@@ -1,4 +1,6 @@
 # 這個 repo 只放制度文件，不該出現憑證、運行資料或暫存
+# dist/ 是 verify_bootstrap.py --zip 的建置產物：它是部署包的副本，進了 Git 就會過期
+dist/
 .env
 .env.*
 tmp/

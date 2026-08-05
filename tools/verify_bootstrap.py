@@ -10,6 +10,10 @@ hooks 套到本 repo 身上），它是部署包的測試。
 用法（在本 repo 根目錄執行）：
   python -X utf8 tools/verify_bootstrap.py
   python -X utf8 tools/verify_bootstrap.py --keep   # 保留產生的骨架供人工檢查
+  python -X utf8 tools/verify_bootstrap.py --zip    # 全過才額外輸出解壓即用的 zip
+
+zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重跑一次，永遠不會有
+一份會過期的壓縮檔躺在 repo 裡跟部署包唱反調。
 
 做七件事：
   1. 重生骨架     ——把第 3 節每個範本抽成實體檔案，比對 EXPECTED 清單有沒有缺漏
@@ -34,6 +38,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from datetime import date
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -429,9 +434,87 @@ def step_misc(dest, work=None):
     return ok
 
 
+# 解壓即用的說明檔。刻意只存在於壓縮檔裡、不進部署包第 3 節——它講的是「怎麼用這個 zip」，
+# 屬於發佈方式，不是專案要長期保留的制度。部署完成就跟部署包一起刪掉。
+ZIP_README = """# 先看這個——三步驟
+
+本資料夾是「AI 協作專案管理骨架」解壓後的樣子。檔案都已就位，但裡面還有 `{{佔位符}}` 沒填。
+
+## 1. 確認位置
+
+這些檔案應該直接躺在**你的專案資料夾根目錄**（跟你的程式碼同一層）。
+如果解壓後多包了一層資料夾，把裡面的東西搬上來。
+
+## 2. 開一個 AI session，貼這段
+
+```text
+本資料夾已經解壓好一套 AI 協作管理骨架，檔案都在，但裡面還有 {{佔位符}} 沒填。
+請照 PROJECT-BOOTSTRAP.md 第 1 節的表格問我問題（一次問完），拿到答案後：
+1. 把所有檔案裡的 {{佔位符}} 換成我的答案，其他內容一個字都不要改、不要自行增刪制度。
+2. 依第 4 節把專案推上 GitHub（已經是 git repo 就只確認 upstream 有設好）。
+3. 跑第 5 節自檢清單，逐項回報通過／不適用／有問題。
+4. 最後刪掉 PROJECT-BOOTSTRAP.md 與本說明檔。
+```
+
+**如果這是一個已經在進行中的專案**（已有 README.md／AGENTS.md），再加一句：
+「已存在的檔案不要覆蓋，只補上缺的段落，動手前先把你打算加什麼列給我看。」
+
+## 3. macOS／Linux 要多做一步
+
+給兩個 hook 腳本執行權限（Windows 不需要）：
+
+```bash
+chmod +x .claude/hooks/*.sh
+```
+
+## 各工具的差異
+
+- **Claude Code**：全自動。開場檢查 git、可打 `/handoff`、忘了寫交接會擋下上傳。
+- **Codex**：同上，但第一次要在 CLI 打 `/hooks` 信任 `.codex/hooks.json`。
+- **Antigravity**：沒有 hook 機制，所以沒有自動提醒。它會讀 `AGENTS.md` 與 `.agents/skills/`；
+  開工時自己講一句「請先讀 .claude/skills/handoff/SKILL.md，照 A 模式接棒」即可。
+
+`python` 指令不存在的機器（macOS 常見）一律改用 `python3`。
+"""
+
+
+def build_zip(out_path):
+    """把「剛剛通過驗證的那份骨架」打包成解壓即用的 zip。
+
+    刻意從部署包重新抽一次未填的範本，不用驗證流程裡那份——那一份的佔位符已經
+    被測試用假值填掉了，打包出去會讓人拿到「驗證用假專案」當專案名。
+    """
+    tmp = pathlib.Path(tempfile.mkdtemp(prefix='pack-'))
+    try:
+        src = tmp / 'gen'
+        src.mkdir()
+        extract(src)
+        (src / '讀我-先看這個.md').write_text(ZIP_README, encoding='utf-8', newline='')
+        shutil.copyfile(KIT, src / KIT.name)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(out_path, 'w', zipfile.ZIP_DEFLATED) as z:
+            for f in sorted(src.rglob('*')):
+                if not f.is_file():
+                    continue
+                arc = f.relative_to(src).as_posix()
+                # 固定時間戳，同一份部署包每次打包都得到相同的 zip（可比對）
+                info = zipfile.ZipInfo(arc, date_time=(2026, 1, 1, 0, 0, 0))
+                # 讓 macOS／Linux 解壓後 .sh 直接可執行，省掉一步 chmod
+                info.external_attr = (0o755 if arc.endswith('.sh') else 0o644) << 16
+                info.compress_type = zipfile.ZIP_DEFLATED
+                z.writestr(info, f.read_bytes())
+        n = len(zipfile.ZipFile(out_path).namelist())
+        print(f'\n已打包 {n} 檔 → {out_path}')
+        return True
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--keep', action='store_true', help='保留產生的骨架，印出路徑')
+    ap.add_argument('--zip', nargs='?', const='', metavar='PATH',
+                    help='驗證全過時，額外輸出解壓即用的 zip（預設 dist/project-skeleton-<日期>.zip）')
     args = ap.parse_args()
 
     if not KIT.exists():
@@ -464,7 +547,13 @@ def main():
     print()
     if failed:
         print(f'FAIL：{len(failed)} 項未通過 —— {"、".join(failed)}')
+        if args.zip is not None:
+            print('（有項目未通過，不產出 zip——沒驗過的東西不該發出去）')
         return 2
+    if args.zip is not None:
+        out = pathlib.Path(args.zip) if args.zip else \
+            ROOT / 'dist' / f'project-skeleton-{date.today().isoformat()}.zip'
+        build_zip(out)
     if skipped:
         print(f'PASS（有 {len(skipped)} 項跳過：{"、".join(skipped)}）——跳過的項目沒有被驗證，回報時要寫明')
         return 1
