@@ -1,0 +1,13 @@
+# 這個 repo 只放制度文件，不該出現憑證、運行資料或暫存
+.env
+.env.*
+tmp/
+scratch/
+__pycache__/
+*.py[cod]
+*.log
+.claude/settings.local.json
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
