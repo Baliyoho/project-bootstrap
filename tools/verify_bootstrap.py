@@ -15,15 +15,17 @@ hooks 套到本 repo 身上），它是部署包的測試。
 zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重跑一次，永遠不會有
 一份會過期的壓縮檔躺在 repo 裡跟部署包唱反調。
 
-做七件事：
+做八件事（第 6 項是 2026-08-05 使用者回報實際部署踩到問題後補的）：
   1. 重生骨架     ——把第 3 節每個範本抽成實體檔案，比對 EXPECTED 清單有沒有缺漏
   2. 填佔位符     ——模擬一次真實部署，填完不該再有殘留
   3. check_docs   ——在填好的骨架跑，要 exit 0
   4. 佔位符清單   ——check_docs 的 PLACEHOLDER_NAMES 要蓋住範本裡真正用到的佔位符，
                     漏一個名字就是那個洞永遠不會被檢查到，而且沒有任何跡象
   5. 佔位符檢查   ——故意種一個佔位符回去，check_docs 必須 exit 2（否則第 5 項檢查是壞的）
-  6. hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
-  7. 行末與雜項   ——本 repo 與重生骨架全 LF、settings.json 合法、verify_state 與
+  6. 真實部署形狀 ——把部署包與一個非 ASCII 檔名放回骨架裡再跑 check_docs，必須仍 exit 0。
+                    這兩件事單獨看都不起眼，合起來就是「照說明部署的人 100% 會踩到」
+  7. hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
+  8. 行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
                     git-freshness 可執行
 
 結束碼：0＝全過；1＝有跳過項（缺 bash 之類）但無失敗；2＝有失敗。
@@ -302,6 +304,41 @@ def step_portability(dest):
     return True
 
 
+def step_deploy_shape(dest):
+    """模擬「剛解壓、還沒刪部署包」的真實部署形狀。
+
+    2026-08-05 使用者實際部署時回報的兩個問題都只在這個形狀下出現，而原本的驗證流程
+    剛好兩個都避開了——骨架裡沒有部署包、檔名又全是 ASCII：
+      - 部署包還在專案裡時，它內嵌範本的相對路徑會被當成死連結（假警報），
+        於是自檢清單第 1 項在刪檔之前永遠不可能通過。
+      - 壓縮檔附的「讀我-先看這個.md」是非 ASCII 檔名，git ls-files 預設會輸出八進位
+        跳脫字串，check_docs 直接 traceback 而不是 FAIL。比 FAIL 更糟：看起來像環境
+        問題，接手的人會跳過驗證，正好繞開這套骨架唯一的文檔關卡。
+    """
+    kit_copy = dest / KIT.name
+    noise = dest / '讀我-先看這個.md'
+    shutil.copyfile(KIT, kit_copy)
+    with open(noise, 'w', encoding='utf-8', newline='') as fh:
+        fh.write('# 說明\n\n> 最後更新：2026-08-05\n')
+    try:
+        git(['add', '-A'], dest)
+        r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
+        if 'Traceback' in r.stderr:
+            tail = r.stderr.strip().splitlines()[-1][:120]
+            record('FAIL', '真實部署形狀', f'check_docs 崩潰而非回報問題：{tail}')
+            return False
+        if r.returncode != 0:
+            head = '\n           '.join(r.stdout.strip().splitlines()[:6])
+            record('FAIL', '真實部署形狀', f'exit {r.returncode}\n           {head}')
+            return False
+        record('OK', '真實部署形狀', '部署包在場＋非 ASCII 檔名，check_docs 仍 exit 0')
+        return True
+    finally:
+        kit_copy.unlink(missing_ok=True)
+        noise.unlink(missing_ok=True)
+        git(['add', '-A'], dest)
+
+
 def step_placeholder_guard(dest):
     """故意種一個佔位符回去。抓不到就代表第 5 項檢查形同虛設。
 
@@ -531,6 +568,7 @@ def main():
         if seen and step_check_docs(dest):
             step_placeholder_list(dest, seen)
             step_placeholder_guard(dest)
+            step_deploy_shape(dest)
             step_portability(dest)
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None

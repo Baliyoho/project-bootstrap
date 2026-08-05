@@ -868,6 +868,9 @@ Thumbs.db
                   這種非文件檔裡；比對的是 PLACEHOLDER_NAMES 這份封閉清單，不是雙大括號語法）
 
 問題以結束碼 2 回報，乾淨為 0。本工具唯讀，絕不修改任何檔案。
+
+source: PROJECT-BOOTSTRAP.md v2026-08-05 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+「專案設定」區塊以外的內容應與權威版一致；副本落後時用這一行辨識。
 """
 import argparse
 import pathlib
@@ -886,6 +889,11 @@ STALE_OK = ('已停用', '已退役', '歷史', '勿再啟動', '~~')
 STALE_OK_PATHS = ()
 # 這些目錄下的 .md 必須在前 8 行有「最後更新」。
 DATED_DIRS = ('docs/ai-notes/',)
+# 連結檢查的豁免路徑。部署包內嵌各檔範本，範本裡的相對路徑是照「該範本部署後的位置」寫的
+# （例如 docs/ai-notes/ 或 .agents/skills/<slug>/），用部署包自己的位置去解析必然解不到——
+# 那是假警報，不是死連結。沒有這條，自檢清單第 1 項在刪掉部署包之前永遠不可能通過，
+# 而部署者只會學到「這支腳本的 FAIL 可以無視」，之後真的死連結也跟著被無視。
+LINK_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)
 # 佔位符檢查掃哪些檔（不只 .md：訪談要填的值也會落在 .gitignore 與 verify_state.py 裡）。
 PLACEHOLDER_GLOBS = ('*.md', '*.py', '*.sh', '*.json', '.gitignore', '.gitattributes')
 # 豁免路徑。部署包本身整份都是佔位符，還沒刪掉時不該報錯（自檢清單最後一項會叫你刪它）。
@@ -907,8 +915,15 @@ PLACEHOLDER_RE = re.compile(r'\{\{(?:' + '|'.join(PLACEHOLDER_NAMES) + r')\}\}')
 
 
 def tracked(*globs):
-    out = subprocess.run(['git', 'ls-files', *globs], capture_output=True, text=True).stdout
-    return [pathlib.Path(p) for p in out.split('\n') if p]
+    # -z 不能拿掉：git ls-files 預設 core.quotepath=true，會把非 ASCII 檔名輸出成加了
+    # 雙引號的八進位跳脫（"\350\256\200..."）。那串原封不動包成 Path，開檔必炸——Windows
+    # 是 OSError errno 22、macOS／Linux 是 FileNotFoundError，兩邊都是 traceback 而不是
+    # FAIL，接手的人很容易判成「環境或 Python 版本問題」而跳過驗證，正好繞開這套骨架
+    # 唯一的文檔關卡。2026-08-05 實際部署時踩到（中文檔名的專案會一直踩）。
+    # -z 另外連「檔名含換行」也一起擋掉，比 -c core.quotepath=false 更完整。
+    out = subprocess.run(['git', 'ls-files', '-z', *globs],
+                         capture_output=True, text=True, encoding='utf-8').stdout
+    return [pathlib.Path(p) for p in out.split('\0') if p]
 
 
 def tracked_md():
@@ -918,6 +933,9 @@ def tracked_md():
 def check_links(files):
     bad, total = [], 0
     for md in files:
+        posix = md.as_posix()
+        if any(posix == p or posix.startswith(p) for p in LINK_OK_PATHS):
+            continue
         for m in re.finditer(r'\[([^\]]*)\]\(([^)]+)\)', md.read_text(encoding='utf-8')):
             link = m.group(2).split('#')[0].strip()
             if not link or link.startswith(('http://', 'https://', 'mailto:')):
@@ -1054,6 +1072,9 @@ if __name__ == '__main__':
 輸出＝緊湊 key=value 事實快照；與 HANDOFF.md「服務查證與期望快照」區塊比對即完成查證。
 腳本只印事實、不做判斷——期望值放 HANDOFF（會隨進度變），避免兩處維護。
 缺少某一層憑證時印 SKIPPED，仍繼續查證其他可用層級。
+
+source: PROJECT-BOOTSTRAP.md v2026-08-05 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+本檔的 CHECKS 區塊本來就該逐專案填寫；其餘內容應與權威版一致。
 """
 import json
 import os
@@ -1300,7 +1321,7 @@ git status -sb
 - [ ] **Antigravity**：`.agents/skills/handoff/SKILL.md` 存在，且內容只有指標、沒有複製程序內容
 - [ ] **另一台機器**：clone 後重跑上面「python 可執行」與「hook 自動跑」兩項。`python` 不存在就用 `python3`；Windows 需要 Git for Windows 附的 bash
 - [ ] `HANDOFF.md` 的「本機能力」已填實際狀況
-- [ ] 刪掉 `PROJECT-BOOTSTRAP.md`（它的內容已分散進 AGENTS.md／handover-protocol.md，留著就是第二份會腐化的副本）
+- [ ] 刪掉 `PROJECT-BOOTSTRAP.md`，以及用壓縮檔部署時附的 `讀我-先看這個.md`。前者的內容已分散進 AGENTS.md／handover-protocol.md，留著就是第二份會腐化的副本；後者的內容在部署完成的當下就是假的（它寫著「檔案都在，但裡面還有佔位符沒填」），下一棒讀到會以為部署沒做完而重跑一次訪談
 
 ---
 
