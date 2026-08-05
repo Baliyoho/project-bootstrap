@@ -832,10 +832,10 @@ Thumbs.db
   2. 過期字串   ——換了網址／改了名稱後殘留的舊值（見下方 STALE_PATTERNS，依專案調整）
   3. 缺日期標頭 ——DATED_DIRS 底下每份都要有「最後更新」，否則無法判斷可信度
   4. 硬編數量   ——「共 N 份」這類會自己過期的寫法
-  5. 殘留佔位符 ——部署訪談沒換掉的雙大括號佔位符（2026-08-05 加入：原本是部署自檢清單上一個
-                  要人工 grep 的核取方塊，而人工核取方塊遲早會有人跳過；改由工具擋才會自動發生。
-                  這一項掃 PLACEHOLDER_GLOBS 的所有檔案，不只 .md——佔位符也會留在
-                  tools/verify_state.py 這種非文件檔裡）
+  5. 殘留佔位符 ——部署訪談沒換掉的洞（2026-08-05 加入：原本是部署自檢清單上一個要人工 grep
+                  的核取方塊，而人工核取方塊遲早會有人跳過；改由工具擋才會自動發生。這一項掃
+                  PLACEHOLDER_GLOBS 的所有檔案，不只 .md——佔位符也會留在 tools/verify_state.py
+                  這種非文件檔裡；比對的是 PLACEHOLDER_NAMES 這份封閉清單，不是雙大括號語法）
 
 問題以結束碼 2 回報，乾淨為 0。本工具唯讀，絕不修改任何檔案。
 """
@@ -859,15 +859,21 @@ DATED_DIRS = ('docs/ai-notes/',)
 # 佔位符檢查掃哪些檔（不只 .md：訪談要填的值也會落在 .gitignore 與 verify_state.py 裡）。
 PLACEHOLDER_GLOBS = ('*.md', '*.py', '*.sh', '*.json', '.gitignore', '.gitattributes')
 # 豁免路徑。部署包本身整份都是佔位符，還沒刪掉時不該報錯（自檢清單最後一項會叫你刪它）。
-# 專案若真的有檔案要用同樣的大寫雙大括號語法（樣板引擎、CI 變數），把該檔或該目錄加進來。
+# 專案若真的有檔案會用到上面那些名字當樣板變數，把該檔或該目錄加進來。
 PLACEHOLDER_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)
 
 COUNT_RE = re.compile(r'(共|計|全)\s*\d+\s*(份|個|支|條)|\d+\s*份(?!量)')
 COUNT_CONTEXT = ('份', '個檔', '支腳本', '知識庫')
-# 只認部署包自己的佔位符語法（雙大括號＋全大寫底線，中間不留空白）。不要放寬成「任何雙
-# 大括號」——verify_state.py 範本裡的 docker `--format` 字串、Jinja2／Handlebars 樣板都長那樣，
-# 放寬就會誤報，而誤報幾次之後這項檢查就會被人關掉。
-PLACEHOLDER_RE = re.compile(r'\{\{[A-Z][A-Z0-9_]{1,40}\}\}')
+# 部署訪談會填的佔位符（第 1 節那張表）。這裡刻意用「名字的封閉清單」而不是「任何雙大括號」
+# 或「雙大括號＋全大寫」：專案自己的樣板語法長得一模一樣——verify_state.py 範本裡有 docker 的
+# --format '{{ .Names }}'，也遇過專案拿同樣的大寫雙大括號寫法產 HTML——用語法比對兩者都會中。
+# 骨架只會留下下面這幾個洞，列舉它們就抓得完，而且不可能誤傷別人的樣板。
+# 部署包新增佔位符時要同步這份清單（verify_bootstrap.py 會比對，漏了會 FAIL）。
+PLACEHOLDER_NAMES = (
+    'PROJECT_NAME', 'ONELINER', 'GH_OWNER', 'GH_REPO', 'GH_VISIBILITY', 'LANG',
+    'TZ', 'TODAY', 'SECRETS', 'RUNTIME_DIRS', 'STACK_DIRS', 'VERIFY_TARGETS',
+)
+PLACEHOLDER_RE = re.compile(r'\{\{(?:' + '|'.join(PLACEHOLDER_NAMES) + r')\}\}')
 
 
 def tracked(*globs):

@@ -11,13 +11,15 @@ hooks 套到本 repo 身上），它是部署包的測試。
   python -X utf8 tools/verify_bootstrap.py
   python -X utf8 tools/verify_bootstrap.py --keep   # 保留產生的骨架供人工檢查
 
-做六件事：
+做七件事：
   1. 重生骨架     ——把第 3 節每個範本抽成實體檔案，比對 EXPECTED 清單有沒有缺漏
-  2. 填佔位符     ——模擬一次真實部署，填完不該再有任何雙大括號殘留
+  2. 填佔位符     ——模擬一次真實部署，填完不該再有殘留
   3. check_docs   ——在填好的骨架跑，要 exit 0
-  4. 佔位符檢查   ——故意種一個佔位符回去，check_docs 必須 exit 2（否則第 5 項檢查是壞的）
-  5. hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
-  6. 行末與雜項   ——本 repo 與重生骨架全 LF、settings.json 合法、verify_state 與
+  4. 佔位符清單   ——check_docs 的 PLACEHOLDER_NAMES 要蓋住範本裡真正用到的佔位符，
+                    漏一個名字就是那個洞永遠不會被檢查到，而且沒有任何跡象
+  5. 佔位符檢查   ——故意種一個佔位符回去，check_docs 必須 exit 2（否則第 5 項檢查是壞的）
+  6. hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
+  7. 行末與雜項   ——本 repo 與重生骨架全 LF、settings.json 合法、verify_state 與
                     git-freshness 可執行
 
 結束碼：0＝全過；1＝有跳過項（缺 bash 之類）但無失敗；2＝有失敗。
@@ -189,7 +191,7 @@ def step_regenerate(dest):
 
 # ── 2. 填佔位符 ────────────────────────────────────────────────
 def step_fill(dest):
-    unknown, filled = set(), 0
+    unknown, seen, filled = set(), set(), 0
     for f in sorted(dest.rglob('*')):
         if not f.is_file():
             continue
@@ -198,8 +200,8 @@ def step_fill(dest):
             continue
 
         def sub(m):
-            nonlocal unknown
             key = m.group(1)
+            seen.add(key)
             if key not in ANSWERS:
                 unknown.add(key)
                 return f'UNKNOWN_{key}'
@@ -221,7 +223,32 @@ def step_fill(dest):
     if left:
         record('FAIL', '填佔位符', f'仍有殘留：{left}')
         return False
-    record('OK', '填佔位符', f'替換 {filled} 處，無殘留')
+    record('OK', '填佔位符', f'替換 {filled} 處、{len(seen)} 種，無殘留')
+    return seen
+
+
+def step_placeholder_list(dest, seen):
+    """check_docs.py 的 PLACEHOLDER_NAMES 必須蓋住範本裡真正出現的佔位符。
+
+    那份清單是封閉列舉（不是語法比對），漏掉一個名字就是那個洞永遠不會被檢查到，
+    而且沒有任何跡象——所以在這裡對一次。
+    """
+    src = (dest / 'tools' / 'check_docs.py').read_text(encoding='utf-8')
+    m = re.search(r'PLACEHOLDER_NAMES\s*=\s*\(([^)]*)\)', src, re.S)
+    if not m:
+        record('FAIL', '佔位符清單涵蓋範本', 'check_docs.py 裡找不到 PLACEHOLDER_NAMES')
+        return False
+    declared = set(re.findall(r"'([A-Z0-9_]+)'", m.group(1)))
+    missing = seen - declared
+    if missing:
+        record('FAIL', '佔位符清單涵蓋範本',
+               f'範本用了但清單沒列：{sorted(missing)}——這些洞不會被檢查到')
+        return False
+    unused = declared - seen
+    detail = f'{len(declared)} 個名字涵蓋範本用到的 {len(seen)} 種'
+    if unused:
+        detail += f'（{sorted(unused)} 只在訪談表出現，不進範本）'
+    record('OK', '佔位符清單涵蓋範本', detail)
     return True
 
 
@@ -238,15 +265,19 @@ def step_check_docs(dest):
 
 
 def step_placeholder_guard(dest):
-    """故意種一個佔位符回去。抓不到就代表第 5 項檢查形同虛設。"""
+    """故意種一個佔位符回去。抓不到就代表第 5 項檢查形同虛設。
+
+    種的名字必須是 PLACEHOLDER_NAMES 裡真的有的（檢查是封閉清單比對，隨便編一個名字
+    本來就不會被抓到，那樣這個測試會恆真、什麼都沒驗到）。
+    """
     target = dest / 'docs' / 'ai-notes' / 'roadmap.md'
     original = target.read_text(encoding='utf-8')
     try:
         with open(target, 'a', encoding='utf-8', newline='') as fh:
-            fh.write('\n- 這行是驗證用的：{{NOT_FILLED_IN}}\n')
+            fh.write('\n- 這行是驗證用的：{{PROJECT_NAME}}\n')
         git(['add', '-A'], dest)
         r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-        if r.returncode != 2 or 'NOT_FILLED_IN' not in r.stdout:
+        if r.returncode != 2 or 'PROJECT_NAME' not in r.stdout:
             record('FAIL', '佔位符檢查（負向測試）', f'期望 exit 2 並指出該行，實得 exit {r.returncode}')
             return False
         record('OK', '佔位符檢查（負向測試）', '殘留佔位符確實被擋下（exit 2）')
@@ -378,7 +409,9 @@ def main():
     print(f'重生骨架於 {dest}\n')
     work = None
     try:
-        if step_regenerate(dest) and step_fill(dest) and step_check_docs(dest):
+        seen = step_regenerate(dest) and step_fill(dest)
+        if seen and step_check_docs(dest):
+            step_placeholder_list(dest, seen)
             step_placeholder_guard(dest)
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None
