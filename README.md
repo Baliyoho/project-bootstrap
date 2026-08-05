@@ -67,6 +67,39 @@
 | 祕密／運行資料被推上 GitHub | 鐵律＋`.gitignore`＋提交前固定檢查 staged 清單 |
 | 交接品質看 agent 心情：漏驗證、忘了寫 HANDOFF 就 push | `handoff` skill＋pre-push hook |
 
+## 要改這份骨架時：開 session 貼這段
+
+在本 repo 開新的 AI session 時整段複製貼上。**這不是接棒 prompt**——本 repo 沒有 `HANDOFF.md`，也沒有骨架那套 hooks，見下方說明。
+改完部署包一律用 `python -X utf8 tools/verify_bootstrap.py` 驗證（重生骨架＋跑完所有檢查，**exit 0 才算完成**）。
+
+```text
+這個 repo 是「AI 協作專案管理骨架」的權威版，唯一產出物是 PROJECT-BOOTSTRAP.md：一份自帶所有檔案範本的
+部署包，複製到新專案資料夾就能生出整套制度（三個入口、交接協定、handoff skill、兩個 git hook、兩支驗證腳本）。
+
+先讀 AGENTS.md 與 README.md，再讀 PROJECT-BOOTSTRAP.md 的第 0–2 節建立全貌。
+第 3 節是各檔範本，改到哪一份才讀那一段——不要整份讀完，那是 1000 多行。
+
+工作時遵守：
+1. 權威版是 PROJECT-BOOTSTRAP.md。制度要改就改它，不要去改各專案裡的副本；改完把副本一起覆蓋
+   （位置見 AGENTS.md「已知的副本位置」）。
+2. 只放通用制度與 {{佔位符}}，不要塞專案專屬內容（網址、docId、憑證檔名、業務規則）。
+3. 每條規則都要保留「為什麼」與絕對日期。砍掉理由，下一棒就會覺得規則多餘而繞過它。
+4. 動到 skill／hook 內容時，同步更新檔頭的 source 版本標記，否則沒人分得出哪份副本落後。
+5. 全檔 LF。用 Python 改寫要 newline='' 或事後正規化，否則 Windows 會把整份寫成 CRLF。
+6. 本 repo 刻意沒有 HANDOFF.md 與 hooks——它是制度的來源，不是一個交接中的工作專案。
+   不要「順手」把骨架套到它自己身上。跨 session 狀態看 git log 與 source 版本標記。
+   tools/ 底下只有 verify_bootstrap.py，那是部署包的測試，不是骨架的一部分。
+
+改完必須驗證，沒驗證不算完成：
+
+    python -X utf8 tools/verify_bootstrap.py
+
+要 exit 0。它會重生骨架比對檔案清單、模擬部署填佔位符、跑 check_docs.py、負向測試佔位符
+檢查擋不擋得住、測 pre-push hook 五情境、查全檔 LF。印出 skip 的項目代表沒被驗證，要照實回報。
+
+先用 3–5 行回報現況與你打算做什麼，再動手。破壞性操作、commit 或 push 之前先問我。
+```
+
 ## handoff skill 的副本同步規則
 
 `SKILL.md` 會同時存在於：**本 repo 的部署包內**（權威版）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
