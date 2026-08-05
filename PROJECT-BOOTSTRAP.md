@@ -10,7 +10,7 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-08-05**（加入 `handoff` skill——把交接協定變成 agent 會自己執行的程序，並補 push 前防呆 hook）。
+> 版本：**2026-08-05**（加入 `handoff` skill——把交接協定變成 agent 會自己執行的程序，補 push 前防呆 hook，並把「殘留佔位符」從人工核取方塊改成 `check_docs.py` 的第 5 項檢查）。
 > 萃取自「台大地理系案件審核工作流」與「NAA_TR」兩個專案實際運行的制度。
 
 ## 交接自動化怎麼運作（本骨架的核心）
@@ -827,11 +827,15 @@ Thumbs.db
   python -X utf8 tools/check_docs.py           # 全部檢查
   python -X utf8 tools/check_docs.py --quiet   # 只印問題與結論
 
-檢查四項（都是實際發生過的腐化模式）：
+檢查五項（都是實際發生過的腐化模式）：
   1. 死連結     ——markdown 相對連結指向不存在的檔案（整併文件時最常見）
   2. 過期字串   ——換了網址／改了名稱後殘留的舊值（見下方 STALE_PATTERNS，依專案調整）
   3. 缺日期標頭 ——DATED_DIRS 底下每份都要有「最後更新」，否則無法判斷可信度
   4. 硬編數量   ——「共 N 份」這類會自己過期的寫法
+  5. 殘留佔位符 ——部署訪談沒換掉的雙大括號佔位符（2026-08-05 加入：原本是部署自檢清單上一個
+                  要人工 grep 的核取方塊，而人工核取方塊遲早會有人跳過；改由工具擋才會自動發生。
+                  這一項掃 PLACEHOLDER_GLOBS 的所有檔案，不只 .md——佔位符也會留在
+                  tools/verify_state.py 這種非文件檔裡）
 
 問題以結束碼 2 回報，乾淨為 0。本工具唯讀，絕不修改任何檔案。
 """
@@ -852,14 +856,27 @@ STALE_OK = ('已停用', '已退役', '歷史', '勿再啟動', '~~')
 STALE_OK_PATHS = ()
 # 這些目錄下的 .md 必須在前 8 行有「最後更新」。
 DATED_DIRS = ('docs/ai-notes/',)
+# 佔位符檢查掃哪些檔（不只 .md：訪談要填的值也會落在 .gitignore 與 verify_state.py 裡）。
+PLACEHOLDER_GLOBS = ('*.md', '*.py', '*.sh', '*.json', '.gitignore', '.gitattributes')
+# 豁免路徑。部署包本身整份都是佔位符，還沒刪掉時不該報錯（自檢清單最後一項會叫你刪它）。
+# 專案若真的有檔案要用同樣的大寫雙大括號語法（樣板引擎、CI 變數），把該檔或該目錄加進來。
+PLACEHOLDER_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)
 
 COUNT_RE = re.compile(r'(共|計|全)\s*\d+\s*(份|個|支|條)|\d+\s*份(?!量)')
 COUNT_CONTEXT = ('份', '個檔', '支腳本', '知識庫')
+# 只認部署包自己的佔位符語法（雙大括號＋全大寫底線，中間不留空白）。不要放寬成「任何雙
+# 大括號」——verify_state.py 範本裡的 docker `--format` 字串、Jinja2／Handlebars 樣板都長那樣，
+# 放寬就會誤報，而誤報幾次之後這項檢查就會被人關掉。
+PLACEHOLDER_RE = re.compile(r'\{\{[A-Z][A-Z0-9_]{1,40}\}\}')
+
+
+def tracked(*globs):
+    out = subprocess.run(['git', 'ls-files', *globs], capture_output=True, text=True).stdout
+    return [pathlib.Path(p) for p in out.split('\n') if p]
 
 
 def tracked_md():
-    out = subprocess.run(['git', 'ls-files', '*.md'], capture_output=True, text=True).stdout
-    return [pathlib.Path(p) for p in out.split('\n') if p]
+    return tracked('*.md')
 
 
 def check_links(files):
@@ -898,6 +915,18 @@ def check_dates(files):
         head = '\n'.join(md.read_text(encoding='utf-8').split('\n')[:8])
         if '最後更新' not in head:
             bad.append(f'{md.as_posix()}  前 8 行沒有「最後更新：YYYY-MM-DD」')
+    return bad
+
+
+def check_placeholders(files):
+    bad = []
+    for md in files:
+        posix = md.as_posix()
+        if any(posix == p or posix.startswith(p) for p in PLACEHOLDER_OK_PATHS):
+            continue
+        for n, line in enumerate(md.read_text(encoding='utf-8').split('\n'), 1):
+            for m in PLACEHOLDER_RE.finditer(line):
+                bad.append(f'{posix}:{n}  「{m.group(0)}」  {line.strip()[:70]}')
     return bad
 
 
@@ -948,6 +977,15 @@ def main():
             print(f'            {b}')
     elif not args.quiet:
         print('[dates]   受管目錄全部有「最後更新」標頭')
+
+    left = check_placeholders(tracked(*PLACEHOLDER_GLOBS))
+    if left:
+        problems += len(left)
+        print(f'[holes]   🔴 {len(left)} 處殘留佔位符（部署訪談沒填完，照文件做會失敗）：')
+        for b in left:
+            print(f'            {b}')
+    elif not args.quiet:
+        print('[holes]   沒有殘留的佔位符')
 
     counts = check_counts(files)
     if counts:
@@ -1152,8 +1190,7 @@ git status -sb
 
 逐項確認，全過才算部署完成：
 
-- [ ] 所有檔案裡**沒有殘留 `{{` 佔位符**（`grep -rn "{{" . --include="*.md"` 應該只剩本說明檔，或已刪除本檔）
-- [ ] `python -X utf8 tools/check_docs.py` → `OK`（死連結會抓出打錯的相對路徑）
+- [ ] `python -X utf8 tools/check_docs.py` → `OK`（一次涵蓋死連結與**殘留佔位符**；佔位符那一項掃 `.md`／`.py`／`.sh`／`.json`／`.gitignore`／`.gitattributes` 的 tracked 檔，所以要先 `git add`。本部署包自己被豁免——照最後一項刪掉它就好）
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
 - [ ] `bash .claude/hooks/git-freshness.sh` → 印出 `✅ 與 origin 同步`，且第二行有 `[handoff]` 提醒（沒有 upstream 會印警告，表示第 4 節沒做完）
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）
