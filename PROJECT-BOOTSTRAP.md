@@ -26,6 +26,24 @@
 **分工**：`docs/ai-notes/handover-protocol.md`＝**規則與理由**（為什麼、什麼算對）；skill＝**怎麼做**（指令、判讀表、模板）。
 兩者衝突以協定為準。這樣才不會變成「同一套程序有兩份會各自演化的副本」。
 
+## 跨工具與跨平台（2026-08-05 查證）
+
+**把三層拆成兩種可靠度**，不要假設哪個工具一定有自動化：
+
+- **可攜層——到哪都成立**：`AGENTS.md`（Claude Code／Codex／Antigravity 都原生讀）＋ 純 Markdown 的程序檔。就算一個 hook 都沒掛，agent 讀 `AGENTS.md` 開頭那段就知道要先走交接程序。**正確性靠這一層，不靠 hook。**
+- **工具層——有就更省事**：hooks。它只是讓人不必記得，不是制度成立的前提。
+
+| | Claude Code | Codex | Antigravity |
+|---|---|---|---|
+| 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生（`AGENTS.md` 優先於 `GEMINI.md`） |
+| 自動載入程序檔 | ✅ `.claude/skills/`，可打 `/handoff` | ⬜ 無 skill 機制，靠 `AGENTS.md` 指路 | ✅ 原生讀 `.agents/skills/` |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，**同格式、同語意**（stdin 收 JSON、exit 2 擋下並把 stderr 交給模型）；首次需在 CLI 打 `/hooks` 信任該定義 | ❌ 沒有 hook 機制 |
+| Windows | ✅ | ✅（Codex 另支援 `commandWindows` 做平台覆寫） | ✅ |
+
+因為 Codex 的 hook 格式與 Claude Code 相同，**兩邊掛的是同樣那兩個 `.sh` 檔**，不要各複製一份——那正是「同一個事實有多個家」的起點。
+
+**共同前提**：兩個 hook 是 bash 腳本，macOS／Linux 內建；Windows 需要 Git for Windows 附的 bash。Python 腳本在 macOS 上常常只有 `python3` 沒有 `python`——所有文件一律寫「`python` 不存在就用 `python3`」。
+
 ---
 
 ## 0. 這套骨架在解決什麼問題
@@ -80,14 +98,16 @@
 ├─ HANDOFF.md                       ← 當下工作狀態（≤80 行，不累積歷史）
 ├─ .gitignore
 ├─ .gitattributes
-├─ .claude/
+├─ .claude/                         ← Claude Code 讀這裡
 │   ├─ settings.json                ← hook 設定（進 Git）
 │   ├─ settings.local.json          ← 各機器本地設定（不進 Git）
 │   ├─ hooks/git-freshness.sh       ← SessionStart：git 新鮮度檢查＋提醒走交接程序
 │   ├─ hooks/pre-push-handoff.sh    ← PreToolUse：沒更新 HANDOFF 就想 push 時擋下
-│   ├─ skills/handoff/SKILL.md      ← 交接與同步的可執行程序（本骨架的核心）
+│   ├─ skills/handoff/SKILL.md      ← 交接與同步的可執行程序（本骨架的核心、權威版）
 │   └─ skills/<其他>/SKILL.md       ← 需要時才建：可重複使用的操作食譜（權威版）
-├─ .agents/skills/                  ← 需要時才建：指向 .claude/skills/ 的指標
+├─ .codex/hooks.json                ← Codex 讀這裡：掛上面同樣那兩個腳本，不另寫一份
+├─ .agents/skills/handoff/SKILL.md  ← Antigravity 原生讀 .agents/：指向權威版的指標
+├─ .agents/skills/<其他>/SKILL.md   ← 需要時才建：同樣只放指標，不複製內容
 ├─ docs/
 │   ├─ ai-notes/
 │   │   ├─ handover-protocol.md     ← 交接協定（接棒／交棒／分支模型）
@@ -109,9 +129,15 @@
 ````markdown
 # AGENTS.md — AI 協作交接指引
 
-> 適用於所有參與本專案的 AI 代理（Claude、Gemini 等）。**開工前先讀完本檔**，再依任務讀下方知識庫。
+> 適用於所有參與本專案的 AI 代理（Claude Code、Codex、Antigravity、Gemini…）。**開工前先讀完本檔**，再依任務讀下方知識庫。
 > 本檔是唯一入口與權威來源；`CLAUDE.md`、`GEMINI.md` 只是指到這裡的指標。
 > 最後更新：{{TODAY}}（建立）
+
+## 開工第一件事（任何工具、任何模型都適用）
+
+**先讀 [`.claude/skills/handoff/SKILL.md`](.claude/skills/handoff/SKILL.md)，照 A 模式接棒；A 沒跑完之前不要修改任何檔案。** 收工時走 B 模式交棒，中途要拉最新或推安全點走 C 模式。
+
+那份檔案是純 Markdown，路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置——**其他工具直接讀它就好**，不要因為資料夾名字而略過。部分工具有自動化輔助（Claude Code 可打 `/handoff`、session 開始會自動檢查 git；Codex 可掛同樣的 hooks；Antigravity 原生讀 `.agents/skills/`），但**有沒有自動化都不改變義務**：沒有被自動提醒，就自己走。
 
 ## 專案是什麼
 
@@ -142,6 +168,7 @@
 | <新主題> | <新增 docs/ai-notes/xxx.md 後，回來把這一列補上> |
 
 `.claude/skills/` 資料夾雖然掛在 Claude 的路徑下，內容是純 Markdown，**任何模型都應直接讀取**。
+`.agents/skills/` 下的同名檔案只是給 Antigravity 這類原生讀 `.agents/` 的工具用的**指標**，內容不重複——看到指標請回頭讀 `.claude/skills/` 的權威版。
 
 ## 跨模型／跨機器協作規範
 
@@ -197,6 +224,7 @@
 
 - **single writer**：不要兩台機器同時改 `main`／`HANDOFF.md`。
 - 開工前先 `git fetch origin`；hook 只是保險，不能取代這一步。
+- 該機器沒有 `python` 指令就用 `python3`（macOS／Linux 常見）。
 
 ## 服務查證與期望快照
 
@@ -274,11 +302,13 @@ tools/                              維運腳本（見下）
 | 腳本 | 做什麼 |
 |---|---|
 | `tools/verify_state.py` | **一鍵驗證**服務現況，輸出 key=value 事實快照，與 HANDOFF 的期望快照比對 |
-| `tools/check_docs.py` | **文檔一致性檢查**：死連結、過期網址、缺日期標頭、硬編數量。動過 `.md` 就跑 |
+| `tools/check_docs.py` | **文檔一致性檢查**：死連結、過期網址、缺日期標頭、硬編數量、殘留佔位符。動過 `.md` 就跑 |
 
 ```bash
 python -X utf8 tools/verify_state.py
 ```
+
+macOS／Linux 常常只有 `python3` 沒有 `python`——該機器上 `python` 不存在就改用 `python3`，兩支腳本都一樣。
 
 ## 動手前必讀的紅線
 
@@ -686,7 +716,7 @@ git fetch origin && git status -sb
 }
 ````
 
-> 其他工具（如 Codex）若也支援 hooks，把同樣兩個腳本掛過去並**保持檔案內容一致**（可直接 `cp`）；兩份各自演化就會出現「Claude 端會擋、Codex 端不會擋」的不對稱。
+> Codex 的接線見 3.16——它掛的是**同樣這兩個 `.sh`**，不要複製第二份腳本進 `.codex/`。兩份各自演化就會出現「Claude 端會擋、Codex 端不會擋」的不對稱。
 
 ### 3.9 `.claude/hooks/git-freshness.sh`
 
@@ -1113,7 +1143,65 @@ if __name__ == '__main__':
     sys.exit(main())
 ````
 
-### 3.15 其他 skills 慣例（有需要時才建，不要空建）
+### 3.15 `.agents/skills/handoff/SKILL.md`（給 Antigravity 的指標）
+
+> Antigravity 原生辨識專案根目錄的 `.agents/`（`.agents/skills/`、`.agents/workflows/`）。這裡放**指標**而不是內容——複製一份程序在這裡，兩份就會各自演化，最後一份說要先 fetch、另一份沒說。
+> 只用得到 Claude Code 與 Codex 的專案可以不建這個檔；建了也不影響其他工具。
+
+````markdown
+---
+name: handoff
+description: Pointer to the authoritative handoff procedure in .claude/skills/. 接棒／交棒／跨機器同步的固定程序。
+---
+
+<!-- source: PROJECT-BOOTSTRAP.md v2026-08-05 — 本檔只是指標，改內容請改權威版 -->
+
+# 本檔只是指標，請讀權威版
+
+**權威版：[`.claude/skills/handoff/SKILL.md`](../../../.claude/skills/handoff/SKILL.md)**
+
+那份是純 Markdown，路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置，內容不限任何工具。
+
+**請勿在此複製內容。** 兩份副本會各自演進並產生矛盾（曾發生：一份已更新成新流程、另一份停在舊版，而入口文件指向舊的那份，照做就失敗）。新知識一律寫進權威版。
+````
+
+### 3.16 `.codex/hooks.json`（給 Codex 的 hook 接線）
+
+> Codex 的 hooks 與 Claude Code **同格式、同語意**：讀 `<repo>/.codex/hooks.json`，context 由 stdin 傳 JSON，exit 2 ＝擋下並把 stderr 交給模型。所以這裡掛的是**同樣那兩個 `.sh`**，不要另外複製一份到 `.codex/hooks/`。
+> **路徑一律相對**——寫成 `C:\Users\...` 的絕對路徑，換到另一台機器或 macOS 必定失效，而且失效時是靜默的。
+> 首次使用要在 Codex CLI 打 `/hooks` 信任這份定義（Codex 用定義的雜湊記錄信任，改過內容要重新信任）。沒有用 Codex 的專案不建這個檔即可。
+
+````json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/git-freshness.sh",
+            "timeout": 30,
+            "statusMessage": "檢查 git 是否與 origin 同步…"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-push-handoff.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
+````
+
+### 3.17 其他 skills 慣例（有需要時才建，不要空建）
 
 當某個操作**做過兩次以上、而且有踩過坑**（API 呼叫順序、部署步驟、前端框架陷阱），就把它寫成 skill：
 
@@ -1204,6 +1292,13 @@ git status -sb
 - [ ] pre-push hook 會放行無關指令：`echo '{"tool_input":{"command":"git status"}}' | bash .claude/hooks/pre-push-handoff.sh; echo $?` → `0`
 - [ ] `git log --stat -1` 確認第一個 commit **沒有**含憑證或運行資料
 - [ ] 關掉 session 重開一次，確認 hook 在對話開頭自動跑
+
+**跨工具（只驗你真的會用的那幾個，用不到的不必建檔）**
+
+- [ ] **可攜層**：`AGENTS.md` 開頭有「開工第一件事」那一段，而且指到的路徑存在——**這一項不能跳過**，它是唯一在所有工具上都成立的保證，其餘都只是輔助
+- [ ] **Codex**：`.codex/hooks.json` 存在且路徑全是相對路徑（`grep -n ':[\\/]' .codex/hooks.json` 應無輸出——絕對路徑在別台機器會靜默失效）；在 Codex CLI 打 `/hooks` 信任該定義後，開一個 session 確認 `[git-check]` 有出現
+- [ ] **Antigravity**：`.agents/skills/handoff/SKILL.md` 存在，且內容只有指標、沒有複製程序內容
+- [ ] **另一台機器**：clone 後重跑上面「python 可執行」與「hook 自動跑」兩項。`python` 不存在就用 `python3`；Windows 需要 Git for Windows 附的 bash
 - [ ] `HANDOFF.md` 的「本機能力」已填實際狀況
 - [ ] 刪掉 `PROJECT-BOOTSTRAP.md`（它的內容已分散進 AGENTS.md／handover-protocol.md，留著就是第二份會腐化的副本）
 

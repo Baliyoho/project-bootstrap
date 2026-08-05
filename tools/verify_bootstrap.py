@@ -45,6 +45,7 @@ EXPECTED = {
     'docs/ai-notes/handover-protocol.md', 'docs/ai-notes/roadmap.md',
     '.claude/skills/handoff/SKILL.md', '.claude/settings.json',
     '.claude/hooks/git-freshness.sh', '.claude/hooks/pre-push-handoff.sh',
+    '.codex/hooks.json', '.agents/skills/handoff/SKILL.md',
     '.gitignore', '.gitattributes',
     'tools/check_docs.py', 'tools/verify_state.py',
 }
@@ -264,6 +265,38 @@ def step_check_docs(dest):
     return True
 
 
+def step_portability(dest):
+    """跨平台／跨工具的靜默失效防呆。
+
+    這兩類問題的共通點是「在原機器上完全正常，換一台才壞，而且壞得無聲無息」：
+      - 絕對路徑：曾經真的發生——某專案的 .codex/hooks.json 寫死了
+        C:\\Users\\<某人>\\Desktop\\<專案>\\...，那台機器一切正常，Mac 上 hook 直接不執行。
+      - 硬寫 `python`：macOS／Linux 常常只有 python3，`python` 不存在。文件裡寫死
+        `python xxx.py` 的那一行，換平台就是一句跑不動的指令。
+    """
+    abs_re = re.compile(r'[A-Za-z]:[\\/]Users[\\/]|/Users/[A-Za-z0-9._-]+/|/home/[A-Za-z0-9._-]+/')
+    py_re = re.compile(r'(?<![a-zA-Z0-9_./-])python(?!3)(?![a-zA-Z0-9_])')
+    bad = []
+    for f in sorted(dest.rglob('*')):
+        if not f.is_file() or '.git' in f.parts:
+            continue
+        rel = f.relative_to(dest).as_posix()
+        text = f.read_text(encoding='utf-8')
+        # 判準是「整份檔案有沒有交代退路」，不是每一行都得重述——逐行要求會逼出
+        # 一堆複述噪音，而讀者是整份讀的。檔內任何一處提到 python3 就算交代過了。
+        told = 'python3' in text
+        for n, line in enumerate(text.split('\n'), 1):
+            if abs_re.search(line):
+                bad.append(f'{rel}:{n}  絕對路徑  {line.strip()[:60]}')
+            if not told and py_re.search(line):
+                bad.append(f'{rel}:{n}  用了 python 但整份沒交代 python3 退路  {line.strip()[:60]}')
+    if bad:
+        record('FAIL', '跨平台防呆', f'{len(bad)} 處：\n           ' + '\n           '.join(bad[:8]))
+        return False
+    record('OK', '跨平台防呆', '無絕對路徑、無缺 python3 退路的 python 呼叫')
+    return True
+
+
 def step_placeholder_guard(dest):
     """故意種一個佔位符回去。抓不到就代表第 5 項檢查形同虛設。
 
@@ -362,12 +395,14 @@ def step_eol(dest):
 
 def step_misc(dest, work=None):
     ok = True
-    try:
-        json.loads((dest / '.claude' / 'settings.json').read_text(encoding='utf-8'))
-        record('OK', 'settings.json 合法 JSON')
-    except Exception as e:
-        record('FAIL', 'settings.json 合法 JSON', str(e))
-        ok = False
+    for label, rel in (('settings.json', '.claude/settings.json'),
+                       ('.codex/hooks.json', '.codex/hooks.json')):
+        try:
+            json.loads((dest / rel).read_text(encoding='utf-8'))
+            record('OK', f'{label} 合法 JSON')
+        except Exception as e:
+            record('FAIL', f'{label} 合法 JSON', str(e))
+            ok = False
 
     r = run([sys.executable, '-X', 'utf8', 'tools/verify_state.py'], cwd=dest)
     if r.returncode == 0 and 'NOT_CONFIGURED' in r.stdout:
@@ -413,6 +448,7 @@ def main():
         if seen and step_check_docs(dest):
             step_placeholder_list(dest, seen)
             step_placeholder_guard(dest)
+            step_portability(dest)
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None
         step_eol(dest)

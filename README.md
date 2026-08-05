@@ -28,16 +28,18 @@
 ├─ AGENTS.md                        AI 的入口（鐵律、連線資料、知識庫地圖）＝唯一權威
 ├─ CLAUDE.md / GEMINI.md            指標，指向 AGENTS.md
 ├─ HANDOFF.md                       當下工作狀態（≤80 行、覆寫不累積）
-├─ .claude/
+├─ .claude/                         Claude Code
 │   ├─ settings.json                hook 設定
 │   ├─ hooks/git-freshness.sh       SessionStart：git 新鮮度檢查＋提醒走交接程序
 │   ├─ hooks/pre-push-handoff.sh    PreToolUse：沒更新 HANDOFF 就想 push 時擋下
-│   └─ skills/handoff/SKILL.md      交接與同步的可執行程序（A 接棒／B 交棒／C 同步）
+│   └─ skills/handoff/SKILL.md      交接與同步的可執行程序（A 接棒／B 交棒／C 同步）＝權威版
+├─ .codex/hooks.json                Codex：掛上面同樣那兩個腳本（同格式、同語意）
+├─ .agents/skills/handoff/SKILL.md  Antigravity 原生讀 .agents/：指向權威版的指標
 ├─ docs/ai-notes/
 │   ├─ handover-protocol.md         交接協定（規則與判準）
 │   └─ roadmap.md                   持久待辦總表
 └─ tools/
-    ├─ check_docs.py                死連結／過期字串／缺日期標頭／硬編數量
+    ├─ check_docs.py                死連結／過期字串／缺日期標頭／硬編數量／殘留佔位符
     └─ verify_state.py              一鍵現況查證（骨架，部署後填檢查項）
 ```
 
@@ -51,6 +53,19 @@
 
 **分工**：`handover-protocol.md`＝規則與理由（為什麼、什麼算對）；`SKILL.md`＝怎麼做（指令、判讀表、模板）。
 兩者衝突以協定為準。這樣才不會變成「同一套程序有兩份會各自演化的副本」。
+
+## 跨工具與跨平台
+
+正確性放在**可攜層**（`AGENTS.md` 開頭那段＋純 Markdown 的程序檔），三個工具都原生讀得到；hooks 只是讓人不必記得，不是制度成立的前提。
+
+| | Claude Code | Codex | Antigravity |
+|---|---|---|---|
+| 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 |
+| 自動載入程序檔 | ✅ `.claude/skills/`、`/handoff` | ⬜ 靠 `AGENTS.md` 指路 | ✅ 原生讀 `.agents/skills/` |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，與 Claude Code 同格式同語意，首次需 `/hooks` 信任 | ❌ 沒有 hook 機制 |
+| Windows／macOS | ✅／✅ | ✅／✅ | ✅／✅ |
+
+Codex 與 Claude Code 掛的是**同樣那兩個 `.sh`**，不各留一份副本。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的）；`python` 不存在的機器改用 `python3`。
 
 ## 它在解決什麼
 

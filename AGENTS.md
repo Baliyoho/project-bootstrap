@@ -15,13 +15,15 @@
 1. **`PROJECT-BOOTSTRAP.md` 是權威版。** 制度要改就改它，再覆蓋到各專案的副本；**不要**在單一專案裡就地改 skill 或 hook——那正是「同一個事實有多個家」的失控起點。
 2. **改動 skill／hook 內容時，同步更新檔頭的 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->` 標記**，否則沒人分得出哪份副本落後。
 3. **保留每條規則的「為什麼」**。這份骨架的價值不在條文，在條文背後的事故；砍掉理由，下一棒就會繞過規則。
-4. **改完要驗證**：跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**。它會重生骨架比對檔案清單、模擬部署填佔位符、跑 `check_docs.py`、負向測試佔位符檢查真的擋得住、測 pre-push hook 五情境、查全檔 LF。2026-08-05 之前這段是要人照著手刻的敘述，每一棒都得重刻一次，於是實務上常被跳過——所以固化成一個指令。跳過的項目（例如機器上沒有 bash）腳本會印 `skip` 並回傳 1，回報時要照實寫。
+4. **改完要驗證**：跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**。它會重生骨架比對檔案清單、模擬部署填佔位符、跑 `check_docs.py`、負向測試佔位符檢查真的擋得住、掃絕對路徑與缺 `python3` 退路的跨平台地雷、測 pre-push hook 五情境、查全檔 LF 與兩份 JSON 設定。2026-08-05 之前這段是要人照著手刻的敘述，每一棒都得重刻一次，於是實務上常被跳過——所以固化成一個指令。跳過的項目（例如機器上沒有 bash）腳本會印 `skip` 並回傳 1，回報時要照實寫。
 5. **不要塞專案專屬內容**（網址、docId、憑證檔名、業務規則）。部署包只放通用制度與佔位符。
 
 ## 已知的副本位置
 
-部署包內（權威）→ 各專案 `.claude/skills/handoff/SKILL.md`、`.claude/hooks/*.sh` → 選用的全域 `~/.claude/skills/handoff/SKILL.md`。
+部署包內（權威）→ 各專案 `.claude/skills/handoff/SKILL.md`、`.claude/hooks/*.sh`、`.claude/settings.json`、`.codex/hooks.json`、`.agents/skills/handoff/SKILL.md` → 選用的全域 `~/.claude/skills/handoff/SKILL.md`。
 改完部署包後，記得把這幾處一起覆蓋。
+
+`.codex/hooks.json` 與 `.agents/skills/handoff/SKILL.md` 是 2026-08-05 加的跨工具接線：Codex 的 hook 與 Claude Code **同格式同語意**，所以掛的是同樣那兩個 `.sh`（不要複製第二份腳本）；Antigravity 原生讀 `.agents/`，那裡只放指向權威版的指標。**兩者的路徑一律相對**——寫死絕對路徑換機器就會靜默失效，`verify_bootstrap.py` 的「跨平台防呆」會擋。
 
 ## 行末
 
