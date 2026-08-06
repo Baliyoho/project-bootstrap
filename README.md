@@ -58,14 +58,15 @@
 
 正確性放在**可攜層**（`AGENTS.md` 開頭那段＋純 Markdown 的程序檔），三個工具都原生讀得到；hooks 只是讓人不必記得，不是制度成立的前提。
 
-| | Claude Code | Codex | Antigravity |
-|---|---|---|---|
-| 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 |
-| 自動載入程序檔 | ✅ `.claude/skills/`、`/handoff` | ⬜ 靠 `AGENTS.md` 指路 | ✅ 原生讀 `.agents/skills/` |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，與 Claude Code 同格式同語意，首次需 `/hooks` 信任 | ❌ 沒有 hook 機制 |
-| Windows／macOS | ✅／✅ | ✅／✅ | ✅／✅ |
+| | Claude Code | Codex CLI | Codex 桌面 App | Antigravity |
+|---|---|---|---|---|
+| 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 | ✅ 原生 |
+| 自動載入程序檔 | ✅ `.claude/skills/`、`/handoff` | ⬜ 靠 `AGENTS.md` 指路 | ✅ `~/.codex/skills/`，也讀專案的 `.agents/skills/` | ✅ 原生讀 `.agents/skills/` |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意，首次需 `/hooks` 信任 | ❌ 沒有 | ❌ 沒有 |
 
-Codex 與 Claude Code 掛的是**同樣那兩個 `.sh`**，不各留一份副本。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的）；`python` 不存在的機器改用 `python3`。
+**Codex 要分 CLI 與桌面 App**（2026-08-06 實測 App `26.721.41059`）：CLI 有 hooks 且與 Claude Code 同格式，兩邊掛**同樣那兩個 `.sh`**、不各留一份；桌面 App 沒有 hooks，但有原生 skill 系統，把 `SKILL.md` 複製到 `~/.codex/skills/handoff/` 即可。
+
+只有 Claude Code 與 Codex CLI 有自動關卡，**其餘兩者要靠可攜層**——這就是正確性不押在 hook 上的理由。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的）；`python` 不存在的機器改用 `python3`。
 
 ## 它在解決什麼
 

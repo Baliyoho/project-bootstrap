@@ -33,14 +33,20 @@
 - **可攜層——到哪都成立**：`AGENTS.md`（Claude Code／Codex／Antigravity 都原生讀）＋ 純 Markdown 的程序檔。就算一個 hook 都沒掛，agent 讀 `AGENTS.md` 開頭那段就知道要先走交接程序。**正確性靠這一層，不靠 hook。**
 - **工具層——有就更省事**：hooks。它只是讓人不必記得，不是制度成立的前提。
 
-| | Claude Code | Codex | Antigravity |
-|---|---|---|---|
-| 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生（`AGENTS.md` 優先於 `GEMINI.md`） |
-| 自動載入程序檔 | ✅ `.claude/skills/`，可打 `/handoff` | ⬜ 無 skill 機制，靠 `AGENTS.md` 指路 | ✅ 原生讀 `.agents/skills/` |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，**同格式、同語意**（stdin 收 JSON、exit 2 擋下並把 stderr 交給模型）；首次需在 CLI 打 `/hooks` 信任該定義 | ❌ 沒有 hook 機制 |
-| Windows | ✅ | ✅（Codex 另支援 `commandWindows` 做平台覆寫） | ✅ |
+| | Claude Code | Codex CLI | Codex 桌面 App | Antigravity |
+|---|---|---|---|---|
+| 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 | ✅ 原生（優先於 `GEMINI.md`） |
+| 自動載入程序檔 | ✅ `.claude/skills/`，可打 `/handoff` | ⬜ 靠 `AGENTS.md` 指路 | ✅ 全域 `~/.codex/skills/<name>/SKILL.md`；專案的 `.agents/skills/` 也讀得到 | ✅ 原生讀 `.agents/skills/` |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json` | ❌ **這個 build 沒有 hooks**，`/hooks` 指令不存在 | ❌ 沒有 hook 機制 |
 
-因為 Codex 的 hook 格式與 Claude Code 相同，**兩邊掛的是同樣那兩個 `.sh` 檔**，不要各複製一份——那正是「同一個事實有多個家」的起點。
+**Codex 要分 CLI 與桌面 App，兩者能力不同**（2026-08-06 在 App 版 `26.721.41059` 實測）：
+
+- **CLI** 有 hooks，格式與語意跟 Claude Code 相同（stdin 收 JSON、exit 2 擋下並把 stderr 交給模型），首次要打 `/hooks` 信任該定義。因為格式相同，**兩邊掛的是同樣那兩個 `.sh` 檔**，不要各複製一份——那正是「同一個事實有多個家」的起點。
+- **桌面 App 沒有 hooks**，但有原生的 skill 系統：使用者 skill 放 `~/.codex/skills/<name>/SKILL.md`，格式與 Claude Code 相同（`name` ＋ `description` frontmatter）。把 `.claude/skills/handoff/SKILL.md` 複製過去即可，`~/.codex/rules/` 是指令核准白名單、不是放指示的地方。
+
+實測時 App 還主動讀到了專案的 `.agents/skills/handoff/SKILL.md`，並照指標找到 `.claude/` 的權威版——所以那個指標檔不只對 Antigravity 有用。
+
+`.codex/hooks.json` 建了不會有害（哪天改用 CLI 就生效），但**在 App 上是空轉的**：沒有開場檢查、沒有 push 攔截。這正是可攜層必須自己站得住的理由。
 
 **共同前提**：兩個 hook 是 bash 腳本，macOS／Linux 內建；Windows 需要 Git for Windows 附的 bash。Python 腳本在 macOS 上常常只有 `python3` 沒有 `python`——所有文件一律寫「`python` 不存在就用 `python3`」。
 
@@ -1188,9 +1194,10 @@ description: Pointer to the authoritative handoff procedure in .claude/skills/. 
 
 ### 3.16 `.codex/hooks.json`（給 Codex 的 hook 接線）
 
-> Codex 的 hooks 與 Claude Code **同格式、同語意**：讀 `<repo>/.codex/hooks.json`，context 由 stdin 傳 JSON，exit 2 ＝擋下並把 stderr 交給模型。所以這裡掛的是**同樣那兩個 `.sh`**，不要另外複製一份到 `.codex/hooks/`。
+> **只有 Codex CLI 用得到這個檔；桌面 App 沒有 hooks**（2026-08-06 實測 App `26.721.41059`，`/hooks` 指令不存在）。App 請改走下一節的全域 skill。建了不會有害，但別以為 App 上會生效。
+> CLI 的 hooks 與 Claude Code **同格式、同語意**：讀 `<repo>/.codex/hooks.json`，context 由 stdin 傳 JSON，exit 2 ＝擋下並把 stderr 交給模型。所以這裡掛的是**同樣那兩個 `.sh`**，不要另外複製一份到 `.codex/hooks/`。
 > **路徑一律相對**——寫成 `C:\Users\...` 的絕對路徑，換到另一台機器或 macOS 必定失效，而且失效時是靜默的。
-> 首次使用要在 Codex CLI 打 `/hooks` 信任這份定義（Codex 用定義的雜湊記錄信任，改過內容要重新信任）。沒有用 Codex 的專案不建這個檔即可。
+> 首次使用要在 CLI 打 `/hooks` 信任這份定義（Codex 用定義的雜湊記錄信任，改過內容要重新信任）。
 
 ````json
 {
@@ -1317,8 +1324,10 @@ git status -sb
 **跨工具（只驗你真的會用的那幾個，用不到的不必建檔）**
 
 - [ ] **可攜層**：`AGENTS.md` 開頭有「開工第一件事」那一段，而且指到的路徑存在——**這一項不能跳過**，它是唯一在所有工具上都成立的保證，其餘都只是輔助
-- [ ] **Codex**：`.codex/hooks.json` 存在且路徑全是相對路徑（`grep -n ':[\\/]' .codex/hooks.json` 應無輸出——絕對路徑在別台機器會靜默失效）；在 Codex CLI 打 `/hooks` 信任該定義後，開一個 session 確認 `[git-check]` 有出現
+- [ ] **Codex CLI**：`.codex/hooks.json` 存在且路徑全是相對路徑（`grep -n ':[\\/]' .codex/hooks.json` 應無輸出——絕對路徑在別台機器會靜默失效）；打 `/hooks` 信任該定義後，開一個 session 確認 `[git-check]` 有出現
+- [ ] **Codex 桌面 App**：`/hooks` 打不出來是正常的（App 沒有 hooks）。改為把 `.claude/skills/handoff/SKILL.md` 複製到 `~/.codex/skills/handoff/SKILL.md`，重開 session 後問「你有哪些 skill 可以用」，看得到 `handoff` 就成了
 - [ ] **Antigravity**：`.agents/skills/handoff/SKILL.md` 存在，且內容只有指標、沒有複製程序內容
+- [ ] **共通的真正驗收**（不論哪個工具）：在專案裡講一句「我要接手這個專案」，agent 應該先 `git fetch`、讀 `AGENTS.md` ＋ `HANDOFF.md`，回報 3–5 行才動手。它直接開始翻程式碼就是沒接上——改用明講版：「請先讀 `.claude/skills/handoff/SKILL.md`，照 A 模式接棒」
 - [ ] **另一台機器**：clone 後重跑上面「python 可執行」與「hook 自動跑」兩項。`python` 不存在就用 `python3`；Windows 需要 Git for Windows 附的 bash
 - [ ] `HANDOFF.md` 的「本機能力」已填實際狀況
 - [ ] 刪掉 `PROJECT-BOOTSTRAP.md`，以及用壓縮檔部署時附的 `讀我-先看這個.md`。前者的內容已分散進 AGENTS.md／handover-protocol.md，留著就是第二份會腐化的副本；後者的內容在部署完成的當下就是假的（它寫著「檔案都在，但裡面還有佔位符沒填」），下一棒讀到會以為部署沒做完而重跑一次訪談
