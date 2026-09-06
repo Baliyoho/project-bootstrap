@@ -125,6 +125,6 @@
 
 ## 來源
 
-從兩個實際運行的專案萃取：台大地理系案件審核工作流（Grist＋NAS＋custom widget，repo `grist-workflow`）、NAA_TR（檔案管理局文本識別）。兩個都是多模型（Claude／Gemini／Codex）、多機器（Windows↔macOS）協作。
+從兩個實際運行的專案萃取：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，另一個是文本識別系統。兩個都是多模型（Claude／Gemini／Codex）、多機器（Windows↔macOS）協作。
 
-repo 名寫在這裡是因為本機資料夾名稱和專案名對不上（`grist-workflow` 的工作目錄叫 `Grist_test`），沒有這行就會有人以為這個專案不存在。
+骨架裡的每條規則都對應一次實際踩過的坑——所以規則旁邊一律附「為什麼」，砍掉理由，下一棒就會繞過規則。
