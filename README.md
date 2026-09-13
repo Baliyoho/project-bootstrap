@@ -2,7 +2,8 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-08-05。這個 repo 只有一個產出物：上面那份部署包。其他檔案都是說明或指標。
+> 最後更新：2026-09-07。這個 repo 只有一個產出物：上面那份部署包。其他檔案都是說明、指標或它的測試。
+> 這個 repo 自己的結構（有哪些檔、部署包各節產出什麼、副本存在於哪些地方）見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 怎麼用
 
@@ -28,11 +29,12 @@
 ├─ AGENTS.md                        AI 的入口（鐵律、連線資料、知識庫地圖）＝唯一權威
 ├─ CLAUDE.md / GEMINI.md            指標，指向 AGENTS.md
 ├─ HANDOFF.md                       當下工作狀態（≤80 行、覆寫不累積）
+├─ ARCHITECT.md                     專案結構的唯一權威（只有結構變動才改）
 ├─ .claude/                         Claude Code
 │   ├─ settings.json                hook 設定
 │   ├─ hooks/git-freshness.sh       SessionStart：git 新鮮度檢查＋提醒走交接程序
 │   ├─ hooks/pre-push-handoff.sh    PreToolUse：沒更新 HANDOFF 就想 push 時擋下
-│   └─ skills/handoff/SKILL.md      交接與同步的可執行程序（A 接棒／B 交棒／C 同步）＝權威版
+│   └─ skills/handoff/SKILL.md      交接與同步的可執行程序（0 建制／A 接棒／B 交棒／C 同步）＝權威版
 ├─ .codex/hooks.json                Codex：掛上面同樣那兩個腳本（同格式、同語意）
 ├─ .agents/skills/handoff/SKILL.md  Antigravity 原生讀 .agents/：指向權威版的指標
 ├─ docs/ai-notes/
@@ -48,11 +50,33 @@
 | 層 | 檔案 | 什麼時候動 |
 |---|---|---|
 | **觸發** | `hooks/git-freshness.sh` | 每次 session 開始自動 fetch，報告落後／分岔，並提醒「接棒先走 handoff skill」 |
-| **程序** | `skills/handoff/SKILL.md` | agent 判斷要接棒／交棒／同步時自動載入；也可打 `/handoff` |
+| **程序** | `skills/handoff/SKILL.md` | agent 判斷要接棒／交棒／同步時自動載入；也可打 `/handoff`（建制走模式 0，見下節） |
 | **防呆** | `hooks/pre-push-handoff.sh` | 要推到權威分支、但這批 commit 沒更新 `HANDOFF.md` → 擋下並要求先走交棒程序 |
 
 **分工**：`handover-protocol.md`＝規則與理由（為什麼、什麼算對）；`SKILL.md`＝怎麼做（指令、判讀表、模板）。
 兩者衝突以協定為準。這樣才不會變成「同一套程序有兩份會各自演化的副本」。
+
+## 完全空白的新專案：模式 0（建制）
+
+上面那三層是**部署完成之後**才會動的；空白資料夾裡什麼都還沒有。所以同一支 skill 多了一個**模式 0**：
+使用者講一句「幫我把交接機制建起來」，agent 就照部署包逐檔生成——訪談一次問完、照抄範本、上 GitHub、
+跑自檢、寫第一份 `HANDOFF.md` 與 `ARCHITECT.md`，最後刪掉部署包（留著就是第二份會腐化的副本）。
+
+**要讓它自動觸發，把 skill 裝成全域的**（一次就好，之後每個新專案都吃得到）：
+
+```bash
+mkdir -p ~/.claude/skills/handoff && cp <某個已部署專案>/.claude/skills/handoff/SKILL.md ~/.claude/skills/handoff/
+```
+
+Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒裝全域副本也可以——把 `PROJECT-BOOTSTRAP.md`
+複製進資料夾，用最上面那段 prompt 手動指路，結果一樣。
+
+模式 0 有兩條硬規定，都對應會實際發生的事：
+
+- **沒拿到部署包就停下來要**，不要憑印象重刻。憑印象生出來的版本缺的永遠是最貴的那部分——每條規則後面的
+  「為什麼」、hook 的邊界條件——看起來像那套制度，實際擋不住任何事，而且沒有任何跡象。
+- **使用者沒明講要導入就不要建。** 這支 skill 會在他只想改一行程式時被載入；未經同意在別人的 repo 裡灑出
+  十幾個檔案，最後會留下半套沒人維護的制度，比沒有更糟。
 
 ## 跨工具與跨平台
 
@@ -90,19 +114,21 @@
 
 ```text
 這個 repo 是「AI 協作專案管理骨架」的權威版，唯一產出物是 PROJECT-BOOTSTRAP.md：一份自帶所有檔案範本的
-部署包，複製到新專案資料夾就能生出整套制度（三個入口、交接協定、handoff skill、兩個 git hook、兩支驗證腳本）。
+部署包，複製到新專案資料夾就能生出整套制度（三個入口＋結構文件、交接協定、handoff skill、兩個 git hook、
+兩支驗證腳本）。
 
-先讀 AGENTS.md 與 README.md，再讀 PROJECT-BOOTSTRAP.md 的第 0–2 節建立全貌。
+先讀 AGENTS.md 與 ARCHITECT.md（規則與結構），再讀 PROJECT-BOOTSTRAP.md 的第 0–2 節建立全貌。
 第 3 節是各檔範本，改到哪一份才讀那一段——不要整份讀完，那是 1000 多行。
 
 工作時遵守：
 1. 權威版是 PROJECT-BOOTSTRAP.md。制度要改就改它，不要去改各專案裡的副本；改完把副本一起覆蓋
-   （位置見 AGENTS.md「已知的副本位置」）。
+   （拓撲見 ARCHITECT.md「副本拓撲」，規則見 AGENTS.md「副本規則」）。
 2. 只放通用制度與 {{佔位符}}，不要塞專案專屬內容（網址、docId、憑證檔名、業務規則）。
 3. 每條規則都要保留「為什麼」與絕對日期。砍掉理由，下一棒就會覺得規則多餘而繞過它。
 4. 動到 skill／hook 內容時，同步更新檔頭的 source 版本標記，否則沒人分得出哪份副本落後。
 5. 全檔 LF。用 Python 改寫要 newline='' 或事後正規化，否則 Windows 會把整份寫成 CRLF。
-6. 本 repo 刻意沒有 HANDOFF.md 與 hooks——它是制度的來源，不是一個交接中的工作專案。
+6. 動到結構（增刪檔案、部署包增刪一節範本、驗證項增減）就更新 ARCHITECT.md，跟該變動同一個 commit。
+7. 本 repo 刻意沒有 HANDOFF.md 與 hooks——它是制度的來源，不是一個交接中的工作專案。
    不要「順手」把骨架套到它自己身上。跨 session 狀態看 git log 與 source 版本標記。
    tools/ 底下只有 verify_bootstrap.py，那是部署包的測試，不是骨架的一部分。
 
