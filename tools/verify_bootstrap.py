@@ -15,7 +15,8 @@ hooks 套到本 repo 身上），它是部署包的測試。
 zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重跑一次，永遠不會有
 一份會過期的壓縮檔躺在 repo 裡跟部署包唱反調。
 
-做八件事（第 6 項是 2026-08-05 使用者回報實際部署踩到問題後補的）：
+做九件事（第 6 項是 2026-08-05 使用者回報實際部署踩到問題後補的；第 9 項是 2026-09-07 加
+ARCHITECT.md 時補的）：
   1. 重生骨架     ——把第 3 節每個範本抽成實體檔案，比對 EXPECTED 清單有沒有缺漏
   2. 填佔位符     ——模擬一次真實部署，填完不該再有殘留
   3. check_docs   ——在填好的骨架跑，要 exit 0
@@ -27,6 +28,9 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
   7. hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
   8. 行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
                     git-freshness 可執行
+  9. 日期標頭     ——拿掉 ARCHITECT.md 的「最後更新」，check_docs 必須 exit 2。這一項守的是
+                    check_docs 的 DATED_DIRS 有沒有真的涵蓋 ARCHITECT.md：漏掉不會有任何
+                    跡象，結構圖就會安靜地變成沒有日期、沒人分得出是哪一天的事實
 
 結束碼：0＝全過；1＝有跳過項（缺 bash 之類）但無失敗；2＝有失敗。
 本工具唯讀本 repo，只在系統暫存區寫檔。
@@ -48,7 +52,7 @@ KIT = ROOT / 'PROJECT-BOOTSTRAP.md'
 
 # 第 3 節應該產出的檔案。少一份就是有人刪了範本卻沒發現；多一份就把它加進來。
 EXPECTED = {
-    'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'HANDOFF.md', 'README.md',
+    'AGENTS.md', 'ARCHITECT.md', 'CLAUDE.md', 'GEMINI.md', 'HANDOFF.md', 'README.md',
     'docs/ai-notes/handover-protocol.md', 'docs/ai-notes/roadmap.md',
     '.claude/skills/handoff/SKILL.md', '.claude/settings.json',
     '.claude/hooks/git-freshness.sh', '.claude/hooks/pre-push-handoff.sh',
@@ -152,7 +156,7 @@ def extract(dest):
         end = heads[n + 1] if n + 1 < len(heads) else len(lines)
         paths = [p for p in re.findall(r'`([^`]+)`', lines[i]) if '.' in p or '/' in p]
         if not paths:
-            continue                       # 例：3.15 是慣例說明，不是檔案
+            continue                       # 例：3.18 是慣例說明，不是檔案
         j, fence = i, None
         while j < end:
             m = FENCE_RE.match(lines[j])
@@ -356,6 +360,35 @@ def step_placeholder_guard(dest):
             record('FAIL', '佔位符檢查（負向測試）', f'期望 exit 2 並指出該行，實得 exit {r.returncode}')
             return False
         record('OK', '佔位符檢查（負向測試）', '殘留佔位符確實被擋下（exit 2）')
+        return True
+    finally:
+        with open(target, 'w', encoding='utf-8', newline='') as fh:
+            fh.write(original)
+        git(['add', '-A'], dest)
+
+
+def step_date_guard(dest):
+    """拿掉 ARCHITECT.md 的日期標頭，check_docs 必須擋下。
+
+    ARCHITECT.md 是被拿來「找檔案」的文件，沒有日期就無法判斷這份結構圖是哪一天的事實，
+    而過期的結構圖比沒有更糟。它靠 check_docs 的 DATED_DIRS 把關——但那份清單漏掉一個
+    名字不會有任何跡象（少一項檢查而已，照樣 exit 0），所以在這裡對一次。
+    """
+    target = dest / 'ARCHITECT.md'
+    original = target.read_text(encoding='utf-8')
+    stripped = '\n'.join(
+        ln for ln in original.split('\n') if '最後更新' not in ln)
+    try:
+        with open(target, 'w', encoding='utf-8', newline='') as fh:
+            fh.write(stripped)
+        git(['add', '-A'], dest)
+        r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
+        if r.returncode != 2 or 'ARCHITECT.md' not in r.stdout:
+            record('FAIL', '日期標頭（負向測試）',
+                   f'期望 exit 2 並指出 ARCHITECT.md，實得 exit {r.returncode}'
+                   '——檢查 check_docs.py 的 DATED_DIRS 有沒有含 ARCHITECT.md')
+            return False
+        record('OK', '日期標頭（負向測試）', 'ARCHITECT.md 缺「最後更新」確實被擋下（exit 2）')
         return True
     finally:
         with open(target, 'w', encoding='utf-8', newline='') as fh:
@@ -568,6 +601,7 @@ def main():
         if seen and step_check_docs(dest):
             step_placeholder_list(dest, seen)
             step_placeholder_guard(dest)
+            step_date_guard(dest)
             step_deploy_shape(dest)
             step_portability(dest)
             hooked = step_hook(dest, tmp)
