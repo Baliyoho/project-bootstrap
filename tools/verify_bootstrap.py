@@ -15,22 +15,27 @@ hooks 套到本 repo 身上），它是部署包的測試。
 zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重跑一次，永遠不會有
 一份會過期的壓縮檔躺在 repo 裡跟部署包唱反調。
 
-做九件事（第 6 項是 2026-08-05 使用者回報實際部署踩到問題後補的；第 9 項是 2026-09-07 加
-ARCHITECT.md 時補的）：
-  1. 重生骨架     ——把第 3 節每個範本抽成實體檔案，比對 EXPECTED 清單有沒有缺漏
-  2. 填佔位符     ——模擬一次真實部署，填完不該再有殘留
-  3. check_docs   ——在填好的骨架跑，要 exit 0
-  4. 佔位符清單   ——check_docs 的 PLACEHOLDER_NAMES 要蓋住範本裡真正用到的佔位符，
-                    漏一個名字就是那個洞永遠不會被檢查到，而且沒有任何跡象
-  5. 佔位符檢查   ——故意種一個佔位符回去，check_docs 必須 exit 2（否則第 5 項檢查是壞的）
-  6. 真實部署形狀 ——把部署包與一個非 ASCII 檔名放回骨架裡再跑 check_docs，必須仍 exit 0。
-                    這兩件事單獨看都不起眼，合起來就是「照說明部署的人 100% 會踩到」
-  7. hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
-  8. 行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
-                    git-freshness 可執行
-  9. 日期標頭     ——拿掉 ARCHITECT.md 的「最後更新」，check_docs 必須 exit 2。這一項守的是
-                    check_docs 的 DATED_DIRS 有沒有真的涵蓋 ARCHITECT.md：漏掉不會有任何
-                    跡象，結構圖就會安靜地變成沒有日期、沒人分得出是哪一天的事實
+檢查項（順序即執行順序；增減時同步 ARCHITECT.md「verify_bootstrap.py 守的東西」那張表。
+這裡刻意不寫「做 N 件事」——數字會自己過期，2026-09-13 就漏算過一項）：
+  重生骨架     ——把第 3 節每個範本抽成實體檔案，比對 EXPECTED 清單有沒有缺漏
+  填佔位符     ——模擬一次真實部署，填完不該再有殘留
+  check_docs   ——在填好的骨架跑，要 exit 0
+  佔位符清單   ——check_docs 的 PLACEHOLDER_NAMES 要蓋住範本裡真正用到的佔位符，
+                  漏一個名字就是那個洞永遠不會被檢查到，而且沒有任何跡象
+  佔位符檢查   ——故意種一個佔位符回去，check_docs 必須 exit 2（否則 check_docs 的
+                  佔位符檢查本身是壞的）
+  日期標頭     ——拿掉 ARCHITECT.md 的「最後更新」，check_docs 必須 exit 2（2026-09-07 加
+                  ARCHITECT.md 時補的）。守的是 check_docs 的 DATED_DIRS 有沒有真的涵蓋
+                  ARCHITECT.md：漏掉不會有任何跡象，結構圖就會安靜地變成沒有日期、
+                  沒人分得出是哪一天的事實
+  真實部署形狀 ——把部署包與一個非 ASCII 檔名放回骨架裡再跑 check_docs，必須仍 exit 0
+                  （2026-08-05 使用者回報實際部署踩到問題後補的）。這兩件事單獨看都不起眼，
+                  合起來就是「照說明部署的人 100% 會踩到」
+  跨平台防呆   ——掃絕對路徑，以及「用了 python 卻整份沒交代 python3 退路」的檔案。
+                  這兩類問題在原機器上完全正常，換一台才壞，而且壞得無聲無息
+  hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
+  行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
+                  git-freshness 可執行
 
 結束碼：0＝全過；1＝有跳過項（缺 bash 之類）但無失敗；2＝有失敗。
 本工具唯讀本 repo，只在系統暫存區寫檔。
@@ -540,7 +545,10 @@ chmod +x .claude/hooks/*.sh
 ## 各工具的差異
 
 - **Claude Code**：全自動。開場檢查 git、可打 `/handoff`、忘了寫交接會擋下上傳。
-- **Codex**：同上，但第一次要在 CLI 打 `/hooks` 信任 `.codex/hooks.json`。
+- **Codex CLI**：同上，但第一次要打 `/hooks` 信任 `.codex/hooks.json`。
+- **Codex 桌面 App**：沒有 hook 機制（2026-08-06 在 App `26.721.41059` 實測），所以沒有自動
+  提醒。把 `.claude/skills/handoff/SKILL.md` 複製到 `~/.codex/skills/handoff/SKILL.md` 就能
+  用 skill；開工時自己講一句「請先讀 .claude/skills/handoff/SKILL.md，照 A 模式接棒」。
 - **Antigravity**：沒有 hook 機制，所以沒有自動提醒。它會讀 `AGENTS.md` 與 `.agents/skills/`；
   開工時自己講一句「請先讀 .claude/skills/handoff/SKILL.md，照 A 模式接棒」即可。
 
