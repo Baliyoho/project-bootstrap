@@ -10,9 +10,11 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-09-20**（handoff skill 加 **A6 回推補交接**，協定範本加對應的「漏交棒的補救」一節——三層防呆全都掛在「下一個動作」上，**直接關掉視窗沒有下一個動作**，所以這是程序責任不是工具責任）。
-> 前一版 2026-09-07：加入 `ARCHITECT.md`＝結構的唯一權威，以及 handoff skill 的**模式 0 建制**——在還沒有這套制度的資料夾裡，由 agent 照本部署包把骨架生出來，而不是憑印象重刻一份。
-> 前前一版 2026-08-05：加入 `handoff` skill、push 前防呆 hook，並把「殘留佔位符」從人工核取方塊改成 `check_docs.py` 的第 5 項檢查。
+> 版本：**2026-09-30**（兩個 hook 腳本補上 `source:` 版本標記——鐵律第 2 條的作用是一眼認出落後的副本，而最無從用肉眼辨識新舊的正好是這兩支 `.sh`）。
+> 前幾版——
+> 2026-09-20：handoff skill 加 **A6 回推補交接**，協定範本加對應的「漏交棒的補救」一節——三層防呆全都掛在「下一個動作」上，**直接關掉視窗沒有下一個動作**，所以這是程序責任不是工具責任。
+> 2026-09-07：加入 `ARCHITECT.md`＝結構的唯一權威，以及 handoff skill 的**模式 0 建制**——在還沒有這套制度的資料夾裡，由 agent 照本部署包把骨架生出來，而不是憑印象重刻一份。
+> 2026-08-05：加入 `handoff` skill、push 前防呆 hook，並把「殘留佔位符」從人工核取方塊改成 `check_docs.py` 的第 5 項檢查。
 > 萃取自兩個實際運行的專案：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，一個是文本識別系統。兩個都是多模型、多機器協作。
 
 ## 交接自動化怎麼運作（本骨架的核心）
@@ -959,6 +961,7 @@ git fetch origin && git status -sb
 
 ````bash
 #!/usr/bin/env bash
+# source: PROJECT-BOOTSTRAP.md v2026-09-30 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：git 新鮮度檢查（多機分岔防呆）
 # 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
 # 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
@@ -1013,7 +1016,7 @@ exit 0
 # 其他情況（非 push 指令、feature 分支中途推進度、判斷不了）一律放行——寧可漏擋，不要誤擋。
 # 退出碼：0＝放行；2＝擋下並把 stderr 交給模型（模型會看到訊息並改走交棒程序）。
 # 臨時停用：HANDOFF_HOOK=off
-# 權威版在 PROJECT-BOOTSTRAP.md，改這裡之前先改部署包。
+# source: PROJECT-BOOTSTRAP.md v2026-09-30 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 
 [ "$HANDOFF_HOOK" = "off" ] && exit 0
 
