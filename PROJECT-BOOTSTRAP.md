@@ -10,8 +10,9 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-09-30**（兩個 hook 腳本補上 `source:` 版本標記——鐵律第 2 條的作用是一眼認出落後的副本，而最無從用肉眼辨識新舊的正好是這兩支 `.sh`）。
+> 版本：**2026-10-24**（handoff skill 加 **session 命名**：接棒／交棒／踩到「必須停下來問使用者」時各改一次 session 名稱。側欄上十幾個 session 全叫「接棒」認不出哪個是哪個，而其中「停在等人回答」的那個最需要被一眼看見）。
 > 前幾版——
+> 2026-09-30：兩個 hook 腳本補上 `source:` 版本標記——鐵律第 2 條的作用是一眼認出落後的副本，而最無從用肉眼辨識新舊的正好是這兩支 `.sh`。
 > 2026-09-20：handoff skill 加 **A6 回推補交接**，協定範本加對應的「漏交棒的補救」一節——三層防呆全都掛在「下一個動作」上，**直接關掉視窗沒有下一個動作**，所以這是程序責任不是工具責任。
 > 2026-09-07：加入 `ARCHITECT.md`＝結構的唯一權威，以及 handoff skill 的**模式 0 建制**——在還沒有這套制度的資料夾裡，由 agent 照本部署包把骨架生出來，而不是憑印象重刻一份。
 > 2026-08-05：加入 `handoff` skill、push 前防呆 hook，並把「殘留佔位符」從人工核取方塊改成 `check_docs.py` 的第 5 項檢查。
@@ -593,7 +594,7 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-09-20 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-10-24 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
@@ -629,6 +630,36 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 > 模式 0 在**已經部署好的專案裡永遠用不到**——這裡有雞生蛋問題：skill 是部署之後才存在於專案的。
 > 它真正會被載入的地方是**全域副本**（`~/.claude/skills/handoff/`、`~/.codex/skills/handoff/`）。
 > 專案內這份仍保留模式 0，是為了讓副本可以整份無腦覆蓋，不必維護兩種版本——分版本就是下一個「同一個事實有多個家」。
+
+---
+
+## session 命名（環境支援才做）
+
+側欄上十幾個 session 全叫「接棒」，要一個個點進去才知道哪個是哪個。**所以每換一次狀態就改一次 session 名稱**——有這個能力才做（例如 Claude Code 桌面版的 `set_session_title`），**沒有就安靜跳過，不要為此停下來問使用者**：Codex CLI 與 Gemini CLI 目前沒有對應能力，為一個做不到的步驟回報失敗只是噪音。
+
+```text
+<符號>YYMMDDHH｜<主題>｜<狀態>
+```
+
+| 符號 | 狀態 | 什麼時候改 |
+|---|---|---|
+| `㊣` | 工作中 | **A5** 回報完之後 |
+| `↗` | 已交棒 | **B9**，而且是 **push 成功之後**（push 失敗不改，照 B8 那不算交棒） |
+| `※` | 待你決定 | 一踩到「必須停下來問使用者」那張表就立刻改 |
+
+範例（同一個 session 從接棒到交棒）：
+
+```text
+㊣26102414｜session改名｜工作中
+↗26102414｜session改名｜已交棒
+```
+
+- **`YYMMDDHH` 取接棒當下的時間，之後永遠不更新。** 交棒時一起改掉的話，同一個 session 在側欄的名字會跳掉，使用者記得的時間點就對不上了。
+- **主題 ≤10 字，取自 `HANDOFF.md` 的任務目標，壓成動詞＋受詞。** 不要寫「更新文件」「修 bug」這種放哪個 session 都成立的詞——那會退化回「全部長一樣」，等於沒改。還不知道要做什麼就先寫 `待指派`，第一件事確定後就地改一次。
+- **符號放最前面**，是因為側欄窄的時候是從尾巴開始截字；狀態是最該被看見的東西，不能放在第一個被截掉的位置。尾綴那幾個字是版面夠寬時的補充，截掉不損失資訊。
+- 同一天同一個主題開第二個 session 才在主題後面加數字（`匯入格式2`），不是每個都編號。
+- **模式 C 中途同步不改名**——狀態沒變。
+- 模式 0 建制照 B9 收尾，主題寫 `骨架建制`。
 
 ---
 
@@ -751,6 +782,8 @@ Git：<分支>、<與 origin 關係>、<待續分支>
 ```
 
 不要重述整份 HANDOFF。有疑問就多一行問題。
+
+回報完把 session 名稱改成 `㊣YYMMDDHH｜<主題>｜工作中`（規則見「session 命名」；環境沒有這個能力就跳過，不必回報）。
 
 ### A6 回推補交接（只有在 A1 判定「前一輪漏交棒」時才走）
 
@@ -883,6 +916,8 @@ git fetch origin && git status -sb
 
 結果／驗證結果／分支／最終 commit hash 與是否已 push／**接手者最容易搞砸的一件事**。
 
+**push 成功之後**把 session 名稱的符號與尾綴換成 `↗` 與 `已交棒`，前面的 `YYMMDDHH｜<主題>` 原封不動（見「session 命名」）。push 失敗就不要改——那不算交棒。
+
 ---
 
 ## C. 中途同步（還沒要交棒）
@@ -903,6 +938,8 @@ git fetch origin && git status -sb
 - HANDOFF 沒授權的破壞性操作（刪檔、批次改資料、改 schema）
 - **建制（模式 0）**：資料夾不是空的、已有 Git 歷史或 README；要覆蓋既有的 `.gitignore`／`README.md`；建 GitHub repo 與第一次 push
 
+**停下來的同時把 session 名稱改成 `※YYMMDDHH｜<主題>｜待你決定`**（見「session 命名」）。否則使用者在側欄只看到一個「工作中」的 session，不會知道它其實卡在等他回答——這種等待很容易一整天沒人發現。
+
 ## 反例（真的發生過，別重演）
 
 - ❌ 開工沒 fetch，對著落後數十個 commit 的本機 HANDOFF 工作數小時 → 分岔，收拾一整天。
@@ -915,6 +952,8 @@ git fetch origin && git status -sb
 - ❌ 建制時沒拿到部署包，憑印象生一套「差不多的」骨架 → 規則沒了理由、hook 沒了邊界條件，看起來有制度、實際擋不住任何事。
 - ❌ 使用者只說「幫我看一下這個 repo」，agent 自作主張把整套骨架灑進去 → 別人的 repo 多出十幾個沒人要的檔案，而且不會被逐一刪乾淨。
 - ❌ 建完沒刪部署包 → 第二份會腐化的副本，下一棒還會以為部署沒做完而重跑一次訪談。
+- ❌ session 名稱全部一樣 → 側欄認不出哪個是哪個；主題寫成「更新文件」也一樣，改了名還是分不出來。
+- ❌ 停下來問使用者卻沒改名 → 側欄顯示「工作中」，使用者以為它還在跑，實際上在等他。
 ````
 
 **同步規則（重要）**：這份 SKILL.md 會同時存在於 ①本部署包 ②每個專案的 `.claude/skills/handoff/` ③（選用）全域 `~/.claude/skills/handoff/`。
