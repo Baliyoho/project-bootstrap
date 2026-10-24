@@ -126,6 +126,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 2. 只放通用制度與 {{佔位符}}，不要塞專案專屬內容（網址、docId、憑證檔名、業務規則）。
 3. 每條規則都要保留「為什麼」與絕對日期。砍掉理由，下一棒就會覺得規則多餘而繞過它。
 4. 動到 skill／hook 內容時，同步更新檔頭的 source 版本標記，否則沒人分得出哪份副本落後。
+   格式 v<日期>，同一天改第二次起加序號（v2026-10-24.2）——只有日期的話，當天改第二次就看不出新舊。
 5. 全檔 LF。用 Python 改寫要 newline='' 或事後正規化，否則 Windows 會把整份寫成 CRLF。
 6. 動到結構（增刪檔案、部署包增刪一節範本、驗證項增減）就更新 ARCHITECT.md，跟該變動同一個 commit。
 7. 本 repo 刻意沒有 HANDOFF.md 與 hooks——它是制度的來源，不是一個交接中的工作專案。
@@ -147,7 +148,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 `SKILL.md` 會同時存在於：**本 repo 的部署包內**（權威版）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
 
 - 要改就**改本 repo 的 `PROJECT-BOOTSTRAP.md`**，再覆蓋下去；不要在單一專案裡就地改。
-- 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，用它辨識落後的副本。
+- 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，用它辨識落後的副本（同一天改第二次起加序號，如 `v2026-10-24.2`）。
 
 ## 來源
 
