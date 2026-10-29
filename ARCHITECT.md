@@ -22,6 +22,8 @@
 | 本檔 | 結構 | 只有結構變動 |
 | [LICENSE](LICENSE) | MIT（2026-09-07 起公開） | 授權改變 |
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
+| [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案，`check_docs.py` 的專案設定區塊會原樣保留。只改檔案，不 commit | 骨架多一個要同步的檔時 |
+| [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
 | `.gitignore`、`.gitattributes` | `dist/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
 | `dist/` | 建置產物（`--zip` 產出的骨架壓縮檔），**不進 Git** | 要發佈就重跑一次，不要留在 repo 裡跟部署包唱反調 |
 
@@ -88,6 +90,8 @@
 | 跨平台防呆 | 無絕對路徑、有 `python3` 退路 | 換一台機器會靜默失效 |
 | pre-push hook 五情境 | 該擋的擋、該放的放 | 防呆變成誤擋或形同虛設 |
 | 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 後四種狀態各印對應結論（別台 🔴、自己這台 🟡、已交棒 ✅、欄位不存在 🟡） | 跨機器誤接棒防呆靜默失效——下一棒只會看到一切正常 |
+| `VERSION` 檔 | 與部署包版本行一致 | 落後偵測會說謊，落後的專案以為自己最新 |
+| 版本落後偵測 | 餵假版本要講、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後，同步又回到靠人記得 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
 **exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫。

@@ -34,6 +34,10 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
   跨平台防呆   ——掃絕對路徑，以及「用了 python 卻整份沒交代 python3 退路」的檔案。
                   這兩類問題在原機器上完全正常，換一台才壞，而且壞得無聲無息
   hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
+  VERSION 檔   ——跟部署包開頭的版本行一致。各專案靠抓它判斷自己落後沒有，
+                  不一致＝落後偵測說謊，而且沒有任何徵兆（2026-10-30 加入）
+  版本落後偵測 ——種一個假的快取版本，git-freshness 要講；同版與開關 off 要閉嘴。
+                  用快取餵假資料所以不打網路（2026-10-30 加入）
   工作中標記   ——HANDOFF.md 範本要有「工作中」欄位，且 git-freshness 讀 origin 那一份後
                   別台機器印 🔴、自己這台印 🟡、已交棒印 ✅、欄位不存在印 🟡。這條鏈斷掉
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
@@ -528,6 +532,39 @@ def step_busy(dest, work):
     return True
 
 
+def step_version_check(work):
+    """骨架版本落後偵測（2026-10-30）。
+
+    用快取檔餵假版本，所以**不打網路**：離線也驗得到，而且驗的正是比對邏輯本身
+    （真正會壞的是比對，不是 curl）。三個情境：落後要講、同版要閉嘴、關掉開關要閉嘴。
+    """
+    bash = find_bash()
+    if not bash or work is None:
+        record('SKIP', '骨架版本落後偵測', '缺 bash 或 hook fixture')
+        return None
+    hook = '.claude/hooks/git-freshness.sh'
+    cache = work / '.claude' / '.bootstrap-version'
+    mark = '骨架落後'
+
+    cache.write_text('1999-01-01', encoding='utf-8', newline='')
+    lag = run([bash, hook], cwd=work).stdout
+    off = run([bash, hook], cwd=work, env=dict(GIT_ENV, BOOTSTRAP_VERSION_CHECK='off')).stdout
+    cache.write_text((ROOT / 'VERSION').read_text(encoding='utf-8').strip(),
+                     encoding='utf-8', newline='')
+    same = run([bash, hook], cwd=work).stdout
+    cache.unlink(missing_ok=True)
+
+    cases = [('落後→講', mark in lag), ('同版→閉嘴', mark not in same),
+             ('開關 off→閉嘴', mark not in off)]
+    bad = [n for n, good in cases if not good]
+    if bad:
+        record('FAIL', '骨架版本落後偵測',
+               '、'.join(bad) + '\n           落後情境輸出：' + lag.strip()[:200])
+        return False
+    record('OK', '骨架版本落後偵測', '、'.join(n for n, _ in cases))
+    return True
+
+
 def step_eol(dest):
     tracked = [
         ROOT / p for p in
@@ -552,6 +589,24 @@ def step_misc(dest, work=None):
         except Exception as e:
             record('FAIL', f'{label} 合法 JSON', str(e))
             ok = False
+
+    # VERSION 檔是落後偵測的依據：各專案抓它跟自己的 source 標記比。它跟部署包開頭
+    # 「版本：**…**」那一行必須一致——不一致的話偵測就會說謊，而那種謊沒有任何徵兆：
+    # 落後的專案會以為自己是最新的，正好是這個機制要解決的問題本身。
+    kit_ver = re.search(r'^> 版本：\*\*([^*]+)\*\*', KIT.read_text(encoding='utf-8'), re.M)
+    vfile = ROOT / 'VERSION'
+    if not vfile.exists():
+        record('FAIL', 'VERSION 檔', '不存在——落後偵測沒有依據')
+        ok = False
+    elif not kit_ver:
+        record('FAIL', 'VERSION 檔', '部署包找不到「> 版本：**…**」那一行')
+        ok = False
+    elif vfile.read_text(encoding='utf-8').strip() != kit_ver.group(1).strip():
+        record('FAIL', 'VERSION 檔', 'VERSION=%s 但部署包版本行=%s'
+               % (vfile.read_text(encoding='utf-8').strip(), kit_ver.group(1).strip()))
+        ok = False
+    else:
+        record('OK', 'VERSION 檔', '與部署包版本行一致（%s）' % kit_ver.group(1).strip())
 
     r = run([sys.executable, '-X', 'utf8', 'tools/verify_state.py'], cwd=dest)
     if r.returncode == 0 and 'NOT_CONFIGURED' in r.stdout:
@@ -684,6 +739,7 @@ def main():
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None
             step_busy(dest, work)
+            step_version_check(work)
         step_eol(dest)
         step_misc(dest, work)
     finally:

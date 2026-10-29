@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-10-30**（`HANDOFF.md` 加**工作中標記**：接棒時（skill A5）確定要動手才把機器與 session 寫進 HANDOFF 並 push，交棒時（B6）改回「無（已交棒）」，下一棒接棒前（A2.5）先檢查。補的是跨機器接力的洞——A 機器忘記交棒就關掉，B 機器看到綠勾就接棒。既有三層防呆全都掛在「下一個動作」上，而**直接關掉視窗沒有下一個動作**；這個標記掛在「開工」，所以繞不過去。`git-freshness.sh` 同步讀它，並改掉那行誤導的 `✅ 與 origin 同步`——它只證明「本機沒落後」，不證明「沒有別台在做」，而一個綠勾會讓人直接往下做。`check_docs.py` 加第 6 項擋欄位不見，否則防呆會靜默失效）。
+> 版本：**2026-10-30**（`HANDOFF.md` 加**工作中標記**：接棒時（skill A5）確定要動手才把機器與 session 寫進 HANDOFF 並 push，交棒時（B6）改回「無（已交棒）」，下一棒接棒前（A2.5）先檢查。補的是跨機器接力的洞——A 機器忘記交棒就關掉，B 機器看到綠勾就接棒。既有三層防呆全都掛在「下一個動作」上，而**直接關掉視窗沒有下一個動作**；這個標記掛在「開工」，所以繞不過去。`git-freshness.sh` 同步讀它，並改掉那行誤導的 `✅ 與 origin 同步`——它只證明「本機沒落後」，不證明「沒有別台在做」，而一個綠勾會讓人直接往下做。`check_docs.py` 加第 6 項擋欄位不見，否則防呆會靜默失效。
+> 同日第二件事：加 `VERSION` 檔 ＋ `tools/sync_project.py`，並讓 `git-freshness.sh` 比對上游版本。這之前「哪些專案裝了這套骨架」沒人記得住、也沒有任何東西負責把權威版發下去，所以同步一直是手工的——今天盤點就掃出 4 個專案留著上一輪沒 commit 的同步殘留。偵測放在開場這個必然發生的時刻，落後的專案會自己講；修則是一行指令。跟「工作中」標記同一招）。
 > 前幾版——
 > 2026-10-24：版本號加序號（同一天改第二次起在日期後面加 `.2`、`.3`，因為日期粒度只能證明「不早於那一天」——當天改第三次時，三份副本的標記長得一模一樣，落後的那份看不出來）；handoff skill 加 **session 命名**：接棒／交棒／踩到「必須停下來問使用者」時各改一次 session 名稱。側欄上十幾個 session 全叫「接棒」認不出哪個是哪個，而其中「停在等人回答」的那個最需要被一眼看見。
 > 2026-09-30：兩個 hook 腳本補上 `source:` 版本標記——鐵律第 2 條的作用是一眼認出落後的副本，而最無從用肉眼辨識新舊的正好是這兩支 `.sh`。
@@ -1151,6 +1152,30 @@ fi
 # origin 上沒有 HANDOFF.md（沒用這套制度，或這條分支還沒推過）就整段安靜跳過——
 # 那不是本 hook 該管的事，在這種 repo 裡每次開場嘮叨一句只會讓人學會無視 [git-check]。
 
+# 骨架版本落後偵測（2026-10-30）
+# 起因：同步是手工的，而「這台機器上有哪些專案裝了這套骨架」沒人記得住——盤點時得用 find
+# 掃一遍，而且掃出 4 個專案留著上一輪沒 commit 的同步殘留。所以偵測放在「開場」這個你一定
+# 會經過的時刻：哪個專案落後，哪個就在你打開它的當下自己講，你永遠不必先知道有哪些專案。
+# 跟「工作中」標記同一招——把檢查掛在必然發生的動作上，而不是掛在要人記得的動作上。
+# 抓不到（離線、沒有 curl、fork 改過網址）就安靜跳過：這是提醒，不是關卡。
+# 結果快取 12 小時，免得每開一次 session 就打一次網路。關掉：BOOTSTRAP_VERSION_CHECK=off
+UPSTREAM_VERSION_URL=https://raw.githubusercontent.com/Baliyoho/project-bootstrap/main/VERSION  # fork 的人改這一行
+skill=.claude/skills/handoff/SKILL.md
+if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
+  mine=$(sed -n 's/.*source: PROJECT-BOOTSTRAP\.md v\([0-9][0-9.-]*\).*/\1/p' "$skill" | head -1)
+  cache=.claude/.bootstrap-version
+  if [ -n "$(find "$cache" -mmin -720 2>/dev/null)" ]; then
+    latest=$(cat "$cache" 2>/dev/null)
+  else
+    latest=$(curl -fsS --max-time 5 "$UPSTREAM_VERSION_URL" 2>/dev/null | tr -d '\r\n \t')
+    [ -n "$latest" ] && printf '%s' "$latest" > "$cache" 2>/dev/null
+  fi
+  if [ -n "$mine" ] && [ -n "$latest" ] && [ "$mine" != "$latest" ]; then
+    echo "[git-check] 🟡 handoff 骨架落後：本機 v$mine，最新 v$latest。"
+    echo "[git-check]    到 project-bootstrap 跑：python -X utf8 tools/sync_project.py <本專案路徑>（python 不存在就用 python3）"
+  fi
+fi
+
 if [ -f .claude/skills/handoff/SKILL.md ]; then
   echo "[handoff] 本專案有交接制度：接棒先走 handoff skill 的 A 模式（.claude/skills/handoff/SKILL.md）——同步 Git、站對分支、A2.5 檢查「工作中」標記、只讀 AGENTS.md＋HANDOFF.md，回報 3–5 行後再動手；收工走 B 模式。"
 fi
@@ -1219,13 +1244,15 @@ archive/
 tmp/
 scratch/
 .claude/settings.local.json
+.claude/.bootstrap-version
 __pycache__/
 *.py[cod]
 *.log
 
-# Operating-system metadata
+# Editor and operating-system metadata
 .DS_Store
 Thumbs.db
+.obsidian/
 ````
 
 > 依訪談把 `{{SECRETS}}`／`{{RUNTIME_DIRS}}` 補進去，再加語言／框架專屬項目（`node_modules/`、`.venv/`、`dist/`、`.build/` …）。**寧可多擋不要少擋。**
@@ -1297,6 +1324,10 @@ PLACEHOLDER_GLOBS = ('*.md', '*.py', '*.sh', '*.json', '.gitignore', '.gitattrib
 # 豁免路徑。部署包本身整份都是佔位符，還沒刪掉時不該報錯（自檢清單最後一項會叫你刪它）。
 # 專案若真的有檔案會用到上面那些名字當樣板變數，把該檔或該目錄加進來。
 PLACEHOLDER_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)
+# ── 專案設定結束 ──────────────────────────────────────────────
+# 以上依專案調整，以下與權威版一致。`tools/sync_project.py` 升級本檔時，會把上面這一段
+# 原樣留下、只換掉其餘部分——沒有這個標記它就得用啟發式猜邊界，而猜錯就是把專案自己的
+# 過期字串規則與豁免路徑默默洗掉，然後沒有人會發現。
 
 COUNT_RE = re.compile(r'(共|計|全)\s*\d+\s*(份|個|支|條)|\d+\s*份(?!量)')
 COUNT_CONTEXT = ('份', '個檔', '支腳本', '知識庫')
@@ -1733,6 +1764,7 @@ git status -sb
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
 - [ ] `bash .claude/hooks/git-freshness.sh` → 印出 `✅ 本機沒落後 origin`，且最後一行有 `[handoff]` 提醒（沒有 upstream 會印警告，表示第 4 節沒做完）
 - [ ] **工作中標記防呆**：把 `HANDOFF.md` 的「工作中」改成一個假的別台機器名，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 要印 🔴 並叫你走 A2.5；改回「無（已交棒）」、commit、push 後再跑 → 不該再印。**驗完記得改回來**
+- [ ] **骨架版本偵測**：`printf 1999-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要印 🟡「handoff 骨架落後」。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）
 - [ ] `ARCHITECT.md` 存在且有「最後更新」標頭（`check_docs.py` 會擋），「專案本體」那節寫的是**實況**——還沒有程式碼就照實寫，不要先畫一個想像中的架構
 - [ ] 在 Claude Code 打 `/handoff` 看得到這個 skill
