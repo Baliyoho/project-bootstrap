@@ -1,7 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
 > **本檔＝結構的唯一權威**：`project-bootstrap` 由什麼組成、每樣東西的家在哪、改哪裡會影響到什麼。
-> 最後更新：2026-10-30（HANDOFF 加「工作中」標記）
+> 最後更新：2026-10-30（本 repo 自己的開場檢查與文件檢查）
 >
 > **什麼時候改**：只有**結構**變動才改——根目錄多／少一個檔案、部署包增刪一節範本、`verify_bootstrap.py` 增減檢查項、副本拓撲改變。
 > 制度內容本身怎麼寫（鐵律的措辭、skill 的步驟）**不要動這一份**，那些的家在 [AGENTS.md](AGENTS.md) 與部署包裡。
@@ -9,7 +9,7 @@
 ## 一句話
 
 唯一產出物是 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)——一份自帶所有檔案範本的部署包，複製到新專案資料夾就能生出整套制度。
-其餘每個檔案都是它的**說明、指標或測試**，沒有第二個產出物。
+其餘每個檔案都是它的**說明、指標或測試**，沒有第二個產出物（唯一的例外是下面那支本 repo 自己的開場檢查 hook——它誰的副本都不是）。
 
 ## 根目錄
 
@@ -24,6 +24,7 @@
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
 | [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案，`check_docs.py` 的專案設定區塊會原樣保留。只改檔案，不 commit | 骨架多一個要同步的檔時 |
 | [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
+| `.claude/settings.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart git 新鮮度檢查。**不是部署包 3.9／3.10 的副本**，不在副本拓撲裡、不要用 `sync_project.py` 同步它 | 幾乎不動 |
 | `.gitignore`、`.gitattributes` | `dist/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
 | `dist/` | 建置產物（`--zip` 產出的骨架壓縮檔），**不進 Git** | 要發佈就重跑一次，不要留在 repo 裡跟部署包唱反調 |
 
@@ -92,6 +93,8 @@
 | 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 後四種狀態各印對應結論（別台 🔴、自己這台 🟡、已交棒 ✅、欄位不存在 🟡） | 跨機器誤接棒防呆靜默失效——下一棒只會看到一切正常 |
 | `VERSION` 檔 | 與部署包版本行一致 | 落後偵測會說謊，落後的專案以為自己最新 |
 | 版本落後偵測 | 餵假版本要講、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後，同步又回到靠人記得 |
+| 本 repo 自己的文件 | 本 repo 的 `.md` 無死連結、`AGENTS.md`／`ARCHITECT.md` 有日期標頭 | 改檔名或搬段落留下死連結。部署包裡指向「部署後才存在的檔」的連結不算，判準是 `EXPECTED`，所以它指向本 repo 檔案的連結照樣會被抓 |
+| 本 repo settings.json | 合法 JSON，且指向的 hook 真的在 | 開場檢查靜默不執行——看起來有防護、實際上沒有 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
 **exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫。
@@ -122,9 +125,11 @@ check_docs.py
 
 ## 這個 repo 刻意沒有的東西
 
-- **沒有 `HANDOFF.md`、沒有 hooks、沒有 `check_docs.py`。** 它是制度的**來源**，不是一個交接中的工作專案；把骨架套到它自己身上，就會出現「權威版與它的副本互相同步」的迴圈。跨 session 狀態看 `git log` 與各檔的 `source:` 版本標記。
+- **沒有 `HANDOFF.md`、沒有 handoff skill、沒有 `pre-push-handoff.sh`、沒有 `check_docs.py`。** 它是制度的**來源**，不是一個交接中的工作專案；把骨架的這幾份套到它自己身上，就會出現「權威版與它的副本互相同步」的迴圈。跨 session 狀態看 `git log` 與各檔的 `source:` 版本標記；接棒程序讀全域副本 `~/.claude/skills/handoff/`。
+- **沒有跨機器「工作中」標記——這是評估過之後接受的缺口**（2026-10-30）。它需要 `HANDOFF.md` 當載體，而那一份得每輪交棒維護；只為防呆而裝，就是多一份沒人讀的文件。所以這個 repo 的 single writer **靠人顧**：同一時間只有一台機器改它。代價要講明白——`git log` 看不到別台機器未提交的變更，所以這個缺口是真的存在。哪天真要多機並行，就把 `HANDOFF.md` 補回來（它是範本 3.3 的*實例*，不是副本，沒有同步義務），**不要發明第二種標記載體**——那會跟 3.10 的讀法分岔，變成「Claude 端會擋、別處不會擋」。
+- **但有一支自己的 SessionStart hook**（`.claude/hooks/repo-git-check.sh`，2026-10-30 加）：只做 git 新鮮度比對，檔頭明寫**不是 3.10 的副本、不要同步**。在此之前這個 repo 開場完全沒有提醒，A1 的 fetch 全靠使用者記得打「接棒」把全域 skill 載進來。為什麼不直接抄 3.10——`sync_project.py` 的 `discover()` 靠 handoff skill 發現專案，這個 repo 沒有 skill，`--all` 永遠掃不到它，抄過來就會變成「所有專案都同步了、只有來源自己落後」而且毫無跡象的那一份副本。
 - **沒有 CI。** 驗證是一個指令（`python -X utf8 tools/verify_bootstrap.py`），跑它是鐵律第 4 條的義務。
-- `tools/` 底下只有 `verify_bootstrap.py` 這一支——它是部署包的測試，不是骨架的一部分。
+- `tools/` 底下只有部署包自己的工具——`verify_bootstrap.py` 測試它、`sync_project.py` 發佈它，兩支都不是骨架的一部分，也都不會被部署出去。
 
 ## 全域約束（誰強制什麼）
 

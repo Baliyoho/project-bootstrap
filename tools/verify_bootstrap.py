@@ -565,6 +565,75 @@ def step_version_check(work):
     return True
 
 
+def template_link(target):
+    """部署包裡指向「部署後才存在的檔」的連結不是死連結——那是範本內容，真正該檢查它的
+    地方是重生出來的骨架（step_check_docs 就在那裡跑 check_docs.py）。判準用 EXPECTED
+    本身而不是「整個 PROJECT-BOOTSTRAP.md 跳過」：這樣它指向本 repo 檔案的連結
+    （README.md、ARCHITECT.md…）改檔名時照樣會被抓到。`<slug>` 那種示意路徑也跳過。"""
+    if '<' in target:
+        return True
+    while target.startswith('../'):
+        target = target[3:]
+    return target in EXPECTED
+
+
+def step_self():
+    """本 repo 自己的 .md 與設定檔沒有任何自動檢查——`check_docs.py` 是骨架的檔，部署進來
+    就成了副本，要跳版、要同步，而 sync_project.py 的 --all 又掃不到這個 repo（它靠
+    handoff skill 發現專案，這裡刻意沒有）。所以改成在這支腳本多一項：同一個指令、同一份
+    報告，沒有第二個會腐化的家。
+
+    2026-10-30 加。在此之前 AGENTS／ARCHITECT／README 之間的相對連結從來沒有被檢查過；
+    當天手掃是乾淨的，但那是一次快照，不是防護——死連結會在改檔名的那一次無聲出現。
+    settings.json 一起查，是因為它壞掉的後果是 SessionStart hook 靜默不執行：那正是
+    「看起來有防護、實際上沒有」的那一類失效，而且沒有任何徵兆。
+    """
+    ok = True
+    mds = [m for m in run(['git', 'ls-files', '*.md'], cwd=ROOT).stdout.splitlines() if m]
+    dead = []
+    for rel in mds:
+        base = (ROOT / rel).parent
+        for link in re.findall(r'\]\(([^)]+)\)', (ROOT / rel).read_text(encoding='utf-8')):
+            if link.startswith(('http://', 'https://', 'mailto:', '#')):
+                continue
+            target = link.split('#')[0]
+            if not target:
+                continue
+            if rel == 'PROJECT-BOOTSTRAP.md' and template_link(target):
+                continue
+            if not (base / target).exists():
+                dead.append('%s → %s' % (rel, link))
+    undated = [rel for rel in ('AGENTS.md', 'ARCHITECT.md')
+               if '最後更新' not in (ROOT / rel).read_text(encoding='utf-8')]
+    if dead or undated:
+        detail = []
+        if dead:
+            detail.append('死連結 %d 處：%s' % (len(dead), '、'.join(dead[:5])))
+        if undated:
+            detail.append('缺「最後更新」：%s' % '、'.join(undated))
+        record('FAIL', '本 repo 自己的文件', '；'.join(detail))
+        ok = False
+    else:
+        record('OK', '本 repo 自己的文件', '%d 個 .md 無死連結，日期標頭齊備' % len(mds))
+
+    cfg = ROOT / '.claude' / 'settings.json'
+    if not cfg.exists():
+        record('SKIP', '本 repo settings.json', '不存在——開場沒有 git 檢查，接棒全靠人記得')
+    else:
+        try:
+            json.loads(cfg.read_text(encoding='utf-8'))
+            hook = ROOT / '.claude' / 'hooks' / 'repo-git-check.sh'
+            if hook.exists():
+                record('OK', '本 repo settings.json', '合法 JSON，且 repo-git-check.sh 在')
+            else:
+                record('FAIL', '本 repo settings.json', '指向的 repo-git-check.sh 不存在')
+                ok = False
+        except Exception as e:
+            record('FAIL', '本 repo settings.json', str(e))
+            ok = False
+    return ok
+
+
 def step_eol(dest):
     tracked = [
         ROOT / p for p in
@@ -741,6 +810,7 @@ def main():
             step_busy(dest, work)
             step_version_check(work)
         step_eol(dest)
+        step_self()
         step_misc(dest, work)
     finally:
         if args.keep:
