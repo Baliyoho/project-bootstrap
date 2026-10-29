@@ -10,8 +10,9 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-10-24.4**（版本號加序號：同一天改第二次起在日期後面加 `.2`、`.3`，因為日期粒度只能證明「不早於那一天」——當天改第三次時，三份副本的標記長得一模一樣，落後的那份看不出來。／handoff skill 加 **session 命名**：接棒／交棒／踩到「必須停下來問使用者」時各改一次 session 名稱。側欄上十幾個 session 全叫「接棒」認不出哪個是哪個，而其中「停在等人回答」的那個最需要被一眼看見）。
+> 版本：**2026-10-30**（`HANDOFF.md` 加**工作中標記**：接棒時（skill A5）確定要動手才把機器與 session 寫進 HANDOFF 並 push，交棒時（B6）改回「無（已交棒）」，下一棒接棒前（A2.5）先檢查。補的是跨機器接力的洞——A 機器忘記交棒就關掉，B 機器看到綠勾就接棒。既有三層防呆全都掛在「下一個動作」上，而**直接關掉視窗沒有下一個動作**；這個標記掛在「開工」，所以繞不過去。`git-freshness.sh` 同步讀它，並改掉那行誤導的 `✅ 與 origin 同步`——它只證明「本機沒落後」，不證明「沒有別台在做」，而一個綠勾會讓人直接往下做。`check_docs.py` 加第 6 項擋欄位不見，否則防呆會靜默失效）。
 > 前幾版——
+> 2026-10-24：版本號加序號（同一天改第二次起在日期後面加 `.2`、`.3`，因為日期粒度只能證明「不早於那一天」——當天改第三次時，三份副本的標記長得一模一樣，落後的那份看不出來）；handoff skill 加 **session 命名**：接棒／交棒／踩到「必須停下來問使用者」時各改一次 session 名稱。側欄上十幾個 session 全叫「接棒」認不出哪個是哪個，而其中「停在等人回答」的那個最需要被一眼看見。
 > 2026-09-30：兩個 hook 腳本補上 `source:` 版本標記——鐵律第 2 條的作用是一眼認出落後的副本，而最無從用肉眼辨識新舊的正好是這兩支 `.sh`。
 > 2026-09-20：handoff skill 加 **A6 回推補交接**，協定範本加對應的「漏交棒的補救」一節——三層防呆全都掛在「下一個動作」上，**直接關掉視窗沒有下一個動作**，所以這是程序責任不是工具責任。
 > 2026-09-07：加入 `ARCHITECT.md`＝結構的唯一權威，以及 handoff skill 的**模式 0 建制**——在還沒有這套制度的資料夾裡，由 agent 照本部署包把骨架生出來，而不是憑印象重刻一份。
@@ -24,7 +25,7 @@
 
 | 層 | 檔案 | 什麼時候動 |
 |---|---|---|
-| **觸發** | `.claude/hooks/git-freshness.sh`（SessionStart hook） | 每次 session 開始自動 fetch、報告落後／分岔，並提醒「接棒先走 handoff skill」 |
+| **觸發** | `.claude/hooks/git-freshness.sh`（SessionStart hook） | 每次 session 開始自動 fetch、報告落後／分岔、**讀 origin 的「工作中」標記揭露別台機器正在動同一條分支**，並提醒「接棒先走 handoff skill」 |
 | **程序** | `.claude/skills/handoff/SKILL.md` | agent 判斷要接棒／交棒／同步時自動載入；使用者也可打 `/handoff` 直接叫它 |
 | **防呆** | `.claude/hooks/pre-push-handoff.sh`（PreToolUse hook） | 要推到權威分支、但這批 commit 沒更新 `HANDOFF.md` 時擋下，要求先走交棒程序 |
 
@@ -223,6 +224,7 @@
 
 - Repo：{{GH_VISIBILITY}} `{{GH_OWNER}}/{{GH_REPO}}`；權威分支：`main`。
 - **待續分支**：無。
+- **工作中**：無（已交棒）
 - 本機能力：<作業系統；哪些憑證可用／未配置，不寫祕密值>
 
 ## 已完成
@@ -452,15 +454,16 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 ## 一、接棒（順序不可反）
 
 > **自動防呆有兩層**（都只是保險，下面每一步仍必做——離線、非 Claude 端或設定沒載入時 hook 不會跑）：
-> ① SessionStart hook（`.claude/hooks/git-freshness.sh`）：session 開始自動 fetch，注入落後／分岔／未推送警告，並提醒走 handoff skill。
+> ① SessionStart hook（`.claude/hooks/git-freshness.sh`）：session 開始自動 fetch，注入落後／分岔／未推送警告，讀 `origin` 的「工作中」標記揭露別台機器正在動同一條分支，並提醒走 handoff skill。
 > ② PreToolUse hook（`.claude/hooks/pre-push-handoff.sh`）：要推到權威分支、但這批 commit 沒更新 `HANDOFF.md` 時擋下（`HANDOFF_HOOK=off` 可停用）。
 
 1. **先同步 Git**：**未同步前不要相信本機 HANDOFF。** 工作樹乾淨、有 upstream 且能 fast-forward 才可自行往下走（指令與完整判讀表見 skill A1）。
 2. **確認你該站在哪條分支**：讀 HANDOFF 的「待續分支」。**若它指向 feature branch，該分支才是主幹**——`main` 可能明顯落後。不要因為 `main` 是預設分支就以為它最新。
-3. **異常就停在安全點**：未知 dirty changes、diverged、遠端意外前進或 pull 不能 fast-forward 時，**禁止** `reset --hard`、force push、自動 stash 或覆寫。先辨認變更來源並回報。
-4. **最小讀取**：只讀 `AGENTS.md` ＋ `HANDOFF.md`。其他知識庫依實際任務 lazy load。
-5. **一鍵驗證**：有憑證就跑 `tools/verify_state.py`，與 HANDOFF 的期望快照比對；不一致以實況為準（見 skill A4）。
-6. **3–5 行回報後動手**：Git 狀態、驗證結果、理解的現況與下一步。不要重述整份 HANDOFF。
+3. **檢查這條分支有沒有人正在工作**：讀該分支 `HANDOFF.md` 的「工作中」欄位，**讀 `origin/` 那一份**（本機可能還沒 pull）。指向別台機器就**停下來問使用者**——同一條分支同時兩台違反 single writer（指令與三個選項見 skill **A2.5**）。
+4. **異常就停在安全點**：未知 dirty changes、diverged、遠端意外前進或 pull 不能 fast-forward 時，**禁止** `reset --hard`、force push、自動 stash 或覆寫。先辨認變更來源並回報。
+5. **最小讀取**：只讀 `AGENTS.md` ＋ `HANDOFF.md`。其他知識庫依實際任務 lazy load。
+6. **一鍵驗證**：有憑證就跑 `tools/verify_state.py`，與 HANDOFF 的期望快照比對；不一致以實況為準（見 skill A4）。
+7. **3–5 行回報後動手**：Git 狀態、驗證結果、理解的現況與下一步。不要重述整份 HANDOFF。**確定要動手才寫「工作中」標記並 push**，push 成功才改 session 名稱（見 skill A5）。
 
 ### 🔴 SKIPPED 的判準
 
@@ -527,6 +530,22 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 **三層防呆（SessionStart／`hooks.json`／pre-push）一個都擋不住**，因為它們全都掛在
 「下一個動作」上，而**直接關掉視窗沒有下一個動作**。所以這是**程序責任，不是工具責任**。
 
+### 2026-10-30：「工作中」標記補了其中一塊
+
+接棒時（skill **A5**）就把機器與 session 寫進 `HANDOFF.md` 並 push，交棒時（**B6**）改回
+`無（已交棒）`，下一棒接棒前（**A2.5**）先檢查。**關鍵在它寫在開工而不是收工**——不依賴任何
+人記得收尾，所以「直接關掉視窗」繞不過它。跨機器接力時，A 機器忘記交棒、B 機器看到
+`✅ 與 origin 同步` 就接棒，是這之前完全沒有任何一層擋得住的洞。
+
+**但它只縮小了洞，沒有補平**：
+
+- **救不回 A 的未提交變更**——那些仍然只在 A 的磁碟上。標記讓你知道「有東西在那台機器」，
+  東西還是得回去拿。
+- **A 在 A5 之前就關掉**（還沒寫標記）→ `origin` 上什麼都沒有，跟以前一樣。
+- **A 用沒有 hook 的工具**（Codex 桌面 App、Antigravity）→ 沒有自動提醒，只剩程序擔保。
+
+所以下面這套補救程序仍然必要，**能補回來的只有留在磁碟上的那部分**這句話也沒有改變。
+
 ### 接棒者發現這種狀況時
 
 1. **先停下來問使用者**這批變更是誰留下的（Git 判讀表已經要求這麼做），不要自己猜著往下做。
@@ -546,8 +565,9 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 ## HANDOFF.md 模板
 
 **模板在 [handoff skill](../../.claude/skills/handoff/SKILL.md) 的 B6**——模板是交棒時照填的東西＝程序，本檔只定義它必須包含什麼：
-交接時間與交棒者、任務目標、Git 狀態（含待續分支與本機憑證能力）、已完成、未完成／下一步、地雷、服務查證快照、懸置事項。
+交接時間與交棒者、任務目標、Git 狀態（含待續分支、**工作中標記**與本機憑證能力）、已完成、未完成／下一步、地雷、服務查證快照、懸置事項。
 ≤80 行、覆寫不累積、**不寫自己的最終 commit hash**。
+**「工作中」欄位必須常駐，而且只有兩種值**（`無（已交棒）`，或機器與 session）：欄位缺席是模稜兩可的——是忘了寫，還是沒人在做？寫「無」才是明確的。`check_docs.py` 第 6 項會擋欄位不見。
 
 ## 標準 prompt
 
@@ -594,7 +614,7 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-10-24.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-10-30 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
@@ -758,6 +778,34 @@ git status -sb && git fetch origin && git log --oneline -3
 - 指向 `feature/...` → **那條才是主幹，`main` 可能明顯落後**。要續作就 `git switch <branch>`；不要因為 `main` 是預設分支就以為它最新。
 - 要開新分支 → 從**現在的主幹**開，不是從 `main` 開。
 
+### A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）
+
+**站對分支之後、讀文件之前**，看該分支 `HANDOFF.md` 的「工作中」欄位：
+
+```bash
+git show "origin/$(git rev-parse --abbrev-ref HEAD):HANDOFF.md" | grep -F "**工作中**"
+```
+
+讀 `origin/` 那一份、**不讀本機的**——此刻可能還沒 pull，本機那份是舊快照。
+
+| 看到 | 動作 |
+|---|---|
+| `無（已交棒）` | 正常，往下走 |
+| 沒有這個欄位 | 這個專案的骨架還沒升級到有這個機制，照舊往下走。**不要自己補欄位**，等 B6 交棒時一併加 |
+| 指向**別台**機器 | **停**，見下方三個選項 |
+| 指向**這台**機器 | 多半是你自己還開著的另一個 session（側欄會有一個 `㊣`）。確認是自己的就往下走；不是的話照「別台機器」處理 |
+
+**指向別台機器時不要自己決定**，把這三個選項給使用者：
+
+1. **回那台機器走完交棒**（預設建議）——那台的未提交變更只在那台的磁碟上，這裡拿不到
+2. 使用者確認那台已經沒在跑 → 授權在這裡接手，由本 session 清掉舊標記並照 **A6** 回推補交接
+3. 這次只讀不寫 → 不接棒、不寫標記、不動任何檔案
+
+同時把 session 名稱改成 `※　YYMMDDHH｜<主題>｜待你決定`（見「session 命名」）。
+
+> **為什麼標記寫在開工而不是收工**：既有三層防呆全都掛在「下一個動作」上，而**直接關掉視窗沒有下一個動作**。寫在開工的標記不依賴任何人記得收尾——A 沒交棒，標記就留在 origin 上，下一棒一定看得到。
+> **它救不回什麼**：A 那些未提交的變更仍然只在 A 的磁碟上。標記只讓你知道「有東西在那台機器」，東西還是得回去拿。
+
 ### A3 最小讀取
 
 只讀 `AGENTS.md` ＋ `HANDOFF.md`。其他知識庫等任務真的碰到再讀（`AGENTS.md` 有知識庫地圖）。
@@ -785,7 +833,22 @@ Git：<分支>、<與 origin 關係>、<待續分支>
 
 不要重述整份 HANDOFF。有疑問就多一行問題。
 
-回報完把 session 名稱改成 `㊣　YYMMDDHH｜<主題>｜工作中`（規則見「session 命名」；環境沒有這個能力就跳過，不必回報）。
+**確定要動手改東西，才寫開工標記。** 只讀、只問問題的 session 不寫——那會在權威分支的歷史裡堆一堆沒有內容的 commit，而被灌爆的歷史沒人會認真看。
+
+1. 把該分支 `HANDOFF.md` 的「工作中」欄位改成本機與本 session：
+
+   ```markdown
+   - **工作中**：`desk-win` ／ `㊣　26103009｜匯入格式｜工作中`，2026-10-30 09:12 (+08) 開工
+   ```
+
+   記 session 名稱比只記機器名有用——可以直接拿它回側欄把那個 session 點開。
+
+2. **只** stage `HANDOFF.md`，commit 後 push 到**當前分支**。訊息用 `chore(handoff): <機器> 開工` 這類前綴，之後掃歷史時一眼可略過。
+3. **push 成功**才把 session 名稱改成 `㊣　YYMMDDHH｜<主題>｜工作中`（規則見「session 命名」；環境沒有這個能力就跳過，不必回報）。
+
+**push 失敗就不是「已標記」**：明確告訴使用者「這次沒有標記保護，別台機器不會知道我在做」，問他要不要在這個狀態下繼續。**不要靜默往下做**——你會以為有保護，實際上沒有。
+
+規則一句話：**側欄名稱永遠跟在 git 之後。** git 是權威，名稱只是它的顯示；跟 B8／B9 的「push 失敗就不算交棒」同一條原則。
 
 ### A6 回推補交接（只有在 A1 判定「前一輪漏交棒」時才走）
 
@@ -863,6 +926,7 @@ python -X utf8 tools/check_docs.py
 ## Git 狀態
 - Repo：`<owner>/<repo>`
 - **待續分支**：<無，或 feature/... @ 已知安全 commit>；若 main 落後主幹要註明
+- **工作中**：無（已交棒）　← 交棒時必須是這個值；開工時由 A5 改成機器與 session
 - 本機能力：<機器；哪些憑證可用／未配置，不寫祕密值>
 
 ## 已完成
@@ -883,6 +947,7 @@ python -X utf8 tools/check_docs.py
 ```
 
 ⚠️ **不要在 HANDOFF 裡寫它自己的最終 commit hash**——提交 HANDOFF 的當下就過時了。最終 hash 放交棒回覆（B9）。
+⚠️ **「工作中」欄位要改回 `無（已交棒）`。** 這一欄是覆寫時最容易被原封不動抄過去的——交棒了卻還寫著「工作中」，下一棒會被擋在 A2.5，然後回頭去找一台其實已經收工的機器。
 ⚠️ 舊內容直接覆寫，不要往下疊成日誌；歷史由 Git 查。
 
 ### B7 安全提交
@@ -920,6 +985,12 @@ git fetch origin && git status -sb
 
 **push 成功之後**把 session 名稱的符號與尾綴換成 `↗` 與 `已交棒`，前面的 `YYMMDDHH｜<主題>` 原封不動（見「session 命名」）。push 失敗就不要改——那不算交棒。
 
+順便確認推上去的那一份「工作中」真的已經清掉（本機改對了但沒推上去，下一棒看到的還是舊的）：
+
+```bash
+git show "origin/$(git rev-parse --abbrev-ref HEAD):HANDOFF.md" | grep -F "**工作中**"
+```
+
 ---
 
 ## C. 中途同步（還沒要交棒）
@@ -934,6 +1005,7 @@ git fetch origin && git status -sb
 ## 必須停下來問使用者（不得自行決定）
 
 - Git 異常：dirty 來源不明、diverged、不能 fast-forward、遠端意外前進、沒有 upstream
+- **A2.5 偵測到別台機器的「工作中」標記**（同一條分支同時兩台＝違反 single writer）
 - `push --force`、`reset --hard`、刪分支、改寫歷史
 - 功能分支要併進 `main`（需使用者驗收；文件／基建分支驗證過可自己併）
 - 憑證缺失，或需要跨機器搬憑證
@@ -950,6 +1022,7 @@ git fetch origin && git status -sb
 - ❌ 知識寫在對話裡或私有記憶 → 換模型、換機器後全部消失。
 - ❌ HANDOFF 愈疊愈長變成日誌 → 接手者要讀 20 分鐘才知道現在做到哪。
 - ❌ push 完才想起沒更新 HANDOFF → 下一棒拿到過期狀態（pre-push hook 會擋，但別靠它）。
+- ❌ A 機器沒交棒就關掉，B 機器開 session 看到 `✅ 與 origin 同步` 就接棒 → 那個綠勾只證明「B 沒落後」，**不證明「沒有別台在做」**；A 的未提交變更整批被繞過。這就是「工作中」標記要擋的那件事。
 - ❌ 會花錢的那一輪跑完直接關掉視窗 → 數字還在磁碟上，**當時的判斷與取捨永久消失**；三層防呆全都掛在「下一個動作」上，擋不住這件事。
 - ❌ 建制時沒拿到部署包，憑印象生一套「差不多的」骨架 → 規則沒了理由、hook 沒了邊界條件，看起來有制度、實際擋不住任何事。
 - ❌ 使用者只說「幫我看一下這個 repo」，agent 自作主張把整套骨架灑進去 → 別人的 repo 多出十幾個沒人要的檔案，而且不會被逐一刪乾淨。
@@ -1002,7 +1075,7 @@ git fetch origin && git status -sb
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-09-30 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-10-30 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：git 新鮮度檢查（多機分岔防呆）
 # 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
 # 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
@@ -1033,13 +1106,53 @@ elif [ "$behind" -gt 0 ]; then
 elif [ "$ahead" -gt 0 ]; then
   echo "[git-check] 🟡 有 $ahead 個未推送 commit（branch=$branch）。上一棒可能沒完成交棒 push；收工前記得推。"
 else
-  echo "[git-check] ✅ 與 origin 同步（branch=$branch）。"
+  echo "[git-check] ✅ 本機沒落後 origin（branch=$branch）——這一行只比對本機與 origin 的落差，不代表沒有別台機器在做。"
 fi
 if [ "$dirty" -gt 0 ]; then
   echo "[git-check] 🟡 工作區有 $dirty 個未提交變更（可能是上一棒未收斂，先辨認來源再動）。"
 fi
+
+# 工作中標記（跨機器誤接棒防呆，2026-10-30）
+# 起因：A 機器忘記交棒就關掉，B 機器開 session 看到「與 origin 同步」的綠勾就接棒——
+# 那個綠勾只證明「B 沒落後」，不證明「沒有別台在做」，於是 A 的未提交變更整批被繞過。
+# 讀 origin 那一份、不讀本機的：此刻還沒 pull，本機那份可能是舊快照。
+# 只讀、只提醒，絕不寫入——往權威分支自動 commit／push 是整套制度最不該自動化的地方
+# （本機落後時會當場分岔，工作樹 dirty 時會把別人的東西一起包進 commit）。寫入是 skill A5 的事。
+# 已知限制：本 hook 跑在 skill 的 A2「站對分支」之前，只看得到當前分支；
+# 切到 feature/... 之後的檢查由 A2.5 的程序負責。
+# 欄位在的時候一定印一句結論（✅／🟡／🔴），不要「沒事就不說話」：沉默跟「查過了沒事」
+# 分不出來，而這個機制的全部價值就在於讓人知道「有沒有被查」。
+remote_handoff=$(git show "origin/$branch:HANDOFF.md" 2>/dev/null)
+if [ -n "$remote_handoff" ]; then
+  busy=$(printf '%s\n' "$remote_handoff" | grep -F '**工作中**' | head -1)
+  case "$busy" in
+    '')
+      echo "[git-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 $branch（這個專案的骨架還沒升級到有這個機制；下次交棒時照 B6 補上）。"
+      ;;
+    *無*)
+      echo "[git-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 $branch。"
+      ;;
+    *)
+      who=${busy#*：}
+      me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
+      same=no
+      [ -n "$me" ] && case "$busy" in *"$me"*) same=yes ;; esac
+      if [ "$same" = yes ]; then
+        echo "[git-check] 🟡 這台機器（$me）還有一個 session 在 $branch 上沒交棒：$who"
+        echo "[git-check]    確認是你自己開的另一個視窗就繼續；不是的話先回去那個 session 收尾。"
+      else
+        echo "[git-check] 🔴 另一台機器正在 $branch 上工作，尚未交棒：$who"
+        echo "[git-check]    依 single writer 規則，同一時間只能有一台機器動同一條分支。"
+        echo "[git-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
+      fi
+      ;;
+  esac
+fi
+# origin 上沒有 HANDOFF.md（沒用這套制度，或這條分支還沒推過）就整段安靜跳過——
+# 那不是本 hook 該管的事，在這種 repo 裡每次開場嘮叨一句只會讓人學會無視 [git-check]。
+
 if [ -f .claude/skills/handoff/SKILL.md ]; then
-  echo "[handoff] 本專案有交接制度：接棒先走 handoff skill 的 A 模式（.claude/skills/handoff/SKILL.md）——同步 Git、站對分支、只讀 AGENTS.md＋HANDOFF.md，回報 3–5 行後再動手；收工走 B 模式。"
+  echo "[handoff] 本專案有交接制度：接棒先走 handoff skill 的 A 模式（.claude/skills/handoff/SKILL.md）——同步 Git、站對分支、A2.5 檢查「工作中」標記、只讀 AGENTS.md＋HANDOFF.md，回報 3–5 行後再動手；收工走 B 模式。"
 fi
 exit 0
 ````
@@ -1136,7 +1249,7 @@ Thumbs.db
   python -X utf8 tools/check_docs.py           # 全部檢查
   python -X utf8 tools/check_docs.py --quiet   # 只印問題與結論
 
-檢查五項（都是實際發生過的腐化模式）：
+檢查六項（都是實際發生過的腐化模式）：
   1. 死連結     ——markdown 相對連結指向不存在的檔案（整併文件時最常見）
   2. 過期字串   ——換了網址／改了名稱後殘留的舊值（見下方 STALE_PATTERNS，依專案調整）
   3. 缺日期標頭 ——DATED_DIRS 底下每份都要有「最後更新」，否則無法判斷可信度
@@ -1145,10 +1258,14 @@ Thumbs.db
                   的核取方塊，而人工核取方塊遲早會有人跳過；改由工具擋才會自動發生。這一項掃
                   PLACEHOLDER_GLOBS 的所有檔案，不只 .md——佔位符也會留在 tools/verify_state.py
                   這種非文件檔裡；比對的是 PLACEHOLDER_NAMES 這份封閉清單，不是雙大括號語法）
+  6. 工作中欄位 ——HANDOFF.md 的「工作中」標記不見了（2026-10-30 加入：這個欄位是跨機器誤接棒
+                  防呆的唯一依據，掉了不會有任何徵兆——下一棒只會看到一切正常然後接棒，正是
+                  這套骨架最怕的靜默失效。而「欄位缺席」與「沒人在做」分不開，所以不接受
+                  「沒寫就是沒人」：必須明確寫「無（已交棒）」。沒有 HANDOFF.md 的 repo 整項跳過）
 
 問題以結束碼 2 回報，乾淨為 0。本工具唯讀，絕不修改任何檔案。
 
-source: PROJECT-BOOTSTRAP.md v2026-09-07 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+source: PROJECT-BOOTSTRAP.md v2026-10-30 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 「專案設定」區塊以外的內容應與權威版一致；副本落後時用這一行辨識。
 """
 import argparse
@@ -1265,6 +1382,21 @@ def check_placeholders(files):
     return bad
 
 
+def check_busy_field(files):
+    # 第 6 項：HANDOFF.md 的「工作中」欄位必須在。這一欄是 handoff skill A2.5 判斷
+    # 「同一條分支有沒有別台機器在做」的唯一依據，而它掉了不會有任何徵兆——下一棒
+    # 只會看到一切正常然後接棒。不接受「沒寫就是沒人在做」：那和「忘了寫」分不開。
+    found, bad = False, []
+    for md in files:
+        if md.as_posix() != 'HANDOFF.md':
+            continue
+        found = True
+        if '**工作中**' not in md.read_text(encoding='utf-8'):
+            bad.append('HANDOFF.md  「Git 狀態」缺「- **工作中**：無（已交棒）」欄位'
+                       '——跨機器誤接棒防呆靠它（見 handoff skill 的 A2.5／A5／B6）')
+    return found, bad
+
+
 def check_counts(files):
     bad = []
     for md in files:
@@ -1321,6 +1453,16 @@ def main():
             print(f'            {b}')
     elif not args.quiet:
         print('[holes]   沒有殘留的佔位符')
+
+    found_handoff, busy = check_busy_field(files)
+    if busy:
+        problems += len(busy)
+        print(f'[busy]    🔴 {len(busy)} 處「工作中」欄位問題：')
+        for b in busy:
+            print(f'            {b}')
+    elif not args.quiet:
+        print('[busy]    HANDOFF.md 的「工作中」欄位在位' if found_handoff
+              else '[busy]    沒有 HANDOFF.md，跳過這一項')
 
     counts = check_counts(files)
     if counts:
@@ -1589,7 +1731,8 @@ git status -sb
 
 - [ ] `python -X utf8 tools/check_docs.py` → `OK`（一次涵蓋死連結與**殘留佔位符**；佔位符那一項掃 `.md`／`.py`／`.sh`／`.json`／`.gitignore`／`.gitattributes` 的 tracked 檔，所以要先 `git add`。本部署包自己被豁免——照最後一項刪掉它就好）
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
-- [ ] `bash .claude/hooks/git-freshness.sh` → 印出 `✅ 與 origin 同步`，且第二行有 `[handoff]` 提醒（沒有 upstream 會印警告，表示第 4 節沒做完）
+- [ ] `bash .claude/hooks/git-freshness.sh` → 印出 `✅ 本機沒落後 origin`，且最後一行有 `[handoff]` 提醒（沒有 upstream 會印警告，表示第 4 節沒做完）
+- [ ] **工作中標記防呆**：把 `HANDOFF.md` 的「工作中」改成一個假的別台機器名，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 要印 🔴 並叫你走 A2.5；改回「無（已交棒）」、commit、push 後再跑 → 不該再印。**驗完記得改回來**
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）
 - [ ] `ARCHITECT.md` 存在且有「最後更新」標頭（`check_docs.py` 會擋），「專案本體」那節寫的是**實況**——還沒有程式碼就照實寫，不要先畫一個想像中的架構
 - [ ] 在 Claude Code 打 `/handoff` 看得到這個 skill

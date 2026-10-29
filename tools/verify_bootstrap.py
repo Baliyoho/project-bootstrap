@@ -34,6 +34,9 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
   跨平台防呆   ——掃絕對路徑，以及「用了 python 卻整份沒交代 python3 退路」的檔案。
                   這兩類問題在原機器上完全正常，換一台才壞，而且壞得無聲無息
   hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
+  工作中標記   ——HANDOFF.md 範本要有「工作中」欄位，且 git-freshness 讀 origin 那一份後
+                  別台機器印 🔴、自己這台印 🟡、已交棒印 ✅、欄位不存在印 🟡。這條鏈斷掉
+                  不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
   行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
                   git-freshness 可執行
 
@@ -459,6 +462,72 @@ def step_hook(dest, tmp):
 
 
 # ── 6. 行末與雜項 ──────────────────────────────────────────────
+def step_busy(dest, work):
+    """「工作中」標記防呆（2026-10-30）。
+
+    守的是整條鏈：範本有欄位 → hook 讀得到 origin 那一份 → 別台機器印 🔴、自己這台印 🟡、
+    交棒後不印。鏈上任何一環斷掉都不會有徵兆——下一棒只會看到一切正常然後接棒，
+    而那正是這個機制要擋的那件事，所以它必須有自動測試。
+    """
+    field = '**工作中**'
+    if field not in (dest / 'HANDOFF.md').read_text(encoding='utf-8'):
+        record('FAIL', '工作中欄位在範本裡', 'HANDOFF.md 範本沒有「工作中」欄位，防呆沒有依據')
+        return False
+    record('OK', '工作中欄位在範本裡', 'HANDOFF.md 有「- **工作中**：無（已交棒）」')
+
+    bash = find_bash()
+    if not bash:
+        record('SKIP', 'git-freshness 工作中標記', '找不到看得懂 Windows 路徑的 bash')
+        return None
+    if work is None:
+        record('SKIP', 'git-freshness 工作中標記', 'hook fixture 沒建起來，缺少有 origin 的 repo 可測')
+        return None
+
+    # hook 用 ${HOSTNAME:-$(hostname)} 判斷「是不是這台機器」，這裡走同一條路徑取名字——
+    # 自己另外用 socket.gethostname() 會在大小寫或 FQDN 上跟 hook 的實際行為對不上。
+    me = run([bash, '-c', 'echo "${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}"'],
+             cwd=work).stdout.strip()
+    hook = '.claude/hooks/git-freshness.sh'
+    target = work / 'HANDOFF.md'
+    base = target.read_text(encoding='utf-8')
+    line = next((l for l in base.split('\n') if l.startswith('- ' + field)), None)
+    if line is None:
+        record('FAIL', 'git-freshness 工作中標記', 'fixture 的 HANDOFF.md 找不到「工作中」欄位列')
+        return False
+
+    def push_busy(value):
+        target.write_text(base.replace(line, '- %s：%s' % (field, value)),
+                          encoding='utf-8', newline='')
+        git(['commit', '-qam', 'chore: busy'], work)
+        git(['push', '-q', 'origin', 'main'], work)
+        return run([bash, hook], cwd=work).stdout
+
+    stamp = '`㊣　26103009｜測試｜工作中`，2026-10-30 09:12 (+08) 開工'
+    cases = []
+    out = push_busy('`other-box` ／ ' + stamp)
+    cases.append(('別台機器→🔴', '🔴 另一台機器正在' in out and 'other-box' in out))
+    out = push_busy('`%s` ／ %s' % (me, stamp))
+    cases.append(('同一台機器→🟡', '🟡 這台機器' in out))
+    out = push_busy('無（已交棒）')
+    cases.append(('已交棒→✅', '✅ 「工作中」是' in out and '另一台機器正在' not in out
+                  and '還有一個 session' not in out))
+    # 欄位整列拿掉：舊骨架的樣子。要印 🟡 說「查不了」，不能安靜放過——
+    # 安靜放過跟「查過了沒事」在畫面上一模一樣，那就回到了這個機制要解決的問題本身。
+    target.write_text(base.replace(line + '\n', ''), encoding='utf-8', newline='')
+    git(['commit', '-qam', 'chore: drop busy field'], work)
+    git(['push', '-q', 'origin', 'main'], work)
+    out = run([bash, hook], cwd=work).stdout
+    cases.append(('欄位不存在→🟡', '沒有「工作中」欄位' in out))
+
+    bad = [n for n, good in cases if not good]
+    if bad:
+        record('FAIL', 'git-freshness 工作中標記',
+               '、'.join(bad) + '\n           最後一次輸出：' + out.strip()[:200])
+        return False
+    record('OK', 'git-freshness 工作中標記', '、'.join(n for n, _ in cases))
+    return True
+
+
 def step_eol(dest):
     tracked = [
         ROOT / p for p in
@@ -614,6 +683,7 @@ def main():
             step_portability(dest)
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None
+            step_busy(dest, work)
         step_eol(dest)
         step_misc(dest, work)
     finally:
