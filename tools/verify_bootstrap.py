@@ -535,6 +535,71 @@ def step_busy(dest, work):
     return True
 
 
+def step_repo_busy(work):
+    """本 repo 自己那支 hook 的「工作中」判讀（2026-10-30）。
+
+    這個 repo 從多機維護開始就靠 `.claude/hooks/repo-git-check.sh` 擋誤接棒，而它刻意**不是**
+    3.10 的副本（檔頭寫了為什麼：sync_project.py 的 discover() 掃不到這個 repo，抄整份就會
+    變成唯一落後又沒有徵兆的那一份）。代價是 step_busy 測不到它——兩支各自演化的話，這裡
+    就會變成「看起來有防護、實際上沒有」，而那正是這個機制要擋的那件事。
+
+    順便釘住欄位字串：兩支讀的必須是同一個欄位。哪天 3.10 改了格式而這支沒跟上，它會對著
+    一個永遠配不到的字串安靜放過每一次檢查。
+    """
+    field = '**工作中**'
+    hook = ROOT / '.claude' / 'hooks' / 'repo-git-check.sh'
+    if not hook.exists():
+        record('FAIL', '本 repo 工作中判讀', 'repo-git-check.sh 不存在')
+        return False
+    if field not in hook.read_text(encoding='utf-8'):
+        record('FAIL', '本 repo 工作中判讀',
+               'repo-git-check.sh 沒讀「工作中」欄位——這個 repo 的跨機器防呆沒有依據')
+        return False
+
+    bash = find_bash()
+    if not bash:
+        record('SKIP', '本 repo 工作中判讀', '找不到看得懂 Windows 路徑的 bash')
+        return None
+    if work is None:
+        record('SKIP', '本 repo 工作中判讀', 'hook fixture 沒建起來，缺少有 origin 的 repo 可測')
+        return None
+
+    me = run([bash, '-c', 'echo "${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}"'],
+             cwd=work).stdout.strip()
+    target = work / 'HANDOFF.md'
+    # step_busy 收尾時把欄位整列拿掉了，所以這裡自己重建一列，不依賴前一步留下的狀態。
+    base = [l for l in target.read_text(encoding='utf-8').split('\n') if field not in l]
+
+    def push_busy(value):
+        body = '\n'.join(base)
+        if value is not None:
+            body = body.rstrip('\n') + '\n- %s：%s\n' % (field, value)
+        target.write_text(body, encoding='utf-8', newline='')
+        git(['commit', '-qam', 'chore: repo busy'], work)
+        git(['push', '-q', 'origin', 'main'], work)
+        return run([bash, hook.as_posix()], cwd=work).stdout
+
+    stamp = '`㊣　26103009｜測試｜工作中`，2026-10-30 09:12 (+08) 開工'
+    cases = []
+    out = push_busy('`other-box` ／ ' + stamp)
+    cases.append(('別台機器→🔴', '🔴 另一台機器正在' in out and 'other-box' in out))
+    out = push_busy('`%s` ／ %s' % (me, stamp))
+    cases.append(('同一台機器→🟡', '🟡 這台機器' in out))
+    out = push_busy('無（已交棒）')
+    cases.append(('已交棒→✅', '✅ 「工作中」是' in out and '另一台機器正在' not in out
+                  and '還有一個 session' not in out))
+    out = push_busy(None)
+    cases.append(('欄位不存在→🟡', '沒有「工作中」欄位' in out))
+
+    bad = [n for n, good in cases if not good]
+    if bad:
+        record('FAIL', '本 repo 工作中判讀',
+               '、'.join(bad) + '\n           最後一次輸出：' + out.strip()[:200])
+        return False
+    record('OK', '本 repo 工作中判讀', '、'.join(n for n, _ in cases) + '，欄位字串與 3.10 一致')
+    return True
+
+
 def step_version_check(work):
     """骨架版本落後偵測（2026-10-30）。
 
@@ -875,6 +940,7 @@ def main():
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None
             step_busy(dest, work)
+            step_repo_busy(work)
             step_version_check(work)
         step_eol(dest)
         step_self()
