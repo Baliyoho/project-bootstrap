@@ -15,6 +15,7 @@
 > 同日第三件事（跳版 `.2`）：**改名與 git 解耦**。舊版 A5 把「改 session 名稱」排在「開工標記 push 成功」之後，於是沒有 `HANDOFF.md` 的專案（包括骨架自己這個 repo）、或這一輪只讀的 session，永遠到不了改名那一步——側欄上三個 session 全是 `↗ 已交棒`，一個 `㊣ 工作中` 都沒有過，正好是這條規則要解決的問題在它的老家失效。改名現在只看 session 狀態：回報完就 `㊣`、停下來等人就 `※`（不限「必須停下來問使用者」那張表），只有宣稱 git 事實的 `↗ 已交棒` 仍要等 push 成功。
 > 同日第四件事（**刻意不跳版**，理由見下）：**修正「跨工具與跨平台」那張表的 Antigravity 一欄。**舊表寫「❌ 沒有 hook 機制」，那是 2026-08-05 的事實，重查官方文件已經不成立——它現在有 `.agents/hooks.json`，而且有 `SessionStart`。照舊表判斷會白白放棄一層防呆，而且錯得毫無徵兆：表上有查證日期，但**沒有人會因為日期舊就去重查**。`ARCHITECT.md` 與 `docs/ai-notes/handover-protocol.md` 兩份範本裡跟著錯的句子一併修掉。`.agents/hooks.json` 範本**刻意還沒附**，理由見那一節。**為什麼不跳版**：`VERSION` 不是「部署包的版本」，是**偵測器拿去跟 `SKILL.md` 的 `source:` 標記比對的那個值**（`git-freshness.sh` 的 `mine=` 那一行）。這次改的全是不同步的檔（兩份範本都在 `INSTANCE`），`SKILL.md` 一個字沒動——跳版就會讓每個專案永遠印「骨架落後」，而且跑 `sync_project.py` 修不掉（同步回去的 `SKILL.md` 標記還是舊的）。這個耦合 2026-10-30 當天就被 `verify_bootstrap.py` 的「同版→閉嘴」抓到，警告寫進 AGENTS.md 鐵律 1。
 > 同日第五件事（**跳版 `.3`**，因為這次真的動到 `SKILL.md`）：**三個平台的能力全部重查一輪，修掉四個過期斷言、加一個保鮮期檢查。** ①**Codex 桌面 App 有 hooks**（App `26.506`／2026-05-08 起有 in-app 信任審核），舊表那句「沒有 hooks」是 2026-08-06 的實測——這是繼 Antigravity 之後**第二次**栽在同一種錯，所以這次不只改字：`verify_bootstrap.py` 加「跨工具表保鮮期」，查證日期超過 90 天就 fail。上一次的對策是一句警告，而**警告沒有擋住第二次**。②**`.agents/skills/` 不再只給 Antigravity**：`codex debug prompt-input` 印的 Skill roots 表證實 Codex 也讀 repo 的 `.agents/skills`，所以 3.16 那個指標檔的 `description` 從此必須寫滿觸發詞——那是它被發現的唯一依據，寫短就等於無聲地關掉一個入口。③**`CLAUDE.md` 改成只放 `@AGENTS.md` import**：Claude Code 從 v2.1.277 原生讀 `AGENTS.md`，但**有 `CLAUDE.md` 就不讀**，舊版那句「去讀 AGENTS.md」的指標反而壓掉了保證載入的機制，換來「它可能會去開那個檔」；順手把 `CLAUDE.md` 從 `sync_project.py` 的 `INSTANCE` 搬到 `PARTIAL`，否則這個修正只有新部署的專案拿得到。`extract()` 也跟著從「只取第一個區塊、事後改標題」改成「區塊依序對應檔名」，因為 3.2 從此是兩份不同的內容，而把其中一份合成在腳本裡就是讓範本有第二個家。④**`SessionEnd` 存在**（Claude Code 與 Codex 都有，Codex 的還會在閒置 30 分鐘觸發；Antigravity 沒有），所以「直接關掉視窗沒有下一個動作」只對一半的工具成立。結論沒變（標記還是寫在開工），但**理由改掉了**——鐵律 3 的重點是理由，理由錯了下一棒就會為了錯的原因重開一個已經定案的決定。⑤Antigravity 的兩個未知查清了：stdout 必須是 JSON `injectSteps`（裸 `echo` 會被丟掉），cwd 官方仍然沒寫、但可以用 stdin 的 `workspacePaths[0]` 繞過，所以「不附 `.agents/hooks.json` 範本」的理由從「查不到」換成「要先寫一層只做管線的轉接並實測」。
+> 2026-10-31（**刻意不跳版**：`SKILL.md` 一個字沒動，理由同上一條）：新增「工具身分：靠環境變數認得出『現在是哪個工具』嗎」一節。起因是「工作中」標記只比機器名，**同一台機器換個工具**就落進「大概是你自己另一個視窗」的 🟡，而 A2.5 叫人去驗的那個證據（側欄的 `㊣`）只有 Claude Code 有——同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴。實測結論是**沒有跨廠商的共同變數**，而且在一個工具的殼層裡啟動另一個工具時變數會被繼承、會說謊，所以身分的權威來源只能是標記裡自己填的工具名。**修法還沒動手**（會動到 `SKILL.md`，要跳版並再同步一輪），待辦在 `HANDOFF.md`。
 > 前幾版——
 > 2026-10-24：版本號加序號（同一天改第二次起在日期後面加 `.2`、`.3`，因為日期粒度只能證明「不早於那一天」——當天改第三次時，三份副本的標記長得一模一樣，落後的那份看不出來）；handoff skill 加 **session 命名**：接棒／交棒／踩到「必須停下來問使用者」時各改一次 session 名稱。側欄上十幾個 session 全叫「接棒」認不出哪個是哪個，而其中「停在等人回答」的那個最需要被一眼看見。
 > 2026-09-30：兩個 hook 腳本補上 `source:` 版本標記——鐵律第 2 條的作用是一眼認出落後的副本，而最無從用肉眼辨識新舊的正好是這兩支 `.sh`。
@@ -105,6 +106,29 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 - 而且四個平面有一個根本沒有這個事件。制度不能押在只有一部分工具有的東西上。
 
 ⚠️ **真要加 `SessionEnd` hook，1.5 秒那個預算就是陷阱**：一支被砍掉的 hook 看起來像防護、實際上不會完成，正是這份骨架最討厭的那一類。要加就把 `timeout` 明確寫上去，而且只做純本機寫檔／stderr，不碰網路。
+
+### 工具身分：靠環境變數認得出「現在是哪個工具」嗎
+
+> **實測日期：2026-10-31。** 這一節刻意不用本節開頭那個 `查證日期：` 字串——保鮮期檢查只讀全檔第一個，寫在這裡會被誤當成重查而把時鐘歸零。
+
+要讓 hook 自動判斷「現在是哪個工具在跑」，前提是有一個共同欄位。**沒有。**
+
+| 工具 | 自報的變數 | 證據強度 |
+|---|---|---|
+| Claude Code 2.1.309 | `CLAUDECODE=1`、`AI_AGENT=claude-code_2-1-309_agent` | session 內直接讀 env |
+| Codex CLI 0.164.0 | `CODEX_VERSION`、`CODEX_SESSION_ID`、`CODEX_THREAD_ID`、`CODEX_TOOL_CALL_ID`（另有 `CODEX_CI=1`、`CODEX_SANDBOX_NETWORK_DISABLED=1`）；**沒有 `AI_AGENT`** | 實跑 `codex exec`，先把 `CLAUDE*`／`AI_AGENT` 全部 unset 並確認殘留 0 |
+| Gemini CLI | `GEMINI_CLI=1` | **僅靜態**：bundle 內自述「`shell_command` 執行指令時會設」，沒實跑 |
+| Antigravity IDE 1.107.0 | 未測 | 它**有** CLI：`antigravity-ide`（在 PATH，執行檔不叫 `antigravity`），`chat --mode agent` 可從命令列起一個 agent，但沒有 headless 列印模式，要在 IDE 裡跑指令才讀得到 |
+
+三個限制，寫進來是因為它們決定這件事能不能自動化：
+
+1. **`AI_AGENT` 不是跨廠商慣例**，只是名字看起來像——Codex 一個字都沒有。所以偵測只能寫成逐家允許清單＋`unknown` 落底，而不是讀一個通用欄位。
+2. **量到的是 shell tool 的環境，不是 hook 的環境**，而要判斷的那段邏輯住在 hook 裡。Codex 的 hook 環境沒量到：要過兩道信任（專案信任＋`/hooks` 逐一審核當前雜湊），而繞過它的旗標語意就是「跑沒審過的 hook」。合理的推論是 hook 作為子進程拿到原始 env、shell tool 那層還額外被 `shell_environment_policy` 過濾過，所以 hook 不會看到更少——但**那是推論不是測量**（鐵律 3）。
+3. **跑的是 `codex exec`（非互動）**，`CODEX_CI=1` 很可能只有非互動才有，不要拿它當判準。像穩定身分標記的是 `CODEX_VERSION` 與 `CODEX_SESSION_ID`，但互動 session 同樣沒量。
+
+🔴 **最重要的坑是反過來的：在一個工具的殼層裡啟動另一個工具，變數會被繼承。** 從 Claude Code 的殼層跑 `codex sandbox cmd /c set`，112 個變數裡 `CLAUDECODE=1` 與 `AI_AGENT=claude-code_…` 整批都在——Codex 的 session 會自稱 Claude Code。而 agent 互相呼叫正是最容易發生這件事的場景，也就是說這個誤判不是邊角案例。
+
+所以結論：**環境變數只能用來加嚴，不能用來放寬。** 身分的權威來源是寫「工作中」標記的那一棒自己填的工具名（模型知道自己是誰，三個平台一致，不依賴任何變數）；變數只拿來交叉檢查「標記說是 A、但我看到 B」這種不一致，而且偵測不出來就退回只比機器名，**永遠不因為偵測失敗而放行**。
 
 ### 這張表的保鮮期（為什麼要用工具擋）
 

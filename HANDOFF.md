@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-10-31 00:40（+08）
-- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（五個專案的骨架同步落地）
+- **交接時間**：2026-10-31 01:02（+08）
+- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（同機器跨工具的防呆缺口＋三平台環境變數實測）
 
 ## 這份檔案在這個 repo 的角色（跟其他專案不一樣，先讀這段）
 
@@ -30,31 +30,30 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 已完成
 
-- 2026-10-31：**五個專案的骨架同步落地**（`VERSION` 2026-10-30.3）。`Grist_test` `d2f8bf2`、
-  `NAA_TR` `5b0bc66`（`feature/W15-research-shell`）、`NAS_MAINT` `ad987a1`、`摘要skill設計` `bef4916`
-  （`feature/claude-native`）、`第三批56箱後檢查` `c87ae61` 各一個 commit、都已 push，內容是兩份
-  `SKILL.md` 的 `source:` 標記 `.2`→`.3` ＋ `CLAUDE.md` 的 `@AGENTS.md` import ＋自己的 `HANDOFF.md`。
-  五個開工前都查過 origin 的「工作中」是「無（已交棒）」，`check_docs.py` 全部 exit 0。**`序號卡`、
-  `解決網路速度問題` 刻意留在 `.2`**（前者已完結、後者有別人未提交的工作），會在下次開場自己報
-  「骨架落後」，是自癒的。
-
-- 2026-10-30（`VERSION` 2026-10-30.3）：**三邊官方文件全部重查＋本機實測 Codex CLI `0.164.0`**，修掉
-  四個過期斷言——Codex 桌面 App 其實有 hooks、`.agents/skills/` 連 Codex 也讀、`CLAUDE.md` 要改成只放
-  `@AGENTS.md` import（有 `CLAUDE.md` 時 Claude Code 不原生讀 `AGENTS.md`）、`SessionEnd` 存在所以「關掉
-  視窗沒有下一個動作」只對一半的工具成立（結論不變，理由換掉）。連帶改了 `extract()`、`sync_project.py`
-  的 `CLAUDE.md` 歸類，並加上**跨工具表保鮮期**檢查（超過 90 天 fail，負向測試已驗）。逐項理由見部署包
-  開頭的版本註與 [ARCHITECT.md](ARCHITECT.md)。
-- 2026-10-30（同日早先）：補跨機器「工作中」標記；評估後**決定不裝** `pre-push-handoff.sh`；修正跨工具
-  表的 Antigravity 一欄。理由在 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有的東西」。
+- 2026-10-31（**刻意不跳版**）：查出**同機器跨工具沒有防呆**，三平台環境變數實測寫進部署包「工具身分」
+  那一節（`AI_AGENT` 不是跨廠商慣例、跨工具啟動時變數會被繼承所以會說謊、Codex 的 **hook** 環境仍未量到）。
+  連帶修正上一輪的錯誤斷言：**Antigravity 有 CLI**（`antigravity-ide`，本來就在 PATH），也有
+  `chat --mode agent`，只是沒有 headless 列印模式。修法還沒動手，見下方第 1 項。
+- 2026-10-31：**五個專案的骨架同步落地**（`VERSION` 2026-10-30.3）：`Grist_test` `d2f8bf2`、`NAA_TR`
+  `5b0bc66`、`NAS_MAINT` `ad987a1`、`摘要skill設計` `bef4916`、`第三批56箱後檢查` `c87ae61`，各一個 commit
+  都已 push，`check_docs.py` 全 exit 0。**`序號卡`、`解決網路速度問題` 刻意留在 `.2`**（前者已完結、後者
+  有別人未提交的工作），會在下次開場自己報「骨架落後」，是自癒的。
+- 2026-10-30：三平台能力重查、補跨機器「工作中」標記、**決定不裝** `pre-push-handoff.sh`（理由在部署包版本註與 [ARCHITECT.md](ARCHITECT.md)）。
 
 ## 未完成／下一步
 
-1. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個工具都
+1. 🔴 **同機器跨工具沒有防呆**（2026-10-31 查出，**設計已定、還沒動手**；洞與理由見部署包「工具身分」
+   那一節）。四步修法：①「工作中」標記加工具欄（`` `機器` ／ `工具` ／ `session 名`（可選） ``）；②hook
+   的同機器分支拆成「同工具→🟡／不同工具→🔴」；③A2.5 的「指向這台機器」拆成兩列，把「看側欄」換成
+   不綁工具的判準；④`check_docs.py` 第 6 項檢查欄位有工具名，否則新格式會靜默退化回舊的。工具名由寫
+   標記的那一棒自己填，不靠環境變數；變數只做交叉檢查，偵測不出來就退回只比機器名。
+   ⚠️ 會動到 `SKILL.md`，所以要跳 `VERSION` 並**再同步一輪五個專案**。
+2. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個工具都
    觸發、`statusMessage` 會不會被忽略。卡在互動式的 `/hooks` 信任（非互動只能用
-   `--dangerously-bypass-hook-trust`，本輪刻意沒用）。
-2. （可選，要實測）Antigravity `.agents/hooks.json`：設計已定——一支**只做管線**的 wrapper，讀 stdin 取
+   `--dangerously-bypass-hook-trust`，本輪刻意沒用）。**量 hook 環境卡在同一道信任**（本 repo 也沒有 trust 條目，`.codex/` 整層本來就被跳過）。
+3. （可選，要實測）Antigravity `.agents/hooks.json`：設計已定——一支**只做管線**的 wrapper，讀 stdin 取
    `workspacePaths[0]`、`cd` 過去、跑同一支 `.sh`、stdout 包成 `injectSteps` 的 `ephemeralMessage`。
-3. （可選）`SessionStart` 的 `sessionTitle` 自動寫 session 名稱（只固定得住開場那一半，狀態轉換仍靠模型）；
+4. （可選）`SessionStart` 的 `sessionTitle` 自動寫 session 名稱（只固定得住開場那一半，狀態轉換仍靠模型）；
    `.codex/hooks.json` 接線本 repo 的 `repo-git-check.sh`（**不要**複製第二份腳本）；`AGENTS.md` 補一段
    「開工第一件事」——可攜層目前沒有一句叫 agent 先 `git fetch`、先看 origin 的「工作中」。
 
@@ -62,8 +61,7 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 地雷與注意事項
 
-- **single writer**：同一時間只有一台機器改 `main`。現在開工有標記了，但標記只告訴你「有東西在
-  那台機器上」——**別台未提交的變更仍然只在那台的磁碟上**，得回去那台 push，這是標記機制的天花板。
+- **single writer**：同一時間只有一台機器改 `main`。標記只告訴你「有東西在那台機器上」，別台未提交的變更仍然只在那台的磁碟上。
 - 改制度改 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)，改完 `verify_bootstrap.py` 要 exit 0（鐵律 4）。
 - 本檔與 `.claude/hooks/repo-git-check.sh` 都不是部署包的一部分，**不要**用 `sync_project.py` 同步。
 - 公開 repo：全部 Git 歷史人人看得到，不要寫單位名稱、內部代號、本機絕對路徑（鐵律 6）。
@@ -78,4 +76,5 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 懸置事項（AI 勿自行處理）
 
-- 上面「未完成」三項要不要做（都要花時間實測或設計，不是順手能完成的）。
+- 上面「未完成」第 1 項的修法**設計已定，等使用者點頭才動手**——它會跳 `VERSION` 並要再同步一輪五個專案。
+- 第 2、3、4 項要不要做（都要花時間實測或設計，不是順手能完成的）。
