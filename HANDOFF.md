@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-10-30 17:20（+08）
-- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（評估 pre-push hook，決定不裝並記下理由）
+- **交接時間**：2026-10-30 17:25（+08）
+- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（修正跨工具表的 Antigravity 一欄）
 
 ## 這份檔案在這個 repo 的角色（跟其他專案不一樣，先讀這段）
 
@@ -25,7 +25,7 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `㊣　26103017｜跨工具表修正｜工作中`，2026-10-30 17:20 (+08) 開工
+- **工作中**：無（已交棒）
 - 本機能力：Windows 11 ＋ Git for Windows 的 bash；有 push 權限（不寫祕密值）。
 
 ## 已完成
@@ -38,10 +38,23 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
   欄位讓 bump 它就能過」這個變通為什麼更糟）寫進 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有
   的東西」，連同它失效的條件。部署包本身沒動，`verify_bootstrap.py` exit 0。
 
+- 2026-10-30：**修正「跨工具與跨平台」表的 Antigravity 一欄**——它現在有 `.agents/hooks.json`
+  ＋ `SessionStart`，舊表的「❌ 沒有 hook 機制」是 2026-08-05 的事實。連同 `ARCHITECT.md` 與
+  `handover-protocol.md` 兩份範本裡跟著錯的句子。**刻意沒附 `.agents/hooks.json` 範本**（相對路徑
+  解析與 stdout 格式官方沒寫，猜錯是靜默失效），也**刻意沒跳 `VERSION`**——理由寫進 AGENTS.md
+  鐵律 1：`VERSION` 實際上是 `SKILL.md` 的版本，這次沒動 `SKILL.md`，跳版會讓每個專案永遠印
+  「骨架落後」且同步修不掉。
+
 ## 未完成／下一步
 
 1. （可選）`.codex/hooks.json` 接線同一支 `repo-git-check.sh`，讓 Codex 開場也看得到這個檢查
    （**不要**複製第二份腳本）。目前只有 Claude Code 的 SessionStart 會跑它。
+2. （可選，要實測）Antigravity 的 `.agents/hooks.json` 同樣可以接 `repo-git-check.sh`，但先在機器上
+   確認兩件事：相對路徑對著哪個 cwd 解析、`echo` 出來的文字會不會被顯示（它的 stdout 是
+   `injectSteps` JSON 契約）。兩件事任一不成立就別接——不會觸發的 hook 比沒有更糟。
+3. （可選）`AGENTS.md` 補一段「開工第一件事」。這個 repo 的可攜層目前沒有任何一句叫 agent 先
+   `git fetch`、先看 origin 的「工作中」——接棒程序在全域 skill，只有 Claude Code 會自動載入，
+   所以 Codex 桌面 App 與沒接線的 Antigravity 開這個 repo 時完全沒有提醒。
 
 （原本的「階段二 pre-push hook」2026-10-30 決定不裝，理由寫在 [ARCHITECT.md](ARCHITECT.md)
 「這個 repo 刻意沒有的東西」，掃到別再重提。）

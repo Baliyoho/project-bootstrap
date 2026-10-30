@@ -16,7 +16,7 @@
 
 ## 鐵律
 
-1. **`PROJECT-BOOTSTRAP.md` 是權威版。** 制度要改就改它，再用 `python -X utf8 tools/sync_project.py <專案路徑> --write` 覆蓋到各專案（`--all` 可一次掃完；它會保留 `check_docs.py` 的專案設定區塊與兩份 hook 接線裡專案自己加的設定，而且只改檔案、不 commit）；**不要**在單一專案裡就地改 skill 或 hook——那正是「同一個事實有多個家」的失控起點。改完版本也要更新 `VERSION`，各專案的開場檢查靠它才知道自己落後。
+1. **`PROJECT-BOOTSTRAP.md` 是權威版。** 制度要改就改它，再用 `python -X utf8 tools/sync_project.py <專案路徑> --write` 覆蓋到各專案（`--all` 可一次掃完；它會保留 `check_docs.py` 的專案設定區塊與兩份 hook 接線裡專案自己加的設定，而且只改檔案、不 commit）；**不要**在單一專案裡就地改 skill 或 hook——那正是「同一個事實有多個家」的失控起點。改完版本也要更新 `VERSION`，各專案的開場檢查靠它才知道自己落後。⚠️ **但只有在 `.claude/skills/handoff/SKILL.md` 真的改了內容時才跳 `VERSION`。** `VERSION` 實際上是「`SKILL.md` 的版本」：偵測器比的是該檔的 `source:` 標記與上游 `VERSION`（`git-freshness.sh` 的 `mine=`）。只改了不同步的範本（`sync_project.py` 的 `INSTANCE`，例如 `ARCHITECT.md`、`handover-protocol.md`）或部署包自己的敘述就跳版，每個專案會**永遠**印「骨架落後」，而且同步修不掉——同步回去的 `SKILL.md` 標記沒變。2026-10-30 修 Antigravity 那張表時踩到，被 `verify_bootstrap.py` 的「同版→閉嘴」擋下。
 2. **改動 skill／hook 內容時，同步更新檔頭的 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->` 標記**，否則沒人分得出哪份副本落後。格式是 `v<日期>`，**同一天改第二次起在日期後面加序號**（`v2026-10-24.2`、`.3`），當天第一次不加；序號跟部署包開頭的「版本」行同一個號，算的是部署包當天的第幾次修改，不是單一檔案的——2026-10-24 當天改了三次而標記三次相同，副本落後卻顯示一樣新，誤判成同步漏掉白查一輪。
 3. **保留每條規則的「為什麼」**。這份骨架的價值不在條文，在條文背後的事故；砍掉理由，下一棒就會繞過規則。
 4. **改完要驗證**：跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**。它會重生骨架比對檔案清單、模擬部署填佔位符、跑 `check_docs.py`、負向測試佔位符檢查與 `ARCHITECT.md` 日期標頭檢查真的擋得住、掃絕對路徑與缺 `python3` 退路的跨平台地雷、測 pre-push hook 五情境、查全檔 LF 與兩份 JSON 設定，也查本 repo 自己的 `.md` 死連結、`.claude/settings.json` 與本 repo 那支 hook 的「工作中」判讀（這個 repo 沒有部署 `check_docs.py`，否則那就成了要跳版同步的副本）。2026-08-05 之前這段是要人照著手刻的敘述，每一棒都得重刻一次，於是實務上常被跳過——所以固化成一個指令。跳過的項目（例如機器上沒有 bash）腳本會印 `skip` 並回傳 1，回報時要照實寫。

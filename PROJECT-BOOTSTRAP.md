@@ -13,6 +13,7 @@
 > 版本：**2026-10-30.2**（`HANDOFF.md` 加**工作中標記**：接棒時（skill A5）確定要動手才把機器與 session 寫進 HANDOFF 並 push，交棒時（B6）改回「無（已交棒）」，下一棒接棒前（A2.5）先檢查。補的是跨機器接力的洞——A 機器忘記交棒就關掉，B 機器看到綠勾就接棒。既有三層防呆全都掛在「下一個動作」上，而**直接關掉視窗沒有下一個動作**；這個標記掛在「開工」，所以繞不過去。`git-freshness.sh` 同步讀它，並改掉那行誤導的 `✅ 與 origin 同步`——它只證明「本機沒落後」，不證明「沒有別台在做」，而一個綠勾會讓人直接往下做。`check_docs.py` 加第 6 項擋欄位不見，否則防呆會靜默失效。
 > 同日第二件事：加 `VERSION` 檔 ＋ `tools/sync_project.py`，並讓 `git-freshness.sh` 比對上游版本。這之前「哪些專案裝了這套骨架」沒人記得住、也沒有任何東西負責把權威版發下去，所以同步一直是手工的——今天盤點就掃出 4 個專案留著上一輪沒 commit 的同步殘留。偵測放在開場這個必然發生的時刻，落後的專案會自己講；修則是一行指令。跟「工作中」標記同一招）。
 > 同日第三件事（跳版 `.2`）：**改名與 git 解耦**。舊版 A5 把「改 session 名稱」排在「開工標記 push 成功」之後，於是沒有 `HANDOFF.md` 的專案（包括骨架自己這個 repo）、或這一輪只讀的 session，永遠到不了改名那一步——側欄上三個 session 全是 `↗ 已交棒`，一個 `㊣ 工作中` 都沒有過，正好是這條規則要解決的問題在它的老家失效。改名現在只看 session 狀態：回報完就 `㊣`、停下來等人就 `※`（不限「必須停下來問使用者」那張表），只有宣稱 git 事實的 `↗ 已交棒` 仍要等 push 成功。
+> 同日第四件事（**刻意不跳版**，理由見下）：**修正「跨工具與跨平台」那張表的 Antigravity 一欄。**舊表寫「❌ 沒有 hook 機制」，那是 2026-08-05 的事實，重查官方文件已經不成立——它現在有 `.agents/hooks.json`，而且有 `SessionStart`。照舊表判斷會白白放棄一層防呆，而且錯得毫無徵兆：表上有查證日期，但**沒有人會因為日期舊就去重查**。`ARCHITECT.md` 與 `docs/ai-notes/handover-protocol.md` 兩份範本裡跟著錯的句子一併修掉。`.agents/hooks.json` 範本**刻意還沒附**，理由見那一節。**為什麼不跳版**：`VERSION` 不是「部署包的版本」，是**偵測器拿去跟 `SKILL.md` 的 `source:` 標記比對的那個值**（`git-freshness.sh` 的 `mine=` 那一行）。這次改的全是不同步的檔（兩份範本都在 `INSTANCE`），`SKILL.md` 一個字沒動——跳版就會讓每個專案永遠印「骨架落後」，而且跑 `sync_project.py` 修不掉（同步回去的 `SKILL.md` 標記還是舊的）。這個耦合 2026-10-30 當天就被 `verify_bootstrap.py` 的「同版→閉嘴」抓到，警告寫進 AGENTS.md 鐵律 1。
 > 前幾版——
 > 2026-10-24：版本號加序號（同一天改第二次起在日期後面加 `.2`、`.3`，因為日期粒度只能證明「不早於那一天」——當天改第三次時，三份副本的標記長得一模一樣，落後的那份看不出來）；handoff skill 加 **session 命名**：接棒／交棒／踩到「必須停下來問使用者」時各改一次 session 名稱。側欄上十幾個 session 全叫「接棒」認不出哪個是哪個，而其中「停在等人回答」的那個最需要被一眼看見。
 > 2026-09-30：兩個 hook 腳本補上 `source:` 版本標記——鐵律第 2 條的作用是一眼認出落後的副本，而最無從用肉眼辨識新舊的正好是這兩支 `.sh`。
@@ -37,7 +38,7 @@
 **還沒有這套制度的資料夾走 skill 的模式 0（建制）**：使用者講一句「幫我把交接機制建起來」，agent 就照本部署包逐檔生成，而不是憑印象重刻——憑印象生出來的版本缺的永遠是最貴的那部分（每條規則後面的「為什麼」、hook 的邊界條件），看起來像那套制度，實際擋不住任何事。
 這裡有個雞生蛋問題：skill 是部署**之後**才存在於專案裡的。所以模式 0 真正會被載入的地方是**全域副本**（`~/.claude/skills/handoff/`、`~/.codex/skills/handoff/`）；專案內那份仍保留模式 0，是為了讓副本可以無腦整份覆蓋，不必維護兩種版本。
 
-## 跨工具與跨平台（2026-08-05 查證）
+## 跨工具與跨平台（2026-08-05 查證；Antigravity 一欄 2026-10-30 重查）
 
 **把三層拆成兩種可靠度**，不要假設哪個工具一定有自動化：
 
@@ -48,7 +49,7 @@
 |---|---|---|---|---|
 | 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 | ✅ 原生（優先於 `GEMINI.md`） |
 | 自動載入程序檔 | ✅ `.claude/skills/`，可打 `/handoff` | ⬜ 靠 `AGENTS.md` 指路 | ✅ 全域 `~/.codex/skills/<name>/SKILL.md`；專案的 `.agents/skills/` 也讀得到 | ✅ 原生讀 `.agents/skills/` |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json` | ❌ **這個 build 沒有 hooks**，`/hooks` 指令不存在 | ❌ 沒有 hook 機制 |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json` | ❌ **這個 build 沒有 hooks**，`/hooks` 指令不存在 | ✅ `.agents/hooks.json`（2026-10-30 重查，見下） |
 
 **Codex 要分 CLI 與桌面 App，兩者能力不同**（2026-08-06 在 App 版 `26.721.41059` 實測）：
 
@@ -56,6 +57,17 @@
 - **桌面 App 沒有 hooks**，但有原生的 skill 系統：使用者 skill 放 `~/.codex/skills/<name>/SKILL.md`，格式與 Claude Code 相同（`name` ＋ `description` frontmatter）。把 `.claude/skills/handoff/SKILL.md` 複製過去即可，`~/.codex/rules/` 是指令核准白名單、不是放指示的地方。
 
 實測時 App 還主動讀到了專案的 `.agents/skills/handoff/SKILL.md`，並照指標找到 `.claude/` 的權威版——所以那個指標檔不只對 Antigravity 有用。
+
+**Antigravity 有 hooks**（2026-10-30 重查官方文件 `antigravity.google/docs/hooks`）：專案層 `.agents/hooks.json`、全域 `~/.gemini/config/hooks.json`，App／CLI／IDE 三種吃同一份契約。事件有 `SessionStart`（「一個新 session 開始時觸發一次，在第一次模型呼叫之前」，matcher 忽略）、`PreToolUse`、`PostToolUse`、`PreInvocation`、`PostInvocation`、`Stop`——`SessionStart` 跟 Claude Code 同語意，`PreToolUse` 也對得上 pre-push 那一層。
+
+⚠️ **這一欄到 2026-10-30 之前都寫著「沒有 hook 機制」**，那是 2026-08-05 查的，兩個半月就過時了。錯的代價是白白放棄一層防呆，而且沒有徵兆——表上標了查證日期，但沒有人會因為日期舊就主動重查。**對外部工具能力的斷言都有保鮮期**，拿它做「做不到所以不做」的決定之前先重查。
+
+**但骨架刻意還沒附 `.agents/hooks.json` 範本**，因為有兩件事官方文件沒寫，而猜錯就是靜默失效：
+
+1. **相對路徑解析到哪，沒有定義。** 範例用 `./scripts/lint.sh`，整頁沒有一句講 working directory；第三方說法互相矛盾（一說必須寫絕對路徑、相對路徑對著啟動終端的目錄解析；另一份 bug 報告則是 cwd 為 `.agents` 時被接成 `.agents/.agents/...`）。而本骨架的規則是**接線路徑一律相對**（絕對路徑換機器會靜默失效，`verify_bootstrap.py` 的跨平台防呆會擋）——兩邊直接相撞，**只能在機器上實測，查文件查不出來**。
+2. **`SessionStart` 的 stdout 是 JSON 契約，不是給人看的文字。** 它定義的輸出是選用的 `injectSteps`（`systemMessage`／`userMessage`／`ephemeralMessage`／`toolCall`），而 `git-freshness.sh` 是直接 `echo` 一行給人讀——Claude Code 會顯示，Antigravity 多半當成不合格式而丟掉。要接上得多一層轉換，而那一層就是第二份會各自演化的東西（正是「同樣那兩個 `.sh`」要避免的）。
+
+所以這一欄現在是「做得到、但要先實測」。**沒實測就先別建**：一個不會觸發的 hook 比沒有更糟，它看起來像有防護。
 
 `.codex/hooks.json` 建了不會有害（哪天改用 CLI 就生效），但**在 App 上是空轉的**：沒有開場檢查、沒有 push 攔截。這正是可攜層必須自己站得住的理由。
 
@@ -401,7 +413,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 | [tools/verify_state.py](tools/verify_state.py) | 一鍵現況查證，輸出 key=value 事實快照 | 本專案（骨架來自部署包） | 服務或檢查項改變 |
 | [.gitignore](.gitignore)、[.gitattributes](.gitattributes) | 排除祕密與運行資料；行末強制 LF | 本專案 | 新增祕密檔或運行目錄 |
 
-**跨工具的可靠度不一樣**：`AGENTS.md` 與純 Markdown 的程序檔是**可攜層**（Claude Code／Codex／Antigravity 都讀得到）；hooks 只在 Claude Code 與 Codex CLI 有效。正確性押在可攜層，不押在 hook 上——換一個工具 hook 就沒了，制度不能跟著沒。
+**跨工具的可靠度不一樣**：`AGENTS.md` 與純 Markdown 的程序檔是**可攜層**（Claude Code／Codex／Antigravity 都讀得到）；hooks 在 Claude Code、Codex CLI 與 Antigravity 有效（Antigravity 2026-10-30 重查確認，Codex 桌面 App 沒有）。正確性押在可攜層，不押在 hook 上——換一個工具 hook 就沒了，制度不能跟著沒。
 
 ## 專案本體
 
@@ -544,7 +556,8 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 - **救不回 A 的未提交變更**——那些仍然只在 A 的磁碟上。標記讓你知道「有東西在那台機器」，
   東西還是得回去拿。
 - **A 在 A5 之前就關掉**（還沒寫標記）→ `origin` 上什麼都沒有，跟以前一樣。
-- **A 用沒有 hook 的工具**（Codex 桌面 App、Antigravity）→ 沒有自動提醒，只剩程序擔保。
+- **A 用沒有 hook 的工具**（Codex 桌面 App；Antigravity 2026-10-30 起有 hooks，但骨架還沒附接線）→
+  沒有自動提醒，只剩程序擔保。
 
 所以下面這套補救程序仍然必要，**能補回來的只有留在磁碟上的那部分**這句話也沒有改變。
 
@@ -1781,7 +1794,7 @@ git status -sb
 - [ ] **可攜層**：`AGENTS.md` 開頭有「開工第一件事」那一段，而且指到的路徑存在——**這一項不能跳過**，它是唯一在所有工具上都成立的保證，其餘都只是輔助
 - [ ] **Codex CLI**：`.codex/hooks.json` 存在且路徑全是相對路徑（`grep -n ':[\\/]' .codex/hooks.json` 應無輸出——絕對路徑在別台機器會靜默失效）；打 `/hooks` 信任該定義後，開一個 session 確認 `[git-check]` 有出現
 - [ ] **Codex 桌面 App**：`/hooks` 打不出來是正常的（App 沒有 hooks）。改為把 `.claude/skills/handoff/SKILL.md` 複製到 `~/.codex/skills/handoff/SKILL.md`，重開 session 後問「你有哪些 skill 可以用」，看得到 `handoff` 就成了
-- [ ] **Antigravity**：`.agents/skills/handoff/SKILL.md` 存在，且內容只有指標、沒有複製程序內容
+- [ ] **Antigravity**：`.agents/skills/handoff/SKILL.md` 存在，且內容只有指標、沒有複製程序內容。它 2026-10-30 起也支援 `.agents/hooks.json` 的 `SessionStart`，但骨架**刻意沒附範本**（理由見開頭「跨工具與跨平台」）——要自己接就先實測相對路徑怎麼解析、以及 `echo` 的文字有沒有被顯示出來
 - [ ] **共通的真正驗收**（不論哪個工具）：在專案裡講一句「我要接手這個專案」，agent 應該先 `git fetch`、讀 `AGENTS.md` ＋ `HANDOFF.md`，回報 3–5 行才動手。它直接開始翻程式碼就是沒接上——改用明講版：「請先讀 `.claude/skills/handoff/SKILL.md`，照 A 模式接棒」
 - [ ] **另一台機器**：clone 後重跑上面「python 可執行」與「hook 自動跑」兩項。`python` 不存在就用 `python3`；Windows 需要 Git for Windows 附的 bash
 - [ ] `HANDOFF.md` 的「本機能力」已填實際狀況
