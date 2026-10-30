@@ -47,6 +47,7 @@ WHOLE = (
     '.claude/skills/handoff/SKILL.md',
     '.claude/hooks/git-freshness.sh',
     '.claude/hooks/pre-push-handoff.sh',
+    '.claude/hooks/antigravity-wrap.sh',
     '.agents/skills/handoff/SKILL.md',
 )
 # 手術式更新：這一份混了「共用程式」與「專案自己的設定」，整份蓋過去會把設定洗掉。
@@ -60,8 +61,13 @@ SETTINGS_END = '# ── 專案設定結束'
 # 舊的 `Bash`，而那台機器的主 shell 正是 PowerShell——pre-push 防呆整個不會觸發，而且
 # 完全沒有徵兆。JSON 塞不進 `source:` 版本標記，落後偵測同樣看不到它們，所以這份清單
 # 是這兩個檔唯一的守門人。
-WIRING = ('.claude/settings.json', '.codex/hooks.json')
+WIRING = ('.claude/settings.json', '.codex/hooks.json', '.agents/hooks.json')
 OWNED_SCRIPTS = ('git-freshness.sh', 'pre-push-handoff.sh')
+# `.agents/hooks.json` 2026-10-31 加入。它掛的 command 是「轉接層 ＋ git-freshness.sh」，
+# 而 scripts_in() 是拿檔名在 command 裡比對的，所以 antigravity-wrap.sh 不必列進 OWNED_SCRIPTS
+# 就認得出這一組——列進去反而會讓 key 變成兩個檔名，跟專案那份舊的單檔名 key 對不起來。
+# 注意 sync 不做「補裝」：既有專案沒有這兩個檔就 skip。要在既有專案啟用 Antigravity 接線，
+# 得手動補檔並照第 5 節在 IDE 裡驗一次——那一步沒人能替它做，而沒驗過的接線不該自動長出來。
 
 # 只補單一欄位／單一行，其餘歸專案自己。
 PARTIAL = ('HANDOFF.md', '.gitignore', 'CLAUDE.md')

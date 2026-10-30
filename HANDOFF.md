@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-10-31 03:05（+08）
-- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（「工作中」標記加工具欄，擋同機器跨工具誤接棒）
+- **交接時間**：2026-10-31 04:10（+08）
+- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（補上 Antigravity 的 hook 轉接層與接線）
 
 ## 這份檔案在這個 repo 的角色（跟其他專案不一樣，先讀這段）
 
@@ -25,35 +25,43 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26103103｜Antigravity hook｜工作中`，2026-10-31 03:20 (+08) 開工
+- **工作中**：無（已交棒）
 - 本機能力：Windows 11 ＋ Git for Windows 的 bash；有 push 權限（不寫祕密值）。
 
 ## 已完成
 
-- 2026-10-31（**跳版 `2026-10-31`**）：**「工作中」標記加工具欄**，格式 `` `機器` ／ `工具` ／ `session 名`（可選） ``。
-  四處一起改：A5 寫標記填工具名；A2.5 的「指向這台機器」拆成同工具／別的工具／沒有工具欄三列
-  （判準不再綁側欄，因為只有 Claude Code 有側欄）；兩支 hook 的同機器分支拆成同工具→🟡／不同
-  工具→🔴；`check_docs.py` 第 6 項擋「標記在工作中卻沒有工具欄」。環境變數只拿來加嚴，兩家簽章
-  同時在場（＝被繼承）就不猜，認不出來只印 🟡 並把「你自己是不是 X」丟回給模型答。新舊格式靠
-  session 名裡的全形豎線分辨。`verify_bootstrap.py` 把兩支 hook 的期望值收斂成共用的 `busy_cases()`
-  （八情境）並清掉工具簽章變數再測，另加工具欄負向測試 → **exit 0，25 項全 ok**。
-- 2026-10-31：**五個專案已同步到 `2026-10-31`**：`Grist_test` `42c60cc`、`NAA_TR` `7791ed9`、
-  `NAS_MAINT` `123c3fb`、`摘要skill設計` `796664f`、`第三批56箱後檢查` `7255bce`，各一個 commit 都已
-  push，`check_docs.py` 全 exit 0。兩份全域副本（`~/.claude/`、`~/.codex/`）也已覆蓋。
-  **`序號卡`、`解決網路速度問題` 刻意沒同步**（前者已完結、後者仍有別人未提交的兩個檔），
-  會在下次開場自己報「骨架落後」，是自癒的。
-- 2026-10-31：三平台環境變數實測、同機器跨工具的缺口、Antigravity 有 CLI 這個修正，都在部署包「工具身分」一節。
-- 2026-10-30：三平台能力重查、補跨機器「工作中」標記、**決定不裝** `pre-push-handoff.sh`（理由在部署包版本註與 [ARCHITECT.md](ARCHITECT.md)）。
+- 2026-10-31（**刻意不跳版**，`SKILL.md` 一個字沒動）：**Antigravity 的 hook 接線補上了**，四個平面
+  從此都有觸發層。新增兩節範本：3.18 `.claude/hooks/antigravity-wrap.sh`（只做管線的轉接層：取
+  `workspacePaths[0]`、`cd`、跑**同一支** `git-freshness.sh`、把 stdout 包成
+  `{"injectSteps":[{"ephemeralMessage":…}]}`）與 3.19 `.agents/hooks.json`（只接 `SessionStart`）；
+  舊 3.18「其他 skills 慣例」順延成 3.20。轉接層裡**沒有任何判斷規則**，所以它不可能跟權威版分岔。
+  失敗路徑刻意做成吵的（`[ag-wrap] ⚠️`），不安靜回空物件。`verify_bootstrap.py` 加「Antigravity
+  轉接層」六情境、`sync_project.py` 的 `WHOLE`／`WIRING` 各多一份 → **exit 0，26 項全 ok**。
+  **證據強度分兩層，別混在一起**：管線已測量（Windows ＋ Git for Windows 的 bash）；
+  **「Antigravity 真的會觸發它、吃不吃這個設定檔形狀」還沒測量**——官方只寫了檔案位置、事件名與
+  stdout 契約，沒有列設定檔欄位，而它沒有 headless 模式。
+- 2026-10-31（**跳版 `2026-10-31`**）：「工作中」標記加工具欄（`` `機器` ／ `工具` ／ `session 名` ``），
+  四處一起改＋五個專案與兩份全域副本都已同步。**`序號卡`、`解決網路速度問題` 刻意沒同步**
+  （前者已完結、後者仍有別人未提交的兩個檔），會在開場自己報「骨架落後」，是自癒的。
+- 2026-10-30／31：三平台能力與環境變數重查、補跨機器「工作中」標記、**決定不裝**
+  `pre-push-handoff.sh`。理由全在部署包的版本註與 [ARCHITECT.md](ARCHITECT.md)，這裡不複述。
 
 ## 未完成／下一步
 
-1. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個工具都
+1. 🔴 **在 Antigravity 裡開一個 session 驗一次**（只有這台機器的人做得到，IDE 1.107.0 已安裝）：
+   對話開頭要看到 `[git-check]`。**看不到就把 `.agents/hooks.json` 與 `.claude/hooks/antigravity-wrap.sh`
+   從部署包刪掉**，順便把實測結果寫進部署包那一節——一個不會觸發的 hook 比沒有更糟，它看起來像
+   有防護。驗之前這兩個檔只到「管線測過了」。
+   不用開 IDE 也能先驗管線（第 5 節那一項）：
+   `printf '{"workspacePaths":["<本專案絕對路徑>"]}' | bash .claude/hooks/antigravity-wrap.sh .claude/hooks/git-freshness.sh`
+2. **既有專案要啟用 Antigravity 接線＝手動補兩個檔**。`sync_project.py` 刻意不做「補裝」，所以
+   2026-10-31 的 `--all` 預演對五個已同步專案全是 `ok`、新檔全是 `skip`（確認過）。沒驗過的接線不該
+   自動長出來，所以這是每個專案各自的決定，不是同步的事。
+3. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個工具都
    觸發、`statusMessage` 會不會被忽略。卡在互動式的 `/hooks` 信任（非互動只能用
    `--dangerously-bypass-hook-trust`，刻意沒用）。**量 hook 環境卡在同一道信任**（本 repo 也沒有 trust
    條目，`.codex/` 整層本來就被跳過）。這道牆沒拆掉之前，hook 端的工具偵測就只有推論、沒有測量。
-2. （可選，要實測）Antigravity `.agents/hooks.json`：設計已定——一支**只做管線**的 wrapper，讀 stdin 取
-   `workspacePaths[0]`、`cd` 過去、跑同一支 `.sh`、stdout 包成 `injectSteps` 的 `ephemeralMessage`。
-3. （可選）`SessionStart` 的 `sessionTitle` 自動寫 session 名稱（只固定得住開場那一半，狀態轉換仍靠模型）；
+4. （可選）`SessionStart` 的 `sessionTitle` 自動寫 session 名稱（只固定得住開場那一半，狀態轉換仍靠模型）；
    `.codex/hooks.json` 接線本 repo 的 `repo-git-check.sh`（**不要**複製第二份腳本）；`AGENTS.md` 補一段
    「開工第一件事」——可攜層目前沒有一句叫 agent 先 `git fetch`、先看 origin 的「工作中」。
 
@@ -73,8 +81,9 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 `python -X utf8 tools/verify_bootstrap.py`
 
-目前：exit 0，**25 項全 `ok`**（`VERSION` 2026-10-31）。新增的那一項是「工具欄（負向測試）」。
+目前：exit 0，**26 項全 `ok`**（`VERSION` 仍是 2026-10-31——`SKILL.md` 沒動就不跳版，鐵律 1）。新增的那一項是「Antigravity 轉接層」。
 
 ## 懸置事項（AI 勿自行處理）
 
-- 上面「未完成」三項要不要做（都要花時間實測或設計，不是順手能完成的；第 1 項還卡在互動式信任）。
+- 第 1 項（在 Antigravity 裡驗）要不要現在做——那一步只有坐在這台機器前面的人能做。
+- 第 3、4 項要不要做（要花時間實測或設計；第 3 項還卡在互動式信任）。

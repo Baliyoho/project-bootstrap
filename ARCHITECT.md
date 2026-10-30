@@ -1,7 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
 > **本檔＝結構的唯一權威**：`project-bootstrap` 由什麼組成、每樣東西的家在哪、改哪裡會影響到什麼。
-> 最後更新：2026-10-30（同日第二次：三平台能力重查後，`extract()` 的抽取規則從「第一個區塊」改成「區塊依序對應檔名」、`sync_project.py` 把 `CLAUDE.md` 從 `INSTANCE` 搬到 `PARTIAL`、`verify_bootstrap.py` 加「跨工具表保鮮期」、副本拓撲裡 `.agents/skills/` 的角色改變。前一次是補上跨機器「工作中」標記並記下 `pre-push-handoff.sh` 決定不裝）
+> 最後更新：2026-10-31（部署包多兩節範本：3.18 `.claude/hooks/antigravity-wrap.sh`＋3.19 `.agents/hooks.json`，舊 3.18「其他 skills 慣例」順延成 3.20；`verify_bootstrap.py` 加「Antigravity 轉接層」六情境，`sync_project.py` 的 `WHOLE` 與 `WIRING` 各多一份。前一次是 2026-10-30 同日第二次：三平台能力重查後，`extract()` 的抽取規則從「第一個區塊」改成「區塊依序對應檔名」、`sync_project.py` 把 `CLAUDE.md` 從 `INSTANCE` 搬到 `PARTIAL`、`verify_bootstrap.py` 加「跨工具表保鮮期」、副本拓撲裡 `.agents/skills/` 的角色改變。前一次是補上跨機器「工作中」標記並記下 `pre-push-handoff.sh` 決定不裝）
 >
 > **什麼時候改**：只有**結構**變動才改——根目錄多／少一個檔案、部署包增刪一節範本、`verify_bootstrap.py` 增減檢查項、副本拓撲改變。
 > 制度內容本身怎麼寫（鐵律的措辭、skill 的步驟）**不要動這一份**，那些的家在 [AGENTS.md](AGENTS.md) 與部署包裡。
@@ -39,7 +39,7 @@
 | 0 | 這套骨架在解決什麼問題（失效模式 → 對策） | 想知道「為什麼要有這條規則」的人 |
 | 1 | 部署前訪談：佔位符表 | 執行部署的 agent |
 | 2 | 要建立的檔案結構 | 同上 |
-| 3 | **各檔範本**（3.1–3.18），照抄只換佔位符 | 同上，改到哪份讀哪節 |
+| 3 | **各檔範本**（3.1–3.20），照抄只換佔位符 | 同上，改到哪份讀哪節 |
 | 4 | 上 GitHub | 同上 |
 | 5 | 部署後自檢清單 | 同上 |
 | 6 | 之後怎麼維持（一頁操作卡） | 部署完的專案 |
@@ -65,7 +65,9 @@
 | 3.15 | `tools/verify_state.py` | 一鍵現況查證（骨架） |
 | 3.16 | `.agents/skills/handoff/SKILL.md` | Antigravity 的指標檔 |
 | 3.17 | `.codex/hooks.json` | Codex CLI 的 hook 接線（掛 3.10／3.11 同樣那兩個 `.sh`） |
-| 3.18 | —— | 其他 skills 的**慣例說明**，不產檔 |
+| 3.18 | `.claude/hooks/antigravity-wrap.sh` | Antigravity 轉接層：只做管線（取工作區、`cd`、跑腳本、包 JSON），不含規則（2026-10-31 加入） |
+| 3.19 | `.agents/hooks.json` | Antigravity 的 hook 接線（經 3.18 掛同一支 3.10；只接 `SessionStart`）（2026-10-31 加入） |
+| 3.20 | —— | 其他 skills 的**慣例說明**，不產檔（2026-10-31 從 3.18 順延） |
 
 ## 部署包 → 骨架的抽取規則（改範本前先讀這段）
 
@@ -73,7 +75,7 @@
 
 1. **`### 3.x` 標題行裡的反引號路徑＝產出的檔名。** 改標題就是改檔名——3.2 的標題有兩個路徑，所以一節產兩檔。
 2. **一節裡的 fence 依序對應標題上的檔名**；fence 比檔名少就全部沿用第一個（多數節是一檔一區塊）。fence 前的散文是給人看的說明，不會進檔案。
-3. **標題行沒有路徑就不產檔**（3.18 是慣例說明）。
+3. **標題行沒有路徑就不產檔**（3.20 是慣例說明）。
 
 第 2 條在 2026-10-30 從「只取第一個 fence，`GEMINI.md` 的標題再由腳本替換」改成現在這樣：3.2 的 `CLAUDE.md` 從此只有一行 `@AGENTS.md` import、`GEMINI.md` 維持指標寫法，兩份內容不同了。把其中一份合成在腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
 
@@ -92,6 +94,7 @@
 | 真實部署形狀 | 部署包在場＋非 ASCII 檔名時仍 exit 0 | 照說明部署的人一定會踩到 |
 | 跨平台防呆 | 無絕對路徑、有 `python3` 退路 | 換一台機器會靜默失效 |
 | pre-push hook 五情境 | 該擋的擋、該放的放 | 防呆變成誤擋或形同虛設 |
+| Antigravity 轉接層 | 六情境：正常注入、escaping 原樣還原、`cd` 進 `workspacePaths[0]`、少參數／腳本不存在／stdin 不是 JSON 時要**講話**，全部要合法 JSON ＋ exit 0 | 管線壞掉的樣子最難看出來：hook 跑了、exit 0，而 Antigravity 把不合格式的 stdout 整段丟掉，畫面上跟「查過了沒事」一模一樣。**這一項不保證 Antigravity 會觸發它**——那沒有 headless 模式可測，是部署時在 IDE 裡的人工驗收（第 5 節），沒看到訊息就把那兩個檔刪掉 |
 | 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 後四種狀態各印對應結論（別台 🔴、自己這台 🟡、已交棒 ✅、欄位不存在 🟡） | 跨機器誤接棒防呆靜默失效——下一棒只會看到一切正常 |
 | `VERSION` 檔 | 與部署包版本行一致 | 落後偵測會說謊，落後的專案以為自己最新 |
 | 版本落後偵測 | 餵假版本要講、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後，同步又回到靠人記得 |
@@ -120,21 +123,26 @@ handoff SKILL.md
                                                      skill 來源，所以它的 description
                                                      必須寫滿觸發詞（那是它被發現的唯一依據）
 
-兩個 hook .sh
-  部署包 3.10／3.11（權威）
+三支 hook .sh
+  部署包 3.10／3.11／3.18（權威）
     └─→ 各專案 .claude/hooks/*.sh   ← 只有這一份腳本
           ├─← .claude/settings.json 指向它
-          └─← .codex/hooks.json 指向同樣那兩個（不複製第二份）
+          ├─← .codex/hooks.json 指向同樣那兩個（不複製第二份）
+          └─← .agents/hooks.json 經 3.18 的轉接層指向同一支 3.10
+                （轉接層也住在 .claude/hooks/，理由同上：hook 腳本只有一個家）
 
 check_docs.py
   部署包 3.14（權威，「專案設定」區塊除外——那塊本來就該依專案調）
     └─→ 各專案 tools/check_docs.py
 
-兩份 hook 接線（JSON）
-  部署包 3.9／3.17（權威，只管「指向骨架那兩個 .sh」的那幾組；
-                   專案自己加的 permissions／env／額外 hook 原樣保留）
+三份 hook 接線（JSON）
+  部署包 3.9／3.17／3.19（權威，只管「指向骨架那幾個 .sh」的那幾組；
+                        專案自己加的 permissions／env／額外 hook 原樣保留）
     ├─→ 各專案 .claude/settings.json
-    └─→ 各專案 .codex/hooks.json
+    ├─→ 各專案 .codex/hooks.json
+    └─→ 各專案 .agents/hooks.json   ← 2026-10-31 加入。sync 不做「補裝」，既有專案
+                                       沒有這個檔就 skip；要啟用得手動補檔並在 IDE
+                                       裡驗一次（沒驗過的接線不該自動長出來）
 ```
 
 **JSON 沒辦法放 `source:` 標記**，所以上面那兩份接線在落後偵測裡是隱形的——它們唯一的守門人是 `sync_project.py` 的 `WIRING` 清單加上 `verify_bootstrap.py` 的「同步清單涵蓋骨架」。2026-10-30 把它們補進拓撲，是因為 2026-09-13 給 3.9 補的 `Bash|PowerShell` matcher 一直沒發下去：三個專案停在舊的 `Bash`，而那台機器的主 shell 正是 PowerShell，pre-push 防呆於是在那些專案等於沒裝，一個半月沒有任何徵兆。
