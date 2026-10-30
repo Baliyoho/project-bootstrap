@@ -43,6 +43,9 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
   行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
                   git-freshness 可執行
+  同步清單     ——sync_project.py 的清單要涵蓋骨架每一個檔，且 hook 接線合併要真的換掉
+                  舊值又保住專案自己的設定。兩份 JSON 接線從來不在清單裡，於是 matcher
+                  的修正一年半沒發下去，pre-push 防呆在那些專案等於沒裝（2026-10-30 加入）
 
 結束碼：0＝全過；1＝有跳過項（缺 bash 之類）但無失敗；2＝有失敗。
 本工具唯讀本 repo，只在系統暫存區寫檔。
@@ -634,6 +637,70 @@ def step_self():
     return ok
 
 
+def step_sync_coverage(dest):
+    """同步清單要涵蓋骨架每一個檔，而且 hook 接線真的會被修好。
+
+    2026-10-30 查出來的洞：`.claude/settings.json` 與 `.codex/hooks.json` 兩份 hook 接線
+    從來不在 sync_project.py 的清單裡。所以 2026-09-13 把 3.9 的 PreToolUse matcher 補成
+    `Bash|PowerShell` 之後，三個專案一直停在舊的 `Bash`——而那台機器的主 shell 正是
+    PowerShell，於是 pre-push 防呆整個不會觸發，且完全沒有徵兆。這兩個檔是 JSON，塞不進
+    `source:` 版本標記，落後偵測也看不到它們，等於沒人在看。所以這裡釘兩件事：清單有沒有
+    涵蓋全部範本（新增範本忘了歸類就 FAIL，而不是安靜地沒人同步），以及接線合併有沒有
+    真的換掉舊值、又保住專案自己加的設定。
+    """
+    sys.path.insert(0, str(ROOT / 'tools'))
+    import sync_project as sp
+
+    declared = (set(sp.WHOLE) | {sp.SURGICAL} | set(sp.WIRING)
+                | set(sp.PARTIAL) | set(sp.INSTANCE))
+    missing, extra = EXPECTED - declared, declared - EXPECTED
+    if missing or extra:
+        bits = []
+        if missing:
+            bits.append('範本有、清單沒歸類：%s（這些檔沒人同步，而且不會有徵兆）'
+                        % sorted(missing))
+        if extra:
+            bits.append('清單有、範本沒有：%s' % sorted(extra))
+        record('FAIL', '同步清單涵蓋骨架', '；'.join(bits))
+        return False
+    record('OK', '同步清單涵蓋骨架',
+           '%d 個範本全部歸類（整份覆蓋 %d／手術 1／接線 %d／補欄位 %d／專案實例 %d）'
+           % (len(EXPECTED), len(sp.WHOLE), len(sp.WIRING), len(sp.PARTIAL),
+              len(sp.INSTANCE)))
+
+    # 接線合併：拿真的範本當權威，餵一份「舊 matcher ＋ 專案自己加的東西」進去。
+    auth = (dest / '.claude' / 'settings.json').read_text(encoding='utf-8')
+    stale = json.loads(auth)
+    stale['hooks']['PreToolUse'][0]['matcher'] = 'Bash'          # 2026-09-13 之前的舊值
+    stale['permissions'] = {'allow': ['Bash(git status)']}       # 專案自己加的
+    stale['hooks']['SessionStart'].append(                       # 專案自己加的 hook
+        {'hooks': [{'type': 'command', 'command': 'bash .claude/hooks/project-own.sh'}]})
+    new, _, err = sp.merge_wiring(auth, json.dumps(stale, ensure_ascii=False, indent=2))
+    if err or new is None:
+        record('FAIL', '接線合併', err or '舊 matcher 沒被認出來——落後的專案不會被修好')
+        return False
+    got = json.loads(new)
+    start = [h for g in got['hooks']['SessionStart'] for h in g.get('hooks', [])]
+    checks = {
+        '換掉舊 matcher': got['hooks']['PreToolUse'][0].get('matcher') == 'Bash|PowerShell',
+        '保留專案 permissions': got.get('permissions') == stale['permissions'],
+        '保留專案自己的 hook': any('project-own.sh' in h.get('command', '') for h in start),
+        '骨架 hook 不重複': sum('git-freshness.sh' in h.get('command', '')
+                             for h in start) == 1,
+    }
+    bad = [k for k, v in checks.items() if not v]
+    if bad:
+        record('FAIL', '接線合併', '沒做到：%s' % '、'.join(bad))
+        return False
+    # 已經一致就不該回報要改，否則每次同步都製造假變更，雜訊會讓人不再看輸出。
+    same, _, err2 = sp.merge_wiring(auth, auth)
+    if err2 or same is not None:
+        record('FAIL', '接線合併', '內容已一致卻說要改（%s）' % (err2 or '會製造假變更'))
+        return False
+    record('OK', '接線合併', '舊 matcher 換新、專案 permissions 與自有 hook 保留、已一致不動')
+    return True
+
+
 def step_eol(dest):
     tracked = [
         ROOT / p for p in
@@ -811,6 +878,7 @@ def main():
             step_version_check(work)
         step_eol(dest)
         step_self()
+        step_sync_coverage(dest)
         step_misc(dest, work)
     finally:
         if args.keep:

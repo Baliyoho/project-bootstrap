@@ -1,7 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
 > **本檔＝結構的唯一權威**：`project-bootstrap` 由什麼組成、每樣東西的家在哪、改哪裡會影響到什麼。
-> 最後更新：2026-10-30（本 repo 自己的開場檢查與文件檢查）
+> 最後更新：2026-10-30（兩份 hook 接線納入副本拓撲）
 >
 > **什麼時候改**：只有**結構**變動才改——根目錄多／少一個檔案、部署包增刪一節範本、`verify_bootstrap.py` 增減檢查項、副本拓撲改變。
 > 制度內容本身怎麼寫（鐵律的措辭、skill 的步驟）**不要動這一份**，那些的家在 [AGENTS.md](AGENTS.md) 與部署包裡。
@@ -22,7 +22,7 @@
 | 本檔 | 結構 | 只有結構變動 |
 | [LICENSE](LICENSE) | MIT（2026-09-07 起公開） | 授權改變 |
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
-| [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案，`check_docs.py` 的專案設定區塊會原樣保留。只改檔案，不 commit | 骨架多一個要同步的檔時 |
+| [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案。`check_docs.py` 的專案設定區塊、兩份 hook 接線裡專案自己加的設定都會原樣保留。只改檔案，不 commit | 骨架多一個要同步的檔時（而且要同時歸類進 `WHOLE`／`WIRING`／`PARTIAL`／`INSTANCE`，否則驗證會 FAIL） |
 | [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
 | `.claude/settings.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart git 新鮮度檢查。**不是部署包 3.9／3.10 的副本**，不在副本拓撲裡、不要用 `sync_project.py` 同步它 | 幾乎不動 |
 | `.gitignore`、`.gitattributes` | `dist/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
@@ -95,6 +95,8 @@
 | 版本落後偵測 | 餵假版本要講、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後，同步又回到靠人記得 |
 | 本 repo 自己的文件 | 本 repo 的 `.md` 無死連結、`AGENTS.md`／`ARCHITECT.md` 有日期標頭 | 改檔名或搬段落留下死連結。部署包裡指向「部署後才存在的檔」的連結不算，判準是 `EXPECTED`，所以它指向本 repo 檔案的連結照樣會被抓 |
 | 本 repo settings.json | 合法 JSON，且指向的 hook 真的在 | 開場檢查靜默不執行——看起來有防護、實際上沒有 |
+| 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
+| 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
 **exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫。
@@ -118,7 +120,15 @@ handoff SKILL.md
 check_docs.py
   部署包 3.14（權威，「專案設定」區塊除外——那塊本來就該依專案調）
     └─→ 各專案 tools/check_docs.py
+
+兩份 hook 接線（JSON）
+  部署包 3.9／3.17（權威，只管「指向骨架那兩個 .sh」的那幾組；
+                   專案自己加的 permissions／env／額外 hook 原樣保留）
+    ├─→ 各專案 .claude/settings.json
+    └─→ 各專案 .codex/hooks.json
 ```
+
+**JSON 沒辦法放 `source:` 標記**，所以上面那兩份接線在落後偵測裡是隱形的——它們唯一的守門人是 `sync_project.py` 的 `WIRING` 清單加上 `verify_bootstrap.py` 的「同步清單涵蓋骨架」。2026-10-30 把它們補進拓撲，是因為 2026-09-13 給 3.9 補的 `Bash|PowerShell` matcher 一直沒發下去：三個專案停在舊的 `Bash`，而那台機器的主 shell 正是 PowerShell，pre-push 防呆於是在那些專案等於沒裝，一年半沒有任何徵兆。
 
 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，**改內容就要跳版**，否則沒人分得出哪份落後（鐵律第 2 條）。同一天改第二次起要在日期後面加序號（`v2026-10-24.2`）——日期粒度只能證明「不早於那一天」，2026-10-24 就因此誤判過一次。
 沒改內容的檔案不要跟著跳版——謊報「副本落後」之後，這個標記就沒人再信。
