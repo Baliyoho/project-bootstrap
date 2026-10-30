@@ -1,7 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
 > **本檔＝結構的唯一權威**：`project-bootstrap` 由什麼組成、每樣東西的家在哪、改哪裡會影響到什麼。
-> 最後更新：2026-10-30（補上跨機器「工作中」標記：多了 `HANDOFF.md`，開場 hook 多一段判讀；並記下 `pre-push-handoff.sh` 這次評估後決定不裝）
+> 最後更新：2026-10-30（同日第二次：三平台能力重查後，`extract()` 的抽取規則從「第一個區塊」改成「區塊依序對應檔名」、`sync_project.py` 把 `CLAUDE.md` 從 `INSTANCE` 搬到 `PARTIAL`、`verify_bootstrap.py` 加「跨工具表保鮮期」、副本拓撲裡 `.agents/skills/` 的角色改變。前一次是補上跨機器「工作中」標記並記下 `pre-push-handoff.sh` 決定不裝）
 >
 > **什麼時候改**：只有**結構**變動才改——根目錄多／少一個檔案、部署包增刪一節範本、`verify_bootstrap.py` 增減檢查項、副本拓撲改變。
 > 制度內容本身怎麼寫（鐵律的措辭、skill 的步驟）**不要動這一份**，那些的家在 [AGENTS.md](AGENTS.md) 與部署包裡。
@@ -72,9 +72,10 @@
 `verify_bootstrap.py` 的 `extract()` 就是「照著部署包生檔案」的機器版，規則只有四條：
 
 1. **`### 3.x` 標題行裡的反引號路徑＝產出的檔名。** 改標題就是改檔名——3.2 的標題有兩個路徑，所以一節產兩檔。
-2. **標題後的第一個 fence 內容＝檔案內容。** fence 前的散文是給人看的說明，不會進檔案。
+2. **一節裡的 fence 依序對應標題上的檔名**；fence 比檔名少就全部沿用第一個（多數節是一檔一區塊）。fence 前的散文是給人看的說明，不會進檔案。
 3. **標題行沒有路徑就不產檔**（3.18 是慣例說明）。
-4. `GEMINI.md` 的標題替換是腳本裡的特判，因為它與 `CLAUDE.md` 共用同一個範本。
+
+第 2 條在 2026-10-30 從「只取第一個 fence，`GEMINI.md` 的標題再由腳本替換」改成現在這樣：3.2 的 `CLAUDE.md` 從此只有一行 `@AGENTS.md` import、`GEMINI.md` 維持指標寫法，兩份內容不同了。把其中一份合成在腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
 
 所以：**新增一份範本＝新增一節＋把檔名加進 `EXPECTED`**。只做前者，驗證會 FAIL 說「多出」；只做後者會 FAIL 說「缺少」。
 
@@ -99,6 +100,7 @@
 | 本 repo 工作中判讀 | `repo-git-check.sh` 讀 `origin` 的 `HANDOFF.md` 後四種狀態各印對應結論，且跟 3.10 用同一個欄位字串 | 這個 repo 的跨機器防呆靜默失效，或兩支 hook 的欄位格式悄悄分岔 |
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
 | 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
+| 跨工具表保鮮期 | 「跨工具與跨平台」那節的「查證日期」不得超過 90 天（`BOOTSTRAP_FRESHNESS=off` 可跳過） | 對外部工具能力的斷言在無聲中過期。這一項只保證有人看過日期，**不保證有人真的重查**——買到的是「必須有意識地決定」。會做成 fail 而不是警告，是因為上一次的對策就是一句警告，而警告沒擋住第二次（Antigravity 的 hooks、Codex 桌面 App 的 hooks，兩次同一種錯） |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
 **exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫。
@@ -110,8 +112,13 @@ handoff SKILL.md
   部署包 3.8（權威）
     └─→ 各專案 .claude/skills/handoff/SKILL.md
           ├─→ （選用）~/.claude/skills/handoff/   ← 模式 0 建制真正會被載入的地方
-          ├─→ （選用）~/.codex/skills/handoff/    ← Codex 桌面 App
-          └─→ .agents/skills/handoff/SKILL.md     ← 只放指標，不複製內容
+          ├─→ （選用）~/.codex/skills/handoff/    ← Codex CLI 與桌面 App（2026-10-30 實測
+          │                                          CLI 0.164.0 仍讀這個路徑，雖然官方
+          │                                          文件已經不列它）
+          └─→ .agents/skills/handoff/SKILL.md     ← 只放指標，不複製內容。2026-10-30 起
+                                                     Antigravity 與 Codex 都把它當專案層
+                                                     skill 來源，所以它的 description
+                                                     必須寫滿觸發詞（那是它被發現的唯一依據）
 
 兩個 hook .sh
   部署包 3.10／3.11（權威）

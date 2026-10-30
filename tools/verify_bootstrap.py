@@ -38,6 +38,10 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   不一致＝落後偵測說謊，而且沒有任何徵兆（2026-10-30 加入）
   版本落後偵測 ——種一個假的快取版本，git-freshness 要講；同版與開關 off 要閉嘴。
                   用快取餵假資料所以不打網路（2026-10-30 加入）
+  跨工具表保鮮期——「跨工具與跨平台」那節的「查證日期」超過 90 天就 fail。對外部工具能力的
+                  斷言會無聲過期，而上一次的對策是一句警告、警告沒擋住第二次（Antigravity
+                  的 hooks、Codex 桌面 App 的 hooks）。`BOOTSTRAP_FRESHNESS=off` 可跳過
+                  （2026-10-30 加入）
   工作中標記   ——HANDOFF.md 範本要有「工作中」欄位，且 git-freshness 讀 origin 那一份後
                   別台機器印 🔴、自己這台印 🟡、已交棒印 ✅、欄位不存在印 🟡。這條鏈斷掉
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
@@ -51,6 +55,7 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
 本工具唯讀本 repo，只在系統暫存區寫檔。
 """
 import argparse
+import datetime
 import json
 import os
 import pathlib
@@ -172,32 +177,31 @@ def extract(dest):
         paths = [p for p in re.findall(r'`([^`]+)`', lines[i]) if '.' in p or '/' in p]
         if not paths:
             continue                       # 例：3.18 是慣例說明，不是檔案
-        j, fence = i, None
+        # 一節裡的圍籬區塊依序對應標題上的檔名；區塊比檔名少就全部沿用第一個
+        # （多數節是一個檔、一個區塊）。2026-10-30 從「只取第一個區塊、事後改標題」
+        # 改成這樣：3.2 的 CLAUDE.md 與 GEMINI.md 從此內容不同，而把其中一份合成在
+        # 這支腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
+        blocks, j = [], i
         while j < end:
             m = FENCE_RE.match(lines[j])
-            if m:
-                fence = m.group(1)
-                break
-            j += 1
-        if fence is None:
+            if not m:
+                j += 1
+                continue
+            fence = m.group(1)
+            k, body = j + 1, []
+            while k < end and lines[k].rstrip() != fence:
+                body.append(lines[k])
+                k += 1
+            blocks.append('\n'.join(body) + '\n')
+            j = k + 1
+        if not blocks:
             continue
-        k, body = j + 1, []
-        while k < end and not re.match('^' + fence + r'\s*$', lines[k]):
-            body.append(lines[k])
-            k += 1
-        content = '\n'.join(body) + '\n'
-        for p in paths:
+        for n_p, p in enumerate(paths):
             f = dest / p
             f.parent.mkdir(parents=True, exist_ok=True)
             with open(f, 'w', encoding='utf-8', newline='') as fh:
-                fh.write(content)
+                fh.write(blocks[n_p] if n_p < len(blocks) else blocks[0])
             written.add(p)
-    # 3.2 一個範本產兩檔，差別只有標題（部署包在該節有註明），這裡照著補上。
-    gem = dest / 'GEMINI.md'
-    if gem.exists():
-        text = gem.read_text(encoding='utf-8').replace('# CLAUDE.md', '# GEMINI.md', 1)
-        with open(gem, 'w', encoding='utf-8', newline='') as fh:
-            fh.write(text)
     return written
 
 
@@ -780,6 +784,45 @@ def step_eol(dest):
     return True
 
 
+FRESHNESS_DAYS = 90
+FRESHNESS_PAGES = ('code.claude.com/docs/en/hooks', 'code.claude.com/docs/en/memory',
+                   'developers.openai.com/codex/hooks', 'developers.openai.com/codex/skills',
+                   'antigravity.google/docs/hooks', 'antigravity.google/docs/rules')
+
+
+def step_table_freshness():
+    """「跨工具與跨平台」那張表的查證日期不得超過 FRESHNESS_DAYS 天。
+
+    為什麼要用工具擋：同一種錯踩過兩次——Antigravity 的 hooks（2026-08-05 的事實，
+    2026-10-30 才發現過時）、Codex 桌面 App 的 hooks（2026-08-06 的實測，同樣到
+    2026-10-30 才發現）。第一次之後的對策是在那一節寫一句警告，而**警告沒有擋住
+    第二次**：表上一直都有查證日期，但沒有人會因為日期舊就主動重查。
+
+    天花板要講明白：這一項只能保證有人看過日期，不能保證有人真的重查。它買到的是
+    「必須有意識地決定」，不是正確性。不怕退化成「bump 一個欄位就能過」（那是
+    pre-push-handoff.sh 被否決的理由之一）的原因是頻率——90 天一次，一年四次，
+    反射形不成；pre-push 是每次推進度都誤報。
+    """
+    if os.environ.get('BOOTSTRAP_FRESHNESS') == 'off':
+        record('SKIP', '跨工具表保鮮期', 'BOOTSTRAP_FRESHNESS=off')
+        return True
+    m = re.search(r'查證日期：(\d{4})-(\d{2})-(\d{2})', KIT.read_text(encoding='utf-8'))
+    if not m:
+        record('FAIL', '跨工具表保鮮期',
+               '「跨工具與跨平台」那節找不到「查證日期：YYYY-MM-DD」——這一項是靠它判斷的')
+        return False
+    checked = datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    age = (datetime.date.today() - checked).days
+    if age > FRESHNESS_DAYS:
+        record('FAIL', '跨工具表保鮮期',
+               '查證日期 %s 已經 %d 天（上限 %d）。先真的重讀這幾頁再改日期：%s。'
+               '只是要跑別的驗證就 BOOTSTRAP_FRESHNESS=off'
+               % (checked, age, FRESHNESS_DAYS, '、'.join(FRESHNESS_PAGES)))
+        return False
+    record('OK', '跨工具表保鮮期', '查證日期 %s，%d 天內（上限 %d）' % (checked, age, FRESHNESS_DAYS))
+    return True
+
+
 def step_misc(dest, work=None):
     ok = True
     for label, rel in (('settings.json', '.claude/settings.json'),
@@ -808,6 +851,8 @@ def step_misc(dest, work=None):
         ok = False
     else:
         record('OK', 'VERSION 檔', '與部署包版本行一致（%s）' % kit_ver.group(1).strip())
+
+    step_table_freshness()
 
     r = run([sys.executable, '-X', 'utf8', 'tools/verify_state.py'], cwd=dest)
     if r.returncode == 0 and 'NOT_CONFIGURED' in r.stdout:

@@ -27,11 +27,15 @@
 
 **完整的副本拓撲（哪一份是權威、覆蓋到哪些地方）在 [ARCHITECT.md](ARCHITECT.md)**，這裡只放規則：
 
-- **改完部署包，把所有副本一起覆蓋**，包括選用的全域 `~/.claude/skills/handoff/` 與 `~/.codex/skills/handoff/`。漏掉一份，那台機器就繼續照舊制度做事。
+- **改完部署包，把所有副本一起覆蓋**，包括選用的全域 `~/.claude/skills/handoff/` 與 `~/.codex/skills/handoff/`（2026-10-30 實測 Codex CLI `0.164.0` 仍讀後者，雖然官方文件已經不列這個路徑）。漏掉一份，那台機器就繼續照舊制度做事。
 - **Codex 的 hook 與 Claude Code 同格式同語意**，所以兩邊掛的是同樣那兩個 `.sh`——不要複製第二份腳本進 `.codex/`。兩份各自演化就會出現「Claude 端會擋、Codex 端不會擋」的不對稱。
 - **接線路徑一律相對**：寫死絕對路徑換機器就靜默失效（真的發生過），`verify_bootstrap.py` 的「跨平台防呆」會擋。
-- **Antigravity 的 `.agents/` 只放指標**，不複製程序內容。
+- **`.agents/` 只放指標**，不複製程序內容。2026-10-30 起它不只給 Antigravity——`codex debug prompt-input` 的 Skill roots 表證實 Codex 也把 repo 的 `.agents/skills/` 當 skill 來源。既然會被自動發現，**那份指標的 `description` 就必須寫滿觸發詞**：agent 是靠它決定要不要開檔的，寫短等於無聲地關掉一個入口。
 - **本 repo 自己的 `HANDOFF.md` 與 `.claude/hooks/repo-git-check.sh` 不在副本拓撲裡**，`sync_project.py` 不要碰它們：前者是範本 3.3 的*實例*，後者誰的副本都不是（檔頭寫了為什麼不抄 3.10）。它們的檢查由 `verify_bootstrap.py` 顧。
+
+## 這個 repo 自己的指標檔
+
+`CLAUDE.md` 2026-10-30 改成只有一行 `@AGENTS.md` import。**不要改回「去讀 AGENTS.md」那種句子**：Claude Code 有 `CLAUDE.md` 就不原生讀 `AGENTS.md`，用文字請它去讀不保證它真的開檔（當天在這個 repo 上驗證過：session 開場只拿到 `CLAUDE.md` 那三行）。`GEMINI.md` 維持指標寫法——Antigravity 原生讀 `AGENTS.md`，而它支不支援 `@` import 沒有文件可查。
 
 ## 行末
 

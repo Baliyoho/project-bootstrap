@@ -64,18 +64,23 @@ WIRING = ('.claude/settings.json', '.codex/hooks.json')
 OWNED_SCRIPTS = ('git-freshness.sh', 'pre-push-handoff.sh')
 
 # 只補單一欄位／單一行，其餘歸專案自己。
-PARTIAL = ('HANDOFF.md', '.gitignore')
+PARTIAL = ('HANDOFF.md', '.gitignore', 'CLAUDE.md')
 # 刻意不同步：部署後就歸專案自己，內容會長成專案的樣子（副本拓撲見 ARCHITECT.md）。
 # 這份清單唯一的用途是讓 verify_bootstrap 的「同步清單涵蓋骨架」對得起來——新增一份範本
 # 卻忘了歸類，會在那裡 FAIL，而不是安靜地沒人同步（那正是 WIRING 兩個檔踩過的坑）。
 INSTANCE = (
-    'AGENTS.md', 'ARCHITECT.md', 'CLAUDE.md', 'GEMINI.md', 'README.md',
+    'AGENTS.md', 'ARCHITECT.md', 'GEMINI.md', 'README.md',
     'docs/ai-notes/handover-protocol.md', 'docs/ai-notes/roadmap.md',
     'tools/verify_state.py', '.gitattributes',
 )
 
 BUSY_FIELD = '- **工作中**：無（已交棒）'
 GITIGNORE_LINES = ('.claude/.bootstrap-version', '.obsidian/')
+# CLAUDE.md 2026-10-30 從 INSTANCE 搬到 PARTIAL：Claude Code 有 CLAUDE.md 就不原生讀
+# AGENTS.md，所以舊版那句「去讀 AGENTS.md」的指標反而壓掉了保證載入的機制。補一行
+# import 是純加法（官方說留著 import 不會讓它讀兩次），專案自己加的內容原樣保留。
+# 不這樣做的話，這個修正只有新部署的專案拿得到，既有專案會無聲地停在舊行為。
+CLAUDE_IMPORT = '@AGENTS.md'
 
 
 def read(p):
@@ -188,6 +193,16 @@ def ensure_gitignore(text):
     return text + tail + '\n# Added by sync_project.py\n' + '\n'.join(missing) + '\n'
 
 
+def ensure_claude_import(text):
+    """CLAUDE.md 補上 `@AGENTS.md` import。已經有就不動，其餘內容原樣保留。"""
+    lines = text.split('\n')
+    if any(l.strip() == CLAUDE_IMPORT for l in lines):
+        return None
+    at = 1 if lines and lines[0].startswith('# ') else 0
+    lines[at:at] = ['', CLAUDE_IMPORT] if at else [CLAUDE_IMPORT, '']
+    return '\n'.join(lines)
+
+
 def sync(project, gen, write_mode):
     """回傳 (改了幾項, [訊息])。"""
     msgs, changed = [], 0
@@ -270,6 +285,20 @@ def sync(project, gen, write_mode):
                 l for l in GITIGNORE_LINES if l not in cur.split('\n')))
             if write_mode:
                 write(gi, new)
+
+    cm = project / 'CLAUDE.md'
+    cur = read(cm)
+    if cur is None:
+        msgs.append('  skip   CLAUDE.md（不存在）')
+    else:
+        new = ensure_claude_import(cur)
+        if new is None:
+            msgs.append('  ok     CLAUDE.md（已有 @AGENTS.md import）')
+        else:
+            changed += 1
+            msgs.append('  UPDATE CLAUDE.md（補上 @AGENTS.md import）')
+            if write_mode:
+                write(cm, new)
 
     return changed, msgs
 
