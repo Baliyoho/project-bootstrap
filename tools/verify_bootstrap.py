@@ -109,6 +109,20 @@ GIT_ENV = dict(
     GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_SYSTEM=os.devnull,
 )
 
+# 工具身分的環境變數簽章（2026-10-31）。測 hook 的「同工具／不同工具」分支時必須先把
+# 它們全部清掉再按情境放回去：verify 自己就跑在某個工具裡，os.environ 會把 CLAUDECODE
+# 之類的變數帶進來，不清就變成「只有在某個工具上跑才會過」的測試——而「變數會被繼承、
+# 會說謊」正是這段邏輯要擋的那件事，測試自己踩進去就什麼都證明不了。
+TOOL_VARS = ('CLAUDECODE', 'AI_AGENT', 'CODEX_VERSION', 'CODEX_SESSION_ID',
+             'CODEX_THREAD_ID', 'CODEX_CI', 'GEMINI_CLI')
+
+
+def tool_env(**extra):
+    env = {k: v for k, v in GIT_ENV.items() if k not in TOOL_VARS}
+    env.update(extra)
+    return env
+
+
 results = []  # (status, 標題, 說明)  status: OK / FAIL / SKIP
 
 
@@ -415,6 +429,41 @@ def step_date_guard(dest):
         git(['add', '-A'], dest)
 
 
+def step_busy_tool_guard(dest):
+    """「工作中」標記少了工具欄，check_docs 必須擋下（2026-10-31）。
+
+    2026-10-31 把標記格式從 `機器` ／ `session 名` 改成 `機器` ／ `工具` ／ `session 名`。
+    這種「加一欄」的格式變更有一個特性：少填那一欄不會壞掉，只會**靜默退化回舊行為**——
+    hook 的同機器分支退回「大概是你自己另一個視窗」的 🟡，而退化後的畫面跟「從來沒有這個
+    機制」一模一樣。所以 check_docs 第 6 項要擋，而這裡要證明它真的擋得住。
+    """
+    target = dest / 'HANDOFF.md'
+    original = target.read_text(encoding='utf-8')
+    field = '- **工作中**：'
+    line = next((ln for ln in original.split('\n') if ln.startswith(field)), None)
+    if line is None:
+        record('FAIL', '工具欄（負向測試）', 'HANDOFF.md 範本找不到「工作中」欄位列')
+        return False
+    stale = field + '`desk-win` ／ `㊣　26103009｜測試｜工作中`，2026-10-30 09:12 (+08) 開工'
+    try:
+        with open(target, 'w', encoding='utf-8', newline='') as fh:
+            fh.write(original.replace(line, stale))
+        git(['add', '-A'], dest)
+        r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
+        if r.returncode != 2 or '缺工具欄' not in r.stdout:
+            record('FAIL', '工具欄（負向測試）',
+                   f'期望 exit 2 並指出「缺工具欄」，實得 exit {r.returncode}'
+                   '——檢查 check_docs.py 的 check_busy_field')
+            return False
+        record('OK', '工具欄（負向測試）',
+               '舊格式標記（沒有工具欄）確實被擋下（exit 2）')
+        return True
+    finally:
+        with open(target, 'w', encoding='utf-8', newline='') as fh:
+            fh.write(original)
+        git(['add', '-A'], dest)
+
+
 # ── 5. pre-push hook 五情境 ────────────────────────────────────
 def step_hook(dest, tmp):
     bash = find_bash()
@@ -473,12 +522,59 @@ def step_hook(dest, tmp):
 
 
 # ── 6. 行末與雜項 ──────────────────────────────────────────────
-def step_busy(dest, work):
-    """「工作中」標記防呆（2026-10-30）。
+def busy_cases(push_busy, me):
+    """兩支 hook 共用的「工作中」情境表（2026-10-31 起含工具欄）。
 
-    守的是整條鏈：範本有欄位 → hook 讀得到 origin 那一份 → 別台機器印 🔴、自己這台印 🟡、
-    交棒後不印。鏈上任何一環斷掉都不會有徵兆——下一棒只會看到一切正常然後接棒，
-    而那正是這個機制要擋的那件事，所以它必須有自動測試。
+    刻意只有一份：3.10 的 `git-freshness.sh` 與本 repo 的 `repo-git-check.sh` 是分開維護的
+    兩支腳本（檔頭寫了為什麼不抄），但它們該印的結論必須一樣——而「期望值有兩份」就是
+    下一個會悄悄分岔的地方。
+
+    回傳 (情境清單, 最後一次輸出)；最後一次輸出只給失敗時貼現場用。
+    """
+    sess = '`㊣　26103009｜測試｜工作中`'
+    claude = tool_env(CLAUDECODE='1')
+    cases = []
+
+    out = push_busy('`other-box` ／ `Claude Code` ／ ' + sess, claude)
+    cases.append(('別台機器→🔴', '🔴 另一台機器正在' in out and 'other-box' in out))
+
+    out = push_busy('`%s` ／ `Claude Code` ／ %s' % (me, sess), claude)
+    cases.append(('同機器同工具→🟡', '🟡 這台機器' in out and '「Claude Code」' in out
+                  and '另一個工具正在' not in out))
+
+    out = push_busy('`%s` ／ `Codex CLI` ／ %s' % (me, sess), claude)
+    cases.append(('同機器不同工具→🔴', '🔴 同一台機器' in out and 'Codex CLI' in out))
+
+    # 認不出自己是哪個工具 → 不准放行，但也不准假裝知道：印 🟡 並把「你自己是不是 X」
+    # 明文丟給模型答。模型知道答案，hook 不知道——這是整段設計的支點。
+    out = push_busy('`%s` ／ `Codex CLI` ／ %s' % (me, sess), tool_env())
+    cases.append(('認不出自己→🟡且把問題丟回', '🟡 這台機器' in out
+                  and '你自己是不是' in out and '另一個工具正在' not in out))
+
+    # 兩家簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，這時不猜（實測見部署包
+    # 「工具身分」一節：從 Claude Code 的殼層跑 codex，CLAUDECODE 整批都還在）。
+    out = push_busy('`%s` ／ `Codex CLI` ／ %s' % (me, sess),
+                    tool_env(CLAUDECODE='1', CODEX_VERSION='0.164.0'))
+    cases.append(('兩家簽章同時在場→不猜', '🟡 這台機器' in out
+                  and '另一個工具正在' not in out))
+
+    out = push_busy('`%s` ／ %s' % (me, sess), claude)
+    cases.append(('同機器舊格式→🟡', '🟡 這台機器' in out and '舊格式' in out
+                  and '另一個工具正在' not in out))
+
+    out = push_busy('無（已交棒）', claude)
+    cases.append(('已交棒→✅', '✅ 「工作中」是' in out and '另一台機器正在' not in out
+                  and '還有一個 session' not in out))
+    return cases, out
+
+
+def step_busy(dest, work):
+    """「工作中」標記防呆（2026-10-30，2026-10-31 加工具欄）。
+
+    守的是整條鏈：範本有欄位 → hook 讀得到 origin 那一份 → 別台機器印 🔴、同機器不同工具
+    也印 🔴、同機器同工具印 🟡、認不出自己是哪個工具印 🟡 但把問題丟回給模型、交棒後不印。
+    鏈上任何一環斷掉都不會有徵兆——下一棒只會看到一切正常然後接棒，而那正是這個機制要擋
+    的那件事，所以它必須有自動測試。
     """
     field = '**工作中**'
     if field not in (dest / 'HANDOFF.md').read_text(encoding='utf-8'):
@@ -506,28 +602,20 @@ def step_busy(dest, work):
         record('FAIL', 'git-freshness 工作中標記', 'fixture 的 HANDOFF.md 找不到「工作中」欄位列')
         return False
 
-    def push_busy(value):
+    def push_busy(value, env=None):
         target.write_text(base.replace(line, '- %s：%s' % (field, value)),
                           encoding='utf-8', newline='')
         git(['commit', '-qam', 'chore: busy'], work)
         git(['push', '-q', 'origin', 'main'], work)
-        return run([bash, hook], cwd=work).stdout
+        return run([bash, hook], cwd=work, env=env or tool_env()).stdout
 
-    stamp = '`㊣　26103009｜測試｜工作中`，2026-10-30 09:12 (+08) 開工'
-    cases = []
-    out = push_busy('`other-box` ／ ' + stamp)
-    cases.append(('別台機器→🔴', '🔴 另一台機器正在' in out and 'other-box' in out))
-    out = push_busy('`%s` ／ %s' % (me, stamp))
-    cases.append(('同一台機器→🟡', '🟡 這台機器' in out))
-    out = push_busy('無（已交棒）')
-    cases.append(('已交棒→✅', '✅ 「工作中」是' in out and '另一台機器正在' not in out
-                  and '還有一個 session' not in out))
+    cases, out = busy_cases(push_busy, me)
     # 欄位整列拿掉：舊骨架的樣子。要印 🟡 說「查不了」，不能安靜放過——
     # 安靜放過跟「查過了沒事」在畫面上一模一樣，那就回到了這個機制要解決的問題本身。
     target.write_text(base.replace(line + '\n', ''), encoding='utf-8', newline='')
     git(['commit', '-qam', 'chore: drop busy field'], work)
     git(['push', '-q', 'origin', 'main'], work)
-    out = run([bash, hook], cwd=work).stdout
+    out = run([bash, hook], cwd=work, env=tool_env()).stdout
     cases.append(('欄位不存在→🟡', '沒有「工作中」欄位' in out))
 
     bad = [n for n, good in cases if not good]
@@ -574,25 +662,17 @@ def step_repo_busy(work):
     # step_busy 收尾時把欄位整列拿掉了，所以這裡自己重建一列，不依賴前一步留下的狀態。
     base = [l for l in target.read_text(encoding='utf-8').split('\n') if field not in l]
 
-    def push_busy(value):
+    def push_busy(value, env=None):
         body = '\n'.join(base)
         if value is not None:
             body = body.rstrip('\n') + '\n- %s：%s\n' % (field, value)
         target.write_text(body, encoding='utf-8', newline='')
         git(['commit', '-qam', 'chore: repo busy'], work)
         git(['push', '-q', 'origin', 'main'], work)
-        return run([bash, hook.as_posix()], cwd=work).stdout
+        return run([bash, hook.as_posix()], cwd=work, env=env or tool_env()).stdout
 
-    stamp = '`㊣　26103009｜測試｜工作中`，2026-10-30 09:12 (+08) 開工'
-    cases = []
-    out = push_busy('`other-box` ／ ' + stamp)
-    cases.append(('別台機器→🔴', '🔴 另一台機器正在' in out and 'other-box' in out))
-    out = push_busy('`%s` ／ %s' % (me, stamp))
-    cases.append(('同一台機器→🟡', '🟡 這台機器' in out))
-    out = push_busy('無（已交棒）')
-    cases.append(('已交棒→✅', '✅ 「工作中」是' in out and '另一台機器正在' not in out
-                  and '還有一個 session' not in out))
-    out = push_busy(None)
+    cases, out = busy_cases(push_busy, me)
+    out = push_busy(None, tool_env())
     cases.append(('欄位不存在→🟡', '沒有「工作中」欄位' in out))
 
     bad = [n for n, good in cases if not good]
@@ -980,6 +1060,7 @@ def main():
             step_placeholder_list(dest, seen)
             step_placeholder_guard(dest)
             step_date_guard(dest)
+            step_busy_tool_guard(dest)
             step_deploy_shape(dest)
             step_portability(dest)
             hooked = step_hook(dest, tmp)

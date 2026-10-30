@@ -10,12 +10,13 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-10-30.3**（`HANDOFF.md` 加**工作中標記**：接棒時（skill A5）確定要動手才把機器與 session 寫進 HANDOFF 並 push，交棒時（B6）改回「無（已交棒）」，下一棒接棒前（A2.5）先檢查。補的是跨機器接力的洞——A 機器忘記交棒就關掉，B 機器看到綠勾就接棒。既有三層防呆全都掛在「下一個動作」上，而**直接關掉視窗沒有下一個動作**；這個標記掛在「開工」，所以繞不過去。`git-freshness.sh` 同步讀它，並改掉那行誤導的 `✅ 與 origin 同步`——它只證明「本機沒落後」，不證明「沒有別台在做」，而一個綠勾會讓人直接往下做。`check_docs.py` 加第 6 項擋欄位不見，否則防呆會靜默失效。
+> 版本：**2026-10-31**（「工作中」標記**加工具欄**，格式變成 `` `機器` ／ `工具` ／ `session 名`（可選） ``。舊格式只比機器名，於是**同一台機器換個工具**就落進「大概是你自己另一個視窗」的 🟡，而 A2.5 叫人去驗的那個證據（側欄有沒有 `㊣`）只有 Claude Code 有——同機器通常就是同一個工作樹，兩個 agent 會**即時互相覆寫**，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。四處一起改，缺一處就白做：A5 寫標記時填工具名；A2.5 的「指向這台機器」拆成同工具／別的工具／沒有工具欄三列，判準不再綁側欄；`git-freshness.sh` 的同機器分支拆成同工具→🟡／不同工具→🔴；`check_docs.py` 第 6 項擋「標記在工作中卻沒有工具欄」——否則新格式會靜默退化回舊行為，而靜默退化跟「沒這個機制」在畫面上一模一樣。**工具名由寫標記的那一棒自己填**：模型知道自己是誰，三個平台一致；環境變數只拿來**加嚴**（偵測到的工具跟標記不符就 🔴），一致或認不出來都只給 🟡 並把問題丟回給模型答——跨工具啟動時變數會被繼承、會說謊（2026-10-31 實測，見「工具身分」一節）。新舊格式靠 session 名裡的全形豎線分辨，所以同一段邏輯讀得了還沒升級的專案，不必先問「這個專案升級了沒」）
+> 前一版 **2026-10-30.3**（`HANDOFF.md` 加**工作中標記**：接棒時（skill A5）確定要動手才把機器與 session 寫進 HANDOFF 並 push，交棒時（B6）改回「無（已交棒）」，下一棒接棒前（A2.5）先檢查。補的是跨機器接力的洞——A 機器忘記交棒就關掉，B 機器看到綠勾就接棒。既有三層防呆全都掛在「下一個動作」上，而**直接關掉視窗沒有下一個動作**；這個標記掛在「開工」，所以繞不過去。`git-freshness.sh` 同步讀它，並改掉那行誤導的 `✅ 與 origin 同步`——它只證明「本機沒落後」，不證明「沒有別台在做」，而一個綠勾會讓人直接往下做。`check_docs.py` 加第 6 項擋欄位不見，否則防呆會靜默失效。
 > 同日第二件事：加 `VERSION` 檔 ＋ `tools/sync_project.py`，並讓 `git-freshness.sh` 比對上游版本。這之前「哪些專案裝了這套骨架」沒人記得住、也沒有任何東西負責把權威版發下去，所以同步一直是手工的——今天盤點就掃出 4 個專案留著上一輪沒 commit 的同步殘留。偵測放在開場這個必然發生的時刻，落後的專案會自己講；修則是一行指令。跟「工作中」標記同一招）。
 > 同日第三件事（跳版 `.2`）：**改名與 git 解耦**。舊版 A5 把「改 session 名稱」排在「開工標記 push 成功」之後，於是沒有 `HANDOFF.md` 的專案（包括骨架自己這個 repo）、或這一輪只讀的 session，永遠到不了改名那一步——側欄上三個 session 全是 `↗ 已交棒`，一個 `㊣ 工作中` 都沒有過，正好是這條規則要解決的問題在它的老家失效。改名現在只看 session 狀態：回報完就 `㊣`、停下來等人就 `※`（不限「必須停下來問使用者」那張表），只有宣稱 git 事實的 `↗ 已交棒` 仍要等 push 成功。
 > 同日第四件事（**刻意不跳版**，理由見下）：**修正「跨工具與跨平台」那張表的 Antigravity 一欄。**舊表寫「❌ 沒有 hook 機制」，那是 2026-08-05 的事實，重查官方文件已經不成立——它現在有 `.agents/hooks.json`，而且有 `SessionStart`。照舊表判斷會白白放棄一層防呆，而且錯得毫無徵兆：表上有查證日期，但**沒有人會因為日期舊就去重查**。`ARCHITECT.md` 與 `docs/ai-notes/handover-protocol.md` 兩份範本裡跟著錯的句子一併修掉。`.agents/hooks.json` 範本**刻意還沒附**，理由見那一節。**為什麼不跳版**：`VERSION` 不是「部署包的版本」，是**偵測器拿去跟 `SKILL.md` 的 `source:` 標記比對的那個值**（`git-freshness.sh` 的 `mine=` 那一行）。這次改的全是不同步的檔（兩份範本都在 `INSTANCE`），`SKILL.md` 一個字沒動——跳版就會讓每個專案永遠印「骨架落後」，而且跑 `sync_project.py` 修不掉（同步回去的 `SKILL.md` 標記還是舊的）。這個耦合 2026-10-30 當天就被 `verify_bootstrap.py` 的「同版→閉嘴」抓到，警告寫進 AGENTS.md 鐵律 1。
 > 同日第五件事（**跳版 `.3`**，因為這次真的動到 `SKILL.md`）：**三個平台的能力全部重查一輪，修掉四個過期斷言、加一個保鮮期檢查。** ①**Codex 桌面 App 有 hooks**（App `26.506`／2026-05-08 起有 in-app 信任審核），舊表那句「沒有 hooks」是 2026-08-06 的實測——這是繼 Antigravity 之後**第二次**栽在同一種錯，所以這次不只改字：`verify_bootstrap.py` 加「跨工具表保鮮期」，查證日期超過 90 天就 fail。上一次的對策是一句警告，而**警告沒有擋住第二次**。②**`.agents/skills/` 不再只給 Antigravity**：`codex debug prompt-input` 印的 Skill roots 表證實 Codex 也讀 repo 的 `.agents/skills`，所以 3.16 那個指標檔的 `description` 從此必須寫滿觸發詞——那是它被發現的唯一依據，寫短就等於無聲地關掉一個入口。③**`CLAUDE.md` 改成只放 `@AGENTS.md` import**：Claude Code 從 v2.1.277 原生讀 `AGENTS.md`，但**有 `CLAUDE.md` 就不讀**，舊版那句「去讀 AGENTS.md」的指標反而壓掉了保證載入的機制，換來「它可能會去開那個檔」；順手把 `CLAUDE.md` 從 `sync_project.py` 的 `INSTANCE` 搬到 `PARTIAL`，否則這個修正只有新部署的專案拿得到。`extract()` 也跟著從「只取第一個區塊、事後改標題」改成「區塊依序對應檔名」，因為 3.2 從此是兩份不同的內容，而把其中一份合成在腳本裡就是讓範本有第二個家。④**`SessionEnd` 存在**（Claude Code 與 Codex 都有，Codex 的還會在閒置 30 分鐘觸發；Antigravity 沒有），所以「直接關掉視窗沒有下一個動作」只對一半的工具成立。結論沒變（標記還是寫在開工），但**理由改掉了**——鐵律 3 的重點是理由，理由錯了下一棒就會為了錯的原因重開一個已經定案的決定。⑤Antigravity 的兩個未知查清了：stdout 必須是 JSON `injectSteps`（裸 `echo` 會被丟掉），cwd 官方仍然沒寫、但可以用 stdin 的 `workspacePaths[0]` 繞過，所以「不附 `.agents/hooks.json` 範本」的理由從「查不到」換成「要先寫一層只做管線的轉接並實測」。
-> 2026-10-31（**刻意不跳版**：`SKILL.md` 一個字沒動，理由同上一條）：新增「工具身分：靠環境變數認得出『現在是哪個工具』嗎」一節。起因是「工作中」標記只比機器名，**同一台機器換個工具**就落進「大概是你自己另一個視窗」的 🟡，而 A2.5 叫人去驗的那個證據（側欄的 `㊣`）只有 Claude Code 有——同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴。實測結論是**沒有跨廠商的共同變數**，而且在一個工具的殼層裡啟動另一個工具時變數會被繼承、會說謊，所以身分的權威來源只能是標記裡自己填的工具名。**修法還沒動手**（會動到 `SKILL.md`，要跳版並再同步一輪），待辦在 `HANDOFF.md`。
+> 2026-10-31（**刻意不跳版**：`SKILL.md` 一個字沒動，理由同上一條）：新增「工具身分：靠環境變數認得出『現在是哪個工具』嗎」一節。起因是「工作中」標記只比機器名，**同一台機器換個工具**就落進「大概是你自己另一個視窗」的 🟡，而 A2.5 叫人去驗的那個證據（側欄的 `㊣`）只有 Claude Code 有——同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴。實測結論是**沒有跨廠商的共同變數**，而且在一個工具的殼層裡啟動另一個工具時變數會被繼承、會說謊，所以身分的權威來源只能是標記裡自己填的工具名。**修法 2026-10-31 已落地**（跳版 `2026-10-31`，四處一起改，見本檔最上面那行版本說明）。
 > 前幾版——
 > 2026-10-24：版本號加序號（同一天改第二次起在日期後面加 `.2`、`.3`，因為日期粒度只能證明「不早於那一天」——當天改第三次時，三份副本的標記長得一模一樣，落後的那份看不出來）；handoff skill 加 **session 命名**：接棒／交棒／踩到「必須停下來問使用者」時各改一次 session 名稱。側欄上十幾個 session 全叫「接棒」認不出哪個是哪個，而其中「停在等人回答」的那個最需要被一眼看見。
 > 2026-09-30：兩個 hook 腳本補上 `source:` 版本標記——鐵律第 2 條的作用是一眼認出落後的副本，而最無從用肉眼辨識新舊的正好是這兩支 `.sh`。
@@ -129,6 +130,13 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 🔴 **最重要的坑是反過來的：在一個工具的殼層裡啟動另一個工具，變數會被繼承。** 從 Claude Code 的殼層跑 `codex sandbox cmd /c set`，112 個變數裡 `CLAUDECODE=1` 與 `AI_AGENT=claude-code_…` 整批都在——Codex 的 session 會自稱 Claude Code。而 agent 互相呼叫正是最容易發生這件事的場景，也就是說這個誤判不是邊角案例。
 
 所以結論：**環境變數只能用來加嚴，不能用來放寬。** 身分的權威來源是寫「工作中」標記的那一棒自己填的工具名（模型知道自己是誰，三個平台一致，不依賴任何變數）；變數只拿來交叉檢查「標記說是 A、但我看到 B」這種不一致，而且偵測不出來就退回只比機器名，**永遠不因為偵測失敗而放行**。
+
+**落地在哪（2026-10-31，跳版 `2026-10-31`）**：
+
+- 標記格式 `` `機器` ／ `工具` ／ `session 名`（可選） ``，由 skill **A5** 寫；工具名用慣用寫法（`Claude Code`／`Codex CLI`／`Gemini CLI`／`Antigravity`），因為 hook 比的是這個字串。
+- 判讀表在 **A2.5**：同機器同工具→往下走（但要核對 session 名／開工時間）、同機器別的工具→停、同機器沒有工具欄→**當成別的工具處理**。分不出來的時候不往放行的方向猜。
+- `git-freshness.sh`（3.10）的同機器分支依工具欄拆成 🟡／🔴。變數偵測只在「偵測到的工具跟標記不符」時加嚴，而且**兩家以上的簽章同時在場就不猜**——那正是被繼承的樣子。偵測一致或認不出來都只印 🟡，並把「你自己是不是 X」這一句明文丟給模型答：模型知道答案，hook 不知道。
+- `check_docs.py` 第 6 項擋「標記在工作中卻沒填工具欄」，判別子是 session 名裡的全形豎線（`｜`）——`機器` ／ `工具` 的第二欄不會有它，`機器` ／ `session 名` 的第二欄一定有。
 
 ### 這張表的保鮮期（為什麼要用工具擋）
 
@@ -552,7 +560,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 
 1. **先同步 Git**：**未同步前不要相信本機 HANDOFF。** 工作樹乾淨、有 upstream 且能 fast-forward 才可自行往下走（指令與完整判讀表見 skill A1）。
 2. **確認你該站在哪條分支**：讀 HANDOFF 的「待續分支」。**若它指向 feature branch，該分支才是主幹**——`main` 可能明顯落後。不要因為 `main` 是預設分支就以為它最新。
-3. **檢查這條分支有沒有人正在工作**：讀該分支 `HANDOFF.md` 的「工作中」欄位，**讀 `origin/` 那一份**（本機可能還沒 pull）。指向別台機器就**停下來問使用者**——同一條分支同時兩台違反 single writer（指令與三個選項見 skill **A2.5**）。
+3. **檢查這條分支有沒有人正在工作**：讀該分支 `HANDOFF.md` 的「工作中」欄位，**讀 `origin/` 那一份**（本機可能還沒 pull）。指向別台機器就**停下來問使用者**——同一條分支同時兩台違反 single writer。指向**這台機器但別的工具**同樣要停，而且更急：同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫（指令與判讀表見 skill **A2.5**）。
 4. **異常就停在安全點**：未知 dirty changes、diverged、遠端意外前進或 pull 不能 fast-forward 時，**禁止** `reset --hard`、force push、自動 stash 或覆寫。先辨認變更來源並回報。
 5. **最小讀取**：只讀 `AGENTS.md` ＋ `HANDOFF.md`。其他知識庫依實際任務 lazy load。
 6. **一鍵驗證**：有憑證就跑 `tools/verify_state.py`，與 HANDOFF 的期望快照比對；不一致以實況為準（見 skill A4）。
@@ -715,7 +723,7 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-10-30.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-10-31 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
@@ -896,7 +904,9 @@ git show "origin/$(git rev-parse --abbrev-ref HEAD):HANDOFF.md" | grep -F "**工
 | `無（已交棒）` | 正常，往下走 |
 | 沒有這個欄位 | 這個專案的骨架還沒升級到有這個機制，照舊往下走——但**別把「沒有欄位」當成「沒人在做」**，這一輪沒有防呆，心裡要有數。欄位由 **A5** 寫標記時一併補上，那也就是這個專案的升級點 |
 | 指向**別台**機器 | **停**，見下方三個選項 |
-| 指向**這台**機器 | 多半是你自己還開著的另一個 session（側欄會有一個 `㊣`）。確認是自己的就往下走；不是的話照「別台機器」處理 |
+| 指向**這台**機器，工具欄是**你自己這個工具** | 多半是你自己還開著的另一個 session。核對標記裡的 session 名與開工時間對不對得上你開過的那一個；對不上就照「別台機器」處理 |
+| 指向**這台**機器，工具欄是**別的工具** | **停**，照下方三個選項處理（選項 1 的「回那台機器」換成「回那個工具的 session」）。**這比跨機器更急**：跨機器至少是兩份磁碟，同機器通常就是同一個資料夾，兩個 agent 會即時互相覆寫 |
+| 指向**這台**機器，**沒有工具欄**（舊格式） | 當成「別的工具」處理。分不出來的時候**不要往放行的方向猜** |
 
 **指向別台機器時不要自己決定**，把這三個選項給使用者：
 
@@ -905,6 +915,16 @@ git show "origin/$(git rev-parse --abbrev-ref HEAD):HANDOFF.md" | grep -F "**工
 3. 這次只讀不寫 → 不接棒、不寫標記、不動任何檔案
 
 同時把 session 名稱改成 `※　YYMMDDHH｜<主題>｜待你決定`（見「session 命名」）。
+
+> **工具名的權威是寫標記的那一棒自己填的，不是環境變數。** 模型知道自己是哪個工具，三個平台都一致；
+> 而環境變數在「從一個工具的殼層啟動另一個工具」時會被繼承——Codex 的 session 會自稱 Claude Code
+> （2026-10-31 實測，細節見部署包「工具身分」一節）。所以 hook 的變數偵測只用來**加嚴**：
+> 它看到的工具跟標記不一致就直接 🔴；一致、或認不出來，都只給 🟡 並把「你自己是不是 X」這一句丟回來給你答。
+> **永遠不因為偵測失敗而放行。**
+>
+> **舊版只比機器名**，於是同機器換個工具會落進「大概是你自己另一個視窗」的 🟡，
+> 而那時候叫人去驗的證據是「側欄有沒有 `㊣`」——只有 Claude Code 有側欄。
+> 判準綁在一個工具的介面上，另外三個平面就等於沒有判準。
 
 > **為什麼標記寫在開工而不是收工**：寫在開工的標記不依賴任何人記得收尾——A 沒交棒，標記就留在 origin 上，下一棒一定看得到。
 > 2026-10-30 重查後，這條規則的理由要講得更準：Claude Code 與 Codex **有** `SessionEnd` 事件（Codex 的還會在閒置 30 分鐘時觸發），Antigravity 沒有，所以「關掉視窗沒有下一個動作」只對一部分工具成立。但那個事件救不了這件事——它**不能擋下結束**，Claude Code 那邊預設只有 1.5 秒預算，做不完一次 `git push`，而且四個平面有一個根本沒有它。所以它最多提醒**離場的那一個人**，擔保仍然只能押在「開工就推上 origin」這一邊。
@@ -944,10 +964,16 @@ Git：<分支>、<與 origin 關係>、<待續分支>
 1. 把該分支 `HANDOFF.md` 的「工作中」欄位改成本機與本 session。舊專案沒有這一欄，就在「Git 狀態」那節補一列（這就是該專案的升級點，不用另外安排一次升級）：
 
    ```markdown
-   - **工作中**：`desk-win` ／ `㊣　26103009｜匯入格式｜工作中`，2026-10-30 09:12 (+08) 開工
+   - **工作中**：`desk-win` ／ `Claude Code` ／ `㊣　26103009｜匯入格式｜工作中`，2026-10-30 09:12 (+08) 開工
    ```
 
-   記 session 名稱比只記機器名有用——可以直接拿它回側欄把那個 session 點開。
+   三欄，用全形斜線 `／` 分隔：**機器** ／ **工具** ／ **session 名**（最後一欄可選，環境沒有 session 名就省略）。
+
+   - **工具欄不能省**（2026-10-31 加）。少了它，同一台機器換個工具就會落進「大概是你自己另一個視窗」的 🟡，
+     而同機器通常就是同一個工作樹——兩個 agent 即時互相覆寫，比跨機器那個洞更貴。`check_docs.py` 第 6 項會擋。
+   - **工具名用慣用寫法**（`Claude Code`／`Codex CLI`／`Gemini CLI`／`Antigravity`）：hook 比的是這個字串，
+     寫同義詞只會讓它多報一次 🔴——那是加嚴的方向，不會放行，但也是噪音。
+   - 記 session 名稱比只記機器名有用——有側欄的工具可以直接拿它把那個 session 點開。
 
 2. **只** stage `HANDOFF.md`，commit 後 push 到**當前分支**。訊息用 `chore(handoff): <機器> 開工` 這類前綴，之後掃歷史時一眼可略過。
 **push 失敗就不是「已標記」**：明確告訴使用者「這次沒有標記保護，別台機器不會知道我在做」，問他要不要在這個狀態下繼續。**不要靜默往下做**——你會以為有保護，實際上沒有。（名稱照樣是 `㊣`——它說的是「這個 session 在做事」，不是「標記已經在 origin 上」。）
@@ -1032,7 +1058,7 @@ python -X utf8 tools/check_docs.py
 ## Git 狀態
 - Repo：`<owner>/<repo>`
 - **待續分支**：<無，或 feature/... @ 已知安全 commit>；若 main 落後主幹要註明
-- **工作中**：無（已交棒）　← 交棒時必須是這個值；開工時由 A5 改成機器與 session
+- **工作中**：無（已交棒）　← 交棒時必須是這個值；開工時由 A5 改成 `機器` ／ `工具` ／ `session 名`
 - 本機能力：<機器；哪些憑證可用／未配置，不寫祕密值>
 
 ## 已完成
@@ -1135,6 +1161,8 @@ git show "origin/$(git rev-parse --abbrev-ref HEAD):HANDOFF.md" | grep -F "**工
 - ❌ 建完沒刪部署包 → 第二份會腐化的副本，下一棒還會以為部署沒做完而重跑一次訪談。
 - ❌ session 名稱全部一樣 → 側欄認不出哪個是哪個；主題寫成「更新文件」也一樣，改了名還是分不出來。
 - ❌ 停下來問使用者卻沒改名 → 側欄顯示「工作中」，使用者以為它還在跑，實際上在等他。只把「必須停下來問使用者」那張表當成改名時機也一樣——普通的「要選哪個」同樣是在等人。
+- ❌ 同一台機器上從一個工具換到另一個工具接棒，而標記只寫了機器名 → hook 印 🟡「大概是你自己另一個視窗」，兩個 agent 對著同一個工作樹即時互相覆寫。工具欄就是為這件事加的（2026-10-31）。
+- ❌ 拿環境變數當工具身分的權威 → 在別的工具殼層裡啟動時變數被繼承，Codex 的 session 自稱 Claude Code，於是「同工具」成立、直接放行。變數只能加嚴。
 - ❌ 把改名綁在「開工標記 push 成功」之後 → 這輪只讀、或專案刻意沒有 `HANDOFF.md`，標記寫不了，側欄就永遠停在「接棒」。2026-10-30 在骨架自己的 repo 上發現：三個 session 全是 `↗ 已交棒`，一個 `㊣ 工作中` 都沒有過。
 ````
 
@@ -1182,7 +1210,7 @@ git show "origin/$(git rev-parse --abbrev-ref HEAD):HANDOFF.md" | grep -F "**工
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-10-30 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-10-31 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：git 新鮮度檢查（多機分岔防呆）
 # 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
 # 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
@@ -1244,13 +1272,56 @@ if [ -n "$remote_handoff" ]; then
       me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
       same=no
       [ -n "$me" ] && case "$busy" in *"$me"*) same=yes ;; esac
-      if [ "$same" = yes ]; then
-        echo "[git-check] 🟡 這台機器（$me）還有一個 session 在 $branch 上沒交棒：$who"
-        echo "[git-check]    確認是你自己開的另一個視窗就繼續；不是的話先回去那個 session 收尾。"
-      else
+      # 工具欄＝標記的第二欄（欄位用全形斜線 ／ 分隔）。2026-10-31 加：只比機器名的時候，
+      # 同一台機器換個工具就落進「大概是你自己另一個視窗」的 🟡——而同機器通常就是同一個
+      # 工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。
+      # 舊格式沒有工具欄，第二欄會是 session 名，而 session 名一定含全形豎線
+      # （`符號　YYMMDDHH｜主題｜狀態`）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
+      # 不必先知道這個專案升級了沒。全程只用參數展開，不用 sed：這段會被抄進各專案，
+      # 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西。
+      tool=''
+      case "$who" in
+        *／*)
+          rest=${who#*／}
+          tool=${rest%%／*}
+          tool=${tool# }
+          tool=${tool% }
+          tool=${tool#'`'}
+          tool=${tool%'`'}
+          ;;
+      esac
+      case "$tool" in *｜*) tool='' ;; esac
+      # 自己是哪個工具：環境變數只拿來**加嚴**，不拿來放寬（2026-10-31 實測，理由見部署包
+      # 「工具身分」一節）。兩家以上的簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，
+      # 這時不猜——猜錯的方向會是「放行」，正好是最貴的那一種錯。
+      mytool=''
+      sigs=0
+      [ -n "${CODEX_VERSION:-}${CODEX_SESSION_ID:-}" ] && { mytool='Codex CLI'; sigs=$((sigs + 1)); }
+      [ -n "${GEMINI_CLI:-}" ] && { mytool='Gemini CLI'; sigs=$((sigs + 1)); }
+      [ -n "${CLAUDECODE:-}" ] && { mytool='Claude Code'; sigs=$((sigs + 1)); }
+      [ "$sigs" -gt 1 ] && mytool=''
+      # 比字串時不分大小寫，也接受標記寫得比偵測值長（例如 `Claude Code (desktop)`）：
+      # 寫法差一點就報 🔴 是在加嚴的方向，但也只是噪音，而噪音多了就會有人學會無視它。
+      mismatch=no
+      if [ -n "$mytool" ] && [ -n "$tool" ]; then
+        lc=$(printf '%s' "$tool" | tr 'A-Z' 'a-z')
+        mylc=$(printf '%s' "$mytool" | tr 'A-Z' 'a-z')
+        case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
+      fi
+      if [ "$same" = no ]; then
         echo "[git-check] 🔴 另一台機器正在 $branch 上工作，尚未交棒：$who"
         echo "[git-check]    依 single writer 規則，同一時間只能有一台機器動同一條分支。"
         echo "[git-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
+      elif [ -z "$tool" ]; then
+        echo "[git-check] 🟡 這台機器（$me）還有一個 session 在 $branch 上沒交棒：$who"
+        echo "[git-check]    這個標記是舊格式、沒有工具欄，分不出是哪個工具寫的。確認是你自己這個工具開的另一個視窗才繼續，不是就照 A2.5 停下來。"
+      elif [ "$mismatch" = yes ]; then
+        echo "[git-check] 🔴 同一台機器（$me）上另一個工具正在 $branch 上工作，尚未交棒：$who"
+        echo "[git-check]    標記寫的是「$tool」，這個 session 的環境看起來是「$mytool」。同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫——比跨機器那個洞更貴。"
+        echo "[git-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
+      else
+        echo "[git-check] 🟡 這台機器（$me）上有一個「$tool」的 session 在 $branch 上沒交棒：$who"
+        echo "[git-check]    你自己是不是「$tool」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
       fi
       ;;
   esac
@@ -1391,14 +1462,17 @@ Thumbs.db
                   的核取方塊，而人工核取方塊遲早會有人跳過；改由工具擋才會自動發生。這一項掃
                   PLACEHOLDER_GLOBS 的所有檔案，不只 .md——佔位符也會留在 tools/verify_state.py
                   這種非文件檔裡；比對的是 PLACEHOLDER_NAMES 這份封閉清單，不是雙大括號語法）
-  6. 工作中欄位 ——HANDOFF.md 的「工作中」標記不見了（2026-10-30 加入：這個欄位是跨機器誤接棒
-                  防呆的唯一依據，掉了不會有任何徵兆——下一棒只會看到一切正常然後接棒，正是
-                  這套骨架最怕的靜默失效。而「欄位缺席」與「沒人在做」分不開，所以不接受
-                  「沒寫就是沒人」：必須明確寫「無（已交棒）」。沒有 HANDOFF.md 的 repo 整項跳過）
+  6. 工作中欄位 ——HANDOFF.md 的「工作中」標記不見了，或標記在工作中卻沒填工具欄（2026-10-30
+                  加入，2026-10-31 補工具欄：這個欄位是跨機器誤接棒防呆的唯一依據，掉了不會有
+                  任何徵兆——下一棒只會看到一切正常然後接棒，正是這套骨架最怕的靜默失效。而
+                  「欄位缺席」與「沒人在做」分不開，所以不接受「沒寫就是沒人」：必須明確寫
+                  「無（已交棒）」。工具欄同理——少了它，同機器換工具的誤接棒會靜默退化成
+                  「大概是你自己另一個視窗」，而退化後的畫面跟「沒這個機制」一模一樣。
+                  沒有 HANDOFF.md 的 repo 整項跳過）
 
 問題以結束碼 2 回報，乾淨為 0。本工具唯讀，絕不修改任何檔案。
 
-source: PROJECT-BOOTSTRAP.md v2026-10-30 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+source: PROJECT-BOOTSTRAP.md v2026-10-31 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 「專案設定」區塊以外的內容應與權威版一致；副本落後時用這一行辨識。
 """
 import argparse
@@ -1521,16 +1595,36 @@ def check_placeholders(files):
 
 def check_busy_field(files):
     # 第 6 項：HANDOFF.md 的「工作中」欄位必須在。這一欄是 handoff skill A2.5 判斷
-    # 「同一條分支有沒有別台機器在做」的唯一依據，而它掉了不會有任何徵兆——下一棒
+    # 「同一條分支有沒有別人在做」的唯一依據，而它掉了不會有任何徵兆——下一棒
     # 只會看到一切正常然後接棒。不接受「沒寫就是沒人在做」：那和「忘了寫」分不開。
     found, bad = False, []
     for md in files:
         if md.as_posix() != 'HANDOFF.md':
             continue
         found = True
-        if '**工作中**' not in md.read_text(encoding='utf-8'):
+        text = md.read_text(encoding='utf-8')
+        if '**工作中**' not in text:
             bad.append('HANDOFF.md  「Git 狀態」缺「- **工作中**：無（已交棒）」欄位'
                        '——跨機器誤接棒防呆靠它（見 handoff skill 的 A2.5／A5／B6）')
+            continue
+        # 2026-10-31 加：標記在「工作中」的時候必須帶工具欄
+        # （`機器` ／ `工具` ／ `session 名`，最後一欄可選）。少了工具名，同一台機器換個
+        # 工具就會落進 hook 的「大概是你自己另一個視窗」🟡，而同機器通常就是同一個工作樹，
+        # 兩個 agent 即時互相覆寫——比跨機器那個洞更貴。新格式少一欄不會壞掉，只會靜默
+        # 退化回舊行為，而退化後的畫面跟「沒這個機制」一模一樣，所以要擋在這裡。
+        # 判別子是 session 名裡的全形豎線：`機器` ／ `工具` 的第二欄不會有它，
+        # `機器` ／ `session 名`（舊格式）的第二欄一定有。
+        for num, line in enumerate(text.splitlines(), 1):
+            if '**工作中**' not in line:
+                continue
+            value = line.split('：', 1)[-1]
+            if '無' in value:          # 「無（已交棒）」：沒人在做，不需要工具欄
+                continue
+            fields = [f.strip() for f in value.split('／')]
+            if len(fields) < 2 or '｜' in fields[1]:
+                bad.append(f'HANDOFF.md:{num}  「工作中」標記缺工具欄——格式是 '
+                           '`機器` ／ `工具` ／ `session 名`（可選）。少了工具名，'
+                           '同機器換工具的誤接棒就擋不住（見 handoff skill 的 A5）')
     return found, bad
 
 
@@ -1873,7 +1967,7 @@ git status -sb
 - [ ] `python -X utf8 tools/check_docs.py` → `OK`（一次涵蓋死連結與**殘留佔位符**；佔位符那一項掃 `.md`／`.py`／`.sh`／`.json`／`.gitignore`／`.gitattributes` 的 tracked 檔，所以要先 `git add`。本部署包自己被豁免——照最後一項刪掉它就好）
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
 - [ ] `bash .claude/hooks/git-freshness.sh` → 印出 `✅ 本機沒落後 origin`，且最後一行有 `[handoff]` 提醒（沒有 upstream 會印警告，表示第 4 節沒做完）
-- [ ] **工作中標記防呆**：把 `HANDOFF.md` 的「工作中」改成一個假的別台機器名，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 要印 🔴 並叫你走 A2.5；改回「無（已交棒）」、commit、push 後再跑 → 不該再印。**驗完記得改回來**
+- [ ] **工作中標記防呆**：把 `HANDOFF.md` 的「工作中」改成 `` `假機器名` ／ `Claude Code` ``，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 要印 🔴 並叫你走 A2.5；改成**這台機器**＋一個**別的工具名**（例如 `` `<本機名>` ／ `Codex CLI` ``）再跑 → 同樣要 🔴（這是 2026-10-31 補的同機器跨工具那個洞；若本機偵測不出自己是哪個工具，會退成 🟡 並把問題丟回給你答，那也是對的）；改回「無（已交棒）」、commit、push 後再跑 → 不該再印。**驗完記得改回來**
 - [ ] **骨架版本偵測**：`printf 1999-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要印 🟡「handoff 骨架落後」。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）
 - [ ] **`CLAUDE.md` 只有 `@AGENTS.md` 這一行 import**，不是「去讀 AGENTS.md」那種句子——有 `CLAUDE.md` 時 Claude Code 不會自己讀 `AGENTS.md`，而用文字請它去讀不保證它真的開那個檔（理由見開頭「跨工具與跨平台」）。開一個 session 問它「`AGENTS.md` 的鐵律第 1 條是什麼」，答得出來才算接上

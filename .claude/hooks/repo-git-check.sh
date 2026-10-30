@@ -70,14 +70,57 @@ if [ -n "$remote_handoff" ]; then
       me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
       same=no
       [ -n "$me" ] && case "$busy" in *"$me"*) same=yes ;; esac
-      if [ "$same" = yes ]; then
-        echo "[repo-check] 🟡 這台機器（$me）還有一個 session 在 $branch 上沒交棒：$who"
-        echo "[repo-check]    確認是你自己開的另一個視窗就繼續；不是的話先回去那個 session 收尾。"
-      else
+      # 工具欄＝標記的第二欄（欄位用全形斜線 ／ 分隔）。2026-10-31 加：只比機器名的時候，
+      # 同一台機器換個工具就落進「大概是你自己另一個視窗」的 🟡——而同機器通常就是同一個
+      # 工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。
+      # 舊格式沒有工具欄，第二欄會是 session 名，而 session 名一定含全形豎線
+      # （`符號　YYMMDDHH｜主題｜狀態`）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
+      # 不必先知道這個專案升級了沒。全程只用參數展開，不用 sed：這段會被抄進各專案，
+      # 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西。
+      tool=''
+      case "$who" in
+        *／*)
+          rest=${who#*／}
+          tool=${rest%%／*}
+          tool=${tool# }
+          tool=${tool% }
+          tool=${tool#'`'}
+          tool=${tool%'`'}
+          ;;
+      esac
+      case "$tool" in *｜*) tool='' ;; esac
+      # 自己是哪個工具：環境變數只拿來**加嚴**，不拿來放寬（2026-10-31 實測，理由見部署包
+      # 「工具身分」一節）。兩家以上的簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，
+      # 這時不猜——猜錯的方向會是「放行」，正好是最貴的那一種錯。
+      mytool=''
+      sigs=0
+      [ -n "${CODEX_VERSION:-}${CODEX_SESSION_ID:-}" ] && { mytool='Codex CLI'; sigs=$((sigs + 1)); }
+      [ -n "${GEMINI_CLI:-}" ] && { mytool='Gemini CLI'; sigs=$((sigs + 1)); }
+      [ -n "${CLAUDECODE:-}" ] && { mytool='Claude Code'; sigs=$((sigs + 1)); }
+      [ "$sigs" -gt 1 ] && mytool=''
+      # 比字串時不分大小寫，也接受標記寫得比偵測值長（例如 `Claude Code (desktop)`）：
+      # 寫法差一點就報 🔴 是在加嚴的方向，但也只是噪音，而噪音多了就會有人學會無視它。
+      mismatch=no
+      if [ -n "$mytool" ] && [ -n "$tool" ]; then
+        lc=$(printf '%s' "$tool" | tr 'A-Z' 'a-z')
+        mylc=$(printf '%s' "$mytool" | tr 'A-Z' 'a-z')
+        case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
+      fi
+      if [ "$same" = no ]; then
         echo "[repo-check] 🔴 另一台機器正在 $branch 上工作，尚未交棒：$who"
         echo "[repo-check]    依 single writer 規則，同一時間只能有一台機器動同一條分支。"
         echo "[repo-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
         echo "[repo-check]    注意：那台未提交的變更只在那台的磁碟上，這裡拿不到——標記只告訴你東西在哪。"
+      elif [ -z "$tool" ]; then
+        echo "[repo-check] 🟡 這台機器（$me）還有一個 session 在 $branch 上沒交棒：$who"
+        echo "[repo-check]    這個標記是舊格式、沒有工具欄，分不出是哪個工具寫的。確認是你自己這個工具開的另一個視窗才繼續，不是就照 A2.5 停下來。"
+      elif [ "$mismatch" = yes ]; then
+        echo "[repo-check] 🔴 同一台機器（$me）上另一個工具正在 $branch 上工作，尚未交棒：$who"
+        echo "[repo-check]    標記寫的是「$tool」，這個 session 的環境看起來是「$mytool」。同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫——比跨機器那個洞更貴。"
+        echo "[repo-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
+      else
+        echo "[repo-check] 🟡 這台機器（$me）上有一個「$tool」的 session 在 $branch 上沒交棒：$who"
+        echo "[repo-check]    你自己是不是「$tool」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
       fi
       ;;
   esac
