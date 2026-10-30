@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-10-30 18:40（+08）
-- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（三平台能力重查，修掉四個過期斷言並加保鮮期檢查）
+- **交接時間**：2026-10-31 00:40（+08）
+- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（五個專案的骨架同步落地）
 
 ## 這份檔案在這個 repo 的角色（跟其他專案不一樣，先讀這段）
 
@@ -30,7 +30,15 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 已完成
 
-- 2026-10-30（本輪，`VERSION` 2026-10-30.3）：**三邊官方文件全部重查＋本機實測 Codex CLI `0.164.0`**，修掉
+- 2026-10-31：**五個專案的骨架同步落地**（`VERSION` 2026-10-30.3）。`Grist_test` `d2f8bf2`、
+  `NAA_TR` `5b0bc66`（`feature/W15-research-shell`）、`NAS_MAINT` `ad987a1`、`摘要skill設計` `bef4916`
+  （`feature/claude-native`）、`第三批56箱後檢查` `c87ae61` 各一個 commit、都已 push，內容是兩份
+  `SKILL.md` 的 `source:` 標記 `.2`→`.3` ＋ `CLAUDE.md` 的 `@AGENTS.md` import ＋自己的 `HANDOFF.md`。
+  五個開工前都查過 origin 的「工作中」是「無（已交棒）」，`check_docs.py` 全部 exit 0。**`序號卡`、
+  `解決網路速度問題` 刻意留在 `.2`**（前者已完結、後者有別人未提交的工作），會在下次開場自己報
+  「骨架落後」，是自癒的。
+
+- 2026-10-30（`VERSION` 2026-10-30.3）：**三邊官方文件全部重查＋本機實測 Codex CLI `0.164.0`**，修掉
   四個過期斷言——Codex 桌面 App 其實有 hooks、`.agents/skills/` 連 Codex 也讀、`CLAUDE.md` 要改成只放
   `@AGENTS.md` import（有 `CLAUDE.md` 時 Claude Code 不原生讀 `AGENTS.md`）、`SessionEnd` 存在所以「關掉
   視窗沒有下一個動作」只對一半的工具成立（結論不變，理由換掉）。連帶改了 `extract()`、`sync_project.py`
@@ -41,18 +49,12 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 未完成／下一步
 
-1. 🔴 **骨架同步還沒落地**：`Grist_test`、`NAA_TR`、`NAS_MAINT`、`摘要skill設計`、`第三批56箱後檢查`
-   已經跑過 `sync_project.py --write`，**各有 3 個未提交的檔**（兩份 `SKILL.md` ＋ `CLAUDE.md` 的 import）。
-   要到各專案照 B 模式收尾：先跑 A2.5 確認沒有別台機器握著它的 main，而且它們的 pre-push hook 會要求
-   那批 commit 動過自己的 `HANDOFF.md`。另兩個**刻意沒同步**，`SKILL.md` 還停在 `.2`：`序號卡`（已完結，
-   不想在沒人會 commit 的 repo 留殘留）、`解決網路速度問題`（有別人未提交的工作）——這兩個會在下次開場
-   自己報「骨架落後」，是自癒的，不急。
-2. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個工具都
+1. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個工具都
    觸發、`statusMessage` 會不會被忽略。卡在互動式的 `/hooks` 信任（非互動只能用
    `--dangerously-bypass-hook-trust`，本輪刻意沒用）。
-3. （可選，要實測）Antigravity `.agents/hooks.json`：設計已定——一支**只做管線**的 wrapper，讀 stdin 取
+2. （可選，要實測）Antigravity `.agents/hooks.json`：設計已定——一支**只做管線**的 wrapper，讀 stdin 取
    `workspacePaths[0]`、`cd` 過去、跑同一支 `.sh`、stdout 包成 `injectSteps` 的 `ephemeralMessage`。
-4. （可選）`SessionStart` 的 `sessionTitle` 自動寫 session 名稱（只固定得住開場那一半，狀態轉換仍靠模型）；
+3. （可選）`SessionStart` 的 `sessionTitle` 自動寫 session 名稱（只固定得住開場那一半，狀態轉換仍靠模型）；
    `.codex/hooks.json` 接線本 repo 的 `repo-git-check.sh`（**不要**複製第二份腳本）；`AGENTS.md` 補一段
    「開工第一件事」——可攜層目前沒有一句叫 agent 先 `git fetch`、先看 origin 的「工作中」。
 
@@ -76,4 +78,4 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 懸置事項（AI 勿自行處理）
 
-- 上面「未完成」第 2、3、4 項要不要做（都要花時間實測或設計，不是順手能完成的）。第 1 項不是懸置，是待收尾。
+- 上面「未完成」三項要不要做（都要花時間實測或設計，不是順手能完成的）。
