@@ -28,6 +28,16 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 已完成
 
+- 2026-10-31（部署包當天第九次修改，**刻意不跳版**，範本內容沒動所以 `sync_project.py` 零改動）：
+  **Codex hook 那兩個未知實測完畢**（`0.164.0`／Windows），而其中一個**問錯了問題**——`statusMessage` 是 Codex
+  正式支援的鍵（「Optional UI message」），不是 Claude 專屬；`PreToolUse` 沒 matcher 就是每次都觸發、不分工具名
+  （`Bash`×2 ＋ `apply_patch`×1 全中）。**沒人問的第三件最重要：信任綁 `hooks.json` 的絕對路徑、不綁內容**
+  （記在 `~/.codex/config.toml` 的 `[hooks.state.'<絕對路徑>:<事件>:<組>:<序>']`，值是 `trusted_hash`；
+  逐位元組相同的接線換資料夾就不信任），而且**只有互動模式會主動問**，`codex exec` 永遠靜默跳過。
+  順手修掉保鮮期清單兩個已搬家的網址（Codex 文件搬到 `learn.chatgpt.com`，skills 那頁連路徑名都換了）。
+  方法論補兩條：**「叫 agent 把注入背出來」在 Codex 上不成立**（它拒絕複述，會給假陰性）；
+  **佈置與測量要分兩步**——這次把建設定檔跟跑受測物寫在同一個指令裡，指令被權限層拒絕、設定檔沒生成，
+  前三次「沒觸發」全部無效。
 - 2026-10-31（部署包當天第八次修改，**刻意不跳版**，三個範本內容仍然沒動）：**Antigravity 2.0 `2.28.2` 實測完畢
   ——它會讀專案層 `.agents/hooks.json`，而且接線端到端成立**（`SessionStart`／`PreInvocation`／`PostInvocation`／
   `Stop` 四個進 log，cwd 是 `.agents/`，沒有信任提示；再到裝好 3.18–3.20 的 `Grist_test` 開一次 session，agent 把
@@ -51,11 +61,15 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 未完成／下一步
 
-1. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個
-   工具都觸發、`statusMessage` 會不會被忽略。卡在互動式 `/hooks` 信任。
-2. （可選）`AGENTS.md` 補一段「開工第一件事」；`SessionStart` 的 `sessionTitle` 自動寫 session 名稱；
+1. 🔴 **六個專案的 Codex 接線從來沒有真的跑過**，要各開一次互動式 `codex` 選 `Trust all and continue`
+   （信任綁 `hooks.json` 絕對路徑，審一個不會全通）。`Grist_test`／`NAA_TR`／`NAS_MAINT`／`摘要skill設計`／
+   `第三批56箱後檢查`／`解決網路速度問題`。這是使用者要按的，AI 代不了。
+2. `statusMessage` 在**互動 TUI** 顯不顯示仍未量（`codex exec` 已確認不顯示）。測法：在探針資料夾開一次
+   互動 session，看開場有沒有 `PROBE-STATUSMSG-SENTINEL`。探針還在暫存區，連同它在
+   `~/.codex/config.toml` 留下的 `[projects…codex-hook-probe]` 與兩筆 `[hooks.state…]`，都可以清掉。
+3. （可選）`AGENTS.md` 補一段「開工第一件事」；`SessionStart` 的 `sessionTitle` 自動寫 session 名稱；
    `.codex/hooks.json` 接線本 repo 的 `repo-git-check.sh`（**不要**複製第二份腳本）。
-3. **`README.md` 的跨工具表仍然沒有守門人**（保鮮期檢查只讀部署包那一張）。
+4. **`README.md` 的跨工具表仍然沒有守門人**（保鮮期檢查只讀部署包那一張）。
 
 （「階段二 pre-push hook」2026-10-30 決定不裝，理由在 [ARCHITECT.md](ARCHITECT.md)，掃到別再重提。）
 
