@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-10-31 20:23（+08）
-- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（Antigravity 全部收斂；各專案已同步，只剩`序號卡`落後而它已完結）
+- **交接時間**：2026-10-31 21:34（+08）
+- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（Codex hook 兩個未知實測完畢；意外發現六個專案的 Codex 接線從未真的跑過）
 
 ## 這份檔案在這個 repo 的角色（跟其他專案不一樣，先讀這段）
 
@@ -23,7 +23,7 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26103120｜Codex hook實測｜工作中`，2026-10-31 20:35 (+08) 開工
+- **工作中**：無（已交棒）
 - 本機能力：Windows 11 ＋ Git for Windows 的 bash；有 push 權限（不寫祕密值）。
 
 ## 已完成
@@ -65,8 +65,11 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
    （信任綁 `hooks.json` 絕對路徑，審一個不會全通）。`Grist_test`／`NAA_TR`／`NAS_MAINT`／`摘要skill設計`／
    `第三批56箱後檢查`／`解決網路速度問題`。這是使用者要按的，AI 代不了。
 2. `statusMessage` 在**互動 TUI** 顯不顯示仍未量（`codex exec` 已確認不顯示）。測法：在探針資料夾開一次
-   互動 session，看開場有沒有 `PROBE-STATUSMSG-SENTINEL`。探針還在暫存區，連同它在
-   `~/.codex/config.toml` 留下的 `[projects…codex-hook-probe]` 與兩筆 `[hooks.state…]`，都可以清掉。
+   互動 session，看開場有沒有 `PROBE-STATUSMSG-SENTINEL`。⚠️ 探針放在那個 session 的
+   暫存區，**下一棒拿不到**，要重建（兩個檔：一支把 stdin 存檔＋append 一行 log 的 `.sh`，一份掛
+   `SessionStart`＋`PreToolUse` 的 `.codex/hooks.json`，然後互動式開一次過第二道閘）。
+   它在 `~/.codex/config.toml` 留下的 `[projects…codex-hook-probe]` 與兩筆 `[hooks.state…]` 指向一個
+   會消失的暫存路徑，**是可以清掉的垃圾**——但那是使用者的設定檔，要他自己動手或明確授權。
 3. （可選）`AGENTS.md` 補一段「開工第一件事」；`SessionStart` 的 `sessionTitle` 自動寫 session 名稱；
    `.codex/hooks.json` 接線本 repo 的 `repo-git-check.sh`（**不要**複製第二份腳本）。
 4. **`README.md` 的跨工具表仍然沒有守門人**（保鮮期檢查只讀部署包那一張）。
@@ -107,8 +110,9 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 `python -X utf8 tools/verify_bootstrap.py`
 
 目前：exit 0，**26 項全 `ok`**，骨架 **21 檔**（上一輪是 25 項／18 檔，差額就是新增的三個範本與
-「Antigravity 接線」那一項）。`VERSION` 仍是 2026-10-31。跨工具表保鮮期的查證日期仍是
-2026-10-30——這幾輪沒有重讀那六頁官方文件，所以**刻意沒有把時鐘歸零**。
+「Antigravity 接線」那一項）。`VERSION` 仍是 2026-10-31（`SKILL.md` 沒動）。
+跨工具表保鮮期的查證日期仍是 2026-10-30：這一輪**只**重讀了 Codex hook 那一頁（而且發現它搬家了），
+其餘五頁沒讀，所以**刻意沒有把時鐘歸零**——歸零會把「查過一頁」謊報成「六頁都查過」。
 
 ## 懸置事項（AI 勿自行處理）
 
