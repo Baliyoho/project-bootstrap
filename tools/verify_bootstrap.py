@@ -77,6 +77,7 @@ EXPECTED = {
     '.claude/skills/handoff/SKILL.md', '.claude/settings.json',
     '.claude/hooks/git-freshness.sh', '.claude/hooks/pre-push-handoff.sh',
     '.codex/hooks.json', '.agents/skills/handoff/SKILL.md',
+    '.claude/hooks/ag-wrap.sh', '.agents/ag-hook.cmd', '.agents/hooks.json',
     '.gitignore', '.gitattributes',
     'tools/check_docs.py', 'tools/verify_state.py',
 }
@@ -786,6 +787,115 @@ def step_self():
     return ok
 
 
+def step_antigravity(dest):
+    """Antigravity 接線的三個檔：轉接層的 JSON 與 escaping、shim 的兩個硬約束、接線的形狀。
+
+    2026-10-31 端到端實測過（`agy -p` 讓 agent 把注入的開場訊息原文背出來），但那個測試
+    需要裝著 Antigravity CLI 的機器，所以這裡釘的是**自動驗得出來的那部分**：管線會不會動、
+    以及兩個踩過才知道的約束有沒有被「順手整理」掉——
+      ① shim 必須全 ASCII：中文 `rem` 註解被 OEM code page 誤讀後會**整段被當成指令執行**，
+         stderr 噴出 `is not recognized`，而 stdout 的 JSON 看起來還是對的，所以不會有徵兆。
+      ② shim 不能有多行括號區塊或 label：檔案是 LF 行末（.gitattributes 強制全檔 LF），
+         而 cmd.exe 讀 LF-only 檔案時這兩種結構會出錯。
+    這兩項都是「看起來沒問題、實際壞掉」的類型，所以做成 fail 而不是註解裡的叮嚀。
+    """
+    wrap = dest / '.claude' / 'hooks' / 'ag-wrap.sh'
+    shim = dest / '.agents' / 'ag-hook.cmd'
+    wiring = dest / '.agents' / 'hooks.json'
+
+    raw = shim.read_bytes()
+    bad = []
+    if any(b > 127 for b in raw):
+        bad.append('shim 有非 ASCII 位元組（batch 的 echo 會依 OEM code page 變亂碼，'
+                   '而被誤讀的註解會被當成指令執行）')
+    text = raw.decode('ascii', 'replace')
+    for n, ln in enumerate(text.split('\n'), 1):
+        s = ln.strip()
+        if s.startswith(':') and not s.startswith('::'):
+            bad.append('shim 第 %d 行是 label（LF-only 檔案上 goto／label 會出錯）' % n)
+        if s.endswith('(') and not s.lower().startswith('rem'):
+            bad.append('shim 第 %d 行開了多行括號區塊（LF-only 檔案上會出錯）' % n)
+    try:
+        conf = json.loads(wiring.read_text(encoding='utf-8'))
+    except Exception as e:
+        record('FAIL', 'Antigravity 接線', '.agents/hooks.json 不是合法 JSON：%s' % e)
+        return False
+    hook = conf.get('handoff-git-check')
+    if not isinstance(hook, dict):
+        bad.append('hooks.json 少了 handoff-git-check 這個頂層 key（sync 靠它認骨架的接線）')
+    else:
+        if list(hook) != ['enabled', 'SessionStart']:
+            bad.append('hooks.json 的 handoff-git-check 多了或少了欄位：%s'
+                       '（PreToolUse 刻意不接——不明確回 allow_tool 就等於拒絕）' % list(hook))
+        cmds = [h.get('command', '') for h in hook.get('SessionStart', [])]
+        if not any(c.startswith('../') for c in cmds):
+            bad.append('hooks.json 少了 Unix 那條 handler')
+        if not any(c.startswith('.\\\\') or c.startswith('.\\') for c in cmds):
+            bad.append('hooks.json 少了 Windows 那條（.\\ag-hook.cmd）handler')
+        for c in cmds:
+            if ':' in c or c.startswith('/'):
+                bad.append('hooks.json 的 command 看起來是絕對路徑：%s'
+                           '（換機器就靜默失效，而且 agy 的 command 不吃空白）' % c)
+
+    bash = find_bash()
+    if not bash:
+        record('SKIP', 'Antigravity 接線', '這台機器上沒有 bash，轉接層的管線沒測到')
+        return True
+
+    # 轉接層的管線：拿一支會吐引號、反斜線與換行的腳本餵它，JSON 要合法且原樣還原。
+    probe = dest / '.claude' / 'hooks' / '_probe.sh'
+    payload = 'he said "hi"\\path\tand\nsecond line'
+    probe.write_text('#!/usr/bin/env bash\nprintf \'%s\\n\' \'' + payload + '\'\n',
+                     encoding='utf-8', newline='')
+    for name, args, want in (
+            ('正常注入', ['_probe.sh'], payload),
+            ('少參數', [], '少了參數'),
+            ('腳本不存在', ['_nope.sh'], '找不到'),
+    ):
+        r = run([bash, str(wrap)] + args, cwd=str(dest / '.agents'))
+        try:
+            got = json.loads(r.stdout)
+        except Exception as e:
+            bad.append('轉接層「%s」的 stdout 不是合法 JSON（%s）：%r'
+                       % (name, e, r.stdout[:120]))
+            continue
+        msg = got.get('injectSteps', [{}])[0].get('ephemeralMessage', '')
+        if want not in msg:
+            bad.append('轉接層「%s」的訊息不對：%r' % (name, msg[:120]))
+    probe.unlink()
+
+    # 接線合併：骨架只擁有 handoff-git-check 這一個頂層 key，要換得掉又不能動到專案自己的。
+    sys.path.insert(0, str(ROOT / 'tools'))
+    import sync_project as sp
+    auth = wiring.read_text(encoding='utf-8')
+    stale = json.loads(auth)
+    stale[sp.AG_KEY]['SessionStart'] = [{'type': 'command', 'command': 'OLD'}]
+    stale['project-own-hook'] = {'enabled': True, 'Stop': [{'command': 'mine'}]}
+    new, _, err = sp.merge_ag_wiring(auth, json.dumps(stale, ensure_ascii=False, indent=2))
+    if err or new is None:
+        bad.append('AG 接線合併沒認出落後的 %s（落後的專案不會被修好）：%s'
+                   % (sp.AG_KEY, err or '說已經一致'))
+    else:
+        got = json.loads(new)
+        if got.get(sp.AG_KEY) != json.loads(auth)[sp.AG_KEY]:
+            bad.append('AG 接線合併沒把 %s 換成權威版' % sp.AG_KEY)
+        if got.get('project-own-hook', {}).get('Stop', [{}])[0].get('command') != 'mine':
+            bad.append('AG 接線合併把專案自己的 hook 洗掉了')
+    same, _, err2 = sp.merge_ag_wiring(auth, auth)
+    if err2 or same is not None:
+        bad.append('AG 接線已一致卻說要改（每次同步都製造假變更，雜訊會讓人不再看輸出）')
+    if sp.merge_ag_wiring(auth, '{壞掉')[2] is None:
+        bad.append('AG 接線合併吃到壞 JSON 卻沒回報錯誤')
+
+    if bad:
+        record('FAIL', 'Antigravity 接線', '；'.join(bad))
+        return False
+    record('OK', 'Antigravity 接線',
+           '轉接層三情境的 JSON 與 escaping 正確、shim 全 ASCII 且無括號區塊／label、'
+           'hooks.json 兩個 handler 都在且只接 SessionStart、接線合併換得掉又保住專案自己的')
+    return True
+
+
 def step_sync_coverage(dest):
     """同步清單要涵蓋骨架每一個檔，而且 hook 接線真的會被修好。
 
@@ -800,7 +910,7 @@ def step_sync_coverage(dest):
     sys.path.insert(0, str(ROOT / 'tools'))
     import sync_project as sp
 
-    declared = (set(sp.WHOLE) | {sp.SURGICAL} | set(sp.WIRING)
+    declared = (set(sp.WHOLE) | {sp.SURGICAL} | set(sp.WIRING) | {sp.AG_WIRING}
                 | set(sp.PARTIAL) | set(sp.INSTANCE))
     missing, extra = EXPECTED - declared, declared - EXPECTED
     if missing or extra:
@@ -813,7 +923,7 @@ def step_sync_coverage(dest):
         record('FAIL', '同步清單涵蓋骨架', '；'.join(bits))
         return False
     record('OK', '同步清單涵蓋骨架',
-           '%d 個範本全部歸類（整份覆蓋 %d／手術 1／接線 %d／補欄位 %d／專案實例 %d）'
+           '%d 個範本全部歸類（整份覆蓋 %d／手術 1／接線 %d＋AG 1／補欄位 %d／專案實例 %d）'
            % (len(EXPECTED), len(sp.WHOLE), len(sp.WIRING), len(sp.PARTIAL),
               len(sp.INSTANCE)))
 
@@ -1062,6 +1172,7 @@ def main():
             step_date_guard(dest)
             step_busy_tool_guard(dest)
             step_deploy_shape(dest)
+            step_antigravity(dest)
             step_portability(dest)
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None

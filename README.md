@@ -34,8 +34,11 @@
 │   ├─ settings.json                hook 設定
 │   ├─ hooks/git-freshness.sh       SessionStart：git 新鮮度檢查＋提醒走交接程序
 │   ├─ hooks/pre-push-handoff.sh    PreToolUse：沒更新 HANDOFF 就想 push 時擋下
+│   ├─ hooks/ag-wrap.sh             Antigravity 轉接層：只做管線，把 stdout 包成 JSON
 │   └─ skills/handoff/SKILL.md      交接與同步的可執行程序（0 建制／A 接棒／B 交棒／C 同步）＝權威版
 ├─ .codex/hooks.json                Codex：掛上面同樣那兩個腳本（同格式、同語意）
+├─ .agents/hooks.json              Antigravity：經轉接層掛同一支 git-freshness.sh（只接 SessionStart）
+├─ .agents/ag-hook.cmd              Windows shim：找 Git Bash 再交給 ag-wrap.sh
 ├─ .agents/skills/handoff/SKILL.md  Antigravity 原生讀 .agents/：指向權威版的指標
 ├─ docs/ai-notes/
 │   ├─ handover-protocol.md         交接協定（規則與判準）
@@ -86,11 +89,11 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 |---|---|---|---|---|
 | 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 | ✅ 原生 |
 | 自動載入程序檔 | ✅ `.claude/skills/`、`/handoff` | ⬜ 靠 `AGENTS.md` 指路 | ✅ `~/.codex/skills/`，也讀專案的 `.agents/skills/` | ✅ 原生讀 `.agents/skills/` |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意，首次需 `/hooks` 信任 | ✅ 有（App `26.506` 起，Settings 裡審核） | ⬜ **骨架還沒附**（Windows 缺一層 shim）。實測分 surface：CLI `1.4.7` **會讀**專案層 `.agents/hooks.json`、IDE `1.107.0` 沒觸發、2.0 未測 |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意，首次需 `/hooks` 信任 | ✅ 有（App `26.506` 起，Settings 裡審核） | ✅ `<repo>/.agents/hooks.json`，**CLI `1.4.7` 端到端實測過**（Windows 經 `.cmd` shim）。IDE `1.107.0` 沒觸發、2.0 未測 |
 
 **Codex 要分 CLI 與桌面 App**：CLI 有 hooks 且與 Claude Code 同格式，兩邊掛**同樣那兩個 `.sh`**、不各留一份；桌面 App 也有 hooks（2026-10-30 重查：App `26.506` 起有 in-app 信任審核，與 CLI 共用 `~/.codex`；舊版這裡寫「沒有」是 2026-08-06 的實測，已過期），全域 skill 一樣放 `~/.codex/skills/handoff/`。
 
-**Antigravity 的保證目前只押在可攜層**：它原生讀 `AGENTS.md` 與 `.agents/skills/`，而 hook 接線骨架**還沒附**。但這**不是**「這個工具沒有 hook」——2026-10-31 實測 **CLI `1.4.7` 的專案層 `.agents/hooks.json` 會讀、六個事件全部觸發**；**IDE `1.107.0` 沒觸發**（原因仍未解釋），2.0 未測。還沒接的原因是 **Windows 缺一層 `.cmd` shim**（`command` 不吃空白也不吃引號，而 Git Bash 的路徑含空白）。細節與三件待解的事見部署包那一節。
+**Antigravity 要分 surface 看**：它原生讀 `AGENTS.md` 與 `.agents/skills/`（可攜層，獨立成立）。hook 這一層 2026-10-31 在 **CLI `1.4.7`** 上端到端實測通過並附進骨架——Windows 要經一支 `.cmd` shim，因為 `agy` 的 `command` 不吃空白也不吃引號，而 Git Bash 的路徑含空白。**IDE `1.107.0` 實測不會觸發專案層設定，原因仍未解釋**；2.0 未測。細節見部署包那一節。
 
 只有 Claude Code 與 Codex CLI 有自動關卡，**其餘兩者要靠可攜層**——這就是正確性不押在 hook 上的理由。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的）；`python` 不存在的機器改用 `python3`。
 

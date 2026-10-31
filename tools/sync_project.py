@@ -47,6 +47,8 @@ WHOLE = (
     '.claude/skills/handoff/SKILL.md',
     '.claude/hooks/git-freshness.sh',
     '.claude/hooks/pre-push-handoff.sh',
+    '.claude/hooks/ag-wrap.sh',
+    '.agents/ag-hook.cmd',
     '.agents/skills/handoff/SKILL.md',
 )
 # 手術式更新：這一份混了「共用程式」與「專案自己的設定」，整份蓋過去會把設定洗掉。
@@ -62,9 +64,13 @@ SETTINGS_END = '# ── 專案設定結束'
 # 是這兩個檔唯一的守門人。
 WIRING = ('.claude/settings.json', '.codex/hooks.json')
 OWNED_SCRIPTS = ('git-freshness.sh', 'pre-push-handoff.sh')
-# `.agents/hooks.json` 2026-10-31 加入，同日移除：實測 Antigravity 根本不讀專案層的那個檔
-# （詳見部署包「跨工具與跨平台」的 Antigravity 一節）。這裡留一句是為了擋住「補回來」的衝動——
-# 那個檔**部署出去也不會被觸發**，而一個不會觸發的 hook 比沒有更糟：它看起來像有防護。
+
+# Antigravity 的接線（2026-10-31 重新加入，這次端到端實測過：CLI 1.4.7 會讀、會觸發）。
+# 它跟 WIRING 那兩個檔分開處理，因為形狀不同——Antigravity 的頂層 key 就是 hook 名稱，
+# 所以骨架只擁有 AG_KEY 這一個 key，換掉它、其餘原樣保留就夠了，不必像 3.9／3.17 那樣
+# 在同一個 hooks 物件裡逐組比對。這個「key 即命名空間」的形狀是它比另外兩家好處理的地方。
+AG_WIRING = '.agents/hooks.json'
+AG_KEY = 'handoff-git-check'
 
 # 只補單一欄位／單一行，其餘歸專案自己。
 PARTIAL = ('HANDOFF.md', '.gitignore', 'CLAUDE.md')
@@ -131,6 +137,35 @@ def scripts_in(group):
         cmd = h.get('command', '') if isinstance(h, dict) else ''
         found.update(s for s in OWNED_SCRIPTS if s in cmd)
     return frozenset(found)
+
+
+def merge_ag_wiring(authority, current):
+    """Antigravity 的接線：只換骨架擁有的那一個頂層 key，其餘原樣保留。
+
+    形狀跟 3.9／3.17 不同——Antigravity 的頂層 key 就是 hook 名稱，所以骨架擁有的東西
+    天生被 AG_KEY 圈起來，不必逐組比對。回傳 (新內容, 說明, 錯誤)；新內容為 None 且無
+    錯誤＝已經一致，不要動它（照寫會把格式差異變成假變更，那種雜訊會讓人不再看輸出）。
+    """
+    try:
+        a = json.loads(authority)
+    except Exception as e:
+        return None, None, '權威版不是合法 JSON（部署包被改壞了？）：%s' % e
+    try:
+        c = json.loads(current)
+    except Exception as e:
+        return None, None, '專案這份不是合法 JSON，不敢動——請人工比對：%s' % e
+    if not isinstance(c, dict):
+        return None, None, '專案這份的頂層不是物件，不敢動——請人工比對'
+    if AG_KEY not in a:
+        return None, None, '權威版裡找不到 %s——部署包被改壞了？' % AG_KEY
+
+    want = copy.deepcopy(c)
+    if want.get(AG_KEY) == a[AG_KEY]:
+        return None, None, None
+    had = AG_KEY in want
+    want[AG_KEY] = copy.deepcopy(a[AG_KEY])
+    note = '換掉 %s 的接線' % AG_KEY if had else '補回 %s 的接線' % AG_KEY
+    return json.dumps(want, ensure_ascii=False, indent=2) + '\n', note, None
 
 
 def merge_wiring(authority, current):
@@ -255,6 +290,22 @@ def sync(project, gen, write_mode):
         else:
             changed += 1
             msgs.append('  UPDATE %s（%s）' % (rel, note))
+            if write_mode:
+                write(dst, new)
+
+    dst, src = project / AG_WIRING, gen / AG_WIRING
+    cur = read(dst)
+    if cur is None:
+        msgs.append('  skip   %s（這個專案沒有這個檔）' % AG_WIRING)
+    else:
+        new, note, err = merge_ag_wiring(read(src), cur)
+        if err:
+            msgs.append('  FAIL   %s：%s' % (AG_WIRING, err))
+        elif new is None:
+            msgs.append('  ok     %s' % AG_WIRING)
+        else:
+            changed += 1
+            msgs.append('  UPDATE %s（%s）' % (AG_WIRING, note))
             if write_mode:
                 write(dst, new)
 

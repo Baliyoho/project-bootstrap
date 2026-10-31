@@ -1,7 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
 > **本檔＝結構的唯一權威**：`project-bootstrap` 由什麼組成、每樣東西的家在哪、改哪裡會影響到什麼。
-> 最後更新：2026-10-31（同日第四次：**在 Antigravity CLI `1.4.7` 上把 hook 實測完**——`agy -p` headless 量到專案層 `.agents/hooks.json` 會讀、六個事件全部觸發，cwd 是 `.agents/`；相對路徑可用、絕對路徑才脆弱（`command` 照空白切 token、不解析引號），所以**上一次那個「骨架的不變量可能害探針測不出東西」的推論被推翻**，鐵律 5 跟它沒有衝突；`PreToolUse` 不明確回 `allow_tool` 就等於拒絕。骨架仍不附接線，理由換成「Windows 缺一層 `.cmd` shim」。只改敘述，接線／`verify_bootstrap.py`／`sync_project.py` 都沒動。同日第三次：**重新界定 Antigravity 那輪探針的範圍**——Antigravity 是四個獨立 surface（2.0 桌面 App／CLI／IDE／SDK），探針只覆蓋 IDE `1.107.0`，所以「這個工具沒有 hook 這一層」改寫成「骨架還沒附接線，2.0 與 CLI 沒測」；全域路徑 `~/.gemini/<applicationName>/hooks.json` 是跟著 surface 走的，`antigravity-ide` 那一份不能一般化成整個產品。只改敘述，接線不動、`verify_bootstrap.py` 與 `sync_project.py` 不動。同日第二次：**部署包移除 Antigravity 的 hook 接線**——舊 3.18 `.claude/hooks/antigravity-wrap.sh` 與舊 3.19 `.agents/hooks.json` 刪除，舊 3.20「其他 skills 慣例」遞補回 3.18；`verify_bootstrap.py` 移除「Antigravity 轉接層」六情境，`sync_project.py` 的 `WHOLE`／`WIRING` 各少一份。原因是實測：Antigravity IDE `1.107.0` **不讀專案層的 `.agents/hooks.json`**，那兩個檔部署出去也不會被觸發。同日稍早才加上它們，當天就被自己的驗收條件判出局。前一次是 2026-10-30 同日第二次：三平台能力重查後，`extract()` 的抽取規則從「第一個區塊」改成「區塊依序對應檔名」、`sync_project.py` 把 `CLAUDE.md` 從 `INSTANCE` 搬到 `PARTIAL`、`verify_bootstrap.py` 加「跨工具表保鮮期」、副本拓撲裡 `.agents/skills/` 的角色改變）
+> 最後更新：2026-10-31（同日第五次：**補上 Antigravity CLI 的 hook 接線，端到端實測過**——新增 3.18 `.claude/hooks/ag-wrap.sh`（轉接層）、3.19 `.agents/ag-hook.cmd`（Windows shim，找 Git Bash）、3.20 `.agents/hooks.json`（只接 `SessionStart`），舊 3.18「其他 skills 慣例」順延成 3.21；`verify_bootstrap.py` 加「Antigravity 接線」情境，`sync_project.py` 的 `WHOLE` 多兩份並新增 `AG_WIRING`（只換 `handoff-git-check` 那一個頂層 key）。骨架從 18 檔變 21 檔。同日第四次：**在 Antigravity CLI `1.4.7` 上把 hook 實測完**——`agy -p` headless 量到專案層 `.agents/hooks.json` 會讀、六個事件全部觸發，cwd 是 `.agents/`；相對路徑可用、絕對路徑才脆弱（`command` 照空白切 token、不解析引號），所以**上一次那個「骨架的不變量可能害探針測不出東西」的推論被推翻**，鐵律 5 跟它沒有衝突；`PreToolUse` 不明確回 `allow_tool` 就等於拒絕。骨架仍不附接線，理由換成「Windows 缺一層 `.cmd` shim」。只改敘述，接線／`verify_bootstrap.py`／`sync_project.py` 都沒動。同日第三次：**重新界定 Antigravity 那輪探針的範圍**——Antigravity 是四個獨立 surface（2.0 桌面 App／CLI／IDE／SDK），探針只覆蓋 IDE `1.107.0`，所以「這個工具沒有 hook 這一層」改寫成「骨架還沒附接線，2.0 與 CLI 沒測」；全域路徑 `~/.gemini/<applicationName>/hooks.json` 是跟著 surface 走的，`antigravity-ide` 那一份不能一般化成整個產品。只改敘述，接線不動、`verify_bootstrap.py` 與 `sync_project.py` 不動。同日第二次：**部署包移除 Antigravity 的 hook 接線**——舊 3.18 `.claude/hooks/antigravity-wrap.sh` 與舊 3.19 `.agents/hooks.json` 刪除，舊 3.20「其他 skills 慣例」遞補回 3.18；`verify_bootstrap.py` 移除「Antigravity 轉接層」六情境，`sync_project.py` 的 `WHOLE`／`WIRING` 各少一份。原因是實測：Antigravity IDE `1.107.0` **不讀專案層的 `.agents/hooks.json`**，那兩個檔部署出去也不會被觸發。同日稍早才加上它們，當天就被自己的驗收條件判出局。前一次是 2026-10-30 同日第二次：三平台能力重查後，`extract()` 的抽取規則從「第一個區塊」改成「區塊依序對應檔名」、`sync_project.py` 把 `CLAUDE.md` 從 `INSTANCE` 搬到 `PARTIAL`、`verify_bootstrap.py` 加「跨工具表保鮮期」、副本拓撲裡 `.agents/skills/` 的角色改變）
 >
 > **什麼時候改**：只有**結構**變動才改——根目錄多／少一個檔案、部署包增刪一節範本、`verify_bootstrap.py` 增減檢查項、副本拓撲改變。
 > 制度內容本身怎麼寫（鐵律的措辭、skill 的步驟）**不要動這一份**，那些的家在 [AGENTS.md](AGENTS.md) 與部署包裡。
@@ -39,7 +39,7 @@
 | 0 | 這套骨架在解決什麼問題（失效模式 → 對策） | 想知道「為什麼要有這條規則」的人 |
 | 1 | 部署前訪談：佔位符表 | 執行部署的 agent |
 | 2 | 要建立的檔案結構 | 同上 |
-| 3 | **各檔範本**（3.1–3.18），照抄只換佔位符 | 同上，改到哪份讀哪節 |
+| 3 | **各檔範本**（3.1–3.21），照抄只換佔位符 | 同上，改到哪份讀哪節 |
 | 4 | 上 GitHub | 同上 |
 | 5 | 部署後自檢清單 | 同上 |
 | 6 | 之後怎麼維持（一頁操作卡） | 部署完的專案 |
@@ -65,7 +65,10 @@
 | 3.15 | `tools/verify_state.py` | 一鍵現況查證（骨架） |
 | 3.16 | `.agents/skills/handoff/SKILL.md` | Antigravity 的指標檔 |
 | 3.17 | `.codex/hooks.json` | Codex CLI 的 hook 接線（掛 3.10／3.11 同樣那兩個 `.sh`） |
-| 3.18 | —— | 其他 skills 的**慣例說明**，不產檔 |
+| 3.18 | `.claude/hooks/ag-wrap.sh` | Antigravity 轉接層：只做管線（跑腳本、把 stdout 包成 JSON），不含規則 |
+| 3.19 | `.agents/ag-hook.cmd` | Antigravity 在 Windows 的 shim：找 Git Bash 再交給 3.18 |
+| 3.20 | `.agents/hooks.json` | Antigravity 的 hook 接線（經 3.18 掛同一支 3.10；只接 `SessionStart`） |
+| 3.21 | —— | 其他 skills 的**慣例說明**，不產檔 |
 
 ## 部署包 → 骨架的抽取規則（改範本前先讀這段）
 
@@ -73,7 +76,7 @@
 
 1. **`### 3.x` 標題行裡的反引號路徑＝產出的檔名。** 改標題就是改檔名——3.2 的標題有兩個路徑，所以一節產兩檔。
 2. **一節裡的 fence 依序對應標題上的檔名**；fence 比檔名少就全部沿用第一個（多數節是一檔一區塊）。fence 前的散文是給人看的說明，不會進檔案。
-3. **標題行沒有路徑就不產檔**（3.18 是慣例說明）。
+3. **標題行沒有路徑就不產檔**（3.21 是慣例說明）。
 
 第 2 條在 2026-10-30 從「只取第一個 fence，`GEMINI.md` 的標題再由腳本替換」改成現在這樣：3.2 的 `CLAUDE.md` 從此只有一行 `@AGENTS.md` import、`GEMINI.md` 維持指標寫法，兩份內容不同了。把其中一份合成在腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
 
@@ -124,21 +127,24 @@ handoff SKILL.md
   部署包 3.10／3.11（權威）
     └─→ 各專案 .claude/hooks/*.sh   ← 只有這一份腳本
           ├─← .claude/settings.json 指向它
-          └─← .codex/hooks.json 指向同樣那兩個（不複製第二份）
-                （Antigravity 還沒有這一條，但不是因為沒有入口：2026-10-31 實測
-                 CLI 1.4.7 的專案層 .agents/hooks.json 會讀、六個事件全觸發；
-                 缺的是 Windows 上那層 .cmd shim（command 不吃空白也不吃引號，
-                 而 Git Bash 路徑含空白）。IDE 1.107.0 沒觸發、2.0 未測）
+          ├─← .codex/hooks.json 指向同樣那兩個（不複製第二份）
+          └─← .agents/hooks.json 經 3.18 的轉接層指向同一支 3.10
+                （Windows 還多一層 3.19 的 .cmd shim：agy 的 command 不吃空白
+                 也不吃引號，而 Git Bash 的路徑含空白。2026-10-31 在 CLI 1.4.7
+                 上端到端實測過；IDE 1.107.0 沒觸發、2.0 未測）
 
 check_docs.py
   部署包 3.14（權威，「專案設定」區塊除外——那塊本來就該依專案調）
     └─→ 各專案 tools/check_docs.py
 
-兩份 hook 接線（JSON）
+三份 hook 接線（JSON）
   部署包 3.9／3.17（權威，只管「指向骨架那幾個 .sh」的那幾組；
                         專案自己加的 permissions／env／額外 hook 原樣保留）
     ├─→ 各專案 .claude/settings.json
     └─→ 各專案 .codex/hooks.json
+  部署包 3.20（權威。Antigravity 的頂層 key 就是 hook 名稱，所以骨架只擁有
+               handoff-git-check 這一個 key，換掉它、專案自己的 key 原樣保留）
+    └─→ 各專案 .agents/hooks.json
 ```
 
 **JSON 沒辦法放 `source:` 標記**，所以上面那兩份接線在落後偵測裡是隱形的——它們唯一的守門人是 `sync_project.py` 的 `WIRING` 清單加上 `verify_bootstrap.py` 的「同步清單涵蓋骨架」。2026-10-30 把它們補進拓撲，是因為 2026-09-13 給 3.9 補的 `Bash|PowerShell` matcher 一直沒發下去：三個專案停在舊的 `Bash`，而那台機器的主 shell 正是 PowerShell，pre-push 防呆於是在那些專案等於沒裝，一個半月沒有任何徵兆。
