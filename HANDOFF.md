@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-10-31 13:10（+08）
-- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（Antigravity CLI 的 hook 接線已附上並端到端實測）
+- **交接時間**：2026-10-31 12:55（+08）
+- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（收掉 IDE 那一項待辦，只改文件）
 
 ## 這份檔案在這個 repo 的角色（跟其他專案不一樣，先讀這段）
 
@@ -23,11 +23,14 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26103112｜收掉IDE待辦｜工作中`，2026-10-31 12:49 (+08) 開工
+- **工作中**：無（已交棒）
 - 本機能力：Windows 11 ＋ Git for Windows 的 bash；有 push 權限（不寫祕密值）。
 
 ## 已完成
 
+- 2026-10-31（只改文件，骨架、部署包與 `VERSION` 都沒動）：**IDE `1.107.0` 那個未解問題決定不追**
+  ——使用者不再使用這個 surface。界線見「未完成／下一步」末尾那段括號，判準同時寫進
+  [AGENTS.md](AGENTS.md) 的 Antigravity 那一條。
 - 2026-10-31（**刻意不跳版**，`SKILL.md` 沒動；新增三檔的 `source:` 標記是 `v2026-10-31.2`）：
   **Antigravity CLI 的 hook 接線已附上，而且是端到端實測過的。** 新增三節範本：3.18
   `.claude/hooks/ag-wrap.sh`（轉接層，只做管線）、3.19 `.agents/ag-hook.cmd`（Windows shim，
@@ -44,18 +47,19 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 未完成／下一步
 
-1. **IDE `1.107.0` 為什麼沒觸發，仍然沒有解釋。** CLI 能跑的同一種形狀、同樣的相對路徑，在 IDE
-   上就是沒動。**不要替它編理由**（鐵律 3）。現在門檻比上一輪低很多：把骨架 3.18–3.20 這份
-   **已經在 CLI 上端到端成立**的接線放進 IDE 的工作區再開一次 session 就知道了。
-   Antigravity 2.0 也還沒測（沒有 headless，要人開 session 看）。
-2. **五個既有專案要不要補 Antigravity 接線**（見上，`sync` 刻意不補裝）。
-3. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個
+1. **五個既有專案要不要補 Antigravity 接線**（見上，`sync` 刻意不補裝）。
+2. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個
    工具都觸發、`statusMessage` 會不會被忽略。卡在互動式 `/hooks` 信任。
+3. **Antigravity 2.0 仍未測**（沒有 headless，要人開 session 看）。
 4. （可選）`AGENTS.md` 補一段「開工第一件事」；`SessionStart` 的 `sessionTitle` 自動寫 session 名稱；
    `.codex/hooks.json` 接線本 repo 的 `repo-git-check.sh`（**不要**複製第二份腳本）。
 5. **`README.md` 的跨工具表仍然沒有守門人**（保鮮期檢查只讀部署包那一張）。
 
 （「階段二 pre-push hook」2026-10-30 決定不裝，理由在 [ARCHITECT.md](ARCHITECT.md)，掃到別再重提。）
+
+（「IDE `1.107.0` 為什麼沒觸發」2026-10-31 決定**不追**：使用者不再使用這個 surface，那個未解問題
+沒有讀者了。**量到的事實照留**——部署包與 `README.md` 都還寫著它沒觸發、原因未解，刪掉會讓下一個
+部署的人以為它能用；要收掉的是「去 IDE 重跑一次」這個下一步，不是那個結果。掃到別再重提。）
 
 ## 地雷與注意事項
 
@@ -92,6 +96,5 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 懸置事項（AI 勿自行處理）
 
-- 第 1 項要不要追（IDE 那個未解問題；2.0 要人開 session 才測得到）。
-- 第 2 項要不要做（既有專案補裝 Antigravity 接線）。
-- 第 3、4、5 項要不要做。
+- 第 1 項要不要做（既有專案補裝 Antigravity 接線）。
+- 第 2、3、4、5 項要不要做。
