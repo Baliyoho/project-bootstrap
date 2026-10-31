@@ -23,7 +23,7 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：無（已交棒）
+- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26103120｜Codex hook實測｜工作中`，2026-10-31 20:35 (+08) 開工
 - 本機能力：Windows 11 ＋ Git for Windows 的 bash；有 push 權限（不寫祕密值）。
 
 ## 已完成
