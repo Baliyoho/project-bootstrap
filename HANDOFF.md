@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-10-31 12:55（+08）
-- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（收掉 IDE 那一項待辦，只改文件）
+- **交接時間**：2026-10-31 17:14（+08）
+- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（Antigravity 收尾：六個專案補完接線，只剩 2.0 要人測）
 
 ## 這份檔案在這個 repo 的角色（跟其他專案不一樣，先讀這段）
 
@@ -23,37 +23,35 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26103112｜Antigravity接線｜工作中`，2026-10-31 17:07 (+08) 開工
+- **工作中**：無（已交棒）
 - 本機能力：Windows 11 ＋ Git for Windows 的 bash；有 push 權限（不寫祕密值）。
 
 ## 已完成
 
-- 2026-10-31（只改文件，骨架、部署包與 `VERSION` 都沒動）：**IDE `1.107.0` 那個未解問題決定不追**
-  ——使用者不再使用這個 surface。界線見「未完成／下一步」末尾那段括號，判準同時寫進
-  [AGENTS.md](AGENTS.md) 的 Antigravity 那一條。
-- 2026-10-31（**刻意不跳版**，`SKILL.md` 沒動；新增三檔的 `source:` 標記是 `v2026-10-31.2`）：
-  **Antigravity CLI 的 hook 接線已附上，而且是端到端實測過的。** 新增三節範本：3.18
-  `.claude/hooks/ag-wrap.sh`（轉接層，只做管線）、3.19 `.agents/ag-hook.cmd`（Windows shim，
-  自己找 Git Bash）、3.20 `.agents/hooks.json`（只接 `SessionStart`）；舊 3.18「其他 skills 慣例」
-  順延成 3.21。**骨架從 18 檔變 21 檔。**
-  驗收方式不是看畫面，而是**讓 agent 自己把開場訊息背出來**：在重生出來的骨架上跑 `agy -p`，
-  `[git-check]` 那一句原文被引用出來了（先用手寫版測通，再用 `extract()` 重生的**權威版**重跑一次）。
-  `verify_bootstrap.py` 加「Antigravity 接線」情境、`sync_project.py` 的 `WHOLE` 多兩份並新增
-  `AG_WIRING` → **exit 0，26 項全 ok**。
-- 同日稍早：在 CLI `1.4.7` 上量完 hook 契約（六個事件全觸發、cwd 是 `.agents/`、相對路徑可用而
-  絕對路徑才脆弱、`PreToolUse` 不明確允許就等於拒絕），並把前兩輪那些過度一般化的斷言縮回範圍。
-- **`sync_project.py` 不會把這三個新檔「補裝」到既有專案**——`WHOLE` 碰到專案沒有的檔就 skip，
-  那是刻意的設計。既有專案要接 Antigravity 就自己從部署包 3.18–3.20 補三個檔。
+- 2026-10-31（部署包當天第七次修改，**刻意不跳版**，三個範本內容沒動所以 `source:` 標記不變）：
+  **既有專案的 Antigravity 接線補完了**——`Grist_test`／`NAA_TR`／`NAS_MAINT`／`摘要skill設計`／
+  `第三批56箱後檢查`／`解決網路速度問題` 各補 3.18／3.19／3.20 三個檔，各一個 commit 已 push；
+  `序號卡`已完結所以不補。`sync_project.py` 沒有改（它刻意不做補裝，所以補裝是一次性動作，
+  用 `extract()` 重生的權威版複製，腳本留在暫存區不進 repo）。**實測**：在 `Grist_test` 跑
+  `agy -p`，`[git-check]` 開場原文被背出來，而且 CLI 已經是 `1.4.12`（上一輪量的是 `1.4.7`，
+  換版沒壞）。順手堵掉一個陷阱：Windows 提交會讓 `ag-wrap.sh` 記成 `100644`，而 Unix handler
+  是直接跑這支 `.sh`——六個專案都用 `git update-index --chmod=+x` 補成 `100755`，部署包 3.18
+  補上那條紅字。
+- 2026-10-31：**IDE `1.107.0` 那個未解問題決定不追**——使用者不再用這個 surface。界線見
+  「未完成／下一步」末尾那段括號，判準同時寫進 [AGENTS.md](AGENTS.md) 的 Antigravity 那一條。
+- 2026-10-31：**Antigravity CLI 的 hook 接線附進骨架並端到端實測過**（3.18 轉接層／3.19 Windows
+  shim／3.20 只接 `SessionStart`；舊 3.18 順延成 3.21，骨架 18 檔→21 檔），同日稍早在 CLI `1.4.7`
+  上量完 hook 契約。理由與約束在部署包的版本行與「跨工具與跨平台」那一節，這裡不重述。
 
 ## 未完成／下一步
 
-1. **五個既有專案要不要補 Antigravity 接線**（見上，`sync` 刻意不補裝）。
-2. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個
+1. **兩件 Codex hook 行為還沒實測**：`.codex/hooks.json` 的 `PreToolUse` 沒 matcher 時會不會對每個
    工具都觸發、`statusMessage` 會不會被忽略。卡在互動式 `/hooks` 信任。
-3. **Antigravity 2.0 仍未測**（沒有 headless，要人開 session 看）。
-4. （可選）`AGENTS.md` 補一段「開工第一件事」；`SessionStart` 的 `sessionTitle` 自動寫 session 名稱；
+2. **Antigravity 2.0 仍未測**——它沒有 headless，`agy -p` 這一招用不上，要**你本人**開一次
+   session 看開場有沒有 `[git-check]`。其餘三個 surface 都已收斂（CLI 實測通、IDE 決定不追）。
+3. （可選）`AGENTS.md` 補一段「開工第一件事」；`SessionStart` 的 `sessionTitle` 自動寫 session 名稱；
    `.codex/hooks.json` 接線本 repo 的 `repo-git-check.sh`（**不要**複製第二份腳本）。
-5. **`README.md` 的跨工具表仍然沒有守門人**（保鮮期檢查只讀部署包那一張）。
+4. **`README.md` 的跨工具表仍然沒有守門人**（保鮮期檢查只讀部署包那一張）。
 
 （「階段二 pre-push hook」2026-10-30 決定不裝，理由在 [ARCHITECT.md](ARCHITECT.md)，掃到別再重提。）
 
@@ -96,5 +94,5 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 懸置事項（AI 勿自行處理）
 
-- 第 1 項要不要做（既有專案補裝 Antigravity 接線）。
-- 第 2、3、4、5 項要不要做。
+- 第 1、3、4 項要不要做。
+- 第 2 項要你本人跑（Antigravity 2.0 沒有 headless，AI 這一端測不到）。
