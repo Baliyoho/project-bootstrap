@@ -86,11 +86,11 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 |---|---|---|---|---|
 | 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 | ✅ 原生 |
 | 自動載入程序檔 | ✅ `.claude/skills/`、`/handoff` | ⬜ 靠 `AGENTS.md` 指路 | ✅ `~/.codex/skills/`，也讀專案的 `.agents/skills/` | ✅ 原生讀 `.agents/skills/` |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意，首次需 `/hooks` 信任 | ✅ 有（App `26.506` 起，Settings 裡審核） | ⬜ **骨架還沒附**：2026-10-31 的探針只測了 IDE `1.107.0`（專案層 `.agents/hooks.json` 沒觸發），**2.0 桌面 App 與 CLI 沒測** |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意，首次需 `/hooks` 信任 | ✅ 有（App `26.506` 起，Settings 裡審核） | ⬜ **骨架還沒附**（Windows 缺一層 shim）。實測分 surface：CLI `1.4.7` **會讀**專案層 `.agents/hooks.json`、IDE `1.107.0` 沒觸發、2.0 未測 |
 
 **Codex 要分 CLI 與桌面 App**：CLI 有 hooks 且與 Claude Code 同格式，兩邊掛**同樣那兩個 `.sh`**、不各留一份；桌面 App 也有 hooks（2026-10-30 重查：App `26.506` 起有 in-app 信任審核，與 CLI 共用 `~/.codex`；舊版這裡寫「沒有」是 2026-08-06 的實測，已過期），全域 skill 一樣放 `~/.codex/skills/handoff/`。
 
-**Antigravity 的保證目前只押在可攜層**：它原生讀 `AGENTS.md` 與 `.agents/skills/`，而 hook 接線骨架**還沒附**。注意這句話的範圍：2026-10-31 的探針只在 **Antigravity IDE `1.107.0`** 上測過（專案層 `.agents/hooks.json` 沒觸發），而 Antigravity 另有 **2.0 桌面 App 與 CLI 兩個獨立 surface，都沒測過**，那次探針本身也還有沒排除的失敗原因（`command` 可能要絕對路徑）。所以結論是「還沒接上」，**不是「這個工具沒有 hook」**。
+**Antigravity 的保證目前只押在可攜層**：它原生讀 `AGENTS.md` 與 `.agents/skills/`，而 hook 接線骨架**還沒附**。但這**不是**「這個工具沒有 hook」——2026-10-31 實測 **CLI `1.4.7` 的專案層 `.agents/hooks.json` 會讀、六個事件全部觸發**；**IDE `1.107.0` 沒觸發**（原因仍未解釋），2.0 未測。還沒接的原因是 **Windows 缺一層 `.cmd` shim**（`command` 不吃空白也不吃引號，而 Git Bash 的路徑含空白）。細節與三件待解的事見部署包那一節。
 
 只有 Claude Code 與 Codex CLI 有自動關卡，**其餘兩者要靠可攜層**——這就是正確性不押在 hook 上的理由。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的）；`python` 不存在的機器改用 `python3`。
 
