@@ -18,6 +18,7 @@
 > 同日第五件事（**跳版 `.3`**，因為這次真的動到 `SKILL.md`）：**三個平台的能力全部重查一輪，修掉四個過期斷言、加一個保鮮期檢查。** ①**Codex 桌面 App 有 hooks**（App `26.506`／2026-05-08 起有 in-app 信任審核），舊表那句「沒有 hooks」是 2026-08-06 的實測——這是繼 Antigravity 之後**第二次**栽在同一種錯，所以這次不只改字：`verify_bootstrap.py` 加「跨工具表保鮮期」，查證日期超過 90 天就 fail。上一次的對策是一句警告，而**警告沒有擋住第二次**。②**`.agents/skills/` 不再只給 Antigravity**：`codex debug prompt-input` 印的 Skill roots 表證實 Codex 也讀 repo 的 `.agents/skills`，所以 3.16 那個指標檔的 `description` 從此必須寫滿觸發詞——那是它被發現的唯一依據，寫短就等於無聲地關掉一個入口。③**`CLAUDE.md` 改成只放 `@AGENTS.md` import**：Claude Code 從 v2.1.277 原生讀 `AGENTS.md`，但**有 `CLAUDE.md` 就不讀**，舊版那句「去讀 AGENTS.md」的指標反而壓掉了保證載入的機制，換來「它可能會去開那個檔」；順手把 `CLAUDE.md` 從 `sync_project.py` 的 `INSTANCE` 搬到 `PARTIAL`，否則這個修正只有新部署的專案拿得到。`extract()` 也跟著從「只取第一個區塊、事後改標題」改成「區塊依序對應檔名」，因為 3.2 從此是兩份不同的內容，而把其中一份合成在腳本裡就是讓範本有第二個家。④**`SessionEnd` 存在**（Claude Code 與 Codex 都有，Codex 的還會在閒置 30 分鐘觸發；Antigravity 沒有），所以「直接關掉視窗沒有下一個動作」只對一半的工具成立。結論沒變（標記還是寫在開工），但**理由改掉了**——鐵律 3 的重點是理由，理由錯了下一棒就會為了錯的原因重開一個已經定案的決定。⑤Antigravity 的兩個未知查清了：stdout 必須是 JSON `injectSteps`（裸 `echo` 會被丟掉），cwd 官方仍然沒寫、但可以用 stdin 的 `workspacePaths[0]` 繞過，所以「不附 `.agents/hooks.json` 範本」的理由從「查不到」換成「要先寫一層只做管線的轉接並實測」。
 > 2026-10-31（**刻意不跳版**：`SKILL.md` 一個字沒動，理由同上一條）：新增「工具身分：靠環境變數認得出『現在是哪個工具』嗎」一節。起因是「工作中」標記只比機器名，**同一台機器換個工具**就落進「大概是你自己另一個視窗」的 🟡，而 A2.5 叫人去驗的那個證據（側欄的 `㊣`）只有 Claude Code 有——同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴。實測結論是**沒有跨廠商的共同變數**，而且在一個工具的殼層裡啟動另一個工具時變數會被繼承、會說謊，所以身分的權威來源只能是標記裡自己填的工具名。**修法 2026-10-31 已落地**（跳版 `2026-10-31`，四處一起改，見本檔最上面那行版本說明）。
 > 2026-10-31（**刻意不跳版**：`SKILL.md` 一個字沒動，理由同上一條。但這是部署包當天的**第二次**修改，所以新增那兩個檔的 `source:` 標記寫 `v2026-10-31.2`——標記算的是「這份副本來自部署包的哪一版」，`VERSION` 算的是「`SKILL.md` 的版本」，兩個號會這樣岔開是正常的，鐵律 1 要的就是別讓後者跟著前者動）：**補上 Antigravity 的 hook 接線**——`.claude/hooks/antigravity-wrap.sh`（3.18）＋ `.agents/hooks.json`（3.19）。這之前四個平面裡有一個完全沒有觸發層，而「不附」的理由已經在 2026-10-30 從「查不到」降級成「要先寫一層轉接」。轉接層只做管線：取 `workspacePaths[0]`、`cd` 過去、跑**同一支** `git-freshness.sh`、把它的 stdout 包成 `{"injectSteps":[{"ephemeralMessage":"…"}]}`。裡面沒有任何判斷規則可以跟權威版分岔，所以它只會在管線上壞掉——而管線是驗得出來的：`verify_bootstrap.py` 加「Antigravity 轉接層」六情境（正常注入、escaping 原樣還原、`cd` 真的進到 `workspacePaths[0]`、少參數、腳本不存在、stdin 不是 JSON），全部要求合法 JSON ＋ exit 0。**還沒驗到的是「Antigravity 真的會觸發它、而且吃這個設定檔形狀」**：官方只寫了檔案位置、事件名與 stdout 契約，沒有列設定檔欄位，而它沒有 headless 模式，要在 IDE 裡開一個 session 才看得到。所以第 5 節那一項**不是可選的驗收，是這兩個檔能不能留下來的條件**——沒看到訊息就把它們刪掉，一個不會觸發的 hook 比沒有更糟（它看起來像有防護）。失敗也刻意做成**吵的**：拿不到工作區或找不到腳本時注入一句 `[ag-wrap] ⚠️`，而不是安靜地什麼都不做。
+> 2026-10-31（**刻意不跳版**：`SKILL.md` 一個字沒動。部署包當天第八次修改，三個範本的內容仍然沒動）：**Antigravity 2.0 `2.28.2` 實測完畢——它會讀專案層 `.agents/hooks.json`，而且接線端到端成立。** 四個 surface 裡現在只剩 IDE `1.107.0` 不觸發（原因仍未解，而且已決定不追）。2.0 沒有命令列入口，所以 session 是用桌面自動化開的，但**偵測器仍然是寫檔不是看畫面**；量到 `SessionStart`／`PreInvocation`／`PostInvocation`／`Stop` 四個事件，cwd 同樣是 `.agents/`，沒有任何信任提示。另外補一條方法論紅字：**先驗儀器再測受測物**——第一版探針的 `command` 被轉義吃掉一個字元，而那種壞法在已知會觸發的 CLI 上同樣一聲不響，直接拿去測 2.0 就會產出一個假陰性，形狀跟 IDE 前兩輪的誤判一模一樣。只改敘述：接線、`verify_bootstrap.py`、`sync_project.py` 都沒動。
 > 2026-10-31（**刻意不跳版**：`SKILL.md` 一個字沒動。部署包當天第七次修改，而且**三個範本的內容都沒動**，所以 `source:` 標記不變）：**把既有專案的 Antigravity 接線補上，並在 3.18 補一條「從 Windows 提交會掉執行位元」的陷阱。** `sync_project.py` 刻意不做補裝（專案缺哪個檔就 skip 哪個），所以補裝是一次性動作，而且清單要先給使用者看過——這台機器 7 個裝過骨架的專案裡，`序號卡`（已完結、main 上那個未推的 commit 是刻意留的）不補，其餘 6 個各補 3.18／3.19／3.20。陷阱本身見 3.18 那條紅字：Unix handler 直接跑 `.sh`，而 Windows 提交出來的是 `100644`，Unix clone 上那條 handler 會靜默不動。**IDE 這一面同日決定不再追**（使用者不再用這個 surface），所以 Antigravity 剩下的唯一未知是 2.0——它沒有 headless，要人開一次 session 才測得到。
 > 2026-10-31（**刻意不跳版**：`SKILL.md` 一個字沒動。部署包當天第六次修改，所以新增三個檔的 `source:` 標記寫 `v2026-10-31.2`）：**把 Antigravity CLI 的 hook 接線補上，而且這次是端到端實測過的。** 新增三節範本：3.18 `.claude/hooks/ag-wrap.sh`（轉接層，只做管線）、3.19 `.agents/ag-hook.cmd`（Windows shim，找 Git Bash）、3.20 `.agents/hooks.json`（接線，只接 `SessionStart`）；舊 3.18「其他 skills 慣例」順延成 3.21。驗收方式從「看畫面」換成**讓 agent 自己把開場訊息背出來**：在重生的骨架上跑 `agy -p`，`[git-check]` 那句原文被引用出來了。shim 的三個設計約束都是踩到才知道的：①**全檔 ASCII**——中文 `rem` 註解被 OEM code page 誤讀後**整段被當成指令執行**，stderr 噴三行 `is not recognized`；②**只用單行 `if`、不用括號區塊也不用 label**——檔案是 LF 行末（`.gitattributes` 強制），而 `cmd.exe` 讀 LF-only 檔案時多行區塊會出錯；③**路徑用 `%~dp0` 與 `$0` 推，不依賴 cwd**——雖然實測 cwd 就是 `hooks.json` 所在目錄，但多押一個假設沒有好處。`.agents/hooks.json` 放兩個 handler（Unix 一條、Windows 一條），不合用的那條失敗而無害（實測只噴 stderr、不產生 stdout）。`PreToolUse` **刻意不接**：實測不明確回 `{"allow_tool": true}` 就等於拒絕，接上之後轉接層任何一次失敗都會擋掉使用者全部的工具呼叫。`verify_bootstrap.py` 加「Antigravity 接線」情境（轉接層的 JSON 與 escaping、shim 全 ASCII 且無括號區塊、`hooks.json` 的 key 與事件），`sync_project.py` 的 `WHOLE` 多兩份、新增 `AG_WIRING` 只換 `handoff-git-check` 那一個頂層 key。**IDE `1.107.0` 為什麼沒觸發仍然沒有解釋**，刻意留成未解問題。
 > 2026-10-31（**刻意不跳版**：`SKILL.md` 一個字沒動。部署包當天第五次修改）：**在 Antigravity CLI `1.4.7` 上把 hook 實測完，結論反轉。** `agy` 有 `--print` headless 模式（IDE 沒有，那正是前兩次測不準的根因），所以這次量得到：**專案層 `.agents/hooks.json` 會被讀、六個事件（`SessionStart`／`PreInvocation`／`PreToolUse`／`PostToolUse`／`PostInvocation`／`Stop`）全部觸發**；cwd 是 `hooks.json` 所在目錄（`.agents/`），與官方契約一致；`PreInvocation` 在 CLI 沒失效。三個意外：①**相對路徑可用、絕對路徑才脆弱**——`command` 照空白切 token、不解析引號，實測只有「不含空白＋不加引號」的絕對路徑跑得起來（四種組合逐一驗證），所以**上一條那個「骨架的不變量可能害探針測不出東西」的推論被推翻**，鐵律 5 跟 Antigravity 沒有衝突，在 Windows 上甚至是唯一寫得出來的形式；②**`PreToolUse` 不明確回 `{"allow_tool": true}` 就等於拒絕**——回 `{}` 的那一輪 agy 把 `read_file` 與 `run_command` 全擋掉了，這比「hook 不跑」危險得多；③**Windows 上接不起來的真正原因是 shim**：`cmd /c` 跑不了 `.sh`，PATH 上的 `bash` 是 WSL 的（本機還壞的），而 Git Bash 在 `C:\Program Files\Git\bin\bash.exe`、路徑含空白——`command` 寫不出來。**骨架仍不附接線**，但理由從「入口不存在」換成「缺一層 `.cmd` shim，而且有三件事要先解決」（shim 怎麼跨機器找到 Git Bash、Unix 不需要 shim 會變成兩種形狀、`PreToolUse` 接上後 shim 失敗等於擋掉全部工具呼叫）。IDE `1.107.0` 為什麼沒觸發**仍然沒有解釋**，刻意留成未解問題。只改敘述：接線、`verify_bootstrap.py`、`sync_project.py` 都沒動。
@@ -64,7 +65,7 @@
 |---|---|---|---|---|
 | 讀 `AGENTS.md` | ✅ 原生（v2.1.277 起），**但有 `CLAUDE.md` 就不讀**，見下 | ✅ 原生（未信任的專案也讀，2026-10-30 實測） | ✅ 原生（與 CLI 共用 `~/.codex`） | ✅ 原生（與 `GEMINI.md` 的優先序官方沒排，見下） |
 | 自動載入程序檔 | ✅ `.claude/skills/`，可打 `/handoff` | ✅ `~/.codex/skills/` ＋ repo 的 `.agents/skills/`（2026-10-30 實測，見 3.16） | ✅ 同 CLI | ✅ 原生讀 `.agents/skills/` |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，但**要專案被信任＋hook 經審核** | ✅ **有**（App `26.506` 起有 in-app 信任審核） | ✅ `<repo>/.agents/hooks.json`（3.20），**CLI `1.4.7` 端到端實測過**；Windows 要經 3.19 的 `.cmd` shim。IDE `1.107.0` 沒觸發、2.0 未測，見下 |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，但**要專案被信任＋hook 經審核** | ✅ **有**（App `26.506` 起有 in-app 信任審核） | ✅ `<repo>/.agents/hooks.json`（3.20），**CLI（`1.4.7`／`1.4.12`）與 2.0 `2.28.2` 都端到端實測過**；Windows 要經 3.19 的 `.cmd` shim。IDE `1.107.0` 沒觸發（原因未解，不再追），見下 |
 | 關閉 session 時有事件 | ✅ `SessionEnd`（不能擋、1.5 秒預算） | ✅ `SessionEnd`（含閒置 30 分鐘） | ✅ 同 CLI | ❌ 沒有這個事件 |
 
 ### Claude Code：`CLAUDE.md` 會擋住 `AGENTS.md`
@@ -88,7 +89,7 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 - **skill 來源看得到，不必猜**：`codex debug prompt-input` 會印一張「Skill roots」表。2026-10-30 實測 0.164.0 列出 `~/.codex/skills`（**官方文件已經不列這個路徑，但實際仍然讀**）**與 repo 的 `.agents/skills`**。官方另外列 `$CWD/../.agents/skills`、`$HOME/.agents/skills`、`/etc/codex/skills`。
 - `project_doc_max_bytes` 會截 `AGENTS.md`，所以**「開工第一件事」那一段必須待在 `AGENTS.md` 最上面**。
 
-### Antigravity：四個 surface，骨架還沒附接線（2026-10-31 探針只覆蓋 IDE）
+### Antigravity：四個 surface，骨架已附接線（CLI 與 2.0 實測通，IDE 沒觸發）
 
 🔴 **先認清一件事：「Antigravity」不是一個產品，是四個。** 官方 blog「Choosing your surface」並排列出：
 
@@ -101,19 +102,25 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 
 官方明講**沒有** deprecate IDE，並建議兩個都裝——所以**同一台機器上同時有多個 surface 是常態**，不是過渡狀態。問「你用 Antigravity 嗎」得不到夠用的答案，要問**哪一個**。
 
-**結論先講：Antigravity CLI `1.4.7` 的專案層 `.agents/hooks.json` 會被讀、而且真的觸發**（2026-10-31 實測）。所以「Antigravity 沒有 hook 這一層」是錯的——錯在把**一個 surface 的結果當成整個產品的性質**。目前狀態分 surface 看：
+**結論先講：Antigravity CLI（`1.4.7`／`1.4.12`）與 Antigravity 2.0（`2.28.2`）的專案層 `.agents/hooks.json` 都會被讀、而且真的觸發**（2026-10-31 實測）。所以「Antigravity 沒有 hook 這一層」是錯的——錯在把**一個 surface 的結果當成整個產品的性質**，而當初那個 surface（IDE）剛好是四個裡唯一不觸發的那一個。目前狀態分 surface 看：
 
 | Surface | 專案層 `.agents/hooks.json` | 證據 |
 |---|---|---|
-| **Antigravity CLI `1.4.7`** | ✅ **會讀、會觸發** | 2026-10-31 實測（`agy -p` headless），六個事件逐一確認，契約見下 |
+| **Antigravity CLI `1.4.7`／`1.4.12`** | ✅ **會讀、會觸發** | 2026-10-31 實測（`agy -p` headless），六個事件逐一確認，契約見下；`1.4.12` 上重跑同一份接線沒壞 |
 | **Antigravity IDE `1.107.0`** | ❌ 沒觸發 | 2026-10-31 探針，四個事件都沒觸發、log 檔沒產生 |
-| **Antigravity 2.0** | ❓ 未測 | 沒有 headless 模式，要人開 session 看 |
+| **Antigravity 2.0 `2.28.2`** | ✅ **會讀、會觸發** | 2026-10-31 實測：`SessionStart`／`PreInvocation`／`PostInvocation`／`Stop` 四個都進 log，cwd 同樣是 `.agents/`，而且沒有出現任何信任／審核提示。接著在裝了 3.18–3.20 的真專案上開一次 session，agent 把 `[git-check]` 開場原文背了出來——注入確實進到 context。測法見下 |
 
 **骨架 2026-10-31 起附了接線**（3.18 轉接層 ＋ 3.19 Windows shim ＋ 3.20 `.agents/hooks.json`），而且是**端到端實測過的**：在重生出來的骨架上跑 `agy -p`，agent 把 `[git-check]` 那句原文背了出來——注入真的進到模型的 context，不是「設定長得像對的」。
 
 #### 怎麼測的：CLI 有 IDE 沒有的東西
 
 `agy` 有 `--print`／`-p`（headless 單輪），所以**不必拿「畫面上看不看得到訊息」當偵測器**——那正是前兩次 IDE 測不準的原因（混進了「沒跑」與「跑了但輸出被丟掉」）。探針讓 hook 自己 append 一行 log（事件名、label、`%CD%`），並在工作區根與 `.agents/` 各放一份同名但 label 不同的腳本，**用哪一份跑起來反推 cwd**。
+
+#### 2.0 怎麼測的：沒有 headless，但偵測器照樣不靠畫面
+
+2.0 的安裝目錄底下只有 `Antigravity.exe`，沒有任何命令列入口（`bin/` 根本不存在），所以 `agy -p` 那一招用不上——這一面只能由人或桌面自動化開一個 session。**但「要用畫面開 session」不等於「要用畫面判讀」**：探針仍然是 hook 自己往 `.agents/_probe.log` 追加一行（事件名、cwd、參數），所以結果不受「訊息有沒有顯示出來」影響。測法是另開一個乾淨資料夾當工作區，只放 `.agents/hooks.json` 與一支全 ASCII 的 `.cmd` 探針，掛五個事件（`PreToolUse` 刻意不掛，理由見上），開一次對話，然後讀 log。
+
+🔴 **先驗儀器，再測受測物。** 第一版探針的 `command` 在寫入時被轉義吃掉一個字元（`.\ag-probe.cmd` 變成 `.` ＋ BEL ＋ `g-probe.cmd`），而這種壞法在**已知會觸發**的 CLI 上同樣一聲不響。要是直接拿去測 2.0，就會把「我的檔寫壞了」寫成「2.0 不支援專案層 hook」——那正是 IDE 前兩輪誤判的同一個形狀。所以同一份接線先在 CLI 上跑一次，log 出來了才拿去測 2.0。**沒有驗過的儀器量不出陰性結果**，只量得出「沒看到東西」。
 
 #### 量到的契約（CLI `1.4.7`／Windows）
 
@@ -144,15 +151,14 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 
 #### 還沒解決的
 
-- **IDE `1.107.0` 為什麼沒觸發，仍然沒有解釋**——CLI 能跑的同一種形狀、同樣的相對路徑，在 IDE 上就是沒動。留著當未解問題，**不要替它編理由**。要查就在 IDE 上重跑這份已經在 CLI 上端到端成立的接線。
-- **Antigravity 2.0 未測**（沒有 headless 模式，要人開 session 看）。
+- **IDE `1.107.0` 為什麼沒觸發，仍然沒有解釋**——同一種形狀、同樣的相對路徑，CLI 會跑、2.0 也會跑（2026-10-31 兩面都實測過），只有 IDE 沒動。四個 surface 裡它是唯一的例外，而**例外沒有解釋就是沒有解釋**，不要替它編一個。要查就在 IDE 上重跑這份已經在另外兩面成立的接線。
 - **專案自己的 `.agents/hooks.json` 內容**：骨架只擁有 `handoff-git-check` 這個頂層 key，同步只換它。但 Antigravity 的 hook 設定**只有專案層**這一份進 Git，全域那一份跟著機器走——所以跨機器的一致性靠的仍然是這個檔，不是人的記性。
 
 #### 一個已經收回的推論（鐵律 3）
 
 同日稍早寫過：「探針的 `command` 必然是相對的，而第三方指南說必須絕對——骨架自己的不變量可能保證了那支探針測不出東西」。**這個推論被實測推翻**：CLI 上相對路徑**正常工作**，反而絕對路徑才脆弱。所以鐵律 5「接線路徑一律相對」跟 Antigravity **沒有衝突**，它在 Windows 上甚至是唯一寫得出來的形式。
 
-**IDE `1.107.0` 那次為什麼沒觸發，到現在仍然沒有解釋**——CLI 能跑的同一種形狀、同樣的相對路徑，在 IDE 上就是沒動。留著當未解問題，**不要再替它編一個理由**。要查就在 IDE 上重跑一次這份已經在 CLI 上成立的設定。
+**IDE `1.107.0` 那次為什麼沒觸發，到現在仍然沒有解釋**——CLI 與 2.0 都能跑的同一種形狀、同樣的相對路徑，在 IDE 上就是沒動。留著當未解問題，**不要再替它編一個理由**。要查就在 IDE 上重跑一次這份已經在另外兩面成立的設定。
 
 **怎麼測才測得準**——這一段比結論重要，因為前兩次都測不準：前兩次用的偵測器是「對話開頭看不看得到 `[git-check]`」，而那同時混進了「hook 沒跑」與「hook 跑了但輸出被丟掉」兩種可能，**兩者在畫面上長得一模一樣**。第三次改成**讓 hook 自己寫檔**（觸發就往 `.agents/_probe.log` 追加一行，記下事件名、cwd 與 stdin），一次掛四個探針：`SessionStart` 扁平、`SessionStart` 包 `matcher`／`hooks`、`PreToolUse` 配 `matcher: "*"`、`Stop`。完全關閉 IDE 重開、開新對話、讓它實際呼叫一次工具之後，**log 檔根本沒有產生**。
 
