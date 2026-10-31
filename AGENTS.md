@@ -29,10 +29,10 @@
 
 - **改完部署包，把所有副本一起覆蓋**，包括選用的全域 `~/.claude/skills/handoff/` 與 `~/.codex/skills/handoff/`（2026-10-30 實測 Codex CLI `0.164.0` 仍讀後者，雖然官方文件已經不列這個路徑）。漏掉一份，那台機器就繼續照舊制度做事。
 - **Codex 的 hook 與 Claude Code 同格式同語意**，所以兩邊掛的是同樣那兩個 `.sh`——不要複製第二份腳本進 `.codex/`。兩份各自演化就會出現「Claude 端會擋、Codex 端不會擋」的不對稱。
-- **Antigravity 沒有 hook 這一層**（2026-10-31 實測後移除）。曾經有過：同一天補上轉接層與 `.agents/hooks.json`，當天就被自己的驗收條件判掉——**Antigravity IDE `1.107.0` 根本不讀專案層的 `.agents/hooks.json`**。證據、完整契約與「怎麼測才測得準」寫在部署包「跨工具與跨平台」的 Antigravity 那一節。**不要憑文件把它接回來**：官方文件（連內嵌在執行檔裡的那份）跟實作對不起來，而它的 hook 是機器層設定（`~/.gemini/antigravity-ide/hooks.json`），本來就不可能隨專案部署。
+- **Antigravity 的 hook 接線目前不附，但「它沒有這一層」是過度推論**（2026-10-31 探針，同日重新界定範圍）。那次只測了 **Antigravity IDE `1.107.0`**，而 Antigravity 是**四個獨立 surface**（Antigravity 2.0 桌面 App／Antigravity CLI／Antigravity IDE／Python SDK，官方 blog 並排列出），**2.0 與 CLI 都沒測過**——而那兩個才是不少人日常在用的。同一次挖出來的全域路徑 `<home>/.gemini/<applicationName>/hooks.json` 自己就說明了這件事：`applicationName` **跟著 surface 走**，所以 `antigravity-ide` 那一份只是 IDE 的，不能一般化成「Antigravity 的 hook 是機器層設定」。探針最可能的失敗原因也還沒排除：`command` 可能必須是絕對路徑，而本骨架鐵律「接線路徑一律相對」＋`verify_bootstrap.py` 的跨平台防呆**主動擋絕對路徑**——那輪還 exit 0 過，所以當時那份 `command` 必然是相對的。證據、完整契約與「怎麼測才測得準」寫在部署包「跨工具與跨平台」的 Antigravity 那一節。**要接回來仍然要先有實測**（別憑文件接），但**原本那句「門檻是比那次探針更強的證據」已經取消**：探針測的是另一個 surface，它不構成需要被超越的證據。
   要重開這個決定，門檻是比那次探針更強的證據——那次是讓 hook 自己寫檔，連 Hooks UI 自己列得出來的 `PreToolUse` 都沒觸發。
 - **接線路徑一律相對**：寫死絕對路徑換機器就靜默失效（真的發生過），`verify_bootstrap.py` 的「跨平台防呆」會擋。
-- **`.agents/` 只放指標**，不複製程序內容（2026-10-31 一度多了 `hooks.json`，同日移除，見上一條）。2026-10-30 起它不只給 Antigravity——`codex debug prompt-input` 的 Skill roots 表證實 Codex 也把 repo 的 `.agents/skills/` 當 skill 來源。既然會被自動發現，**那份指標的 `description` 就必須寫滿觸發詞**：agent 是靠它決定要不要開檔的，寫短等於無聲地關掉一個入口。
+- **`.agents/` 只放指標**，不複製程序內容（2026-10-31 一度多了 `hooks.json`，同日移除，見上一條——那是「還沒測到會動」而移除，不是「這個工具沒有這個入口」）。2026-10-30 起它不只給 Antigravity——`codex debug prompt-input` 的 Skill roots 表證實 Codex 也把 repo 的 `.agents/skills/` 當 skill 來源。既然會被自動發現，**那份指標的 `description` 就必須寫滿觸發詞**：agent 是靠它決定要不要開檔的，寫短等於無聲地關掉一個入口。
 - **本 repo 自己的 `HANDOFF.md` 與 `.claude/hooks/repo-git-check.sh` 不在副本拓撲裡**，`sync_project.py` 不要碰它們：前者是範本 3.3 的*實例*，後者誰的副本都不是（檔頭寫了為什麼不抄 3.10）。它們的檢查由 `verify_bootstrap.py` 顧。
 
 ## 這個 repo 自己的指標檔
