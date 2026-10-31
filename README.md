@@ -86,9 +86,11 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 |---|---|---|---|---|
 | 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 | ✅ 原生 |
 | 自動載入程序檔 | ✅ `.claude/skills/`、`/handoff` | ⬜ 靠 `AGENTS.md` 指路 | ✅ `~/.codex/skills/`，也讀專案的 `.agents/skills/` | ✅ 原生讀 `.agents/skills/` |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意，首次需 `/hooks` 信任 | ❌ 沒有 | ❌ 沒有 |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意，首次需 `/hooks` 信任 | ✅ 有（App `26.506` 起，Settings 裡審核） | ❌ **專案層的 `.agents/hooks.json` 不被讀取**（2026-10-31 實測 IDE `1.107.0`） |
 
-**Codex 要分 CLI 與桌面 App**（2026-08-06 實測 App `26.721.41059`）：CLI 有 hooks 且與 Claude Code 同格式，兩邊掛**同樣那兩個 `.sh`**、不各留一份；桌面 App 沒有 hooks，但有原生 skill 系統，把 `SKILL.md` 複製到 `~/.codex/skills/handoff/` 即可。
+**Codex 要分 CLI 與桌面 App**：CLI 有 hooks 且與 Claude Code 同格式，兩邊掛**同樣那兩個 `.sh`**、不各留一份；桌面 App 也有 hooks（2026-10-30 重查：App `26.506` 起有 in-app 信任審核，與 CLI 共用 `~/.codex`；舊版這裡寫「沒有」是 2026-08-06 的實測，已過期），全域 skill 一樣放 `~/.codex/skills/handoff/`。
+
+**Antigravity 只有可攜層**：它原生讀 `AGENTS.md` 與 `.agents/skills/`，但 hook 接不上——2026-10-31 實測 IDE `1.107.0` 不讀專案層的 `.agents/hooks.json`（它的 hook 是機器層設定）。所以這個工具的保證全押在 `AGENTS.md` 與那份指標檔上。
 
 只有 Claude Code 與 Codex CLI 有自動關卡，**其餘兩者要靠可攜層**——這就是正確性不押在 hook 上的理由。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的）；`python` 不存在的機器改用 `python3`。
 

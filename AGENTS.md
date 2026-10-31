@@ -29,10 +29,10 @@
 
 - **改完部署包，把所有副本一起覆蓋**，包括選用的全域 `~/.claude/skills/handoff/` 與 `~/.codex/skills/handoff/`（2026-10-30 實測 Codex CLI `0.164.0` 仍讀後者，雖然官方文件已經不列這個路徑）。漏掉一份，那台機器就繼續照舊制度做事。
 - **Codex 的 hook 與 Claude Code 同格式同語意**，所以兩邊掛的是同樣那兩個 `.sh`——不要複製第二份腳本進 `.codex/`。兩份各自演化就會出現「Claude 端會擋、Codex 端不會擋」的不對稱。
-- **Antigravity 不同格式，但也只有一份腳本**（2026-10-31）。它的 `SessionStart` 只吃 JSON（`injectSteps`），裸 `echo` 會被整段丟掉，所以中間過一層 `.claude/hooks/antigravity-wrap.sh`（部署包 3.18）。**那一層刻意只做管線**——取 `workspacePaths[0]`、`cd`、跑腳本、包 JSON——裡面沒有任何判斷規則，所以它不可能跟權威版分岔，只會在管線上壞掉，而管線由 `verify_bootstrap.py` 的「Antigravity 轉接層」六情境守著。要加規則就是加到被包的那支 `.sh` 裡，不要加到轉接層。
-  🔴 **但「Antigravity 真的會觸發它」還沒測量過**：官方只寫了檔案位置、事件名與 stdout 契約，沒有列設定檔的欄位，而它沒有 headless 模式。所以部署時那一項（第 5 節）是**條件不是選項**——開一個 session 看不到 `[git-check]` 就把 `.agents/hooks.json` 與轉接層刪掉。一個不會觸發的 hook 比沒有更糟，它看起來像有防護。
+- **Antigravity 沒有 hook 這一層**（2026-10-31 實測後移除）。曾經有過：同一天補上轉接層與 `.agents/hooks.json`，當天就被自己的驗收條件判掉——**Antigravity IDE `1.107.0` 根本不讀專案層的 `.agents/hooks.json`**。證據、完整契約與「怎麼測才測得準」寫在部署包「跨工具與跨平台」的 Antigravity 那一節。**不要憑文件把它接回來**：官方文件（連內嵌在執行檔裡的那份）跟實作對不起來，而它的 hook 是機器層設定（`~/.gemini/antigravity-ide/hooks.json`），本來就不可能隨專案部署。
+  要重開這個決定，門檻是比那次探針更強的證據——那次是讓 hook 自己寫檔，連 Hooks UI 自己列得出來的 `PreToolUse` 都沒觸發。
 - **接線路徑一律相對**：寫死絕對路徑換機器就靜默失效（真的發生過），`verify_bootstrap.py` 的「跨平台防呆」會擋。
-- **`.agents/` 只放指標與接線**，不複製程序內容——2026-10-31 起它多了 `hooks.json`，那是接線（指向 `.claude/hooks/` 的腳本），不是程序的第二份。2026-10-30 起它不只給 Antigravity——`codex debug prompt-input` 的 Skill roots 表證實 Codex 也把 repo 的 `.agents/skills/` 當 skill 來源。既然會被自動發現，**那份指標的 `description` 就必須寫滿觸發詞**：agent 是靠它決定要不要開檔的，寫短等於無聲地關掉一個入口。
+- **`.agents/` 只放指標**，不複製程序內容（2026-10-31 一度多了 `hooks.json`，同日移除，見上一條）。2026-10-30 起它不只給 Antigravity——`codex debug prompt-input` 的 Skill roots 表證實 Codex 也把 repo 的 `.agents/skills/` 當 skill 來源。既然會被自動發現，**那份指標的 `description` 就必須寫滿觸發詞**：agent 是靠它決定要不要開檔的，寫短等於無聲地關掉一個入口。
 - **本 repo 自己的 `HANDOFF.md` 與 `.claude/hooks/repo-git-check.sh` 不在副本拓撲裡**，`sync_project.py` 不要碰它們：前者是範本 3.3 的*實例*，後者誰的副本都不是（檔頭寫了為什麼不抄 3.10）。它們的檢查由 `verify_bootstrap.py` 顧。
 
 ## 這個 repo 自己的指標檔

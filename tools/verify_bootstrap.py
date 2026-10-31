@@ -76,8 +76,7 @@ EXPECTED = {
     'docs/ai-notes/handover-protocol.md', 'docs/ai-notes/roadmap.md',
     '.claude/skills/handoff/SKILL.md', '.claude/settings.json',
     '.claude/hooks/git-freshness.sh', '.claude/hooks/pre-push-handoff.sh',
-    '.claude/hooks/antigravity-wrap.sh',
-    '.codex/hooks.json', '.agents/hooks.json', '.agents/skills/handoff/SKILL.md',
+    '.codex/hooks.json', '.agents/skills/handoff/SKILL.md',
     '.gitignore', '.gitattributes',
     'tools/check_docs.py', 'tools/verify_state.py',
 }
@@ -520,97 +519,6 @@ def step_hook(dest, tmp):
         return False
     record('OK', 'pre-push hook 五情境', '、'.join(f'{n}→{want}' for n, want, _ in cases))
     return work        # 有 origin、有 commit，git-freshness 才走得到比對邏輯
-
-
-# ── 5.5 Antigravity 轉接層 ─────────────────────────────────────
-def step_ag_wrap(work):
-    """3.18 的轉接層六情境。
-
-    Antigravity 的 `SessionStart` 只吃 JSON（`injectSteps`），而骨架那兩支 `.sh` 是直接 echo
-    給人讀的——所以中間一定要有一層轉接。這裡驗的是**管線**，不是 Antigravity 會不會觸發它：
-    後者沒有 headless 模式，只能在 IDE 裡開 session 看（第 5 節那一項）。兩件事的證據強度
-    不同，刻意不混在一起報——「轉接層測過了」不等於「Antigravity 吃這個設定檔」。
-
-    管線壞掉的樣子正好是最難看出來的那一種：hook 跑了、exit 0、而 Antigravity 把不合格式的
-    stdout 整段丟掉，畫面上跟「查過了沒事」一模一樣。所以六個情境都釘同兩件事：**輸出是合法
-    JSON** 且 **exit 0**，失敗路徑還要真的講話（`[ag-wrap]`），不能安靜地回空物件。
-    """
-    title = 'Antigravity 轉接層'
-    bash = find_bash()
-    if not bash:
-        record('SKIP', title, '找不到看得懂 Windows 路徑的 bash')
-        return None
-    if work is None:
-        record('SKIP', title, 'hook fixture 沒建起來，缺少有 origin 與 commit 的 repo 可測')
-        return None
-
-    # 轉接層本身用絕對路徑呼叫：下面有兩個情境刻意從工作區外面執行，相對路徑在那裡找不到它
-    # （那會測成「轉接層沒輸出」，而真正要測的是它有沒有 cd 進 workspacePaths[0]）。
-    wrap = str(work / '.claude' / 'hooks' / 'antigravity-wrap.sh')
-    payload = json.dumps({'workspacePaths': [str(work)], 'event': 'SessionStart'})
-    # 故意挑 JSON escaping 最容易壞的三個字元：反斜線、雙引號、tab。
-    probe_text = '[probe] "引號" 反斜線 C:\\tmp\n[probe] tab\t結束'
-    probe = work / '.claude' / 'hooks' / 'ag-probe.sh'
-    with open(probe, 'w', encoding='utf-8', newline='') as fh:
-        # 單引號包起來：bash 的單引號會原樣保留反斜線與 tab，而 printf 不展開 %s 的參數。
-        # 用 json.dumps 當引號會踩到兩個坑——ensure_ascii 把中文變成字面的 \uXXXX，而雙引號
-        # 裡的 \t 也不會變成 tab。探針印錯字元，測到的就不是 escaping。
-        for line in probe_text.split('\n'):
-            assert "'" not in line
-            fh.write("printf '%s\\n' '" + line + "'\n")
-
-    def fire(args, stdin=payload, cwd=work):
-        r = run([bash, wrap] + args, cwd=cwd, stdin=stdin, env=GIT_ENV)
-        try:
-            doc = json.loads(r.stdout)
-        except Exception:
-            return r.returncode, None, r.stdout.strip()[:120]
-        steps = doc.get('injectSteps') or []
-        msg = steps[0].get('ephemeralMessage', '') if steps else ''
-        return r.returncode, msg, ''
-
-    cases, bad = [], []
-
-    def check(name, cond, got=''):
-        cases.append(name)
-        if not cond:
-            bad.append(f'{name}（{got}）' if got else name)
-
-    code, msg, raw = fire(['.claude/hooks/git-freshness.sh'])
-    check('正常注入', code == 0 and msg is not None
-          and '[git-check]' in msg and '[handoff]' in msg,
-          raw or f'exit {code}、訊息 {str(msg)[:60]!r}')
-
-    code, msg, raw = fire(['.claude/hooks/ag-probe.sh'])
-    check('escaping 原樣還原', code == 0 and msg == probe_text,
-          raw or repr(str(msg)[:80]))
-
-    # 從別處執行、而且那裡不是 git repo：找得到相對路徑的腳本就證明真的 cd 進工作區了
-    # （退路 `git rev-parse --show-toplevel` 在這裡幫不上忙，所以這一項測的是 workspacePaths）。
-    outside = work.parent
-    code, msg, raw = fire(['.claude/hooks/ag-probe.sh'], cwd=outside)
-    check('cd 進 workspacePaths[0]', code == 0 and msg == probe_text,
-          raw or repr(str(msg)[:80]))
-
-    code, msg, raw = fire([])
-    check('少參數會講話', code == 0 and msg and '[ag-wrap]' in msg,
-          raw or repr(str(msg)[:60]))
-
-    code, msg, raw = fire(['.claude/hooks/nope.sh'])
-    check('腳本不存在會講話', code == 0 and msg and '[ag-wrap]' in msg,
-          raw or repr(str(msg)[:60]))
-
-    # stdin 不是 JSON：不能爆、不能印裸文字，而且因為退路找不到腳本，要講話而不是沉默。
-    code, msg, raw = fire(['.claude/hooks/ag-probe.sh'], stdin='not json', cwd=outside)
-    check('stdin 不是 JSON', code == 0 and msg is not None and '[ag-wrap]' in msg,
-          raw or repr(str(msg)[:60]))
-
-    probe.unlink()
-    if bad:
-        record('FAIL', title, '；'.join(bad))
-        return False
-    record('OK', title, '、'.join(cases))
-    return True
 
 
 # ── 6. 行末與雜項 ──────────────────────────────────────────────
@@ -1157,7 +1065,6 @@ def main():
             step_portability(dest)
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None
-            step_ag_wrap(work)
             step_busy(dest, work)
             step_repo_busy(work)
             step_version_check(work)
