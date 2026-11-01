@@ -1,19 +1,16 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-01 12:05（+08）
-- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（`README.md` 的跨工具表加守門人；加的當下就抓到一處已經發生的分岔）
+- **交接時間**：2026-11-01 12:42（+08）
+- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（量完 `statusMessage`，順手推翻同一節另一句沒人懷疑過的話）
 
 ## 這份檔案在這個 repo 的角色（跟其他專案不一樣，先讀這段）
 
 **它只有一個任務：當跨機器「工作中」標記的載體。** 這個 repo 是制度的來源、刻意沒有 handoff
 skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有的東西」），所以：
 
-- **不要把這裡當狀態日誌或知識庫。** 鐵律「這裡不是知識庫」照舊；跨 session 的事實看 `git log`
-  與各檔的 `source:` 版本標記。這一份要短，短到每輪交棒都願意維護它。
-- **它是部署包範本 3.3 的*實例*，不是副本。** `sync_project.py` 的 `discover()` 靠 handoff skill
-  認專案，掃不到這個 repo。所以它沒有同步義務，改它不必動 `VERSION`。
-- **每輪一定要維護的只有「待續分支」與「工作中」兩欄**：開工由 skill 的 A5 寫，交棒由 B6 改回
-  「無（已交棒）」。其餘段落沒變就不用動。
+- **不要把這裡當狀態日誌或知識庫。** 跨 session 的事實看 `git log` 與各檔的 `source:` 標記。
+- **它是部署包範本 3.3 的*實例*，不是副本**，`sync_project.py` 掃不到它，改它不必動 `VERSION`。
+- **每輪一定要維護的只有「待續分支」與「工作中」兩欄**（A5 寫、B6 改回「無（已交棒）」）。
 
 ## 任務目標
 
@@ -23,83 +20,68 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26110112｜量statusMessage｜工作中`，2026-11-01 12:11 (+08) 開工
+- **工作中**：無（已交棒）
 - 本機能力：Windows 11 ＋ Git for Windows 的 bash；有 push 權限（不寫祕密值）。
+  ⚠️ **2026-11-01 這台的 `codex` 升到 `0.166.0`**（使用者授權，為繞過 TUI 開場的更新提示）。
+  之前的 Codex 實測記在 `0.164.0`，部署包兩個版本號都保留著，別混成同一筆。
 
 ## 已完成
 
-- 2026-11-01（**刻意不跳版**：`SKILL.md` 與所有範本零改動，`sync_project.py` 不必跑）：
-  **`README.md` 的跨工具表有守門人了**（上一棒「未完成」的第 4 項）。`verify_bootstrap.py` 新增
-  「README 跨工具表一致性」——比對同名列的**判定符號**、孤兒版本號、指回部署包的指標，附四種分岔
-  的負向測試。**加的當下就抓到一處已經發生的分岔**：「自動載入程序檔」×「Codex CLI」部署包
-  2026-10-30 實測後改成 ✅，README 還停在 ⬜「靠 `AGENTS.md` 指路」，一個多月沒人發現；連帶修掉
-  README 兩句過期散文，並把腳本裡 `FRESHNESS_PAGES` 那份網址副本補成跟部署包一致。
-  為什麼不給 README 自己一個「查證日期」：部署包「這張表的保鮮期」那一節。驗證：exit 0，27 項全 `ok`。
-- 2026-10-31（部署包當天第九次修改，**刻意不跳版**，範本內容沒動所以 `sync_project.py` 零改動）：
-  **Codex hook 那兩個未知實測完畢**（`0.164.0`／Windows），而其中一個**問錯了問題**——`statusMessage` 是 Codex
-  正式支援的鍵（「Optional UI message」），不是 Claude 專屬；`PreToolUse` 沒 matcher 就是每次都觸發、不分工具名
-  （`Bash`×2 ＋ `apply_patch`×1 全中）。**沒人問的第三件最重要：信任綁 `hooks.json` 的絕對路徑、不綁內容**
-  （記在 `~/.codex/config.toml` 的 `[hooks.state.'<絕對路徑>:<事件>:<組>:<序>']`，值是 `trusted_hash`；
-  逐位元組相同的接線換資料夾就不信任），而且**只有互動模式會主動問**，`codex exec` 永遠靜默跳過。
-  順手修掉保鮮期清單兩個已搬家的網址（Codex 文件搬到 `learn.chatgpt.com`，skills 那頁連路徑名都換了）。
-  方法論補兩條：**「叫 agent 把注入背出來」在 Codex 上不成立**（它拒絕複述，會給假陰性）；
-  **佈置與測量要分兩步**——這次把建設定檔跟跑受測物寫在同一個指令裡，指令被權限層拒絕、設定檔沒生成，
-  前三次「沒觸發」全部無效。
+- 2026-11-01（部署包當天**第二次**修改，**刻意不跳版**：`SKILL.md` 與所有範本零改動，
+  `sync_project.py` 不必跑）：**上一棒「未完成」第 2 項量完**。①**互動 TUI 會顯示
+  `statusMessage`**（`0.166.0`），接在狀態行後面（`Working (1s • esc to interrupt) · <字串>`）
+  ——配上「純文字 stdout 只進 agent 的 context」那條，它是互動模式下**使用者唯一看得到的那行
+  字**。②**互動 TUI 開場不跑 `SessionStart`，跟著第一個 turn 才跑**；舊版 3.17 與第 5 節都寫
+  「你按下同意的那個 session 不會跑，要再開一個才算」，那是推論、實測是反的，而且教人用**保證
+  看不到**的方式驗收，兩處一起改掉。③**TUI 的 hook 失敗是吵的**（`• Hook failed` ＋
+  `└ hook exited with code 1`），跟 `codex exec` 全程無聲相反。④留一個未解（見下第 2 項）。
+  ⑤把「PATH 上的 `bash` 是 WSL 那支」從 Antigravity 那節延伸到 Codex 這一面，只加指標、
+  不重寫事實。驗證：exit 0，27 項全 `ok`。
 
 ## 未完成／下一步
 
-1. 🔴 **六個專案的 Codex 接線從來沒有真的跑過**，要各開一次互動式 `codex` 選 `Trust all and continue`
-   （信任綁 `hooks.json` 絕對路徑，審一個不會全通）。`Grist_test`／`NAA_TR`／`NAS_MAINT`／`摘要skill設計`／
-   `第三批56箱後檢查`／`解決網路速度問題`。這是使用者要按的，AI 代不了。
-2. `statusMessage` 在**互動 TUI** 顯不顯示仍未量（`codex exec` 已確認不顯示）。測法：在探針資料夾開一次
-   互動 session，看開場有沒有 `PROBE-STATUSMSG-SENTINEL`。⚠️ 探針放在那個 session 的
-   暫存區，**下一棒拿不到**，要重建（兩個檔：一支把 stdin 存檔＋append 一行 log 的 `.sh`，一份掛
-   `SessionStart`＋`PreToolUse` 的 `.codex/hooks.json`，然後互動式開一次過第二道閘）。
-   它在 `~/.codex/config.toml` 留下的 `[projects…codex-hook-probe]` 與兩筆 `[hooks.state…]` 指向一個
-   會消失的暫存路徑，**是可以清掉的垃圾**——但那是使用者的設定檔，要他自己動手或明確授權。
-3. （可選）`AGENTS.md` 補一段「開工第一件事」；`SessionStart` 的 `sessionTitle` 自動寫 session 名稱；
-   `.codex/hooks.json` 接線本 repo 的 `repo-git-check.sh`（**不要**複製第二份腳本）。
+1. 🔴 **六個專案的 Codex 接線從來沒有真的跑過**，要各開一次互動式 `codex` 選
+   `Trust all and continue`（信任綁 `hooks.json` 絕對路徑，審一個不會全通）。`Grist_test`／
+   `NAA_TR`／`NAS_MAINT`／`摘要skill設計`／`第三批56箱後檢查`／`解決網路速度問題`。使用者要按的。
+   ⚠️ **驗收方式這輪改了**：按完信任要**在同一個 session 裡送出一句話**才驗得到（開場不跑）；
+   不要去畫面上找 `[git-check]`（那是 developer context，不顯示給人）。
+2. **未解：同一支 hook 在互動 TUI 退出碼 1，六分鐘前在 `codex exec` 下卻成功。** 兩個很有說服
+   力的理由都被量掉了（`bash` 解析到 WSL：同一條啟動鏈獨立跑是 exit 0；殼層偵測不同：兩次
+   rollout 都寫 `<shell>powershell</shell>`，**包括成功那次**）。要重開：讓探針印出 hook 自己
+   看到的 `PATH` 與 cwd 再比對。⚠️ 量它**必然要花模型呼叫**，花之前要問使用者。
+3. **Codex 這一面還沒有 `bash` 解析的解法**（Antigravity 靠 3.19 的 shim 解掉了）。它至今沒在
+   真實部署裡失敗過，因為第 1 項還沒跑——**先別動手**，等有真的失敗案例再決定要不要補 shim。
+4. （可選）`AGENTS.md` 補「開工第一件事」；`SessionStart` 自動寫 session 名稱；本 repo 的
+   `.codex/hooks.json` 接線 `repo-git-check.sh`（**不要**複製第二份腳本）。
 
-（「階段二 pre-push hook」2026-10-30 決定不裝，理由在 [ARCHITECT.md](ARCHITECT.md)，掃到別再重提。）
-
-（「IDE `1.107.0` 為什麼沒觸發」2026-10-31 決定**不追**：使用者不再使用這個 surface，那個未解問題
-沒有讀者了。**量到的事實照留**——部署包與 `README.md` 都還寫著它沒觸發、原因未解，刪掉會讓下一個
-部署的人以為它能用；要收掉的是「去 IDE 重跑一次」這個下一步，不是那個結果。掃到別再重提。）
+（「階段二 pre-push hook」2026-10-30 決定不裝、「IDE `1.107.0` 為什麼沒觸發」2026-10-31 決定不追，
+理由分別在 [ARCHITECT.md](ARCHITECT.md) 與部署包。掃到別再重提。）
 
 ## 地雷與注意事項
 
-- 🔴 **`.agents/ag-hook.cmd` 有兩個不能「順手整理」掉的約束**，兩個都是踩到才知道的：
-  **①全檔 ASCII**——中文 `rem` 註解被 OEM code page 誤讀後會**整段被當成指令執行**，stderr 噴
-  `is not recognized`，而 stdout 的 JSON 看起來還是對的，所以不會有徵兆。**②不能有多行括號
-  區塊或 label**——檔案是 LF 行末（`.gitattributes` 強制），`cmd.exe` 讀 LF-only 檔案時這兩種
-  結構會出錯。`verify_bootstrap.py` 的「Antigravity 接線」兩項都擋。
-- 🔴 **`PreToolUse` 不明確回 `{"allow_tool": true}` 就等於拒絕**（實測回 `{}` 時 `read_file` 與
-  `run_command` 全被擋）。所以骨架**只接 `SessionStart`**；要接 `PreToolUse` 之前先想清楚失敗
-  路徑怎麼保證回 allow——那比「hook 不跑」糟得多。
-- 🔴 **`agy` 的 `command` 照空白切 token、不解析引號。** 所以相對路徑才是可靠的那一邊，鐵律 5
-  跟 Antigravity **沒有**衝突；Windows 上它甚至是唯一寫得出來的形式。
-- 🔴 **沒有量過的因果就標成未解，不要補一個合理的理由。** 2026-10-31 的推論「骨架自己的不變量
-  害探針測不出東西」聽起來很有說服力，實測是反的。
-- **測 hook 要讓它自己寫檔或讓 agent 把注入背出來，不要看畫面。** 「看不到訊息」把「沒跑」與
-  「跑了但輸出被丟掉」混在一起，前兩次就是這樣測不準的。
-- **寫外部工具能力時先確認講的是哪一個 surface**（Antigravity vs Antigravity IDE 是不同產品）。
+- 🔴 **會呼叫模型的步驟先問再跑。** 這套制度的前提是只用訂閱額度；`codex exec`、在 TUI 送出一句
+  話、`agy -p` 都會呼叫模型。要講「花多少」之前先驗是哪一邊的帳（`codex login status`、
+  `auth.json` 的 `auth_mode` 與 `OPENAI_API_KEY` 是否為空），不要用「OpenAI 額度」這種含混說法。
+  2026-11-01 查證：本機是 ChatGPT 登入、`OPENAI_API_KEY` 為空，走訂閱、沒動到 API。
+- 🔴 **測 hook 的探針要能分開「沒跑」與「跑了但看不到」**：讓 hook 自己寫 log ＋ 故意慢（這輪用
+  `sleep 20`）。少了 log 分不出有沒有跑，少了那段延遲分不出「沒顯示」與「只閃一下」。
+- 🔴 **沒有量過的因果就標成未解，不要補一個合理的理由。** 這輪連續推翻兩個聽起來很對的理由，
+  早一步收手就會寫出錯的因果。
 - **single writer**：同一時間只有一台機器＋一個工具改 `main`。
-- 改制度改 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)，改完 `verify_bootstrap.py` 要 exit 0（鐵律 4）。
-- **只有 `SKILL.md` 真的改了才跳 `VERSION`**（鐵律 1）：這輪沒動它，所以沒跳。
-- 公開 repo：全部 Git 歷史人人看得到，不要寫單位名稱、內部代號、本機絕對路徑（鐵律 6）。
-- 本檔與 `.claude/hooks/repo-git-check.sh` 都不是部署包的一部分，**不要**用 `sync_project.py` 同步。
+- 改制度改部署包，改完 `verify_bootstrap.py` 要 exit 0（鐵律 4）；只有 `SKILL.md` 真的改了才跳
+  `VERSION`（鐵律 1，這輪沒跳）。公開 repo，不要寫單位名稱、內部代號、本機絕對路徑（鐵律 6）。
+- 本檔與 `.claude/hooks/repo-git-check.sh` 不是部署包的一部分，**不要**用 `sync_project.py` 同步。
 
 ## 服務查證與期望快照
 
-這個 repo 沒有 `tools/verify_state.py`——它是骨架的檔，不部署到自己身上。驗證指令是：
-
-`python -X utf8 tools/verify_bootstrap.py`
-
-目前：exit 0，**27 項全 `ok`**，骨架 **21 檔**（上一輪是 26 項，差額就是新增的
-「README 跨工具表一致性」）。`VERSION` 仍是 2026-10-31（`SKILL.md` 沒動）。
-跨工具表保鮮期的查證日期仍是 2026-10-30：這一輪**沒有重讀任何官方頁面**（只把腳本裡那份網址副本
-補成跟部署包一致），所以**刻意沒有把時鐘歸零**——歸零會把「沒查」謊報成「查過」。
+`python -X utf8 tools/verify_bootstrap.py`（這個 repo 沒有 `verify_state.py`——那是骨架的檔，
+不部署到自己身上）。目前：exit 0，**27 項全 `ok`**，骨架 **21 檔**，`VERSION` 仍 2026-10-31。
+跨工具表保鮮期的查證日期仍是 2026-10-30：這輪**沒重讀任何官方頁面**，只在本機實測，所以
+**刻意沒把時鐘歸零**——歸零會把「沒查」謊報成「查過」。
 
 ## 懸置事項（AI 勿自行處理）
 
-- 第 1、2、3 項要不要做。
+- 第 1、2、3、4 項要不要做。
+- `~/.codex/config.toml` 裡三個探針留下的垃圾（`codex-hook-probe`／`-probe2`／
+  `codex-statusmsg-probe` 的 `[projects…]` 與 `[hooks.state…]`），全指向已不存在的暫存路徑。
+  **可以清，但那是使用者的設定檔**，要他自己動手或明確授權。
