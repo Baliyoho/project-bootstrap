@@ -168,25 +168,25 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 
 #### 還沒解決的
 
-- **IDE `1.107.0` 為什麼沒觸發，仍然沒有解釋**——同一種形狀、同樣的相對路徑，CLI 會跑、2.0 也會跑（2026-10-31 兩面都實測過），只有 IDE 沒動。四個 surface 裡它是唯一的例外，而**例外沒有解釋就是沒有解釋**，不要替它編一個。要查就在 IDE 上重跑這份已經在另外兩面成立的接線。
+- **IDE `1.107.0` 為什麼沒觸發，仍然沒有解釋**——同一種形狀、同樣的相對路徑，CLI 會跑、2.0 也會跑（2026-10-31 兩面都實測過），只有 IDE 沒動。四個 surface 裡它是唯一的例外，而**例外沒有解釋就是沒有解釋**，不要替它編一個。**2026-10-31 已決定不再追查**：使用者不再使用這個 surface，未解問題已沒有讀者；保留測量結果，不把重跑 IDE 列為下一步。
 - **專案自己的 `.agents/hooks.json` 內容**：骨架只擁有 `handoff-git-check` 這個頂層 key，同步只換它。但 Antigravity 的 hook 設定**只有專案層**這一份進 Git，全域那一份跟著機器走——所以跨機器的一致性靠的仍然是這個檔，不是人的記性。
 
 #### 一個已經收回的推論（鐵律 3）
 
 同日稍早寫過：「探針的 `command` 必然是相對的，而第三方指南說必須絕對——骨架自己的不變量可能保證了那支探針測不出東西」。**這個推論被實測推翻**：CLI 上相對路徑**正常工作**，反而絕對路徑才脆弱。所以鐵律 5「接線路徑一律相對」跟 Antigravity **沒有衝突**，它在 Windows 上甚至是唯一寫得出來的形式。
 
-**IDE `1.107.0` 那次為什麼沒觸發，到現在仍然沒有解釋**——CLI 與 2.0 都能跑的同一種形狀、同樣的相對路徑，在 IDE 上就是沒動。留著當未解問題，**不要再替它編一個理由**。要查就在 IDE 上重跑一次這份已經在另外兩面成立的設定。
+**IDE `1.107.0` 那次為什麼沒觸發，到現在仍然沒有解釋**——CLI 與 2.0 都能跑的同一種形狀、同樣的相對路徑，在 IDE 上就是沒動。留著當未解問題，**不要再替它編一個理由**；是否追查的決定見上方「還沒解決的」。
 
 **怎麼測才測得準**——這一段比結論重要，因為前兩次都測不準：前兩次用的偵測器是「對話開頭看不看得到 `[git-check]`」，而那同時混進了「hook 沒跑」與「hook 跑了但輸出被丟掉」兩種可能，**兩者在畫面上長得一模一樣**。第三次改成**讓 hook 自己寫檔**（觸發就往 `.agents/_probe.log` 追加一行，記下事件名、cwd 與 stdin），一次掛四個探針：`SessionStart` 扁平、`SessionStart` 包 `matcher`／`hooks`、`PreToolUse` 配 `matcher: "*"`、`Stop`。完全關閉 IDE 重開、開新對話、讓它實際呼叫一次工具之後，**log 檔根本沒有產生**。
 
 關鍵是 `PreToolUse` 那一個對照組：它是 Antigravity 自己的 Hooks UI 就列得出來的事件，**連它都沒觸發**，所以結論不是「`SessionStart` 這一版還沒接上」，而是整個專案層設定檔沒被讀。
 
-**順便排除掉的兩個混淆**（下一棒重測時不必再花時間）：
+**當時排除掉的兩個混淆**（保留實測邊界，不代表要重開追查）：
 
 - **不是信任閘**：`~/.gemini/trustedFolders.json` 裡家目錄是 `TRUST_FOLDER`，涵蓋受測專案。跟 Codex 那道信任不是同一回事。
 - **不是沒重啟**：四個探針是在完全關閉 IDE、重新啟動之後才測的。
 
-**查到的真實契約**，從 `resources/app/extensions/antigravity/bin/language_server_windows_x64.exe` 內嵌的官方文件與 proto 字串挖出來（比官網完整）。留著是因為下一棒很可能想再試一次，而這些是當時花最多力氣才拿到的東西：
+**查到的真實契約**，從 `resources/app/extensions/antigravity/bin/language_server_windows_x64.exe` 內嵌的官方文件與 proto 字串挖出來（比官網完整）。保留這些當時花最多力氣取得的證據，讓 IDE 的測量結果與 CLI／2.0 的實測能分開判讀：
 
 | 項目 | 實際 |
 |---|---|
@@ -200,9 +200,9 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 | 輸出契約 | `{"injectSteps":[{"ephemeralMessage":"…"}]}`（裸文字會被丟掉）。骨架舊版的轉接層這部分**是對的**，只是沒機會被呼叫 |
 | 全域路徑 | Hooks UI 讀寫 `<home>/.gemini/<applicationName>/hooks.json`。**`applicationName` 跟著 surface 走**：IDE 是 `antigravity-ide`、CLI 是 `antigravity-cli`、2.0 是 `antigravity`（本機三個目錄並存）。所以**不能**從這一列推論「Antigravity 的 hook 是機器層設定」——它只說明全域那一份在哪。另有第三方實測指向共用的 `~/.gemini/config/hooks.json` |
 
-全域那一列**不能**被讀成「所以它只有機器層、專案層不存在」——那是舊版犯的錯。`applicationName` 隨 surface 變，這一列講的是「全域那一份放哪」，而專案層 `.agents/hooks.json` 官方與第三方都明確寫著存在（上面第 3 點還有人測到它會觸發）。骨架要的是「clone 下來就有防護」，所以專案層能不能用才是關鍵，**而那正是還沒在 2.0 與 CLI 上測過的事**。想自己在機器上補一層的人，把設定放進對應 surface 的 `~/.gemini/<applicationName>/hooks.json`、並自己處理 stdout 必須是 JSON——**那條路徑骨架沒測過，所以這裡不寫成建議**。
+全域那一列**不能**被讀成「所以它只有機器層、專案層不存在」——那是舊版犯的錯。`applicationName` 隨 surface 變，這一列講的是「全域那一份放哪」，而專案層 `.agents/hooks.json` 官方與第三方都明確寫著存在。骨架要的是「clone 下來就有防護」，所以專案層能不能用才是關鍵，**CLI 與 2.0 已在 2026-10-31 實測成立**（證據見本節開頭的 surface 表）。想自己在機器上補一層的人，把設定放進對應 surface 的 `~/.gemini/<applicationName>/hooks.json`、並自己處理 stdout 必須是 JSON——**全域那條路徑骨架沒測過，所以這裡不寫成建議**。
 
-**可攜層在 Antigravity 這一面是獨立成立的**（就算 hook 那層壞掉也還在），而且是**實測成立**：2026-10-31 在完全沒有接線的狀態下，它自己發現了 `.agents/skills/handoff/`，照 A 模式跑完接棒並回報了 Git 狀態與「工作中」欄位。這是 3.16 那個指標檔第一次拿到 Antigravity 這一面的證據——也是為什麼它的 `description` 必須寫滿觸發詞：**那是這個工具上唯一的入口**，寫短等於無聲地關掉它。
+**可攜層在 Antigravity 這一面是獨立成立的**（就算 hook 那層壞掉也還在），而且是**實測成立**：2026-10-31 在完全沒有接線的狀態下，它自己發現了 `.agents/skills/handoff/`，照 A 模式跑完接棒並回報了 Git 狀態與「工作中」欄位。這是 3.16 那個指標檔第一次拿到 Antigravity 這一面的證據——也是為什麼它的 `description` 必須寫滿觸發詞：**agent 靠它決定要不要讀程序檔**，寫短等於無聲地關掉這個入口；CLI／2.0 的 hook 是另外一層提醒，不能取代這條可攜路徑。
 
 指示檔方面：Antigravity 讀 `AGENTS.md`、`GEMINI.md`、`.agents/rules/*.md`（**必須有合法 `trigger` frontmatter，否則整份丟棄**）、`.agents/AGENTS.md`，以及 legacy `.agent/rules/`，從檔案所在資料夾往上載到工作區根。**`AGENTS.md` 與 `GEMINI.md` 的優先序官方沒有排**——舊表寫「優先於 `GEMINI.md`」是沒有依據的斷言，已經改掉。骨架的 `GEMINI.md` 只是指標，實務上誰贏都不影響，但「查不到卻寫成確定」正是鐵律 3 要防的東西。
 
@@ -616,7 +616,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 | [tools/verify_state.py](tools/verify_state.py) | 一鍵現況查證，輸出 key=value 事實快照 | 本專案（骨架來自部署包） | 服務或檢查項改變 |
 | [.gitignore](.gitignore)、[.gitattributes](.gitattributes) | 排除祕密與運行資料；行末強制 LF | 本專案 | 新增祕密檔或運行目錄 |
 
-**跨工具的可靠度不一樣**：`AGENTS.md` 與純 Markdown 的程序檔是**可攜層**（Claude Code／Codex／Antigravity 都原生讀得到）；hooks 四個平面都接了（Claude Code、Codex CLI、Codex 桌面 App、Antigravity CLI），而且**都帶條件**——Codex 要專案被信任＋hook 經審核；Antigravity 的 Windows 這一面要找得到 Git Bash，而且 IDE `1.107.0` 實測沒觸發、2.0 未測。正確性押在可攜層，不押在 hook 上：2026-10-30 在未信任的資料夾實測，`AGENTS.md` 照樣被讀進 prompt，`.codex/hooks.json` 整層被跳過而且沒有任何訊息。
+**跨工具的可靠度不一樣**：`AGENTS.md` 與純 Markdown 的程序檔是**可攜層**（Claude Code／Codex／Antigravity 都原生讀得到）；hooks 已接 Claude Code、Codex CLI／桌面 App、Antigravity CLI／2.0，而且**都帶條件**——Codex 要專案被信任＋hook 經審核；Antigravity 的 Windows 這一面要找得到 Git Bash，CLI 與 2.0 已於 2026-10-31 實測觸發，IDE `1.107.0` 實測沒觸發、已決定不再追查。正確性押在可攜層，不押在 hook 上：2026-10-30 在未信任的資料夾實測，`AGENTS.md` 照樣被讀進 prompt，`.codex/hooks.json` 整層被跳過而且沒有任何訊息。
 
 ## 專案本體
 
@@ -765,9 +765,10 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 - **救不回 A 的未提交變更**——那些仍然只在 A 的磁碟上。標記讓你知道「有東西在那台機器」，
   東西還是得回去拿。
 - **A 在 A5 之前就關掉**（還沒寫標記）→ `origin` 上什麼都沒有，跟以前一樣。
-- **A 那一端的 hook 沒有真的生效**（Codex 的專案未被信任或 hook 未經審核——失敗時完全無聲；
-  Antigravity 骨架還沒附接線）→ 沒有自動提醒，只剩程序擔保。2026-10-30 重查：四個平面都有
-  hooks，所以這一條不再是「哪個工具沒有」，而是「裝了不代表會跑」。
+- **A 那一端的 hook 沒有真的生效**（例如 Codex 的專案未被信任或 hook 未經審核，非互動模式
+  會靜默跳過；Antigravity 的 shim 找不到 Git Bash，或使用的是實測未觸發的 IDE surface）→
+  沒有自動提醒，只剩程序擔保。Codex 與 Antigravity 的接線已隨骨架提供；這一條要防的仍然是
+  「裝了不代表會跑」。
 
 所以下面這套補救程序仍然必要，**能補回來的只有留在磁碟上的那部分**這句話也沒有改變。
 

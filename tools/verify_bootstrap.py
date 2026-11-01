@@ -45,6 +45,12 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
   README 跨工具表——README 那張表是部署包那一張的轉述，而保鮮期只守部署包那一份。同名列的
                   判定符號、README 的版本號、指回部署包的指標三者要對得上，否則人的入口會
                   無聲分岔（2026-11-01 加入，加的當下就抓到一處）
+  ZIP 說明指標 ——工具差異只指向同包部署包的權威段落與驗收清單，不再維護另一份能力摘要。
+                  原本的 ZIP_README 留著兩句「沒有 hook」，矩陣改對後它仍會被打包出去
+                  （2026-11-01 加入，附六個負向測試）
+  跨工具過期敘述——守住已修掉的「2.0 未測」「骨架還沒附接線」等已知舊斷言，涵蓋部署包正文、
+                  重生的結構／協定範本與本 repo 結構說明。表頭的歷史變更記錄不算現況；
+                  這不是通用語意檢查，不會重查外部工具（2026-11-01 加入，附負向與範圍測試）
   改名寫進回報——A5 與 B9 的回報模板各要有一行 `session：`，而且都要留著「不適用」這個選項。
                   改 session 名稱發生在 repo 外面，check_docs、git-freshness、pre-push 三層
                   都看不到它，所以漏掉完全無聲；那一行是它唯一的守門人，被誰順手刪掉也同樣
@@ -1275,6 +1281,97 @@ def step_readme_table():
     return True
 
 
+def zip_readme_problems(text):
+    """ZIP 的第一份說明只指路，工具能力留在部署包的一個家（2026-11-01）。"""
+    heading = '## 各工具的差異'
+    if heading not in text:
+        return ['缺少「各工具的差異」入口']
+    section = text.split(heading, 1)[1].split('\n## ', 1)[0]
+    problems = []
+    if not re.search(r'\[[^\]\n]+\]\(PROJECT-BOOTSTRAP\.md\)', section):
+        problems.append('缺少同包 PROJECT-BOOTSTRAP.md 的相對連結')
+    if '跨工具與跨平台' not in section:
+        problems.append('未指向部署包的跨工具權威段落')
+    if not re.search(r'第\s*5\s*節', section):
+        problems.append('未指向第 5 節驗收清單')
+    if re.search(r'^- \*\*(?:Claude Code|Codex CLI|Codex 桌面 App|Antigravity)\*\*',
+                 section, re.M):
+        problems.append('又長出逐工具摘要——能力說明只在部署包維護')
+    return problems
+
+
+def step_zip_readme():
+    problems = zip_readme_problems(ZIP_README)
+    cases = (
+        ('入口刪掉', ZIP_README.replace('## 各工具的差異', '## 其他')),
+        ('連結指錯', ZIP_README.replace('](PROJECT-BOOTSTRAP.md)', '](missing.md)')),
+        ('權威段落抽掉', ZIP_README.replace('跨工具與跨平台', '工具說明')),
+        ('驗收指標抽掉', ZIP_README.replace('第 5 節', '另一節')),
+        ('App 舊說回來', ZIP_README + '\n- **Codex 桌面 App**：沒有 hook 機制。\n'),
+        ('AG 舊說回來', ZIP_README + '\n- **Antigravity**：沒有 hook 機制。\n'),
+    )
+    for name, mutated in cases:
+        if not zip_readme_problems(mutated):
+            problems.append('負向測試未擋住：' + name)
+    if problems:
+        record('FAIL', 'ZIP 說明指標', '；'.join(problems))
+        return False
+    record('OK', 'ZIP 說明指標', '指向同包部署包的權威段落與第 5 節，無逐工具副本；六個負向測試通過')
+    return True
+
+
+# 只守已知回歸，不把所有「未解」「沒觸發」都擋掉，也不掃表頭的歷史變更記錄。
+# 若未來有新證據改變結論，應連同本表一起更新；不是用保鮮期代替實際查證。
+STALE_TOOL_PROSE = (
+    ('2.0 仍列未測', r'2\.0\s*(?:未測|尚未測)'),
+    ('CLI／2.0 仍列未測', r'(?:還沒|尚未)在\s*2\.0\s*與\s*CLI\s*上測過'),
+    ('Antigravity 仍列未附接線', r'Antigravity\s*骨架(?:還沒|尚未)附接線'),
+    ('skill 仍被稱作唯一入口', r'那是這個工具上唯一的入口'),
+    ('IDE 追查又列下一步', r'要查就在\s*IDE\s*上重跑'),
+)
+
+
+def stale_tool_prose_problems(text):
+    # 表頭的 dated changelog 保留事故史；第一個二級標題之後才是現行說明與範本。
+    body = re.search(r'^## ', text, re.M)
+    current = text[body.start():] if body else text
+    current = re.sub(r'\s+', ' ', current.replace('`', '').replace('**', ''))
+    return [label for label, pattern in STALE_TOOL_PROSE if re.search(pattern, current)]
+
+
+def step_tool_prose(dest):
+    documents = (
+        ('部署包正文', KIT.read_text(encoding='utf-8')),
+        ('本 repo ARCHITECT', (ROOT / 'ARCHITECT.md').read_text(encoding='utf-8')),
+        ('重生 ARCHITECT', (dest / 'ARCHITECT.md').read_text(encoding='utf-8')),
+        ('重生交接協定', (dest / 'docs/ai-notes/handover-protocol.md').read_text(encoding='utf-8')),
+    )
+    problems = [f'{name}：{problem}' for name, text in documents
+                for problem in stale_tool_prose_problems(text)]
+    regressions = (
+        'IDE `1.107.0` 沒觸發、2.0 未測。',
+        '而那正是還沒在 2.0 與 CLI 上測過的事。',
+        'Antigravity 骨架還沒附接線。',
+        '**那是這個工具上唯一的入口**。',
+        '要查就在 IDE 上重跑這份接線。',
+    )
+    for name, text in documents:
+        for old in regressions:
+            if not stale_tool_prose_problems(text + '\n' + old):
+                problems.append(f'負向測試未擋住（{name}）：{old}')
+    control = ('> 2026-10-30 當時寫的是：2.0 未測、Antigravity 骨架還沒附接線。\n'
+               '\n## 現況\nCLI／2.0 已實測；IDE 沒觸發，原因未解、不再追查。\n')
+    if stale_tool_prose_problems(control):
+        problems.append('範圍測試誤擋歷史紀錄或 IDE 未解事實')
+    if problems:
+        record('FAIL', '跨工具過期敘述', '；'.join(problems))
+        return False
+    record('OK', '跨工具過期敘述',
+           '正文與重生範本無已知舊斷言；%d 個回歸負向測試通過，歷史紀錄與 IDE 未解事實保留'
+           % (len(documents) * len(regressions)))
+    return True
+
+
 def step_misc(dest, work=None):
     ok = True
     for label, rel in (('settings.json', '.claude/settings.json'),
@@ -1306,6 +1403,8 @@ def step_misc(dest, work=None):
 
     step_table_freshness()
     step_readme_table()
+    step_zip_readme()
+    step_tool_prose(dest)
 
     r = run([sys.executable, '-X', 'utf8', 'tools/verify_state.py'], cwd=dest)
     if r.returncode == 0 and 'NOT_CONFIGURED' in r.stdout:
@@ -1359,7 +1458,7 @@ ZIP_README = """# 先看這個——三步驟
 
 ## 3. macOS／Linux 要多做一步
 
-給兩個 hook 腳本執行權限（Windows 不需要）：
+給 hook 腳本執行權限（Windows 不需要）：
 
 ```bash
 chmod +x .claude/hooks/*.sh
@@ -1367,13 +1466,9 @@ chmod +x .claude/hooks/*.sh
 
 ## 各工具的差異
 
-- **Claude Code**：全自動。開場檢查 git、可打 `/handoff`、忘了寫交接會擋下上傳。
-- **Codex CLI**：同上，但第一次要打 `/hooks` 信任 `.codex/hooks.json`。
-- **Codex 桌面 App**：沒有 hook 機制（2026-08-06 在 App `26.721.41059` 實測），所以沒有自動
-  提醒。把 `.claude/skills/handoff/SKILL.md` 複製到 `~/.codex/skills/handoff/SKILL.md` 就能
-  用 skill；開工時自己講一句「請先讀 .claude/skills/handoff/SKILL.md，照 A 模式接棒」。
-- **Antigravity**：沒有 hook 機制，所以沒有自動提醒。它會讀 `AGENTS.md` 與 `.agents/skills/`；
-  開工時自己講一句「請先讀 .claude/skills/handoff/SKILL.md，照 A 模式接棒」即可。
+工具能力、信任審核與已實測版本，請讀同包的 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)
+「跨工具與跨平台」；實際驗收照該檔第 5 節，設定檔存在不代表 hook 已生效。
+本說明只放指標，不另維護一份工具能力摘要：重查後若只修部署包，這裡的舊說法就會無聲留下。
 
 `python` 指令不存在的機器（macOS 常見）一律改用 `python3`。
 """
