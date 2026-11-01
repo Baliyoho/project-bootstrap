@@ -45,6 +45,10 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
   README 跨工具表——README 那張表是部署包那一張的轉述，而保鮮期只守部署包那一份。同名列的
                   判定符號、README 的版本號、指回部署包的指標三者要對得上，否則人的入口會
                   無聲分岔（2026-11-01 加入，加的當下就抓到一處）
+  改名寫進回報——A5 與 B9 的回報模板各要有一行 `session：`，而且都要留著「不適用」這個選項。
+                  改 session 名稱發生在 repo 外面，check_docs、git-freshness、pre-push 三層
+                  都看不到它，所以漏掉完全無聲；那一行是它唯一的守門人，被誰順手刪掉也同樣
+                  無聲（2026-11-01 加入，起因是六個收尾 session 裡兩個漏了改名）
   工作中標記   ——HANDOFF.md 範本要有「工作中」欄位，且 git-freshness 讀 origin 那一份後
                   別台機器印 🔴、自己這台印 🟡、已交棒印 ✅、欄位不存在印 🟡。這條鏈斷掉
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
@@ -728,6 +732,80 @@ def step_version_check(work):
     return True
 
 
+# A5／B9 回報模板裡那行 `session：`。改 session 名稱是整套程序裡唯一不留 repo 痕跡的動作，
+# 所以它沒有辦法被真正地「驗」——能釘的只有「回報模板有沒有逼人講」。這一項守的就是那一行
+# 別被後人順手刪掉：刪掉之後規則還在文件裡，但漏掉就再也看不出來，跟沒有這條規則一樣。
+RENAME_LINE = 'session：'
+
+
+def rename_block(text, heading):
+    """取某個步驟標題底下第一個 ```text 區塊的內容；找不到回 None。"""
+    i = text.find(heading)
+    if i < 0:
+        return None
+    j = text.find('```text', i)
+    if j < 0:
+        return None
+    k = text.find('```', j + len('```text'))
+    if k < 0:
+        return None
+    return text[j + len('```text'):k]
+
+
+def rename_line_problems(skill):
+    """回傳問題清單；空清單＝兩個模板都把改名寫進去了。"""
+    problems = []
+    for heading in ('### A5 ', '### B9 '):
+        block = rename_block(skill, heading)
+        if block is None:
+            problems.append('%s 底下找不到 ```text 回報模板' % heading.strip())
+            continue
+        hit = [l.strip() for l in block.splitlines() if l.strip().startswith(RENAME_LINE)]
+        if not hit:
+            problems.append('%s 的回報模板沒有「%s」那一行' % (heading.strip(), RENAME_LINE))
+        elif '不適用' not in hit[0]:
+            # 少了這個選項，沒有改名能力的工具（Codex CLI／Gemini CLI）就只剩「整行省掉」
+            # 一條路可走，必填會退化成「有能力的工具才填」——正好放掉要守的那一半。
+            problems.append('%s 的「%s」那一行沒有留「不適用」這個選項'
+                            % (heading.strip(), RENAME_LINE))
+    return problems
+
+
+def step_rename_line(dest):
+    """改名有沒有被寫進回報模板（2026-11-01）。
+
+    2026-11-01 量到：六個收尾 session（全 Sonnet）裡只有四個改了 session 名稱，六個的 git
+    結果全部正確。**為什麼漏沒有量過**，所以加硬的方向不是猜原因，而是讓「有沒有做」露出來。
+    """
+    skill = (dest / '.claude/skills/handoff/SKILL.md').read_text(encoding='utf-8')
+    problems = rename_line_problems(skill)
+    if problems:
+        record('FAIL', '改名寫進回報模板', '；'.join(problems))
+        return False
+
+    # 負向測試：一個永遠回 ok 的檢查跟沒有這一項在畫面上一模一樣。
+    a5 = 'session：㊣　<YYMMDDHH｜主題>｜工作中（已改）／不適用：<本工具不能改名>'
+    b9 = 'session：↗　<YYMMDDHH｜主題>｜已交棒（已改）／不適用：<本工具不能改名>'
+    cases = (
+        ('A5 那一行被刪掉', skill.replace(a5 + '\n', '')),
+        ('B9 那一行被刪掉', skill.replace(b9 + '\n', '')),
+        ('「不適用」選項被拿掉', skill.replace('（已改）／不適用：<本工具不能改名>', '（已改）')),
+    )
+    bad = []
+    for name, mutated in cases:
+        if mutated == skill:
+            # 改壞的字串沒對上就等於沒測到，而它會安靜地「通過」。
+            bad.append('%s：負向測試沒改到任何字，字串對不上了' % name)
+        elif not rename_line_problems(mutated):
+            bad.append('%s：沒被擋下' % name)
+    if bad:
+        record('FAIL', '改名寫進回報模板', '；'.join(bad))
+        return False
+    record('OK', '改名寫進回報模板',
+           'A5／B9 模板各有一行 session：且留著「不適用」；三個負向測試都擋得住')
+    return True
+
+
 def template_link(target):
     """部署包裡指向「部署後才存在的檔」的連結不是死連結——那是範本內容，真正該檢查它的
     地方是重生出來的骨架（step_check_docs 就在那裡跑 check_docs.py）。判準用 EXPECTED
@@ -1364,6 +1442,7 @@ def main():
             step_busy(dest, work)
             step_repo_busy(work)
             step_version_check(work)
+            step_rename_line(dest)
         step_eol(dest)
         step_self()
         step_sync_coverage(dest)
