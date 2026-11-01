@@ -82,6 +82,7 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 ## 懸置事項（AI 勿自行處理）
 
 - 第 1、2、3、4 項要不要做。
-- `~/.codex/config.toml` 裡三個探針留下的垃圾（`codex-hook-probe`／`-probe2`／
-  `codex-statusmsg-probe` 的 `[projects…]` 與 `[hooks.state…]`），全指向已不存在的暫存路徑。
-  **可以清，但那是使用者的設定檔**，要他自己動手或明確授權。
+- （已結案）`~/.codex/config.toml` 的三個探針殘留 2026-11-01 經使用者授權清掉了：3 個
+  `[projects…]` ＋ 4 個 `[hooks.state…]`，共 7 個表，備份在同目錄的 `config.toml.bak-*`。
+  剩下一個空的 `[hooks.state]` 表頭是合法 TOML、無害，**也是誠實的**——六個專案的 hook
+  到現在真的一個都沒被審核過（見「未完成」第 1 項）。
