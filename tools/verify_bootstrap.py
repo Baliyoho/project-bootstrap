@@ -4,8 +4,8 @@
 
 為什麼有這支：AGENTS.md 鐵律第 4 條要求「改完部署包要重生一次骨架驗證」，但在 2026-08-05
 之前那是一段要人照著手刻的敘述——每一棒都得重刻一次，於是實務上常常跳過。把它固化成一個
-指令，驗證才會真的發生。這支腳本本身不是「交接制度」（鐵律第 6 條講的是不要把 HANDOFF／
-hooks 套到本 repo 身上），它是部署包的測試。
+指令，驗證才會真的發生。這支腳本是部署包的測試；本 repo 自己的交接快照與開場 hook
+也由它檢查，不另部署一份 check_docs.py。
 
 用法（在本 repo 根目錄執行）：
   python -X utf8 tools/verify_bootstrap.py
@@ -58,6 +58,8 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
   工作中標記   ——HANDOFF.md 範本要有「工作中」欄位，且 git-freshness 讀 origin 那一份後
                   別台機器印 🔴、自己這台印 🟡、已交棒印 ✅、欄位不存在印 🟡。這條鏈斷掉
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
+  本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
+                  只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
   行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
                   git-freshness 可執行
   同步清單     ——sync_project.py 的清單要涵蓋骨架每一個檔，且 hook 接線合併要真的換掉
@@ -810,6 +812,92 @@ def step_rename_line(dest):
         return False
     record('OK', '改名寫進回報模板',
            'A5／B9 模板各有一行 session：且留著「不適用」；三個負向測試都擋得住')
+    return True
+
+
+REPO_HANDOFF_HEADINGS = ('任務目標', 'Git 狀態', '已完成', '未完成／下一步',
+                         '地雷與注意事項', '服務查證與期望快照', '懸置事項（AI 勿自行處理）')
+REPO_HANDOFF_STALE = (
+    r'Codex\s*接線從來沒真的跑過',
+    r'Codex\s*這一面還沒有\s*bash\s*解析的解法',
+    r'新發現、還沒處理.{0,80}ZIP_README',
+)
+
+
+def repo_handoff_rule_problems(text):
+    flat = re.sub(r'\s+', ' ', text.replace('`', '').replace('**', ''))
+    patterns = (r'每輪只維護.{0,45}兩欄', r'每輪一定要維護的只有.{0,45}兩欄',
+                r'HANDOFF\.md.{0,12}只當.{0,15}標記的載體',
+                r'本 repo 沒有\s*HANDOFF\.md',
+                r'本 repo 刻意沒有\s*HANDOFF\.md', r'接線在、但還沒真的跑過')
+    return ['交接入口仍有舊規則：' + pattern for pattern in patterns if re.search(pattern, flat)]
+
+
+def repo_handoff_problems(text, version):
+    """2026-11-01：舊快照凍結三輪但全數驗證通過；這裡只查已知回歸，不聲稱理解所有待辦。"""
+    problems = repo_handoff_rule_problems(text)
+    if len(text.splitlines()) > 80:
+        problems.append('HANDOFF 超過 80 行')
+    for label in ('交接時間', '交棒者', '待續分支', '工作中', '骨架版本'):
+        matches = re.findall(r'^- \*\*' + re.escape(label) + r'\*\*：(.+)$', text, re.M)
+        if len(matches) != 1 or not matches[0].strip():
+            problems.append(label + ' 必須有且只有一個非空欄位')
+        elif label == '骨架版本' and matches[0].strip() != '`' + version + '`':
+            problems.append('HANDOFF 骨架版本與 VERSION 不一致')
+    for heading in REPO_HANDOFF_HEADINGS:
+        matches = re.findall(r'^## ' + re.escape(heading) + r'\n(.*?)(?=^## |\Z)', text, re.M | re.S)
+        if len(matches) != 1 or not matches[0].strip():
+            problems.append('缺少或重複交接章節：' + heading)
+    flat = re.sub(r'\s+', ' ', text.replace('`', '').replace('**', ''))
+    problems.extend('已完成待辦復活：' + p for p in REPO_HANDOFF_STALE if re.search(p, flat))
+    return problems
+
+
+def step_repo_handoff():
+    text = (ROOT / 'HANDOFF.md').read_text(encoding='utf-8')
+    version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
+    problems = repo_handoff_problems(text, version)
+    for name in ('AGENTS.md', 'ARCHITECT.md', 'README.md', '.claude/hooks/repo-git-check.sh'):
+        problems.extend(name + '：' + p for p in
+                        repo_handoff_rule_problems((ROOT / name).read_text(encoding='utf-8')))
+    # 固定的有效基線讓負向測試不依賴實際快照的待辦內容或工作中／已交棒狀態。
+    control = '\n'.join('- **%s**：%s' % (label, value) for label, value in (
+        ('交接時間', '2026-11-01 23:18（+08）'), ('交棒者', 'Codex'),
+        ('待續分支', '無。'), ('工作中', '無（已交棒）'), ('骨架版本', '`' + version + '`')))
+    control += '\n' + '\n'.join('## ' + h + '\n無。\n' for h in REPO_HANDOFF_HEADINGS)
+    cases = (
+        ('版本落後', control.replace('`' + version + '`', '`2000-01-01`')),
+        ('只剩標記', '- **工作中**：無（已交棒）\n'),
+        ('缺待辦章節', control.replace('## 未完成／下一步\n無。\n', '')),
+        ('空待辦章節', control.replace('## 未完成／下一步\n無。', '## 未完成／下一步\n')),
+        ('工作中欄位重複', control + '\n- **工作中**：無（已交棒）'),
+        ('超過行數', control + '\n' * 81),
+        ('驗收舊待辦', control + '\nCodex 接線從來沒真的跑過。'),
+        ('啟動器舊待辦', control + '\nCodex 這一面還沒有 `bash` 解析的解法。'),
+        ('ZIP 舊待辦', control + '\n新發現、還沒處理：`ZIP_README` 有過期斷言。'),
+    )
+    if repo_handoff_problems(control, version):
+        problems.append('有效快照被誤擋')
+    busy = control.replace('無（已交棒）', '`desk` ／ `Codex CLI` ／ `session`，2026-11-01 開工')
+    if repo_handoff_problems(busy, version):
+        problems.append('工作中快照被誤擋')
+    for name, mutated in cases:
+        if mutated == control or not repo_handoff_problems(mutated, version):
+            problems.append('負向測試未擋住：' + name)
+    rules = ('每輪只維護「待續分支」與「工作中」兩欄。',
+             '每輪一定要維護的只有「待續分支」與「工作中」兩欄。',
+             'HANDOFF.md 只當「工作中」標記的載體。',
+             '本 repo 沒有 HANDOFF.md。', '本 repo 刻意沒有 HANDOFF.md 與 hooks。',
+             '接線在、但還沒真的跑過。')
+    for old in rules:
+        if not repo_handoff_rule_problems(old):
+            problems.append('負向測試未擋住入口舊規則：' + old)
+    if problems:
+        record('FAIL', '本 repo 交接狀態', '；'.join(problems))
+        return False
+    record('OK', '本 repo 交接狀態',
+           '快照必要欄位、≤80 行、版本一致、已知舊待辦與入口規則；%d 個負向測試通過'
+           % (len(cases) + len(rules)))
     return True
 
 
@@ -1693,6 +1781,7 @@ def main():
             step_rename_line(dest)
         step_eol(dest)
         step_self()
+        step_repo_handoff()
         step_sync_coverage(dest)
         step_sync_self_guard()
         step_misc(dest, work)

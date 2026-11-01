@@ -115,7 +115,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 
 ## 要改這份骨架時：開 session 貼這段
 
-在本 repo 開新的 AI session 時整段複製貼上。**這不是接棒 prompt**——本 repo 沒有 `HANDOFF.md`，也沒有骨架那套 hooks，見下方說明。
+在本 repo 開新的 AI session 時整段複製貼上。**先走全域 handoff skill 的 A 模式**，再按任務閱讀需要的範本；本 repo 的差異見 `AGENTS.md`。
 改完部署包一律用 `python -X utf8 tools/verify_bootstrap.py` 驗證（重生骨架＋跑完所有檢查，**exit 0 才算完成**）。
 
 ```text
@@ -123,7 +123,8 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 部署包，複製到新專案資料夾就能生出整套制度（三個入口＋結構文件、交接協定、handoff skill、兩個 git hook、
 兩支驗證腳本）。
 
-先讀 AGENTS.md 與 ARCHITECT.md（規則與結構），再讀 PROJECT-BOOTSTRAP.md 的第 0–2 節建立全貌。
+先讀 AGENTS.md，照全域 handoff skill 跑完 A 模式，讀 HANDOFF.md 並驗證現況。
+任務碰到結構才讀 ARCHITECT.md；需要制度背景再讀 PROJECT-BOOTSTRAP.md 的第 0–2 節。
 第 3 節是各檔範本，改到哪一份才讀那一段——不要整份讀完，那是 1000 多行。
 
 工作時遵守：
@@ -135,9 +136,10 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
    格式 v<日期>，同一天改第二次起加序號（v2026-10-24.2）——只有日期的話，當天改第二次就看不出新舊。
 5. 全檔 LF。用 Python 改寫要 newline='' 或事後正規化，否則 Windows 會把整份寫成 CRLF。
 6. 動到結構（增刪檔案、部署包增刪一節範本、驗證項增減）就更新 ARCHITECT.md，跟該變動同一個 commit。
-7. 本 repo 刻意沒有 HANDOFF.md 與 hooks——它是制度的來源，不是一個交接中的工作專案。
-   不要「順手」把骨架套到它自己身上。跨 session 狀態看 git log 與 source 版本標記。
-   tools/ 底下只有 verify_bootstrap.py，那是部署包的測試，不是骨架的一部分。
+7. 本 repo 有 HANDOFF.md 當下交接快照與自己的 SessionStart hook；沒有專案層 handoff skill、
+   pre-push-handoff.sh 或 check_docs.py。不要「順手」把整套骨架套到自己身上。
+   A5 寫工作中標記，B6 核對並覆寫整份交接快照，移除已完成待辦，≤80 行、不累積歷史。
+   tools/ 的 verify_bootstrap.py 與 sync_project.py 分別是部署包的測試與發佈工具。
 
 改完必須驗證，沒驗證不算完成：
 

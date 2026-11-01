@@ -129,7 +129,7 @@ if [ -n "$remote_handoff" ]; then
   esac
 fi
 
-echo "[repo-check] 本 repo 刻意沒有 handoff skill、沒有 pre-push 防呆、沒有 check_docs.py（理由見 ARCHITECT.md「這個 repo 刻意沒有的東西」）：接棒程序讀全域 ~/.claude/skills/handoff/。HANDOFF.md 只當「工作中」標記的載體，不是狀態日誌（界線寫在它開頭那節）。改制度就改 PROJECT-BOOTSTRAP.md，改完跑 python -X utf8 tools/verify_bootstrap.py。"
+echo "[repo-check] 本 repo 刻意沒有 handoff skill、沒有 pre-push 防呆、沒有 check_docs.py（理由見 ARCHITECT.md「這個 repo 刻意沒有的東西」）：接棒程序讀全域 ~/.claude/skills/handoff/。HANDOFF.md 是當下交接快照與工作標記；B6 核對整份現況、移除已完成待辦（見 AGENTS.md「本 repo 的交接快照」）。改制度就改 PROJECT-BOOTSTRAP.md，改完跑 python -X utf8 tools/verify_bootstrap.py。"
 # 開工改名用的 YYMMDDHH 在這裡算好（2026-11-01 加）。改名規則在 skill 的「session 命名」
 # 那一節，但時間戳一直是要 agent 自己去取的——而它取錯的時候是靜默的：拿系統提示裡的日期
 # 去推小時就會寫出一個不存在的時刻，而那個時間戳的唯一用途正是「讓使用者在側欄認出這是
