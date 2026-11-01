@@ -569,6 +569,13 @@ def busy_cases(push_busy, me):
     out = push_busy('無（已交棒）', claude)
     cases.append(('已交棒→✅', '✅ 「工作中」是' in out and '另一台機器正在' not in out
                   and '還有一個 session' not in out))
+
+    # 開工改名提示（2026-11-01）。放進這張共用表，是因為它正是「期望值有兩份就會分岔」的
+    # 下一個候選；而它消失的時候完全沒有徵兆——agent 只會回頭自己去 date 一次，或者更糟，
+    # 拿系統提示裡的日期猜一個小時，寫出一個不存在的時刻。所以連格式一起釘：全形空格、
+    # 八位數字、全形豎線，少一樣側欄上就排不整齊，而排不整齊就等於沒改名。
+    cases.append(('印開工改名提示', '開工改名用' in out
+                  and re.search('㊣　[0-9]{8}｜', out) is not None))
     return cases, out
 
 
@@ -772,22 +779,74 @@ def step_self():
     else:
         record('OK', '本 repo 自己的文件', '%d 個 .md 無死連結，日期標頭齊備' % len(mds))
 
-    cfg = ROOT / '.claude' / 'settings.json'
-    if not cfg.exists():
-        record('SKIP', '本 repo settings.json', '不存在——開場沒有 git 檢查，接棒全靠人記得')
-    else:
+    # 兩份接線一起查（2026-11-01 加上 `.codex/hooks.json`）。這個 repo 的接線指的是它
+    # 自己那支 `repo-git-check.sh`，所以它們跟部署包 3.9／3.17 只是長得像、不是副本；
+    # 也因此沒有 `source:` 標記、落後偵測看不到它們，唯一的守門人就是這一項。
+    # 連「有沒有被 sync_project.py 覆蓋過」一起釘：那會把它們改成指向這裡不存在的
+    # `git-freshness.sh`，開場檢查於是靜默失效——看起來有防護、實際上沒有。
+    hook_rel = '.claude/hooks/repo-git-check.sh'
+    problems, present = [], []
+    for rel in ('.claude/settings.json', '.codex/hooks.json'):
+        cfg = ROOT / rel
+        if not cfg.exists():
+            problems.append('%s 不存在' % rel)
+            continue
+        raw = cfg.read_text(encoding='utf-8')
         try:
-            json.loads(cfg.read_text(encoding='utf-8'))
-            hook = ROOT / '.claude' / 'hooks' / 'repo-git-check.sh'
-            if hook.exists():
-                record('OK', '本 repo settings.json', '合法 JSON，且 repo-git-check.sh 在')
-            else:
-                record('FAIL', '本 repo settings.json', '指向的 repo-git-check.sh 不存在')
-                ok = False
+            data = json.loads(raw)
         except Exception as e:
-            record('FAIL', '本 repo settings.json', str(e))
-            ok = False
+            problems.append('%s 不是合法 JSON：%s' % (rel, e))
+            continue
+        present.append(rel)
+        if hook_rel not in raw:
+            problems.append('%s 沒指向 %s' % (rel, hook_rel))
+        for bad in ('git-freshness.sh', 'pre-push-handoff.sh'):
+            if bad in raw:
+                problems.append('%s 指向 %s，而這個 repo 沒有那個檔'
+                                '（被 sync_project.py 覆蓋過？）' % (rel, bad))
+        for event in data.get('hooks', {}):
+            if event != 'SessionStart':
+                problems.append('%s 接了 %s，但這個 repo 只有 SessionStart 那一支'
+                                % (rel, event))
+    if not (ROOT / hook_rel).exists():
+        problems.append('%s 不存在——兩份接線都指著一個不在的腳本' % hook_rel)
+
+    if problems:
+        record('FAIL', '本 repo 兩份接線', '；'.join(problems))
+        ok = False
+    elif not present:
+        record('SKIP', '本 repo 兩份接線', '都不存在——開場沒有 git 檢查，接棒全靠人記得')
+    else:
+        record('OK', '本 repo 兩份接線',
+               '%s 都是合法 JSON、只接 SessionStart、都指向 repo-git-check.sh'
+               % '＋'.join(present))
     return ok
+
+
+def step_sync_self_guard():
+    """`sync_project.py <本 repo 路徑>` 必須拒絕（2026-11-01）。
+
+    這個 repo 的 `.claude/settings.json` 與 `.codex/hooks.json` 跟 `WIRING` 清單同名，指的
+    卻是它自己那支 `repo-git-check.sh`。沒有這道擋，一次 `sync_project.py .` 就把兩份接線
+    改成指向這裡不存在的 `git-freshness.sh` 與 `pre-push-handoff.sh`——開場檢查從此靜默
+    失效，而「看起來有防護、實際上沒有」是這套制度最貴的那一種壞法。`--all` 那條路本來就
+    安全（`discover()` 靠 handoff skill 發現專案，這裡刻意沒有），會踩到的是手打路徑，而那
+    在加擋之前實測真的印出兩個 `UPDATE`。
+
+    釘兩件事而不是一件：拒絕的話有印出來，而且**預演輸出裡一個 `UPDATE` 都沒有**。只檢查
+    前者的話，一個「印了話卻照樣改檔」的版本會通過，而那比沒有這項檢查更糟。
+    """
+    out = run([sys.executable, '-X', 'utf8', 'tools/sync_project.py', str(ROOT)],
+              cwd=ROOT).stdout
+    refused, untouched = '不是同步目標' in out, 'UPDATE' not in out
+    if not (refused and untouched):
+        record('FAIL', 'sync 拒絕本 repo',
+               '%s%s' % ('' if refused else '沒印出拒絕；',
+                         '' if untouched else '預演仍要改檔（UPDATE）')
+               + chr(10) + '           輸出：' + out.strip()[:200])
+        return False
+    record('OK', 'sync 拒絕本 repo', '手打本 repo 路徑→拒絕，預演零 UPDATE')
+    return True
 
 
 def step_antigravity(dest):
@@ -1308,6 +1367,7 @@ def main():
         step_eol(dest)
         step_self()
         step_sync_coverage(dest)
+        step_sync_self_guard()
         step_misc(dest, work)
     finally:
         if args.keep:

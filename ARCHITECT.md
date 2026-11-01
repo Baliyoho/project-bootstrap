@@ -1,7 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
 > **本檔＝結構的唯一權威**：`project-bootstrap` 由什麼組成、每樣東西的家在哪、改哪裡會影響到什麼。
-> 最後更新：2026-11-01（`verify_bootstrap.py` 多一項「README 跨工具表一致性」：README 那張跨工具表是部署包那一張的轉述，而保鮮期只守部署包那一份，於是它可以無聲分岔；加的當下就抓到一處。**只動腳本與敘述，骨架仍是 21 檔，範本與 `sync_project.py` 都沒動。**前一次是 2026-10-31 同日第五次：**補上 Antigravity CLI 的 hook 接線，端到端實測過**——新增 3.18 `.claude/hooks/ag-wrap.sh`（轉接層）、3.19 `.agents/ag-hook.cmd`（Windows shim，找 Git Bash）、3.20 `.agents/hooks.json`（只接 `SessionStart`），舊 3.18「其他 skills 慣例」順延成 3.21；`verify_bootstrap.py` 加「Antigravity 接線」情境，`sync_project.py` 的 `WHOLE` 多兩份並新增 `AG_WIRING`（只換 `handoff-git-check` 那一個頂層 key）。骨架從 18 檔變 21 檔。同日第四次：**在 Antigravity CLI `1.4.7` 上把 hook 實測完**——`agy -p` headless 量到專案層 `.agents/hooks.json` 會讀、六個事件全部觸發，cwd 是 `.agents/`；相對路徑可用、絕對路徑才脆弱（`command` 照空白切 token、不解析引號），所以**上一次那個「骨架的不變量可能害探針測不出東西」的推論被推翻**，鐵律 5 跟它沒有衝突；`PreToolUse` 不明確回 `allow_tool` 就等於拒絕。骨架仍不附接線，理由換成「Windows 缺一層 `.cmd` shim」。只改敘述，接線／`verify_bootstrap.py`／`sync_project.py` 都沒動。同日第三次：**重新界定 Antigravity 那輪探針的範圍**——Antigravity 是四個獨立 surface（2.0 桌面 App／CLI／IDE／SDK），探針只覆蓋 IDE `1.107.0`，所以「這個工具沒有 hook 這一層」改寫成「骨架還沒附接線，2.0 與 CLI 沒測」；全域路徑 `~/.gemini/<applicationName>/hooks.json` 是跟著 surface 走的，`antigravity-ide` 那一份不能一般化成整個產品。只改敘述，接線不動、`verify_bootstrap.py` 與 `sync_project.py` 不動。同日第二次：**部署包移除 Antigravity 的 hook 接線**——舊 3.18 `.claude/hooks/antigravity-wrap.sh` 與舊 3.19 `.agents/hooks.json` 刪除，舊 3.20「其他 skills 慣例」遞補回 3.18；`verify_bootstrap.py` 移除「Antigravity 轉接層」六情境，`sync_project.py` 的 `WHOLE`／`WIRING` 各少一份。原因是實測：Antigravity IDE `1.107.0` **不讀專案層的 `.agents/hooks.json`**，那兩個檔部署出去也不會被觸發。同日稍早才加上它們，當天就被自己的驗收條件判出局。前一次是 2026-10-30 同日第二次：三平台能力重查後，`extract()` 的抽取規則從「第一個區塊」改成「區塊依序對應檔名」、`sync_project.py` 把 `CLAUDE.md` 從 `INSTANCE` 搬到 `PARTIAL`、`verify_bootstrap.py` 加「跨工具表保鮮期」、副本拓撲裡 `.agents/skills/` 的角色改變）
+> 最後更新：2026-11-01（本 repo 自己多一份 Codex 接線 `.codex/hooks.json`——指向它自己那支 `repo-git-check.sh`，**不是 3.17 的副本**；`sync_project.py` 加一道「拒絕把本 repo 自己當目標」的防護（兩份接線跟 `WIRING` 同名，覆蓋下去會指到不存在的 `git-freshness.sh`）；`verify_bootstrap.py` 從 27 項變 **29 項**（「本 repo settings.json」擴成「本 repo 兩份接線」、新增「sync 拒絕本 repo」）。**骨架仍是 21 檔**，但這次動到範本 3.10（多印一行開工改名提示），所以它的 `source:` 標記跳到 `v2026-11-01`；`SKILL.md` 沒動，`VERSION` 刻意不跳。前一次是同日第二次：`verify_bootstrap.py` 多一項「README 跨工具表一致性」：README 那張跨工具表是部署包那一張的轉述，而保鮮期只守部署包那一份，於是它可以無聲分岔；加的當下就抓到一處。**只動腳本與敘述，骨架仍是 21 檔，範本與 `sync_project.py` 都沒動。**前一次是 2026-10-31 同日第五次：**補上 Antigravity CLI 的 hook 接線，端到端實測過**——新增 3.18 `.claude/hooks/ag-wrap.sh`（轉接層）、3.19 `.agents/ag-hook.cmd`（Windows shim，找 Git Bash）、3.20 `.agents/hooks.json`（只接 `SessionStart`），舊 3.18「其他 skills 慣例」順延成 3.21；`verify_bootstrap.py` 加「Antigravity 接線」情境，`sync_project.py` 的 `WHOLE` 多兩份並新增 `AG_WIRING`（只換 `handoff-git-check` 那一個頂層 key）。骨架從 18 檔變 21 檔。同日第四次：**在 Antigravity CLI `1.4.7` 上把 hook 實測完**——`agy -p` headless 量到專案層 `.agents/hooks.json` 會讀、六個事件全部觸發，cwd 是 `.agents/`；相對路徑可用、絕對路徑才脆弱（`command` 照空白切 token、不解析引號），所以**上一次那個「骨架的不變量可能害探針測不出東西」的推論被推翻**，鐵律 5 跟它沒有衝突；`PreToolUse` 不明確回 `allow_tool` 就等於拒絕。骨架仍不附接線，理由換成「Windows 缺一層 `.cmd` shim」。只改敘述，接線／`verify_bootstrap.py`／`sync_project.py` 都沒動。同日第三次：**重新界定 Antigravity 那輪探針的範圍**——Antigravity 是四個獨立 surface（2.0 桌面 App／CLI／IDE／SDK），探針只覆蓋 IDE `1.107.0`，所以「這個工具沒有 hook 這一層」改寫成「骨架還沒附接線，2.0 與 CLI 沒測」；全域路徑 `~/.gemini/<applicationName>/hooks.json` 是跟著 surface 走的，`antigravity-ide` 那一份不能一般化成整個產品。只改敘述，接線不動、`verify_bootstrap.py` 與 `sync_project.py` 不動。同日第二次：**部署包移除 Antigravity 的 hook 接線**——舊 3.18 `.claude/hooks/antigravity-wrap.sh` 與舊 3.19 `.agents/hooks.json` 刪除，舊 3.20「其他 skills 慣例」遞補回 3.18；`verify_bootstrap.py` 移除「Antigravity 轉接層」六情境，`sync_project.py` 的 `WHOLE`／`WIRING` 各少一份。原因是實測：Antigravity IDE `1.107.0` **不讀專案層的 `.agents/hooks.json`**，那兩個檔部署出去也不會被觸發。同日稍早才加上它們，當天就被自己的驗收條件判出局。前一次是 2026-10-30 同日第二次：三平台能力重查後，`extract()` 的抽取規則從「第一個區塊」改成「區塊依序對應檔名」、`sync_project.py` 把 `CLAUDE.md` 從 `INSTANCE` 搬到 `PARTIAL`、`verify_bootstrap.py` 加「跨工具表保鮮期」、副本拓撲裡 `.agents/skills/` 的角色改變）
 >
 > **什麼時候改**：只有**結構**變動才改——根目錄多／少一個檔案、部署包增刪一節範本、`verify_bootstrap.py` 增減檢查項、副本拓撲改變。
 > 制度內容本身怎麼寫（鐵律的措辭、skill 的步驟）**不要動這一份**，那些的家在 [AGENTS.md](AGENTS.md) 與部署包裡。
@@ -25,7 +25,7 @@
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
 | [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案。`check_docs.py` 的專案設定區塊、兩份 hook 接線裡專案自己加的設定都會原樣保留。只改檔案，不 commit | 骨架多一個要同步的檔時（而且要同時歸類進 `WHOLE`／`WIRING`／`PARTIAL`／`INSTANCE`，否則驗證會 FAIL） |
 | [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
-| `.claude/settings.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart 檢查：git 新鮮度＋`HANDOFF.md` 的「工作中」判讀。**不是部署包 3.9／3.10 的副本**，不在副本拓撲裡、不要用 `sync_project.py` 同步它（檔頭寫了為什麼不抄 3.10） | 幾乎不動 |
+| `.claude/settings.json`＋`.codex/hooks.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart 檢查：git 新鮮度＋`HANDOFF.md` 的「工作中」判讀＋開工改名提示。兩份接線掛的都是**同一支** `repo-git-check.sh`（2026-11-01 補 Codex 這一面），所以它們**不是部署包 3.9／3.17 的副本**，那支 hook 也不是 3.10 的副本——都不在副本拓撲裡、不要用 `sync_project.py` 同步（檔頭寫了為什麼不抄 3.10；2026-11-01 起那支腳本會直接拒絕） | 幾乎不動 |
 | `.gitignore`、`.gitattributes` | `dist/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
 | `dist/` | 建置產物（`--zip` 產出的骨架壓縮檔），**不進 Git** | 要發佈就重跑一次，不要留在 repo 裡跟部署包唱反調 |
 
@@ -99,7 +99,8 @@
 | `VERSION` 檔 | 與部署包版本行一致 | 落後偵測會說謊，落後的專案以為自己最新 |
 | 版本落後偵測 | 餵假版本要講、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後，同步又回到靠人記得 |
 | 本 repo 自己的文件 | 本 repo 的 `.md` 無死連結、`AGENTS.md`／`ARCHITECT.md` 有日期標頭 | 改檔名或搬段落留下死連結。部署包裡指向「部署後才存在的檔」的連結不算，判準是 `EXPECTED`，所以它指向本 repo 檔案的連結照樣會被抓 |
-| 本 repo settings.json | 合法 JSON，且指向的 hook 真的在 | 開場檢查靜默不執行——看起來有防護、實際上沒有 |
+| 本 repo 兩份接線 | `.claude/settings.json` 與 `.codex/hooks.json` 都是合法 JSON、只接 `SessionStart`、都指向真的在的 `repo-git-check.sh`，而且沒被改成指向 `git-freshness.sh`／`pre-push-handoff.sh` | 開場檢查靜默不執行——看起來有防護、實際上沒有。這兩個檔是 JSON、塞不進 `source:` 標記，落後偵測看不到它們，這一項是唯一的守門人 |
+| sync 拒絕本 repo | `sync_project.py <本 repo 路徑>` 要印出拒絕，**而且預演輸出裡零 `UPDATE`** | 一次手打路徑就把兩份接線改成指向這裡不存在的腳本。只檢查「有印拒絕」的話，一個印了話卻照樣改檔的版本會通過，比沒有這項更糟 |
 | 本 repo 工作中判讀 | `repo-git-check.sh` 讀 `origin` 的 `HANDOFF.md` 後四種狀態各印對應結論，且跟 3.10 用同一個欄位字串 | 這個 repo 的跨機器防呆靜默失效，或兩支 hook 的欄位格式悄悄分岔 |
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
 | 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
@@ -148,6 +149,13 @@ check_docs.py
     └─→ 各專案 .agents/hooks.json
 ```
 
+**本 repo 自己的兩份接線（`.claude/settings.json`、`.codex/hooks.json`）不在上面這張圖裡。**
+它們跟 3.9／3.17 路徑同名、形狀也幾乎一樣，但掛的是這個 repo 自己那支 `repo-git-check.sh`——
+所以是**同名而非同源**，沒有同步義務，也不跳 `source:` 版本。而「路徑同名」本身就是風險：
+`sync_project.py` 的 `WIRING` 清單認的是路徑，手打一次 `sync_project.py <本 repo>` 就會把它們
+改成指向這裡不存在的 `git-freshness.sh`。2026-11-01 起那支腳本直接拒絕本 repo（`--all` 本來就
+掃不到它），`verify_bootstrap.py` 的「sync 拒絕本 repo」與「本 repo 兩份接線」兩項各守一端。
+
 **JSON 沒辦法放 `source:` 標記**，所以上面那兩份接線在落後偵測裡是隱形的——它們唯一的守門人是 `sync_project.py` 的 `WIRING` 清單加上 `verify_bootstrap.py` 的「同步清單涵蓋骨架」。2026-10-30 把它們補進拓撲，是因為 2026-09-13 給 3.9 補的 `Bash|PowerShell` matcher 一直沒發下去：三個專案停在舊的 `Bash`，而那台機器的主 shell 正是 PowerShell，pre-push 防呆於是在那些專案等於沒裝，一個半月沒有任何徵兆。
 
 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，**改內容就要跳版**，否則沒人分得出哪份落後（鐵律第 2 條）。同一天改第二次起要在日期後面加序號（`v2026-10-24.2`）——日期粒度只能證明「不早於那一天」，2026-10-24 就因此誤判過一次。
@@ -158,7 +166,7 @@ check_docs.py
 - **沒有 handoff skill、沒有 `pre-push-handoff.sh`、沒有 `check_docs.py`。** 它是制度的**來源**，不是一個交接中的工作專案；把骨架的這幾份套到它自己身上，就會出現「權威版與它的副本互相同步」的迴圈。跨 session 狀態看 `git log` 與各檔的 `source:` 版本標記；接棒程序讀全域副本 `~/.claude/skills/handoff/`。**`HANDOFF.md` 是 2026-10-30 補回來的例外**，見下一條；`pre-push-handoff.sh` 同一天重新評估過，結論仍是不裝，但理由已經換成另一個，見下面那條。
 - **跨機器「工作中」標記：2026-10-30 先是接受這個缺口，同一天決定多機維護就補上了。** 當初不裝的理由是它需要 `HANDOFF.md` 當載體，而那一份得每輪交棒維護——只為防呆而裝，就是多一份沒人讀、然後開始腐化的文件；那時 single writer 靠人顧。改成多機維護之後這個理由不成立了：`git log` 與 `git fetch` **看不到別台機器未提交的變更**，而開場那個 ✅ 只證明「本機沒落後 origin」，誤接棒就會整批繞過那些變更。所以補上 `HANDOFF.md`（範本 3.3 的*實例*，不是副本，沒有同步義務），並在 `repo-git-check.sh` 加判讀段——**沿用 3.10 的同一個載體與同一個欄位，沒有發明第二種標記**，那會變成「這裡會擋、別處不會擋」的不對稱。為了讓這份文件不腐化，它開頭明寫「只當標記載體」，每輪只維護兩欄。**天花板要講明白**：標記只告訴你「東西在那台機器上」，東西本身仍得回那台 push，這不是實作缺漏。
 - **`pre-push-handoff.sh`：2026-10-30 評估過，決定不裝。** 第一條那個「套到自己身上會變成同步迴圈」的理由，在 `HANDOFF.md` 以*實例*身分補回來之後就不夠用了——同一招對這支 hook 也成立——所以這次是另一個理由。它擋的是「推到權威分支、但這批 commit 沒更新 `HANDOFF.md`」，而這裡的 `HANDOFF.md` 刻意只剩「待續分支」與「工作中」兩欄：**中途推進度的當下，交接狀態真的沒有變**，沒有東西可寫。於是每次誤報只剩兩條路——編一行不成立的更動，或 `HANDOFF_HOOK=off`——實際上一定是後者，而「看到 handoff-check 就 off」一旦變成反射，哪天它為了真正的理由擋下來也會被順手關掉；防呆的價值全在那一次。**同時否決了「加一個計數器／時間戳欄位、bump 它就能過」的變通**：那會讓這支 hook 從此擋不下任何東西，卻比 `off` 更糟——`off` 是看得見的、每次都是有意識的決定，bump 過的時間戳卻長得像合規，下一棒會以為這份檔案一直有在維護；而「最後 push 時間」`git log` 已經有了，手動維護的第二份只會漂移（[AGENTS.md](AGENTS.md) 「每個事實只有一個家」）。**這個判斷綁在「這裡的 HANDOFF 只是標記載體」上**：哪天它恢復成真的狀態文件，或這個 repo 改成以 feature 分支為主（那時 hook 根本不會擋），理由就不成立，要重新評估。
-- **但有一支自己的 SessionStart hook**（`.claude/hooks/repo-git-check.sh`，2026-10-30 加）：做 git 新鮮度比對與「工作中」判讀（後者 2026-10-30 加），檔頭明寫**不是 3.10 的副本、不要同步**。在此之前這個 repo 開場完全沒有提醒，A1 的 fetch 全靠使用者記得打「接棒」把全域 skill 載進來。為什麼不直接抄 3.10——`sync_project.py` 的 `discover()` 靠 handoff skill 發現專案，這個 repo 沒有 skill，`--all` 永遠掃不到它，抄過來就會變成「所有專案都同步了、只有來源自己落後」而且毫無跡象的那一份副本。
+- **但有一支自己的 SessionStart hook**（`.claude/hooks/repo-git-check.sh`，2026-10-30 加）：做 git 新鮮度比對、「工作中」判讀（2026-10-30 加）與開工改名提示（2026-11-01 加）。**2026-11-01 起 Codex 這一面也接上了**（`.codex/hooks.json`，掛同一支腳本、不複製第二份）——在此之前只有 Claude Code 會跑它，而這個 repo 本來就在多工具維護；代價是它跟那六個專案一樣進了「Codex 要各審一次」的清單（信任綁 `hooks.json` 的絕對路徑），所以**接線在、但還沒真的跑過**，檔頭明寫**不是 3.10 的副本、不要同步**。在此之前這個 repo 開場完全沒有提醒，A1 的 fetch 全靠使用者記得打「接棒」把全域 skill 載進來。為什麼不直接抄 3.10——`sync_project.py` 的 `discover()` 靠 handoff skill 發現專案，這個 repo 沒有 skill，`--all` 永遠掃不到它，抄過來就會變成「所有專案都同步了、只有來源自己落後」而且毫無跡象的那一份副本。
 - **沒有 CI。** 驗證是一個指令（`python -X utf8 tools/verify_bootstrap.py`），跑它是鐵律第 4 條的義務。
 - `tools/` 底下只有部署包自己的工具——`verify_bootstrap.py` 測試它、`sync_project.py` 發佈它，兩支都不是骨架的一部分，也都不會被部署出去。
 

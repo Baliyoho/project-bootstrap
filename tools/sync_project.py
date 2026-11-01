@@ -392,6 +392,16 @@ def main():
         extract(tmp)
         print('權威版 v%s（%d 個目標）\n' % (version, len(targets)))
         for project in targets:
+            # 本 repo 自己不是同步目標（2026-11-01）。`--all` 掃不到它（discover() 靠
+            # handoff skill 發現專案，這裡刻意沒有），但手打一個路徑進來本來會過——而這個
+            # repo 的 `.claude/settings.json` 與 `.codex/hooks.json` 跟 WIRING 同名，指的
+            # 卻是它自己那支 `repo-git-check.sh`；覆蓋下去就變成指向這裡不存在的
+            # `git-freshness.sh`，開場檢查從此靜默失效（實測預演真的會印出兩個 UPDATE）。
+            # 擋在這裡，而不是在文件裡寫一句「不要這樣做」——那種規則只在有人記得時有效。
+            if project == ROOT:
+                print('%s\n  這是權威版 repo 自己，不是同步目標：它的兩份接線指向自己那支'
+                      ' repo-git-check.sh，覆蓋下去會指到這裡不存在的 git-freshness.sh\n' % project)
+                continue
             if not project.exists():
                 print('%s\n  找不到這個資料夾\n' % project)
                 continue

@@ -13,6 +13,9 @@
 # 打「接棒」把全域 skill 載進來；哪天直接說「幫我改部署包第 3.8 節」，skill 不會載入，
 # 就可能對著落後的本機動手——那是反例清單第一條。
 #
+# 2026-11-01 加第三件事：把開工改名用的 YYMMDDHH 算好印出來（理由見下面那段）。三件事都是
+# 「開場印一句話」，沒有可以跟權威版分岔的判斷規則，所以這支腳本仍然簡單到不會腐化。
+#
 # 只讀不寫，絕不自動 pull/push。
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
@@ -127,4 +130,13 @@ if [ -n "$remote_handoff" ]; then
 fi
 
 echo "[repo-check] 本 repo 刻意沒有 handoff skill、沒有 pre-push 防呆、沒有 check_docs.py（理由見 ARCHITECT.md「這個 repo 刻意沒有的東西」）：接棒程序讀全域 ~/.claude/skills/handoff/。HANDOFF.md 只當「工作中」標記的載體，不是狀態日誌（界線寫在它開頭那節）。改制度就改 PROJECT-BOOTSTRAP.md，改完跑 python -X utf8 tools/verify_bootstrap.py。"
+# 開工改名用的 YYMMDDHH 在這裡算好（2026-11-01 加）。改名規則在 skill 的「session 命名」
+# 那一節，但時間戳一直是要 agent 自己去取的——而它取錯的時候是靜默的：拿系統提示裡的日期
+# 去推小時就會寫出一個不存在的時刻，而那個時間戳的唯一用途正是「讓使用者在側欄認出這是
+# 哪一次」，對不上就等於沒改名。hook 跑在 SessionStart，所以這個值本來就比「回報完才去
+# date 一次」更接近接棒那一刻。
+# 只印、不改名：沒有任何工具讓 hook 改 session 名稱，有這個能力的是 agent（Claude Code 的
+# set_session_title），而 Codex CLI 與 Gemini CLI 沒有——所以這句明寫「有這個能力才做」，
+# 免得在做不到的工具上變成一個每次開場都在要求失敗動作的指令。
+echo "[repo-check] 開工改名用（接棒時間已算好，有這個能力的工具才做）：㊣　$(date +%y%m%d%H)｜<主題>｜工作中"
 exit 0

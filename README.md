@@ -32,7 +32,7 @@
 ├─ ARCHITECT.md                     專案結構的唯一權威（只有結構變動才改）
 ├─ .claude/                         Claude Code
 │   ├─ settings.json                hook 設定
-│   ├─ hooks/git-freshness.sh       SessionStart：git 新鮮度檢查＋提醒走交接程序
+│   ├─ hooks/git-freshness.sh       SessionStart：git 新鮮度檢查＋提醒走交接程序＋開工改名提示
 │   ├─ hooks/pre-push-handoff.sh    PreToolUse：沒更新 HANDOFF 就想 push 時擋下
 │   ├─ hooks/ag-wrap.sh             Antigravity 轉接層：只做管線，把 stdout 包成 JSON
 │   └─ skills/handoff/SKILL.md      交接與同步的可執行程序（0 建制／A 接棒／B 交棒／C 同步）＝權威版
@@ -52,7 +52,7 @@
 
 | 層 | 檔案 | 什麼時候動 |
 |---|---|---|
-| **觸發** | `hooks/git-freshness.sh` | 每次 session 開始自動 fetch，報告落後／分岔，並提醒「接棒先走 handoff skill」 |
+| **觸發** | `hooks/git-freshness.sh` | 每次 session 開始自動 fetch，報告落後／分岔，提醒「接棒先走 handoff skill」，並把開工改名用的時間戳算好（agent 自己推小時會寫出不存在的時刻，而那是靜默的） |
 | **程序** | `skills/handoff/SKILL.md` | agent 判斷要接棒／交棒／同步時自動載入；也可打 `/handoff`（建制走模式 0，見下節） |
 | **防呆** | `hooks/pre-push-handoff.sh` | 要推到權威分支、但這批 commit 沒更新 `HANDOFF.md` → 擋下並要求先走交棒程序 |
 

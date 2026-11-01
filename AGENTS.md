@@ -1,6 +1,20 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-10-31
+> 最後更新：2026-11-01
+
+## 開工第一件事（任何工具、任何模型都適用）
+
+**先走接棒程序的 A 模式，A 沒跑完之前不要改任何檔案**；收工走 B 模式，中途要拉最新或推一個安全點走 C 模式。
+
+程序檔在**全域**副本：`~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）——**這個 repo 刻意沒有專案層的那一份**（理由見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有的東西」）。沒有全域副本、或工具不會自動載入 skill 的時候就直接開那個檔讀，它是純 Markdown。
+
+照 A 模式做會踩到三處跟部署出去的專案不一樣的地方：
+
+- **A4 的一鍵驗證不是 `verify_state.py`**（那是骨架的檔，不部署到自己身上），改跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**（鐵律 4）。
+- **沒有 `check_docs.py`、沒有 pre-push 防呆**，所以 B4 與那層擋 push 的關卡都不存在；`.md` 的死連結與日期標頭由 `verify_bootstrap.py` 的「本 repo 自己的文件」那一項顧。
+- **`HANDOFF.md` 只是「工作中」標記的載體**，不是狀態日誌（界線寫在它開頭那節），每輪只維護「待續分支」與「工作中」兩欄。
+
+**為什麼要在這裡再寫一次**：開場 hook 已經會講同樣的話，但它**只在 Claude Code、以及已經審核過 hook 的 Codex 上會跑**——Antigravity、Gemini CLI、還沒被信任的 Codex 都不會，而 `AGENTS.md` 是那些工具唯一保證會讀到的入口。把開工義務只放在 hook 裡，等於讓它在一半的平面上無聲消失。（2026-11-01 補。部署包範本 3.1 一直有這一節，缺的反而是骨架自己這個 repo——制度的來源比它的產物少一層保護，而且沒有任何徵兆。）
 
 ## 這個 repo 是什麼
 
@@ -33,7 +47,8 @@
   要重開這個決定，門檻是比那次探針更強的證據——那次是讓 hook 自己寫檔，連 Hooks UI 自己列得出來的 `PreToolUse` 都沒觸發。
 - **接線路徑一律相對**：寫死絕對路徑換機器就靜默失效（真的發生過），`verify_bootstrap.py` 的「跨平台防呆」會擋。
 - **`.agents/` 只放指標與接線**，不複製程序內容。2026-10-31 起它有 `hooks.json`（接線）與 `ag-hook.cmd`（Windows shim）——兩者都**不含任何判斷規則**，規則只在被包的那支 `.sh` 裡（權威版只有一份），所以它們跟「複製第二份腳本」不是同一種風險：裡面沒有東西可以跟權威版分岔，只會在管線上壞掉，而管線由 `verify_bootstrap.py` 的「Antigravity 接線」守著。2026-10-30 起它不只給 Antigravity——`codex debug prompt-input` 的 Skill roots 表證實 Codex 也把 repo 的 `.agents/skills/` 當 skill 來源。既然會被自動發現，**那份指標的 `description` 就必須寫滿觸發詞**：agent 是靠它決定要不要開檔的，寫短等於無聲地關掉一個入口。
-- **本 repo 自己的 `HANDOFF.md` 與 `.claude/hooks/repo-git-check.sh` 不在副本拓撲裡**，`sync_project.py` 不要碰它們：前者是範本 3.3 的*實例*，後者誰的副本都不是（檔頭寫了為什麼不抄 3.10）。它們的檢查由 `verify_bootstrap.py` 顧。
+- **本 repo 自己的 `HANDOFF.md`、`.claude/hooks/repo-git-check.sh` 與兩份接線（`.claude/settings.json`、2026-11-01 起多一份 `.codex/hooks.json`）都不在副本拓撲裡**，`sync_project.py` 不要碰它們：`HANDOFF.md` 是範本 3.3 的*實例*；那支 hook 誰的副本都不是（檔頭寫了為什麼不抄 3.10）；兩份接線指向的是那支 hook，所以它們跟 3.9／3.17 只是**長得像**，不是副本。它們的檢查由 `verify_bootstrap.py` 顧。
+  ⚠️ **但那兩份接線的路徑跟 `sync_project.py` 的 `WIRING` 清單同名**，所以 `sync_project.py <本 repo 路徑>` 會把它們改成指向這裡不存在的 `git-freshness.sh`，開場檢查就靜默失效——看起來有防護、實際上沒有。`--all` 本來就掃不到這個 repo（`discover()` 靠 handoff skill 發現專案，這裡刻意沒有），所以 2026-11-01 起改成**明確拒絕**把本 repo 自己當目標，而不是靠「記得不要這樣做」。
 
 ## 這個 repo 自己的指標檔
 
