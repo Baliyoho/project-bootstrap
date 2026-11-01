@@ -37,25 +37,28 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
     一行**；上一棒只在骨架自己身上驗過，這是第一次在真實專案上看到。
   - 順手修掉上一棒的筆誤：`verify_bootstrap.py` 是 **28 項**，不是 29（「27→29」是增量被記成項
     數）。驗證：exit 0、28 項全 `ok`。
+- 2026-11-01：**那六個專案的未提交變更都落地了**（上一棒「未完成」的第 1 項）——六個各自開一個
+  session 在自己的資料夾走 A→B 收尾，只 stage 那一個檔、`check_docs.py` exit 0、commit ＋ push。
+  最終 commit：`Grist_test` `29086d3`／`NAA_TR` `3b9f73e`（`feature/W15-research-shell`）／
+  `NAS_MAINT` `a7dc446`／`摘要skill設計` `9464eb3`（`feature/claude-native`）／
+  `第三批56箱後檢查` `464721b`／`解決網路速度問題` `1d61995`。
+  - 六個 `HEAD` 都與 `origin` 對齊、hook 的 blob 都是 `085044bb`、「工作中」都回到
+    `無（已交棒）`——**從骨架這邊獨立複驗過，不只採信各 session 的回報**。
+  - `解決網路速度問題` 那兩個使用者說不用管的檔**刻意留著未提交**，收尾後它仍是 dirty。
 
 ## 未完成／下一步
 
-1. 🔴 **那六個專案的工作樹各有 1 個未提交變更**（就是那支 `git-freshness.sh`）：
-   `Grist_test`／`NAA_TR`／`NAS_MAINT`／`摘要skill設計`／`第三批56箱後檢查`／`解決網路速度問題`。
-   **不要從這個 repo 去 commit 它們**——各專案自己接棒時走 B 收尾（只 stage 那一個檔、跑
-   `check_docs.py`、commit ＋ push）。`解決網路速度問題` 另有兩個使用者說不用管的既有變更，
-   別一起 stage。
-2. 🔴 **Codex 接線從來沒真的跑過，現在是 7 個地方**：那六個專案 ＋ **本 repo 自己**。各開一次
+1. 🔴 **Codex 接線從來沒真的跑過，現在是 7 個地方**：那六個專案 ＋ **本 repo 自己**。各開一次
    互動式 `codex` 選 `Trust all and continue`（信任綁 `hooks.json` 絕對路徑，審一個不會全通）。
    使用者要按的。⚠️ 按完要**在同一個 session 裡送出一句話**才驗得到（互動 TUI 開場不跑
    `SessionStart`）；不要去畫面上找 `[git-check]`（那是 developer context，不顯示給人）。
-3. **未解：同一支 hook 在互動 TUI 退出碼 1，六分鐘前在 `codex exec` 下卻成功。** 兩個很有說服
+2. **未解：同一支 hook 在互動 TUI 退出碼 1，六分鐘前在 `codex exec` 下卻成功。** 兩個很有說服
    力的理由都被量掉了（`bash` 解析到 WSL：同一條啟動鏈獨立跑是 exit 0；殼層偵測不同：兩次
    rollout 都寫 `<shell>powershell</shell>`，**包括成功那次**）。要重開：讓探針印出 hook 自己
    看到的 `PATH` 與 cwd 再比對。⚠️ 量它**必然要花模型呼叫**，花之前要問使用者。
-4. **Codex 這一面還沒有 `bash` 解析的解法**（Antigravity 靠 3.19 的 shim 解掉了）。它至今沒在
-   真實部署裡失敗過，因為第 2 項還沒跑——**先別動手**，等有真的失敗案例再決定要不要補 shim。
-5. （已結案，別掃回來）`SessionStart` **自動改** session 名稱做不到——改名的能力在 agent 手上，
+3. **Codex 這一面還沒有 `bash` 解析的解法**（Antigravity 靠 3.19 的 shim 解掉了）。它至今沒在
+   真實部署裡失敗過，因為第 1 項還沒跑——**先別動手**，等有真的失敗案例再決定要不要補 shim。
+4. （已結案，別掃回來）`SessionStart` **自動改** session 名稱做不到——改名的能力在 agent 手上，
    hook 只能把時間戳算好印出來，而那已經做了。
 
 （「階段二 pre-push hook」2026-10-30 決定不裝、「IDE `1.107.0` 為什麼沒觸發」2026-10-31 決定不追，
@@ -82,4 +85,4 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 ## 懸置事項（AI 勿自行處理）
 
-- 第 2、3、4 項要不要做（第 2 項要使用者親手按，第 3 項會花模型呼叫）。
+- 第 1、2、3 項要不要做（第 1 項要使用者親手按，第 2 項會花模型呼叫）。
