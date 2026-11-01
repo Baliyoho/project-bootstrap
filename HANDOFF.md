@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-10-31 21:34（+08）
-- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（Codex hook 兩個未知實測完畢；意外發現六個專案的 Codex 接線從未真的跑過）
+- **交接時間**：2026-11-01 12:05（+08）
+- **交棒者**：Claude Opus 5 ／ `DESKTOP-M8MRS05`（`README.md` 的跨工具表加守門人；加的當下就抓到一處已經發生的分岔）
 
 ## 這份檔案在這個 repo 的角色（跟其他專案不一樣，先讀這段）
 
@@ -23,11 +23,18 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26110111｜README表守門人｜工作中`，2026-11-01 11:35 (+08) 開工
+- **工作中**：無（已交棒）
 - 本機能力：Windows 11 ＋ Git for Windows 的 bash；有 push 權限（不寫祕密值）。
 
 ## 已完成
 
+- 2026-11-01（**刻意不跳版**：`SKILL.md` 與所有範本零改動，`sync_project.py` 不必跑）：
+  **`README.md` 的跨工具表有守門人了**（上一棒「未完成」的第 4 項）。`verify_bootstrap.py` 新增
+  「README 跨工具表一致性」——比對同名列的**判定符號**、孤兒版本號、指回部署包的指標，附四種分岔
+  的負向測試。**加的當下就抓到一處已經發生的分岔**：「自動載入程序檔」×「Codex CLI」部署包
+  2026-10-30 實測後改成 ✅，README 還停在 ⬜「靠 `AGENTS.md` 指路」，一個多月沒人發現；連帶修掉
+  README 兩句過期散文，並把腳本裡 `FRESHNESS_PAGES` 那份網址副本補成跟部署包一致。
+  為什麼不給 README 自己一個「查證日期」：部署包「這張表的保鮮期」那一節。驗證：exit 0，27 項全 `ok`。
 - 2026-10-31（部署包當天第九次修改，**刻意不跳版**，範本內容沒動所以 `sync_project.py` 零改動）：
   **Codex hook 那兩個未知實測完畢**（`0.164.0`／Windows），而其中一個**問錯了問題**——`statusMessage` 是 Codex
   正式支援的鍵（「Optional UI message」），不是 Claude 專屬；`PreToolUse` 沒 matcher 就是每次都觸發、不分工具名
@@ -38,26 +45,6 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
   方法論補兩條：**「叫 agent 把注入背出來」在 Codex 上不成立**（它拒絕複述，會給假陰性）；
   **佈置與測量要分兩步**——這次把建設定檔跟跑受測物寫在同一個指令裡，指令被權限層拒絕、設定檔沒生成，
   前三次「沒觸發」全部無效。
-- 2026-10-31（部署包當天第八次修改，**刻意不跳版**，三個範本內容仍然沒動）：**Antigravity 2.0 `2.28.2` 實測完畢
-  ——它會讀專案層 `.agents/hooks.json`，而且接線端到端成立**（`SessionStart`／`PreInvocation`／`PostInvocation`／
-  `Stop` 四個進 log，cwd 是 `.agents/`，沒有信任提示；再到裝好 3.18–3.20 的 `Grist_test` 開一次 session，agent 把
-  `[git-check]` 開場原文背了出來）。**四個 surface 只剩 IDE `1.107.0` 不觸發**（原因未解，已決定不追）。2.0 沒有
-  命令列入口，session 是用桌面自動化開的，但**偵測器是寫檔不是看畫面**。方法論補一條紅字進部署包：**先驗儀器再測
-  受測物**——第一版探針的 `command` 被轉義吃掉一個字元，而那種壞法在已知會觸發的 CLI 上同樣一聲不響。
-- 2026-10-31（部署包當天第七次修改，**刻意不跳版**，三個範本內容沒動所以 `source:` 標記不變）：
-  **既有專案的 Antigravity 接線補完了**——`Grist_test`／`NAA_TR`／`NAS_MAINT`／`摘要skill設計`／
-  `第三批56箱後檢查`／`解決網路速度問題` 各補 3.18／3.19／3.20 三個檔，各一個 commit 已 push；
-  `序號卡`已完結所以不補。`sync_project.py` 沒有改（它刻意不做補裝，所以補裝是一次性動作，
-  用 `extract()` 重生的權威版複製，腳本留在暫存區不進 repo）。**實測**：在 `Grist_test` 跑
-  `agy -p`，`[git-check]` 開場原文被背出來，而且 CLI 已經是 `1.4.12`（上一輪量的是 `1.4.7`，
-  換版沒壞）。順手堵掉一個陷阱：Windows 提交會讓 `ag-wrap.sh` 記成 `100644`，而 Unix handler
-  是直接跑這支 `.sh`——六個專案都用 `git update-index --chmod=+x` 補成 `100755`，部署包 3.18
-  補上那條紅字。
-- 2026-10-31：**IDE `1.107.0` 那個未解問題決定不追**——使用者不再用這個 surface。界線見
-  「未完成／下一步」末尾那段括號，判準同時寫進 [AGENTS.md](AGENTS.md) 的 Antigravity 那一條。
-- 2026-10-31：**Antigravity CLI 的 hook 接線附進骨架並端到端實測過**（3.18 轉接層／3.19 Windows
-  shim／3.20 只接 `SessionStart`；舊 3.18 順延成 3.21，骨架 18 檔→21 檔），同日稍早在 CLI `1.4.7`
-  上量完 hook 契約。理由與約束在部署包的版本行與「跨工具與跨平台」那一節，這裡不重述。
 
 ## 未完成／下一步
 
@@ -72,7 +59,6 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
    會消失的暫存路徑，**是可以清掉的垃圾**——但那是使用者的設定檔，要他自己動手或明確授權。
 3. （可選）`AGENTS.md` 補一段「開工第一件事」；`SessionStart` 的 `sessionTitle` 自動寫 session 名稱；
    `.codex/hooks.json` 接線本 repo 的 `repo-git-check.sh`（**不要**複製第二份腳本）。
-4. **`README.md` 的跨工具表仍然沒有守門人**（保鮮期檢查只讀部署包那一張）。
 
 （「階段二 pre-push hook」2026-10-30 決定不裝，理由在 [ARCHITECT.md](ARCHITECT.md)，掃到別再重提。）
 
@@ -109,10 +95,10 @@ skill 也沒有知識庫（見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意
 
 `python -X utf8 tools/verify_bootstrap.py`
 
-目前：exit 0，**26 項全 `ok`**，骨架 **21 檔**（上一輪是 25 項／18 檔，差額就是新增的三個範本與
-「Antigravity 接線」那一項）。`VERSION` 仍是 2026-10-31（`SKILL.md` 沒動）。
-跨工具表保鮮期的查證日期仍是 2026-10-30：這一輪**只**重讀了 Codex hook 那一頁（而且發現它搬家了），
-其餘五頁沒讀，所以**刻意沒有把時鐘歸零**——歸零會把「查過一頁」謊報成「六頁都查過」。
+目前：exit 0，**27 項全 `ok`**，骨架 **21 檔**（上一輪是 26 項，差額就是新增的
+「README 跨工具表一致性」）。`VERSION` 仍是 2026-10-31（`SKILL.md` 沒動）。
+跨工具表保鮮期的查證日期仍是 2026-10-30：這一輪**沒有重讀任何官方頁面**（只把腳本裡那份網址副本
+補成跟部署包一致），所以**刻意沒有把時鐘歸零**——歸零會把「沒查」謊報成「查過」。
 
 ## 懸置事項（AI 勿自行處理）
 

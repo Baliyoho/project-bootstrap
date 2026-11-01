@@ -42,6 +42,9 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   斷言會無聲過期，而上一次的對策是一句警告、警告沒擋住第二次（Antigravity
                   的 hooks、Codex 桌面 App 的 hooks）。`BOOTSTRAP_FRESHNESS=off` 可跳過
                   （2026-10-30 加入）
+  README 跨工具表——README 那張表是部署包那一張的轉述，而保鮮期只守部署包那一份。同名列的
+                  判定符號、README 的版本號、指回部署包的指標三者要對得上，否則人的入口會
+                  無聲分岔（2026-11-01 加入，加的當下就抓到一處）
   工作中標記   ——HANDOFF.md 範本要有「工作中」欄位，且 git-freshness 讀 origin 那一份後
                   別台機器印 🔴、自己這台印 🟡、已交棒印 ✅、欄位不存在印 🟡。這條鏈斷掉
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
@@ -975,8 +978,11 @@ def step_eol(dest):
 
 
 FRESHNESS_DAYS = 90
+# 權威清單在部署包「這張表的保鮮期」那一段，這裡只是它的副本（用途只有放進 fail 訊息）。
+# Codex 那兩頁 2026-10-31 搬家：舊網址回 308，skills 那頁連路徑名都換了，所以兩邊要一起改——
+# 指著轉址等於每次重查都先撞一次牆。
 FRESHNESS_PAGES = ('code.claude.com/docs/en/hooks', 'code.claude.com/docs/en/memory',
-                   'developers.openai.com/codex/hooks', 'developers.openai.com/codex/skills',
+                   'learn.chatgpt.com/docs/hooks', 'learn.chatgpt.com/docs/build-skills',
                    'antigravity.google/docs/hooks', 'antigravity.google/docs/rules')
 
 
@@ -1013,6 +1019,125 @@ def step_table_freshness():
     return True
 
 
+TOOL_VERDICTS = '✅❌⬜🟡'
+VER_TOKEN = r'`v?(\d+\.\d+(?:\.\d+)*)`'
+
+
+def tool_section(text):
+    """「## 跨工具與跨平台」那一節（到下一個 `## ` 為止）。"""
+    i = text.find('## 跨工具與跨平台')
+    if i < 0:
+        return ''
+    j = text.find('\n## ', i + 3)
+    return text[i:j if j > 0 else len(text)]
+
+
+def tool_matrix(section):
+    """那一節裡的能力矩陣：表頭是空的第一欄＋四個工具名。
+
+    回傳 (欄名, {列名: [判定符號]})。**只讀第一張這種形狀的表**：那一節裡還有別的表
+    （Antigravity 四個 surface、hook 契約、實測版本），拿列名當 key 全掃會把它們也收
+    進來，然後在兩邊都沒有的列名上比出一堆假問題。
+    """
+    lines = section.splitlines()
+    for n, line in enumerate(lines):
+        if not line.startswith('|'):
+            continue
+        cells = [c.strip() for c in line.strip('|').split('|')]
+        if cells[0] or len(cells) != 5:
+            continue
+        rows = {}
+        for body in lines[n + 2:]:
+            if not body.startswith('|'):
+                break
+            row = [c.strip() for c in body.strip('|').split('|')]
+            if len(row) != 5:
+                break
+            rows[row[0]] = [c[:1] if c[:1] in TOOL_VERDICTS else '?' for c in row[1:]]
+        return tuple(cells[1:]), rows
+    return (), {}
+
+
+def compare_tool_tables(readme, kit):
+    """README 那張跨工具表不得跟部署包那一張分岔。回傳問題清單（空＝一致）。"""
+    problems = []
+    rsec, ksec = tool_section(readme), tool_section(kit)
+    if not rsec or not ksec:
+        problems.append('找不到「## 跨工具與跨平台」那一節（%s）'
+                        % ('README' if not rsec else '部署包'))
+        return problems
+    rcols, rrows = tool_matrix(rsec)
+    kcols, krows = tool_matrix(ksec)
+    if not rrows or not krows:
+        problems.append('抓不到能力矩陣，表頭要是空的第一欄＋四個工具名（%s）'
+                        % ('README' if not rrows else '部署包'))
+        return problems
+    if rcols != kcols:
+        problems.append('欄位不一樣：README %s ／ 部署包 %s' % (list(rcols), list(kcols)))
+        return problems
+    shared = [lab for lab in rrows if lab in krows]
+    if not shared:
+        problems.append('兩張表沒有同名的列，無從比對——列名改過就要兩邊一起改')
+    for lab in shared:
+        for col, rv, kv in zip(rcols, rrows[lab], krows[lab]):
+            if rv != kv:
+                problems.append('「%s」×「%s」：README %s ／ 部署包 %s' % (lab, col, rv, kv))
+    orphan = sorted(set(re.findall(VER_TOKEN, rsec)) - set(re.findall(VER_TOKEN, ksec)))
+    if orphan:
+        problems.append('README 寫了部署包那節已經沒有的版本號：%s' % '、'.join(orphan))
+    if '部署包' not in rsec:
+        problems.append('README 那節沒有指回部署包——它是轉述，必須留指標')
+    return problems
+
+
+def step_readme_table():
+    """README 的跨工具表是部署包那一張的**轉述**，而保鮮期檢查只讀部署包那一份。於是它可以
+    無聲分岔：事實在部署包被重查、改對，README 留在舊事實上——而 README 正好是**人的入口**，
+    第一個讀到它的人拿到的就是過期的那一份。
+
+    2026-11-01 加。**加的當下就抓到一處已經發生的分岔**：「自動載入程序檔」×「Codex CLI」
+    部署包 2026-10-30 實測後改成 ✅（`~/.codex/skills/` ＋ repo 的 `.agents/skills/`），
+    README 還停在 ⬜「靠 `AGENTS.md` 指路」。沒有任何徵兆，也沒人發現。
+
+    為什麼不是給 README 也加一個「查證日期」：那會讓同一個事實有**第二個時鐘**，而兩個時鐘
+    一定會分岔（部署包那一節已經踩過——Antigravity 那段的 `實測日期：` 刻意避開 `查證日期：`
+    這個字串，就是因為保鮮期只讀全檔第一個）。綁住一致性之後，**單一時鐘就同時罩得住兩張表**。
+
+    天花板：只守矩陣的**判定符號**、README 的版本號與指回部署包的指標，守不了 cell 裡與表
+    下面那幾段**散文**。README 的列比部署包少是刻意的（它是入口摘要，不是副本），所以只比對
+    同名的列——代價是部署包新增一整列（新的能力類別）不會逼 README 跟上。
+    """
+    readme = (ROOT / 'README.md').read_text(encoding='utf-8')
+    problems = compare_tool_tables(readme, KIT.read_text(encoding='utf-8'))
+    if problems:
+        record('FAIL', 'README 跨工具表一致性', '；'.join(problems))
+        return False
+
+    # 負向測試：比對器自己要擋得住四種分岔。一個永遠回「一致」的比對器，跟沒有這項檢查
+    # 在畫面上一模一樣——這整支腳本的存在理由就是不接受那種東西。
+    base = ('## 跨工具與跨平台\n\n細節見部署包。\n\n'
+            '| | Claude Code | Codex CLI | Codex 桌面 App | Antigravity |\n'
+            '|---|---|---|---|---|\n'
+            '| Hooks | ✅ a | ✅ b `1.2.3` | ✅ c | ✅ d |\n')
+    cases = (
+        ('判定符號翻掉', base.replace('| Hooks | ✅ a | ✅ b', '| Hooks | ✅ a | ⬜ b')),
+        ('版本號成孤兒', base.replace('`1.2.3`', '`9.9.9`')),
+        ('欄位長出一個', base.replace('| Antigravity |\n', '| Antigravity | 新工具 |\n')),
+        ('指標被抽掉', base.replace('細節見部署包。', '細節見別處。')),
+    )
+    missed = [name for name, mutated in cases if not compare_tool_tables(mutated, base)]
+    if missed or compare_tool_tables(base, base):
+        record('FAIL', 'README 跨工具表一致性',
+               '負向測試沒排到：%s' % ('、'.join(missed) or '兩份相同卻被判成分岔'))
+        return False
+
+    _, rrows = tool_matrix(tool_section(readme))
+    record('OK', 'README 跨工具表一致性',
+           '%d 個同名列的判定符號與部署包一致、沒有孤兒版本號、指標在；'
+           '負向測試四種分岔都擋得住' % len(rrows))
+    return True
+
+
 def step_misc(dest, work=None):
     ok = True
     for label, rel in (('settings.json', '.claude/settings.json'),
@@ -1043,6 +1168,7 @@ def step_misc(dest, work=None):
         record('OK', 'VERSION 檔', '與部署包版本行一致（%s）' % kit_ver.group(1).strip())
 
     step_table_freshness()
+    step_readme_table()
 
     r = run([sys.executable, '-X', 'utf8', 'tools/verify_state.py'], cwd=dest)
     if r.returncode == 0 and 'NOT_CONFIGURED' in r.stdout:
