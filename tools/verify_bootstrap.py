@@ -1054,7 +1054,10 @@ def codex_wiring_problems(cfg, scripts):
         h = hooks[0]
         if h.get('command') != 'bash .claude/hooks/' + script:
             problems.append('%s 的 Unix 接線改變了' % event)
-        if h.get('commandWindows') != 'cmd /d /c .claude\\hooks\\codex-hook.cmd ' + script:
+        windows = 'cmd /d /c .claude\\hooks\\codex-hook.cmd ' + script
+        if event == 'PreToolUse':
+            windows += '; exit $LASTEXITCODE'
+        if h.get('commandWindows') != windows:
             problems.append('%s 沒經 Windows 啟動器執行同一支腳本' % event)
     return problems
 
@@ -1141,6 +1144,25 @@ def step_codex_windows(dest, tmp):
         record('FAIL', 'Codex Windows 啟動器',
                '空白／中文路徑、不同 cwd、stdin 或 exit 2 沒保留：%r' % ((r.returncode, r.stdout, r.stderr),))
         return False
+    # Codex 的 Windows hook 外面還有 PowerShell -Command；只測 cmd 會漏掉 2 被折成 1。
+    powershell = shutil.which('powershell') or shutil.which('pwsh')
+    if not powershell:
+        record('SKIP', 'Codex Windows 結束碼', '找不到 PowerShell，無法驗完整啟動鏈')
+        return None
+    ps_command = cfg['hooks']['PreToolUse'][0]['hooks'][0]['commandWindows'].replace(
+        'pre-push-handoff.sh', 'probe.sh')
+    ps = run([powershell, '-NoProfile', '-NonInteractive', '-Command', ps_command],
+             cwd=fixture.parents[1], stdin='stdin-survives\n')
+    old_ps = run([powershell, '-NoProfile', '-NonInteractive', '-Command',
+                  ps_command.replace('; exit $LASTEXITCODE', '')],
+                 cwd=fixture.parents[1], stdin='stdin-survives\n')
+    if ps.returncode != 2 or old_ps.returncode != 1:
+        record('FAIL', 'Codex Windows 結束碼',
+               'PowerShell 完整啟動鏈應回 2、拿掉明確 exit 應回 1，實得 %s／%s'
+               % (ps.returncode, old_ps.returncode))
+        return False
+    record('OK', 'Codex Windows 結束碼',
+           'PowerShell → cmd → Git Bash 保留 exit 2；拿掉明確 exit 的負向測試重現 exit 1')
     # 原始回歸：只有方括號標記時，CLI 0.166.0 把它當 JSON。證明標頭真的不能被刪掉。
     stale = raw.replace(b'echo Git status check:\n', b'')
     if stale == raw:
