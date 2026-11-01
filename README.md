@@ -35,6 +35,7 @@
 │   ├─ hooks/git-freshness.sh       SessionStart：git 新鮮度檢查＋提醒走交接程序＋開工改名提示
 │   ├─ hooks/pre-push-handoff.sh    PreToolUse：沒更新 HANDOFF 就想 push 時擋下
 │   ├─ hooks/ag-wrap.sh             Antigravity 轉接層：只做管線，把 stdout 包成 JSON
+│   ├─ hooks/codex-hook.cmd         Codex 的 Windows 啟動器（Git Bash、純文字標頭、結束碼）
 │   └─ skills/handoff/SKILL.md      交接與同步的可執行程序（0 建制／A 接棒／B 交棒／C 同步）＝權威版
 ├─ .codex/hooks.json                Codex：掛上面同樣那兩個腳本（同格式、同語意）
 ├─ .agents/hooks.json              Antigravity：經轉接層掛同一支 git-freshness.sh（只接 SessionStart）
@@ -147,6 +148,8 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 
 先用 3–5 行回報現況與你打算做什麼，再動手。破壞性操作、commit 或 push 之前先問我。
 ```
+
+Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_project.py <專案路徑> --codex-only --write` 單獨升級，不改專案的 SKILL 或其他設定。接線變更後要重新審核並驗收實際執行，條件與理由見部署包 3.17。
 
 ## handoff skill 的副本同步規則
 

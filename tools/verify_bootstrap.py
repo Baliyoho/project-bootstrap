@@ -91,6 +91,7 @@ EXPECTED = {
     '.claude/hooks/git-freshness.sh', '.claude/hooks/pre-push-handoff.sh',
     '.codex/hooks.json', '.agents/skills/handoff/SKILL.md',
     '.claude/hooks/ag-wrap.sh', '.agents/ag-hook.cmd', '.agents/hooks.json',
+    '.claude/hooks/codex-hook.cmd',
     '.gitignore', '.gitattributes',
     'tools/check_docs.py', 'tools/verify_state.py',
 }
@@ -1042,6 +1043,135 @@ def step_antigravity(dest):
     return True
 
 
+def codex_wiring_problems(cfg, scripts):
+    problems = []
+    for event, script in scripts.items():
+        hooks = [h for g in cfg.get('hooks', {}).get(event, []) for h in g.get('hooks', [])
+                 if script in h.get('command', '')]
+        if len(hooks) != 1:
+            problems.append('%s 的 %s 接線不是一份' % (event, script))
+            continue
+        h = hooks[0]
+        if h.get('command') != 'bash .claude/hooks/' + script:
+            problems.append('%s 的 Unix 接線改變了' % event)
+        if h.get('commandWindows') != 'cmd /d /c .claude\\hooks\\codex-hook.cmd ' + script:
+            problems.append('%s 沒經 Windows 啟動器執行同一支腳本' % event)
+    return problems
+
+
+def step_codex_windows(dest, tmp):
+    """真部署發生過：已信任卻選到 WSL，exit 1；驗接線與實際 batch 的 stdin／結束碼。"""
+    cfg = json.loads((dest / '.codex/hooks.json').read_text(encoding='utf-8'))
+    scripts = {'SessionStart': 'git-freshness.sh', 'PreToolUse': 'pre-push-handoff.sh'}
+    bad = codex_wiring_problems(cfg, scripts)
+    for event in scripts:
+        stale = json.loads(json.dumps(cfg))
+        del stale['hooks'][event][0]['hooks'][0]['commandWindows']
+        if not codex_wiring_problems(stale, scripts):
+            bad.append('%s 拿掉 commandWindows 的負向測試沒擋住' % event)
+    stale = json.loads(json.dumps(cfg))
+    stale['hooks']['PreToolUse'][0]['hooks'][0]['commandWindows'] = 'bash .claude/hooks/pre-push-handoff.sh'
+    if not codex_wiring_problems(stale, scripts):
+        bad.append('Windows 改回 PATH bash 的負向測試沒擋住')
+    own = json.loads((ROOT / '.codex/hooks.json').read_text(encoding='utf-8'))
+    bad += codex_wiring_problems(own, {'SessionStart': 'repo-git-check.sh'})
+    launcher = dest / '.claude/hooks/codex-hook.cmd'
+    raw = launcher.read_bytes()
+    body = raw.decode('ascii') if raw.isascii() else ''
+    if not body or '\r' in body or re.search(r'^\s*(?::|\()|\(\s*$', body, re.M):
+        bad.append('啟動器必須 ASCII、LF、無 label 與多行括號區塊')
+    if (ROOT / '.claude/hooks/codex-hook.cmd').read_bytes() != raw:
+        bad.append('本 repo 的 Windows 啟動器與權威範本不同')
+    if bad:
+        record('FAIL', 'Codex Windows 接線', '；'.join(bad))
+        return False
+    record('OK', 'Codex Windows 接線',
+           '兩個事件與本 repo 均用 commandWindows；Unix 命令保留；三個負向測試通過，啟動器 ASCII／LF 且副本一致')
+
+    import sync_project as sp
+    project = tmp / 'codex-upgrade'
+    (project / '.codex').mkdir(parents=True)
+    old = json.loads(json.dumps(cfg))
+    for groups in old['hooks'].values():
+        for group in groups:
+            for h in group['hooks']:
+                h.pop('commandWindows', None)
+    old['hooks']['SessionStart'].append({'hooks': [{'type': 'command', 'command': 'project-own'}]})
+    wiring = project / '.codex/hooks.json'
+    wiring.write_text(json.dumps(old), encoding='utf-8')
+    skill = project / '.claude/skills/handoff/SKILL.md'
+    skill.parent.mkdir(parents=True)
+    skill.write_text('project skill must stay untouched', encoding='utf-8')
+    preview, _ = sp.sync(project, dest, False, codex_only=True)
+    if preview != 2 or (project / sp.CODEX_LAUNCHER).exists():
+        bad.append('Codex 限定預演沒有列出兩項，或竟然寫檔')
+    changed, _ = sp.sync(project, dest, True, codex_only=True)
+    got = json.loads(wiring.read_text(encoding='utf-8'))
+    if changed != 2 or codex_wiring_problems(got, scripts):
+        bad.append('舊專案沒同時升級接線與新增啟動器')
+    if skill.read_text(encoding='utf-8') != 'project skill must stay untouched':
+        bad.append('Codex 限定同步竟改了 SKILL.md')
+    if not any(h.get('command') == 'project-own' for g in got['hooks']['SessionStart'] for h in g['hooks']):
+        bad.append('Codex 同步洗掉專案自己的 hook')
+    if sp.sync(project, dest, True, codex_only=True)[0] != 0:
+        bad.append('Codex 限定同步重跑仍改檔')
+    absent = tmp / 'codex-absent'
+    absent.mkdir()
+    if sp.sync(absent, dest, True, codex_only=True)[0] or list(absent.iterdir()):
+        bad.append('沒有 Codex 接線的專案被自動補裝')
+    if bad:
+        record('FAIL', 'Codex 接線升級', '；'.join(bad))
+        return False
+    record('OK', 'Codex 接線升級',
+           '預演零寫入、舊接線補齊啟動器、自有 hook 與 SKILL 保留、重跑零變更、沒裝 Codex 的專案不補裝')
+
+    if os.name != 'nt':
+        return True  # batch 執行只適用 Windows；其他平台仍跑上面的接線與升級測試。
+    fixture = tmp / 'Codex 空白路徑' / '.claude/hooks'
+    fixture.mkdir(parents=True)
+    shim = fixture / 'codex-hook.cmd'
+    shim.write_bytes(raw)
+    (fixture / 'probe.sh').write_text(
+        '#!/usr/bin/env bash\nIFS= read -r payload\nprintf "[git-check] %s\\n" "$payload"\n'
+        'printf "err:%s\\n" "$payload" >&2\nexit 2\n', encoding='utf-8', newline='')
+    command = '"%s" /d /s /c ""%s" probe.sh"' % (os.environ['COMSPEC'], shim)
+    r = run(command, cwd=tmp, stdin='stdin-survives\n')
+    if (r.returncode != 2 or r.stdout.strip() != 'Git status check:\n[git-check] stdin-survives'
+            or r.stderr.strip() != 'err:stdin-survives'):
+        record('FAIL', 'Codex Windows 啟動器',
+               '空白／中文路徑、不同 cwd、stdin 或 exit 2 沒保留：%r' % ((r.returncode, r.stdout, r.stderr),))
+        return False
+    # 原始回歸：只有方括號標記時，CLI 0.166.0 把它當 JSON。證明標頭真的不能被刪掉。
+    stale = raw.replace(b'echo Git status check:\n', b'')
+    if stale == raw:
+        record('FAIL', 'Codex Windows 啟動器', '移除純文字標頭的負向測試沒有改到內容')
+        return False
+    try:
+        shim.write_bytes(stale)
+        negative = run(command, cwd=tmp, stdin='stdin-survives\n')
+        if negative.stdout.startswith('Git status check:\n') or not negative.stdout.startswith('[git-check]'):
+            record('FAIL', 'Codex Windows 啟動器', '移除標頭後沒有重現方括號開頭的舊輸出')
+            return False
+    finally:
+        shim.write_bytes(raw)
+    # Windows 啟動 cmd 時會重建 ProgramFiles；須在同一個 cmd 裡設定，負向情境才真的沒 Git。
+    missing = fixture / 'missing-git.cmd'
+    missing.write_text('@echo off\nset "ProgramFiles=%~dp0missing"\n'
+                       'set "ProgramFiles(x86)=%~dp0missing"\n'
+                       'set "LOCALAPPDATA=%~dp0missing"\n'
+                       'call "%~dp0codex-hook.cmd" probe.sh\nexit /b %ERRORLEVEL%\n',
+                       encoding='ascii', newline='')
+    missing_command = '"%s" /d /s /c ""%s""' % (os.environ['COMSPEC'], missing)
+    env = dict(os.environ, PATH=os.environ['SystemRoot'] + '\\System32')
+    r = run(missing_command, cwd=tmp, env=env, stdin='no-git\n')
+    if r.returncode != 1 or 'Git Bash not found' not in r.stderr:
+        record('FAIL', 'Codex Windows 啟動器', '找不到 Git Bash 時沒明確失敗：%r' % ((r.returncode, r.stderr),))
+        return False
+    record('OK', 'Codex Windows 啟動器',
+           '原生 cmd 實跑：中文／空白路徑、不同 cwd、純文字標頭、stdin／輸出內容／stderr／exit 2 保留；缺 Git Bash 明確 exit 1')
+    return True
+
+
 def step_sync_coverage(dest):
     """同步清單要涵蓋骨架每一個檔，而且 hook 接線真的會被修好。
 
@@ -1531,6 +1661,7 @@ def main():
             step_busy_tool_guard(dest)
             step_deploy_shape(dest)
             step_antigravity(dest)
+            step_codex_windows(dest, tmp)
             step_portability(dest)
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None

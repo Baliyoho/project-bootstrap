@@ -1,7 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
 > **本檔＝結構的唯一權威**：`project-bootstrap` 由什麼組成、每樣東西的家在哪、改哪裡會影響到什麼。
-> 最後更新：2026-11-01（新增「ZIP 說明指標」與「跨工具過期敘述」兩項檢查：ZIP 的工具差異只指向部署包，已知過期散文由回歸測試守住；原有 29 項加到 31 項。修正本檔拓撲中的「2.0 未測」，骨架仍是 21 檔，skill／hook 與 VERSION 均未改。前一次是同日：本 repo 自己多一份 Codex 接線 `.codex/hooks.json`——指向它自己那支 `repo-git-check.sh`，**不是 3.17 的副本**；`sync_project.py` 加一道「拒絕把本 repo 自己當目標」的防護（兩份接線跟 `WIRING` 同名，覆蓋下去會指到不存在的 `git-freshness.sh`）；`verify_bootstrap.py` 從 27 項變 **29 項**（「本 repo settings.json」擴成「本 repo 兩份接線」、新增「sync 拒絕本 repo」）。**骨架仍是 21 檔**，但這次動到範本 3.10（多印一行開工改名提示），所以它的 `source:` 標記跳到 `v2026-11-01`；`SKILL.md` 沒動，`VERSION` 刻意不跳。前一次是同日第二次：`verify_bootstrap.py` 多一項「README 跨工具表一致性」：README 那張跨工具表是部署包那一張的轉述，而保鮮期只守部署包那一份，於是它可以無聲分岔；加的當下就抓到一處。**只動腳本與敘述，骨架仍是 21 檔，範本與 `sync_project.py` 都沒動。**前一次是 2026-10-31 同日第五次：**補上 Antigravity CLI 的 hook 接線，端到端實測過**——新增 3.18 `.claude/hooks/ag-wrap.sh`（轉接層）、3.19 `.agents/ag-hook.cmd`（Windows shim，找 Git Bash）、3.20 `.agents/hooks.json`（只接 `SessionStart`），舊 3.18「其他 skills 慣例」順延成 3.21；`verify_bootstrap.py` 加「Antigravity 接線」情境，`sync_project.py` 的 `WHOLE` 多兩份並新增 `AG_WIRING`（只換 `handoff-git-check` 那一個頂層 key）。骨架從 18 檔變 21 檔。同日第四次：**在 Antigravity CLI `1.4.7` 上把 hook 實測完**——`agy -p` headless 量到專案層 `.agents/hooks.json` 會讀、六個事件全部觸發，cwd 是 `.agents/`；相對路徑可用、絕對路徑才脆弱（`command` 照空白切 token、不解析引號），所以**上一次那個「骨架的不變量可能害探針測不出東西」的推論被推翻**，鐵律 5 跟它沒有衝突；`PreToolUse` 不明確回 `allow_tool` 就等於拒絕。骨架仍不附接線，理由換成「Windows 缺一層 `.cmd` shim」。只改敘述，接線／`verify_bootstrap.py`／`sync_project.py` 都沒動。同日第三次：**重新界定 Antigravity 那輪探針的範圍**——Antigravity 是四個獨立 surface（2.0 桌面 App／CLI／IDE／SDK），探針只覆蓋 IDE `1.107.0`，所以「這個工具沒有 hook 這一層」改寫成「骨架還沒附接線，2.0 與 CLI 沒測」；全域路徑 `~/.gemini/<applicationName>/hooks.json` 是跟著 surface 走的，`antigravity-ide` 那一份不能一般化成整個產品。只改敘述，接線不動、`verify_bootstrap.py` 與 `sync_project.py` 不動。同日第二次：**部署包移除 Antigravity 的 hook 接線**——舊 3.18 `.claude/hooks/antigravity-wrap.sh` 與舊 3.19 `.agents/hooks.json` 刪除，舊 3.20「其他 skills 慣例」遞補回 3.18；`verify_bootstrap.py` 移除「Antigravity 轉接層」六情境，`sync_project.py` 的 `WHOLE`／`WIRING` 各少一份。原因是實測：Antigravity IDE `1.107.0` **不讀專案層的 `.agents/hooks.json`**，那兩個檔部署出去也不會被觸發。同日稍早才加上它們，當天就被自己的驗收條件判出局。前一次是 2026-10-30 同日第二次：三平台能力重查後，`extract()` 的抽取規則從「第一個區塊」改成「區塊依序對應檔名」、`sync_project.py` 把 `CLAUDE.md` 從 `INSTANCE` 搬到 `PARTIAL`、`verify_bootstrap.py` 加「跨工具表保鮮期」、副本拓撲裡 `.agents/skills/` 的角色改變）
+> 最後更新：2026-11-01（本輪新增 Codex Windows 啟動器與三項驗證，骨架為 **22 檔**、Windows 驗證為 **34 項**；`sync_project.py --codex-only` 只更新 Codex 接線與依賴的啟動器。原有紀錄：新增「ZIP 說明指標」與「跨工具過期敘述」兩項檢查：ZIP 的工具差異只指向部署包，已知過期散文由回歸測試守住；原有 29 項加到 31 項。修正本檔拓撲中的「2.0 未測」，骨架仍是 21 檔，skill／hook 與 VERSION 均未改。前一次是同日：本 repo 自己多一份 Codex 接線 `.codex/hooks.json`——指向它自己那支 `repo-git-check.sh`，**不是 3.17 的副本**；`sync_project.py` 加一道「拒絕把本 repo 自己當目標」的防護（兩份接線跟 `WIRING` 同名，覆蓋下去會指到不存在的 `git-freshness.sh`）；`verify_bootstrap.py` 從 27 項變 **29 項**（「本 repo settings.json」擴成「本 repo 兩份接線」、新增「sync 拒絕本 repo」）。**骨架仍是 21 檔**，但這次動到範本 3.10（多印一行開工改名提示），所以它的 `source:` 標記跳到 `v2026-11-01`；`SKILL.md` 沒動，`VERSION` 刻意不跳。前一次是同日第二次：`verify_bootstrap.py` 多一項「README 跨工具表一致性」：README 那張跨工具表是部署包那一張的轉述，而保鮮期只守部署包那一份，於是它可以無聲分岔；加的當下就抓到一處。**只動腳本與敘述，骨架仍是 21 檔，範本與 `sync_project.py` 都沒動。**前一次是 2026-10-31 同日第五次：**補上 Antigravity CLI 的 hook 接線，端到端實測過**——新增 3.18 `.claude/hooks/ag-wrap.sh`（轉接層）、3.19 `.agents/ag-hook.cmd`（Windows shim，找 Git Bash）、3.20 `.agents/hooks.json`（只接 `SessionStart`），舊 3.18「其他 skills 慣例」順延成 3.21；`verify_bootstrap.py` 加「Antigravity 接線」情境，`sync_project.py` 的 `WHOLE` 多兩份並新增 `AG_WIRING`（只換 `handoff-git-check` 那一個頂層 key）。骨架從 18 檔變 21 檔。同日第四次：**在 Antigravity CLI `1.4.7` 上把 hook 實測完**——`agy -p` headless 量到專案層 `.agents/hooks.json` 會讀、六個事件全部觸發，cwd 是 `.agents/`；相對路徑可用、絕對路徑才脆弱（`command` 照空白切 token、不解析引號），所以**上一次那個「骨架的不變量可能害探針測不出東西」的推論被推翻**，鐵律 5 跟它沒有衝突；`PreToolUse` 不明確回 `allow_tool` 就等於拒絕。骨架仍不附接線，理由換成「Windows 缺一層 `.cmd` shim」。只改敘述，接線／`verify_bootstrap.py`／`sync_project.py` 都沒動。同日第三次：**重新界定 Antigravity 那輪探針的範圍**——Antigravity 是四個獨立 surface（2.0 桌面 App／CLI／IDE／SDK），探針只覆蓋 IDE `1.107.0`，所以「這個工具沒有 hook 這一層」改寫成「骨架還沒附接線，2.0 與 CLI 沒測」；全域路徑 `~/.gemini/<applicationName>/hooks.json` 是跟著 surface 走的，`antigravity-ide` 那一份不能一般化成整個產品。只改敘述，接線不動、`verify_bootstrap.py` 與 `sync_project.py` 不動。同日第二次：**部署包移除 Antigravity 的 hook 接線**——舊 3.18 `.claude/hooks/antigravity-wrap.sh` 與舊 3.19 `.agents/hooks.json` 刪除，舊 3.20「其他 skills 慣例」遞補回 3.18；`verify_bootstrap.py` 移除「Antigravity 轉接層」六情境，`sync_project.py` 的 `WHOLE`／`WIRING` 各少一份。原因是實測：Antigravity IDE `1.107.0` **不讀專案層的 `.agents/hooks.json`**，那兩個檔部署出去也不會被觸發。同日稍早才加上它們，當天就被自己的驗收條件判出局。前一次是 2026-10-30 同日第二次：三平台能力重查後，`extract()` 的抽取規則從「第一個區塊」改成「區塊依序對應檔名」、`sync_project.py` 把 `CLAUDE.md` 從 `INSTANCE` 搬到 `PARTIAL`、`verify_bootstrap.py` 加「跨工具表保鮮期」、副本拓撲裡 `.agents/skills/` 的角色改變）
 >
 > **什麼時候改**：只有**結構**變動才改——根目錄多／少一個檔案、部署包增刪一節範本、`verify_bootstrap.py` 增減檢查項、副本拓撲改變。
 > 制度內容本身怎麼寫（鐵律的措辭、skill 的步驟）**不要動這一份**，那些的家在 [AGENTS.md](AGENTS.md) 與部署包裡。
@@ -29,6 +29,8 @@
 | `.gitignore`、`.gitattributes` | `dist/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
 | `dist/` | 建置產物（`--zip` 產出的骨架壓縮檔），**不進 Git** | 要發佈就重跑一次，不要留在 repo 裡跟部署包唱反調 |
 
+本 repo 的 `.claude/hooks/codex-hook.cmd` 是 **3.17 啟動器的副本**，跟 `repo-git-check.sh` 的角色不同；更新時從部署包抽取這一檔覆蓋，不把本 repo 當成 `sync_project.py` 的目標。它只尋找 Git Bash、加上避免 JSON 誤判的純文字標頭，並保留 stdin／輸出內容／結束碼，沒有交接規則。既有專案的 Codex 接線升級時會補齊這個新依賴；沒有 Codex 接線的專案仍不自動補裝。`--codex-only` 只同步這兩檔，專案 SKILL 與其他設定不變。
+
 ## 部署包的內部結構
 
 | 節 | 內容 | 誰會讀它 |
@@ -39,7 +41,7 @@
 | 0 | 這套骨架在解決什麼問題（失效模式 → 對策） | 想知道「為什麼要有這條規則」的人 |
 | 1 | 部署前訪談：佔位符表 | 執行部署的 agent |
 | 2 | 要建立的檔案結構 | 同上 |
-| 3 | **各檔範本**（3.1–3.21），照抄只換佔位符 | 同上，改到哪份讀哪節 |
+| 3 | **各檔範本**（3.1–3.21，3.17 產兩檔），照抄只換佔位符 | 同上，改到哪份讀哪節 |
 | 4 | 上 GitHub | 同上 |
 | 5 | 部署後自檢清單 | 同上 |
 | 6 | 之後怎麼維持（一頁操作卡） | 部署完的專案 |
@@ -64,7 +66,7 @@
 | 3.14 | `tools/check_docs.py` | 文檔一致性檢查 |
 | 3.15 | `tools/verify_state.py` | 一鍵現況查證（骨架） |
 | 3.16 | `.agents/skills/handoff/SKILL.md` | Antigravity 的指標檔 |
-| 3.17 | `.codex/hooks.json` | Codex CLI 的 hook 接線（掛 3.10／3.11 同樣那兩個 `.sh`） |
+| 3.17 | `.codex/hooks.json`＋`.claude/hooks/codex-hook.cmd` | Codex 的 hook 接線與 Windows 啟動器（掛 3.10／3.11 同樣那兩個 `.sh`，Windows 明確找 Git Bash） |
 | 3.18 | `.claude/hooks/ag-wrap.sh` | Antigravity 轉接層：只做管線（跑腳本、把 stdout 包成 JSON），不含規則 |
 | 3.19 | `.agents/ag-hook.cmd` | Antigravity 在 Windows 的 shim：找 Git Bash 再交給 3.18 |
 | 3.20 | `.agents/hooks.json` | Antigravity 的 hook 接線（經 3.18 掛同一支 3.10；只接 `SessionStart`） |
@@ -108,6 +110,9 @@
 | README 跨工具表一致性 | README 那張跨工具表與部署包那一張：同名列的判定符號一致、README 沒有孤兒版本號、有指回部署包的指標（附四種分岔的負向測試） | README 是**人的入口**，而保鮮期只守部署包那一份——事實在部署包被重查改對，README 留在舊事實上，沒有任何徵兆。2026-11-01 加這一項的當下就抓到一處已經發生的分岔（「自動載入程序檔」×「Codex CLI」）。不給 README 自己一個「查證日期」是因為那是同一個事實的第二個時鐘 |
 | ZIP 說明指標 | ZIP 隨附說明的工具差異只連到同包部署包的「跨工具與跨平台」及第 5 節，不另列逐工具能力摘要（附六個負向測試） | 壓縮檔第一份說明成為另一個會過期的家；2026-11-01 確認它仍寫著 Codex 桌面 App、Antigravity 沒有 hook，矩陣與 README 的檢查都看不到它 |
 | 跨工具過期敘述 | 部署包正文、本 repo 結構說明與重生的結構／協定範本，不得復活 CLI／2.0 測試狀態、Antigravity 接線、skill 入口與 IDE 追查決定的已知舊斷言；附回歸負向測試與範圍測試 | 同一份文件的表改對了，散文卻仍教下一棒照舊事實行動。只檢查已知回歸，不做通用語意判讀、不代替外部查證；表頭的歷史變更記錄與 IDE 未解結果仍保留 |
+| Codex Windows 接線 | `commandWindows` 經 Git Bash 啟動器，兩個事件與本 repo 都指向原本那支 `.sh`；三個負向測試 | 真部署的已信任 hook 曾選到 WSL 而 exit 1 |
+| Codex 接線升級 | 舊專案補齊啟動器、保留專案 hook 與 SKILL、預演零寫入、重跑零變更、不替沒有接線的專案補裝 | 只更新 JSON 卻漏掉新依賴會再度靜默失效 |
+| Codex Windows 啟動器 | Windows 原生 cmd 實跑中文／空白路徑、不同 cwd、stdin／stdout／stderr／exit 2 與缺少 Git Bash 的情境 | 轉接層若吞掉 exit 2，pre-push 防呆會消失；此項只在 Windows 執行 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
 **exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫。

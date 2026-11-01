@@ -19,7 +19,8 @@
 可能有別人未提交的變更，替它 commit 會把那些一起包進去——而「明確 stage 需要的檔案」正是
 B7 存在的理由。跑完請到各專案照 B 模式收尾。
 
-**本工具不做「補裝」**：專案缺哪個檔就跳過哪個，不會把沒裝過的檔案長出來。在既有專案上
+**本工具不做「補裝」**：專案缺哪個檔就跳過哪個；唯一例外是已裝 Codex 接線的專案升級時，
+補齊它新增依賴的 Windows 啟動器。沒有 `.codex/hooks.json` 就不補。在既有專案上
 補一套不完整的骨架是 skill 的模式 0 該做的事，而且動手前要先把清單給使用者看過。
 
 兩份 hook 接線（`.claude/settings.json`、`.codex/hooks.json`）是 2026-10-30 才補進來的，
@@ -48,6 +49,7 @@ WHOLE = (
     '.claude/hooks/git-freshness.sh',
     '.claude/hooks/pre-push-handoff.sh',
     '.claude/hooks/ag-wrap.sh',
+    '.claude/hooks/codex-hook.cmd',
     '.agents/ag-hook.cmd',
     '.agents/skills/handoff/SKILL.md',
 )
@@ -64,6 +66,8 @@ SETTINGS_END = '# ── 專案設定結束'
 # 是這兩個檔唯一的守門人。
 WIRING = ('.claude/settings.json', '.codex/hooks.json')
 OWNED_SCRIPTS = ('git-freshness.sh', 'pre-push-handoff.sh')
+CODEX_WIRING = '.codex/hooks.json'
+CODEX_LAUNCHER = '.claude/hooks/codex-hook.cmd'
 
 # Antigravity 的接線（2026-10-31 重新加入，這次端到端實測過：CLI 1.4.7 會讀、會觸發）。
 # 它跟 WIRING 那兩個檔分開處理，因為形狀不同——Antigravity 的頂層 key 就是 hook 名稱，
@@ -241,16 +245,40 @@ def ensure_claude_import(text):
     return '\n'.join(lines)
 
 
-def sync(project, gen, write_mode):
-    """回傳 (改了幾項, [訊息])。"""
-    msgs, changed = [], 0
-
-    for rel in WHOLE:
+def sync_wiring(project, gen, rels, write_mode, msgs):
+    changed = 0
+    for rel in rels:
         dst, src = project / rel, gen / rel
         cur = read(dst)
         if cur is None:
             msgs.append('  skip   %s（這個專案沒有這個檔）' % rel)
             continue
+        new, note, err = merge_wiring(read(src), cur)
+        if err:
+            msgs.append('  FAIL   %s：%s' % (rel, err))
+        elif new is None:
+            msgs.append('  ok     %s' % rel)
+        else:
+            changed += 1
+            msgs.append('  UPDATE %s（%s）' % (rel, note))
+            if write_mode:
+                write(dst, new)
+    return changed
+
+
+def sync(project, gen, write_mode, codex_only=False):
+    """回傳 (改了幾項, [訊息])。"""
+    msgs, changed = [], 0
+
+    for rel in WHOLE:
+        if codex_only and rel != CODEX_LAUNCHER:
+            continue
+        dst, src = project / rel, gen / rel
+        cur = read(dst)
+        if cur is None:
+            if rel != CODEX_LAUNCHER or not (project / CODEX_WIRING).exists():
+                msgs.append('  skip   %s（這個專案沒有這個檔）' % rel)
+                continue
         new = read(src)
         if cur == new:
             msgs.append('  ok     %s' % rel)
@@ -258,7 +286,12 @@ def sync(project, gen, write_mode):
         changed += 1
         msgs.append('  UPDATE %s' % rel)
         if write_mode:
+            dst.parent.mkdir(parents=True, exist_ok=True)
             write(dst, new)
+
+    if codex_only:
+        changed += sync_wiring(project, gen, (CODEX_WIRING,), write_mode, msgs)
+        return changed, msgs
 
     dst, src = project / SURGICAL, gen / SURGICAL
     cur = read(dst)
@@ -276,22 +309,7 @@ def sync(project, gen, write_mode):
             if write_mode:
                 write(dst, merged)
 
-    for rel in WIRING:
-        dst, src = project / rel, gen / rel
-        cur = read(dst)
-        if cur is None:
-            msgs.append('  skip   %s（這個專案沒有這個檔）' % rel)
-            continue
-        new, note, err = merge_wiring(read(src), cur)
-        if err:
-            msgs.append('  FAIL   %s：%s' % (rel, err))
-        elif new is None:
-            msgs.append('  ok     %s' % rel)
-        else:
-            changed += 1
-            msgs.append('  UPDATE %s（%s）' % (rel, note))
-            if write_mode:
-                write(dst, new)
+    changed += sync_wiring(project, gen, WIRING, write_mode, msgs)
 
     dst, src = project / AG_WIRING, gen / AG_WIRING
     cur = read(dst)
@@ -374,6 +392,8 @@ def main():
     ap.add_argument('project', nargs='?', help='要同步的專案路徑')
     ap.add_argument('--all', action='store_true', help='掃 ROOTS 底下所有裝過骨架的專案')
     ap.add_argument('--write', action='store_true', help='實際寫入（預設只預演）')
+    ap.add_argument('--codex-only', action='store_true',
+                    help='只更新 Codex 接線與其 Windows 啟動器，不更新 SKILL.md 或其他檔案')
     args = ap.parse_args()
 
     if not (ROOT / 'PROJECT-BOOTSTRAP.md').exists():
@@ -405,7 +425,7 @@ def main():
             if not project.exists():
                 print('%s\n  找不到這個資料夾\n' % project)
                 continue
-            changed, msgs = sync(project, tmp, args.write)
+            changed, msgs = sync(project, tmp, args.write, codex_only=args.codex_only)
             total += changed
             print('%s' % project)
             print('\n'.join(msgs))

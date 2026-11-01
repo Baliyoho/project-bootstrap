@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-01.3**（**把「改 session 名稱」寫進 A5 與 B9 的回報模板，變成必填的一行。**2026-11-01 量到：六個收尾 session（全 Sonnet）裡只有四個照「session 命名」改成 `↗　…｜已交棒`，另外兩個用的還是派工時給的標題；六個的 git 結果**全部正確**，漏的只有命名。**為什麼漏沒有量過**，所以這次不針對某個原因下藥——改的是「有沒有做」看不看得出來：改名發生在 session 的外殼上，repo 裡不留痕跡，`check_docs.py`、`git-freshness.sh`、pre-push 防呆三層**全都看不到它**，漏掉完全無聲，而無聲的漏跟「沒有這條規則」在畫面上一模一樣。回報那一行是它唯一能有的守門人：改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>`（仍然不必為此停下來問使用者）。B9 同時從散文改成有編號的三件事（改名→確認 origin 的「工作中」已清→回報）——漏掉的那兩個 session 把 B1–B8 **有編號**的步驟全做對了，而改名是整個 B 模式裡唯一沒有編號的動作。順手補掉一個讀文字就看得出來的洞：舊版 B9 寫「前面的 `YYMMDDHH｜<主題>` 原封不動」，那句話**預設 A5 已經改過名**，A5 漏掉時它無從執行，而那時候唯一拿得到的時間是「現在」——重算會寫出交棒的小時，正是同日把時間戳搬進 hook 要修掉的那種靜默錯誤；所以補一條恢復路徑：前綴從 `HANDOFF.md`「工作中」欄位抄（它記的就是開工時間與當時的 session 名）。守門人：`verify_bootstrap.py` 新增「改名寫進回報模板」，釘 A5／B9 兩個模板各有一行 `session：`、而且都留著「不適用」這個選項，附三個負向測試（刪 A5 那行、刪 B9 那行、拿掉「不適用」）。**為什麼跳版**：這次真的動到 `SKILL.md`，`VERSION` 要跟著走（鐵律 1）。**序號為什麼是 `.2` 而不是 `.4`**：序號算的是**當天第幾個帶 `source:` 標記的改動**，不是當天第幾次碰部署包——當天前兩次只改敘述、沒有任何標記動過，第三次改了 3.10 拿到 `v2026-11-01`，這是第二個。所以 `版本行` 從來沒有過裸的 `2026-11-01`，那不是漏編號，是當天第三次刻意不跳版的結果。另外，A5／B9 標題裡的行數**刻意沒跟著改**（A5 仍是「3–5 行」、B9 仍是「≤5 行」）：那兩個數字在 `README.md`、`handover-protocol.md`、3.10 的開場提醒等**六個地方**都有副本，其中兩處是 `sync_project.py` 的 `INSTANCE`、永遠不會同步——改一個數字就會製造一處無聲分岔，而模板現在剛好是 5 行、本來就落在原範圍內。下一棒看到「必填 5 行卻寫 3–5」不要去修它。**`.2` 是同一輪 15 分鐘前推出去的同一件事**，只差 A5／B9 標題的行數；因為那一版已經 push，而 `VERSION` 的同一個號不該對應兩份不同的 `SKILL.md`（那正是鐵律 2 寫下來要防的事），所以還原行數時一起跳到 `.3`。那 15 分鐘裡沒有任何副本同步過 `.2`——六個專案實測都還在 `v2026-10-31`，全域兩份當場重新覆蓋）
+> 版本：**2026-11-01.4**（Windows 的 Codex hook 改經 Git Bash 啟動器，保留 `.sh` 的判斷與結束碼；skill 的 B5 補上接線變更後必須重新審核、驗收實際執行的程序，所以 `VERSION` 同步跳版。）
+> 前一版 **2026-11-01.3**（**把「改 session 名稱」寫進 A5 與 B9 的回報模板，變成必填的一行。**2026-11-01 量到：六個收尾 session（全 Sonnet）裡只有四個照「session 命名」改成 `↗　…｜已交棒`，另外兩個用的還是派工時給的標題；六個的 git 結果**全部正確**，漏的只有命名。**為什麼漏沒有量過**，所以這次不針對某個原因下藥——改的是「有沒有做」看不看得出來：改名發生在 session 的外殼上，repo 裡不留痕跡，`check_docs.py`、`git-freshness.sh`、pre-push 防呆三層**全都看不到它**，漏掉完全無聲，而無聲的漏跟「沒有這條規則」在畫面上一模一樣。回報那一行是它唯一能有的守門人：改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>`（仍然不必為此停下來問使用者）。B9 同時從散文改成有編號的三件事（改名→確認 origin 的「工作中」已清→回報）——漏掉的那兩個 session 把 B1–B8 **有編號**的步驟全做對了，而改名是整個 B 模式裡唯一沒有編號的動作。順手補掉一個讀文字就看得出來的洞：舊版 B9 寫「前面的 `YYMMDDHH｜<主題>` 原封不動」，那句話**預設 A5 已經改過名**，A5 漏掉時它無從執行，而那時候唯一拿得到的時間是「現在」——重算會寫出交棒的小時，正是同日把時間戳搬進 hook 要修掉的那種靜默錯誤；所以補一條恢復路徑：前綴從 `HANDOFF.md`「工作中」欄位抄（它記的就是開工時間與當時的 session 名）。守門人：`verify_bootstrap.py` 新增「改名寫進回報模板」，釘 A5／B9 兩個模板各有一行 `session：`、而且都留著「不適用」這個選項，附三個負向測試（刪 A5 那行、刪 B9 那行、拿掉「不適用」）。**為什麼跳版**：這次真的動到 `SKILL.md`，`VERSION` 要跟著走（鐵律 1）。**序號為什麼是 `.2` 而不是 `.4`**：序號算的是**當天第幾個帶 `source:` 標記的改動**，不是當天第幾次碰部署包——當天前兩次只改敘述、沒有任何標記動過，第三次改了 3.10 拿到 `v2026-11-01`，這是第二個。所以 `版本行` 從來沒有過裸的 `2026-11-01`，那不是漏編號，是當天第三次刻意不跳版的結果。另外，A5／B9 標題裡的行數**刻意沒跟著改**（A5 仍是「3–5 行」、B9 仍是「≤5 行」）：那兩個數字在 `README.md`、`handover-protocol.md`、3.10 的開場提醒等**六個地方**都有副本，其中兩處是 `sync_project.py` 的 `INSTANCE`、永遠不會同步——改一個數字就會製造一處無聲分岔，而模板現在剛好是 5 行、本來就落在原範圍內。下一棒看到「必填 5 行卻寫 3–5」不要去修它。**`.2` 是同一輪 15 分鐘前推出去的同一件事**，只差 A5／B9 標題的行數；因為那一版已經 push，而 `VERSION` 的同一個號不該對應兩份不同的 `SKILL.md`（那正是鐵律 2 寫下來要防的事），所以還原行數時一起跳到 `.3`。那 15 分鐘裡沒有任何副本同步過 `.2`——六個專案實測都還在 `v2026-10-31`，全域兩份當場重新覆蓋）
 > 前一版 **2026-10-31**（「工作中」標記**加工具欄**，格式變成 `` `機器` ／ `工具` ／ `session 名`（可選） ``。舊格式只比機器名，於是**同一台機器換個工具**就落進「大概是你自己另一個視窗」的 🟡，而 A2.5 叫人去驗的那個證據（側欄有沒有 `㊣`）只有 Claude Code 有——同機器通常就是同一個工作樹，兩個 agent 會**即時互相覆寫**，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。四處一起改，缺一處就白做：A5 寫標記時填工具名；A2.5 的「指向這台機器」拆成同工具／別的工具／沒有工具欄三列，判準不再綁側欄；`git-freshness.sh` 的同機器分支拆成同工具→🟡／不同工具→🔴；`check_docs.py` 第 6 項擋「標記在工作中卻沒有工具欄」——否則新格式會靜默退化回舊行為，而靜默退化跟「沒這個機制」在畫面上一模一樣。**工具名由寫標記的那一棒自己填**：模型知道自己是誰，三個平台一致；環境變數只拿來**加嚴**（偵測到的工具跟標記不符就 🔴），一致或認不出來都只給 🟡 並把問題丟回給模型答——跨工具啟動時變數會被繼承、會說謊（2026-10-31 實測，見「工具身分」一節）。新舊格式靠 session 名裡的全形豎線分辨，所以同一段邏輯讀得了還沒升級的專案，不必先問「這個專案升級了沒」）
 > 再前一版 **2026-10-30.3**（`HANDOFF.md` 加**工作中標記**：接棒時（skill A5）確定要動手才把機器與 session 寫進 HANDOFF 並 push，交棒時（B6）改回「無（已交棒）」，下一棒接棒前（A2.5）先檢查。補的是跨機器接力的洞——A 機器忘記交棒就關掉，B 機器看到綠勾就接棒。既有三層防呆全都掛在「下一個動作」上，而**直接關掉視窗沒有下一個動作**；這個標記掛在「開工」，所以繞不過去。`git-freshness.sh` 同步讀它，並改掉那行誤導的 `✅ 與 origin 同步`——它只證明「本機沒落後」，不證明「沒有別台在做」，而一個綠勾會讓人直接往下做。`check_docs.py` 加第 6 項擋欄位不見，否則防呆會靜默失效。
 > 同日第二件事：加 `VERSION` 檔 ＋ `tools/sync_project.py`，並讓 `git-freshness.sh` 比對上游版本。這之前「哪些專案裝了這套骨架」沒人記得住、也沒有任何東西負責把權威版發下去，所以同步一直是手工的——今天盤點就掃出 4 個專案留著上一輪沒 commit 的同步殘留。偵測放在開場這個必然發生的時刻，落後的專案會自己講；修則是一行指令。跟「工作中」標記同一招）。
@@ -99,7 +100,7 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 - **`statusMessage` 在互動 TUI 真的會顯示（2026-11-01 實測，`0.166.0`）**：它接在狀態行後面——畫面上是 `Working (1s • esc to interrupt) · <statusMessage 的字串>`。`codex exec` 不顯示（非互動沒有 UI），這一點 `0.164.0` 與 `0.166.0` 一致。所以這個鍵在骨架的接線裡**不是裝飾**：配上上面那條（純文字 stdout 只進 agent 的 context、不給人看），互動模式下它是**使用者唯一看得到的那行字**。
 - **互動 TUI 的 hook 失敗是吵的，不是靜默的**（同一輪實測）：畫面上出現 `• Hook failed` ＋ `└ hook exited with code 1`。這跟 `codex exec` 的「全程不吭聲」正好相反，所以**驗收要在互動模式做**——非互動模式連失敗都看不到。
 - 🔴 **未解：同一支 hook 在互動 TUI 退出碼 1，而六分鐘前在 `codex exec` 下跑得好好的。** 同一個資料夾、同一份已信任的 `hooks.json`、同一支腳本；exec 那次寫出了 log，TUI 那次一行都沒寫，所以腳本的第一個指令都沒跑到。兩個看起來很有說服力的理由**都被量掉了**：①「`bash` 解析到 WSL」——把同一條啟動鏈（PowerShell → `bash -lc`）拿來獨立跑同一支腳本，exit 0 成功；②「codex 偵測到的殼層不同」——兩次 session rollout 的 `<environment_context>` 都寫 `<shell>powershell</shell>`，**包括成功那次**。照鐵律 3，這裡刻意不補第三個理由。要重開這題，先讓探針印出 hook 自己看到的 `PATH` 與 cwd，再比對兩次。
-- ⚠️ **「PATH 上的 `bash` 是 WSL 那支」這件事對 Codex 這一面也成立**（事實本身記在下面 Antigravity 那節的死結三條，不在這裡重寫一份）：2026-11-01 補量到它回的是 **exit 1**，而骨架兩份接線寫的都是 `bash .claude/hooks/<腳本>.sh`，所以**哪一支 `bash` 被解析到，就決定這層防呆在不在**。⚠️ 但**別拿它去解釋上一條那個未解**——同一條啟動鏈獨立跑是成功的，兩者不要混在一起看。Antigravity 那邊靠 3.19 的 `.cmd` shim 解掉；Codex 這邊**還沒有對應的解法**，因為它至今沒在真實部署裡失敗過（六個專案的接線還沒有任何一個被實際審核並跑起來，見 `HANDOFF.md`）。
+- **Windows 的 Codex 接線已補 Git Bash 啟動器（2026-11-01）**：真 repo 上實跑舊接線，互動 TUI 報 exit 1、context 沒收到訊息；同一支腳本經 PATH 的 WSL `bash` 報缺 `/bin/bash`，經 Git Bash 則 exit 0。新接線用 `commandWindows` 指向 3.17 的 `.cmd`，只做管線；另對 stdout 加純文字標頭，避開本版把 `[` 開頭當 JSON 的實測問題。修正後 CLI `0.166.0` 與桌面 App 內附 runtime `0.166.0-alpha.5.1` 的互動測試都收到 `HOOK_PRESENT`（後者是以該 binary 的 TUI 驗收，不冒充 App UI 已驗）。**稍早那組 exec／TUI 探針的差異仍未回溯查明，不能用新案例替它補原因。**
 - 🔴 **「叫 agent 把注入背出來」這個測法在 Codex 上不成立。** 2026-10-31 實測：它回「I can't repeat hidden system or developer instructions」**直接拒絕複述**（Antigravity 那一面可以，見下）。要量注入有沒有到，就讓 hook 自己寫檔，或問一個不必複述的是非題（「只回 YES／NO：你的 context 裡有沒有以 `[git-check]` 開頭的行」）。**拿複述當儀器會得到假陰性，而假陰性長得就跟「hook 沒跑」一模一樣。**
 - **skill 來源看得到，不必猜**：`codex debug prompt-input` 會印一張「Skill roots」表。2026-10-30 實測 0.164.0 列出 `~/.codex/skills`（**官方文件已經不列這個路徑，但實際仍然讀**）**與 repo 的 `.agents/skills`**。官方另外列 `$CWD/../.agents/skills`、`$HOME/.agents/skills`、`/etc/codex/skills`。
 - `project_doc_max_bytes` 會截 `AGENTS.md`，所以**「開工第一件事」那一段必須待在 `AGENTS.md` 最上面**。
@@ -322,6 +323,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 │   ├─ hooks/git-freshness.sh       ← SessionStart：git 新鮮度檢查＋提醒走交接程序
 │   ├─ hooks/pre-push-handoff.sh    ← PreToolUse：沒更新 HANDOFF 就想 push 時擋下
 │   ├─ hooks/ag-wrap.sh             ← Antigravity 轉接層：只做管線，把 stdout 包成 JSON
+│   ├─ hooks/codex-hook.cmd         ← Codex 的 Windows 啟動器：找 Git Bash、加純文字標頭、保留結束碼
 │   ├─ skills/handoff/SKILL.md      ← 交接與同步的可執行程序（本骨架的核心、權威版）
 │   └─ skills/<其他>/SKILL.md       ← 需要時才建：可重複使用的操作食譜（權威版）
 ├─ .codex/hooks.json                ← Codex 讀這裡：掛上面同樣那兩個腳本，不另寫一份
@@ -840,7 +842,7 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-01.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-01.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
@@ -1164,6 +1166,8 @@ python -X utf8 tools/check_docs.py
 
 本專案若有固定流程（部署、版本號 bump、測試、備份），對照 `AGENTS.md` 鐵律：這輪有動到就執行並記錄；沒動到就在 HANDOFF 明記「不適用」。
 **不要靜默略過**——接手者無法分辨「沒做」與「不用做」。
+
+**Codex hook 接線有改或同步過，就重新檢查信任並驗收實際執行。** 在互動 CLI 的 `/hooks` 或桌面 App 的 Hooks 設定審核當前定義，再於新 session 送出一則最小測試訊息；確認 hook 成功、輸出確實進入 context。只看檔案或信任狀態不算驗收：2026-11-01 在 Windows 的真專案上量到 hook 已信任，卻因 PATH 的 `bash` 指向缺少 `/bin/bash` 的 WSL 而 exit 1。模型呼叫仍依專案原有的額度與授權規則，不因這一項自動取得授權。
 
 ### B6 更新 `HANDOFF.md`（覆寫，≤80 行，不累積歷史）
 
@@ -1984,13 +1988,13 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接�
 **請勿在此複製內容。** 兩份副本會各自演進並產生矛盾（曾發生：一份已更新成新流程、另一份停在舊版，而入口文件指向舊的那份，照做就失敗）。新知識一律寫進權威版。
 ````
 
-### 3.17 `.codex/hooks.json`（給 Codex 的 hook 接線）
+### 3.17 `.codex/hooks.json`、`.claude/hooks/codex-hook.cmd`（給 Codex 的 hook 接線與 Windows 啟動器）
 
 > **CLI 與桌面 App 都用得到這個檔。** 舊版這裡寫「桌面 App 沒有 hooks」，依據是 2026-08-06 在 App `26.721.41059` 打不出 `/hooks`——2026-10-30 重查已經不成立：App `26.506`（2026-05-08）就加了 hooks 的 in-app 信任審核流程。**對外部工具能力的斷言都有保鮮期**，拿它做「做不到所以不做」的決定之前先重查（保鮮期機制見開頭那一節）。
 > hooks 與 Claude Code **同格式、同語意**：讀 `<repo>/.codex/hooks.json`，context 由 stdin 傳 JSON。所以這裡掛的是**同樣那兩個 `.sh`**，不要另外複製一份到 `.codex/hooks/`。
 > 功能**預設開啟**（`codex features list` 可以確認 `hooks  stable  true`；要關是 `[features] hooks = false`）。來源不只這一個檔：`~/.codex/hooks.json`、兩層 `config.toml` 的 `[hooks]`、plugin 都會**合併**進來，同一層同時用兩種寫法會在啟動時警告。
 > **路徑一律相對**——寫成 `C:\Users\...` 的絕對路徑，換到另一台機器或 macOS 必定失效，而且失效時是靜默的。
-> 🔴 **要兩道信任，而且失敗是靜默的。** ①專案的 `.codex/` 整層要先被信任（記在 `~/.codex/config.toml` 的 `[projects.'<路徑>'] trust_level`）；②每一支非 managed 的 hook 還要按**當前雜湊**逐一審核（CLI 打 `/hooks`），所以改過腳本內容要重新審核。2026-10-30 實測：在未信任的資料夾跑 `codex exec`，hook 完全沒跑，而且 **stderr 一個字都沒有**。所以部署完**一定要照第 5 節真的開一個 session**，不能看到檔案在就算裝好了。⚠️ **而且要在互動模式、而且要送出一句話**：2026-11-01 實測互動 TUI 開場不跑 `SessionStart`（跟著第一個 turn 才跑），所以盯著開場看是假陰性。互動模式的補償是 hook 失敗會印 `• Hook failed`，而 `codex exec` 連失敗都不吭聲。
+> 🔴 **要兩道信任，而且失敗是靜默的。** ①專案的 `.codex/` 整層要先被信任（記在 `~/.codex/config.toml` 的 `[projects.'<路徑>'] trust_level`）；②每一支非 managed 的 hook 還要按**當前雜湊**逐一審核（CLI 打 `/hooks`），所以改過接線定義要重新審核。2026-10-30 實測：在未信任的資料夾跑 `codex exec`，hook 完全沒跑，而且 **stderr 一個字都沒有**。所以部署完**一定要照第 5 節真的開一個 session**，不能看到檔案在就算裝好了。⚠️ **而且要在互動模式、而且要送出一句話**：2026-11-01 實測互動 TUI 開場不跑 `SessionStart`（跟著第一個 turn 才跑），所以盯著開場看是假陰性。互動模式的補償是 hook 失敗會印 `• Hook failed`，而 `codex exec` 連失敗都不吭聲。
 > **2026-10-31 實測完畢（`0.164.0`／Windows），兩個未知都收掉了，其中一個是問錯問題。**
 > ① **`statusMessage` 不是 Claude 專屬的 key**：官方把它列在 hook 定義的正式鍵裡（`type`／`command`／`commandWindows`／`timeout`／`statusMessage`／`additionalContextLimit`／`async`／`server`／`tool`／`input`），語意就是「Optional UI message」。所以它不會被當成雜訊，也不會讓設定失效。實測 `codex exec` 的 stdout／stderr **都不會出現它**（非互動沒有 UI 可顯示）；**互動 TUI 會顯示**——2026-11-01 在 `0.166.0` 量到它接在狀態行後面（`Working (1s • esc to interrupt) · <字串>`），所以互動模式下它是使用者唯一看得到的那行字。
 > ② **`PreToolUse` 沒有 matcher＝每一次都觸發，而且不分工具名**：官方寫「省略、`""`、`"*"` 都等於比對該事件的每一次發生」，實測同一個 session 裡 `Bash`×2 ＋ `apply_patch`×1 全部觸發。所以 `pre-push-handoff.sh` 會跟著**每一個**工具呼叫跑一次——它自己對非 push 的呼叫是 `exit 0` 立刻收手，功能上沒問題，但**要知道這是「每次都跑」而不是「只在 push 時跑」**。要縮成只比對殼層工具就加 `"matcher": "Bash"`，但那是拿一次實測的工具名去賭所有情境（MCP 工具名長得完全不同），**這個取捨刻意留著不改**。
@@ -2006,6 +2010,7 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接�
           {
             "type": "command",
             "command": "bash .claude/hooks/git-freshness.sh",
+            "commandWindows": "cmd /d /c .claude\\hooks\\codex-hook.cmd git-freshness.sh",
             "timeout": 30,
             "statusMessage": "檢查 git 是否與 origin 同步…"
           }
@@ -2018,6 +2023,7 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接�
           {
             "type": "command",
             "command": "bash .claude/hooks/pre-push-handoff.sh",
+            "commandWindows": "cmd /d /c .claude\\hooks\\codex-hook.cmd pre-push-handoff.sh",
             "timeout": 15
           }
         ]
@@ -2025,6 +2031,31 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接�
     ]
   }
 }
+````
+
+**Windows 用 `commandWindows` 經下面的啟動器找 Git Bash**，macOS／Linux 仍用原本的 `command`。它只處理管線，不複製任何 git 或交接判斷；stdin、stderr 與腳本結束碼原樣傳遞，否則 `PreToolUse` 的 exit 2 防呆會被吃掉；stdout 在原內容前加一行純文字標頭以免 JSON 誤判。相對接線仍從 repo 根目錄啟動；啟動器找到腳本時用 `%~dp0`，不靠當下 cwd。2026-11-01 在 Windows／CLI `0.166.0` 的真 repo 重現舊接線已信任卻 exit 1：PATH 的 `bash` 是 WSL，缺少 `/bin/bash`；直接改用 Git Bash 同一支 `.sh` 就成功。這是新的真部署案例，**不能倒推成稍早那組 exec／TUI 探針差異的原因**。
+
+與 3.19 同樣保持 **ASCII、全 LF、單行 if、沒有 label 與多行括號區塊**。尋找順序是 PATH 上 `git.exe` 的安裝位置、兩種 Program Files、使用者安裝位置；刻意不執行 PATH 上未驗明來源的 `bash`，以免又選到 WSL。找不到 Git Bash 就在 stderr 明確報錯並 exit 1，不假裝驗收成功。另量到 `0.166.0` 對以 `[` 開頭的純文字 stdout 會報 `invalid session start JSON output`；同一支腳本只加上 `Git status check:` 標頭後，互動驗收由 `HOOK_ABSENT` 變成 `HOOK_PRESENT`。所以標頭留在啟動器，不改兩支共用 `.sh` 的既有標記。
+
+````bat
+@echo off
+rem source: PROJECT-BOOTSTRAP.md v2026-11-01.4 - authority is the kit; edit it first, then sync.
+rem Codex Windows launcher. Plumbing only; rules stay in the existing .sh files.
+rem ASCII-only, LF-only, no labels or multiline parenthesised blocks. See section 3.17.
+setlocal
+if "%~1"=="" >&2 echo [codex-hook] ERROR: missing script argument.
+if "%~1"=="" exit /b 1
+set "BASH="
+for /f "delims=" %%G in ('where git 2^>nul') do if not defined BASH if exist "%%~dpG..\bin\bash.exe" set "BASH=%%~dpG..\bin\bash.exe"
+if not defined BASH if exist "%ProgramFiles%\Git\bin\bash.exe" set "BASH=%ProgramFiles%\Git\bin\bash.exe"
+if not defined BASH if exist "%ProgramFiles(x86)%\Git\bin\bash.exe" set "BASH=%ProgramFiles(x86)%\Git\bin\bash.exe"
+if not defined BASH if exist "%LOCALAPPDATA%\Programs\Git\bin\bash.exe" set "BASH=%LOCALAPPDATA%\Programs\Git\bin\bash.exe"
+if not defined BASH >&2 echo [codex-hook] ERROR: Git Bash not found; hook did not run. Install Git for Windows and retry.
+if not defined BASH exit /b 1
+rem Codex 0.166.0 treats stdout starting with [ as JSON. Keep a plain-text first line.
+echo Git status check:
+"%BASH%" "%~dp0%~1"
+exit /b %ERRORLEVEL%
 ````
 
 ### 3.18 `.claude/hooks/ag-wrap.sh`（Antigravity 轉接層）
@@ -2227,7 +2258,7 @@ git status -sb
 **跨工具（只驗你真的會用的那幾個，用不到的不必建檔）**
 
 - [ ] **可攜層**：`AGENTS.md` 開頭有「開工第一件事」那一段，而且指到的路徑存在——**這一項不能跳過**，它是唯一在所有工具上都成立的保證，其餘都只是輔助
-- [ ] **Codex CLI**：`.codex/hooks.json` 存在且路徑全是相對路徑（`grep -n ':[\\/]' .codex/hooks.json` 應無輸出——絕對路徑在別台機器會靜默失效）；**專案要先被信任**（否則整層 `.codex/` 被跳過）；然後**開一次互動式 `codex`**——它開場就會問「Hooks need review」，選 `Trust all and continue`（想一條條看就選 `Review hooks`）。🔴 **這一項不能只看檔案在不在**，而且有三個會讓你誤判的點：①**信任綁 `hooks.json` 的絕對路徑，所以每個專案都要各做一次**，審過一個不會全通；②**在那個 session 裡送出一句話才驗得到**——2026-11-01 實測互動 TUI 開場不跑 `SessionStart`，它跟著第一個 turn 才跑；舊版這裡寫「你按下同意的那個 session 不會跑，要再開一個才算」，那是推論而實測是反的，而且它教人用**保證看不到**的方式驗收（再開一個、然後盯著開場）；③**不要去畫面上找 `[git-check]`**——Codex 把純文字 stdout 當 developer context 餵給模型、不顯示給人，所以要驗就問 agent 一個不必複述的是非題（「只回 YES／NO：你的 context 裡有沒有以 `[git-check]` 開頭的行」），或暫時讓 hook 自己寫一個檔。`codex exec` 從頭到尾不問也不印，**不能拿它當驗收手段**（2026-10-30／31 兩輪實測）
+- [ ] **Codex CLI**：`.codex/hooks.json` 與 `.claude/hooks/codex-hook.cmd` 存在且接線路徑全是相對路徑（`grep -n ':[\\/]' .codex/hooks.json` 應無輸出——絕對路徑在別台機器會靜默失效）；**專案要先被信任**（否則整層 `.codex/` 被跳過）；Windows 的 `commandWindows` 要指向 `.claude/hooks/codex-hook.cmd`，該檔也必須在場；然後**開一次互動式 `codex`**——它開場就會問「Hooks need review」，選 `Trust all and continue`（想一條條看就選 `Review hooks`）。🔴 **這一項不能只看檔案在不在**，而且有三個會讓你誤判的點：①**信任綁 `hooks.json` 的絕對路徑，所以每個專案都要各做一次**，審過一個不會全通；②**在那個 session 裡送出一句話才驗得到**——2026-11-01 實測互動 TUI 開場不跑 `SessionStart`，它跟著第一個 turn 才跑；舊版這裡寫「你按下同意的那個 session 不會跑，要再開一個才算」，那是推論而實測是反的，而且它教人用**保證看不到**的方式驗收（再開一個、然後盯著開場）；③**不要去畫面上找 `[git-check]`**——Codex 把純文字 stdout 當 developer context 餵給模型、不顯示給人，所以要驗就問 agent 一個不必複述的是非題（「只回 YES／NO：你的 context 裡有沒有以 `[git-check]` 開頭的行」），或暫時讓 hook 自己寫一個檔。`codex exec` 從頭到尾不問也不印，**不能拿它當驗收手段**（2026-10-30／31 兩輪實測）
 - [ ] **Codex skill 來源**：`codex debug prompt-input` 會印一張「Skill roots」表，確認裡面有 `~/.codex/skills`（全域副本放這裡）與本專案的 `.agents/skills`。這比問模型「你有哪些 skill」可靠，也不花一次模型呼叫
 - [ ] **Codex 桌面 App**：它**有** hooks（App `26.506` 起有 in-app 信任審核，Settings 裡找 Hooks），而且跟 CLI 共用 `~/.codex`。舊版這裡寫「App 沒有 hooks」是 2026-08-06 的實測，已經過期。全域 skill 仍然放 `~/.codex/skills/handoff/SKILL.md`（2026-10-30 實測 CLI `0.164.0` 仍讀這個路徑，雖然官方文件已經不列它）
 - [ ] **Antigravity 指標檔**：`.agents/skills/handoff/SKILL.md` 存在，內容只有指標、沒有複製程序內容，而且 `description` 完整（那是它被發現的唯一依據；這個檔同時也是 Codex 的專案層入口，見 3.16）

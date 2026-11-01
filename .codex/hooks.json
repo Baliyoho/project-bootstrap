@@ -6,6 +6,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/repo-git-check.sh",
+            "commandWindows": "cmd /d /c .claude\\hooks\\codex-hook.cmd repo-git-check.sh",
             "timeout": 30,
             "statusMessage": "檢查 git 是否與 origin 同步…"
           }
