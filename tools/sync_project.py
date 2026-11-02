@@ -30,6 +30,7 @@ B7 存在的理由。跑完請到各專案照 B 模式收尾。
 import argparse
 import copy
 import json
+import os
 import pathlib
 import shutil
 import sys
@@ -132,15 +133,61 @@ def merge_check_docs(authority, current):
     return '\n'.join(a[0] + c[1] + a[2]), None
 
 
+def handler_scripts(handler):
+    """這一個 handler 指向哪些骨架腳本。
+
+    `commandWindows` 也要看（2026-11-02）：Codex 的 Windows 接線把腳本名寫在那一欄，
+    只看 `command` 的話「只有 Windows 命令」的 handler 會被當成專案自己的，於是骨架
+    永遠不更新它，而落後的接線沒有任何徵兆。
+    """
+    if not isinstance(handler, dict):
+        return frozenset()
+    cmd = '%s %s' % (handler.get('command', ''), handler.get('commandWindows', ''))
+    return frozenset(s for s in OWNED_SCRIPTS if s in cmd)
+
+
 def scripts_in(group):
     """這一組 hook 指向哪些骨架腳本。用檔名比對，不挑路徑寫法。"""
     if not isinstance(group, dict):
         return frozenset()
     found = set()
     for h in group.get('hooks', []):
-        cmd = h.get('command', '') if isinstance(h, dict) else ''
-        found.update(s for s in OWNED_SCRIPTS if s in cmd)
+        found.update(handler_scripts(h))
     return frozenset(found)
+
+
+def merge_group(auth_group, cur_group, event, key):
+    """合併一組：骨架擁有的是**指向骨架腳本的那幾個 handler**，不是整組。
+
+    2026-11-02 修（查核報告 F02）。舊版是 `cur[at] = deepcopy(g)`——只要一組裡有骨架
+    handler，整組就被當成骨架的。於是專案把自己的 hook 加在同一組裡（`hooks` 陣列本來
+    就能放多個，這是完全合法的形狀）就會被**靜默刪掉**，而輸出還寫著「專案其他設定原樣
+    保留」。既有測試把專案的 hook 放在另一組，所以一直沒碰到這個形狀。
+
+    組層設定（`matcher` 等）仍歸骨架：2026-09-13 那次事故要修的正是 matcher。但如果這
+    一組裡有專案自己的 handler，而權威版又要改這一組的 matcher，那就會連專案那個
+    handler 的觸發條件一起換掉——這種情況**拒絕並說清楚**，不要猜。
+    """
+    foreign = [h for h in cur_group.get('hooks', []) if not handler_scripts(h)]
+    auth_own = [h for h in auth_group.get('hooks', []) if handler_scripts(h)]
+    meta_now = {k: v for k, v in cur_group.items() if k != 'hooks'}
+    meta_auth = {k: v for k, v in auth_group.items() if k != 'hooks'}
+    clash = sorted(k for k, v in meta_auth.items() if k in meta_now and meta_now[k] != v)
+    if foreign and clash:
+        return None, (
+            '%s 的「%s」那一組裡有專案自己的 handler（%s），而權威版要改這一組的 %s'
+            '（%s → %s）——改下去會連專案那個 handler 的觸發條件一起換掉，不敢猜。'
+            '請把專案自己的 handler 搬到另一組，或人工比對'
+            % (event, '、'.join(sorted(key)),
+               '、'.join(str(h.get('command', h))[:40] for h in foreign),
+               '、'.join(clash),
+               '、'.join(str(meta_now[k]) for k in clash),
+               '、'.join(str(meta_auth[k]) for k in clash)))
+    merged = dict(meta_now)
+    merged.update(meta_auth)
+    merged['hooks'] = ([copy.deepcopy(h) for h in auth_own]
+                       + [copy.deepcopy(h) for h in foreign])
+    return merged, None
 
 
 def merge_ag_wiring(authority, current):
@@ -195,16 +242,36 @@ def merge_wiring(authority, current):
     for event, groups in a.get('hooks', {}).items():
         cur = hooks.get(event)
         cur = list(cur) if isinstance(cur, list) else []
+        used = set()
         for g in groups:
             key = scripts_in(g)
             if not key:
                 continue                      # 不指向骨架腳本的組，骨架不插手
-            at = next((i for i, x in enumerate(cur) if scripts_in(x) == key), None)
-            if at is None:
+            at = [i for i, x in enumerate(cur)
+                  if i not in used and scripts_in(x) == key]
+            if len(at) > 1:
+                return None, None, (
+                    '專案的 %s 有 %d 組都指向「%s」，不敢猜要更新哪一組——'
+                    '請人工比對後只留一組' % (event, len(at), '、'.join(sorted(key))))
+            if not at:
                 cur.append(copy.deepcopy(g))
+                used.add(len(cur) - 1)
                 repaired.append('補回 %s 的接線' % '、'.join(sorted(key)))
-            else:
-                cur[at] = copy.deepcopy(g)
+                continue
+            merged, err = merge_group(g, cur[at[0]], event, key)
+            if err:
+                return None, None, err
+            cur[at[0]] = merged
+            used.add(at[0])
+        # 還指向骨架腳本、卻沒有任何權威組認領的組：分組方式跟權威版不一樣。
+        # 舊版會在後面另外 append 一組，於是同一支腳本掛兩次（開場印兩遍、防呆跑兩次）。
+        orphan = [x for i, x in enumerate(cur) if i not in used and scripts_in(x)]
+        if orphan:
+            return None, None, (
+                '專案的 %s 有 %d 組指向骨架腳本、但分組方式跟權威版不同（%s）——'
+                '直接補一組會讓同一支腳本掛兩次，整組換掉又會動到不屬於骨架的東西。'
+                '請人工比對' % (event, len(orphan),
+                             '；'.join('、'.join(sorted(scripts_in(x))) for x in orphan)))
         hooks[event] = cur
 
     if want == c:
@@ -245,30 +312,78 @@ def ensure_claude_import(text):
     return '\n'.join(lines)
 
 
-def sync_wiring(project, gen, rels, write_mode, msgs):
-    changed = 0
+class Plan:
+    """一個同步目標的計畫：要改哪些檔、算不出來的有哪些。
+
+    2026-11-02 加（查核報告 F03）。舊版邊算邊寫：`WHOLE` 那一圈在任何 JSON 驗證之前，
+    所以一份壞掉的接線會在「已經覆蓋掉好幾個檔之後」才被發現；而 `FAIL` 只進訊息列、
+    不影響 `changed` 也不影響結束碼，於是同步失敗一半照樣回 exit 0，最後還印
+    「全部都已經是 v… 」。先算完、驗完、再寫，是這兩件事唯一的共同修法。
+    """
+
+    def __init__(self):
+        self.msgs = []
+        self.errors = []
+        self.writes = []                      # [(path, text, rel)]
+
+    def ok(self, rel):
+        self.msgs.append('  ok     %s' % rel)
+
+    def skip(self, rel, why):
+        self.msgs.append('  skip   %s（%s）' % (rel, why))
+
+    def fail(self, rel, why):
+        self.msgs.append('  FAIL   %s：%s' % (rel, why))
+        self.errors.append('%s：%s' % (rel, why))
+
+    def update(self, path, rel, text, note=None):
+        self.msgs.append('  UPDATE %s%s' % (rel, ('（%s）' % note) if note else ''))
+        self.writes.append((path, text, rel))
+
+    @property
+    def changed(self):
+        return len(self.writes)
+
+
+def apply_plan(plan):
+    """逐檔原子替換，回傳 (已套用的 rel, 失敗的 (rel, 原因) 或 None)。
+
+    先寫同目錄的暫存檔再 `os.replace`：中途斷掉也不會留下半個檔（半個 JSON 接線
+    比舊的接線更糟——它會讓整份設定失效，而那是靜默的）。一旦失敗就停，已經套用的
+    必須講出來，否則人不知道這個專案現在是什麼狀態。
+    """
+    done = []
+    for path, text, rel in plan.writes:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_name(path.name + '.sync-tmp')
+            tmp.write_text(text, encoding='utf-8', newline='')
+            os.replace(tmp, path)
+            done.append(rel)
+        except OSError as e:
+            return done, (rel, str(e))
+    return done, None
+
+
+def sync_wiring(project, gen, rels, plan):
     for rel in rels:
         dst, src = project / rel, gen / rel
         cur = read(dst)
         if cur is None:
-            msgs.append('  skip   %s（這個專案沒有這個檔）' % rel)
+            plan.skip(rel, '這個專案沒有這個檔')
             continue
         new, note, err = merge_wiring(read(src), cur)
         if err:
-            msgs.append('  FAIL   %s：%s' % (rel, err))
+            plan.fail(rel, err)
         elif new is None:
-            msgs.append('  ok     %s' % rel)
+            plan.ok(rel)
         else:
-            changed += 1
-            msgs.append('  UPDATE %s（%s）' % (rel, note))
-            if write_mode:
-                write(dst, new)
-    return changed
+            plan.update(dst, rel, new, note)
 
 
-def sync(project, gen, write_mode, codex_only=False):
-    """回傳 (改了幾項, [訊息])。"""
-    msgs, changed = [], 0
+def sync(project, gen, codex_only=False):
+    """算出這個目標要改什麼，**不寫任何檔**。回傳 Plan；寫入是 apply_plan 的事。"""
+    plan = Plan()
 
     for rel in WHOLE:
         if codex_only and rel != CODEX_LAUNCHER:
@@ -277,102 +392,83 @@ def sync(project, gen, write_mode, codex_only=False):
         cur = read(dst)
         if cur is None:
             if rel != CODEX_LAUNCHER or not (project / CODEX_WIRING).exists():
-                msgs.append('  skip   %s（這個專案沒有這個檔）' % rel)
+                plan.skip(rel, '這個專案沒有這個檔')
                 continue
         new = read(src)
         if cur == new:
-            msgs.append('  ok     %s' % rel)
-            continue
-        changed += 1
-        msgs.append('  UPDATE %s' % rel)
-        if write_mode:
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            write(dst, new)
+            plan.ok(rel)
+        else:
+            plan.update(dst, rel, new)
 
     if codex_only:
-        changed += sync_wiring(project, gen, (CODEX_WIRING,), write_mode, msgs)
-        return changed, msgs
+        sync_wiring(project, gen, (CODEX_WIRING,), plan)
+        return plan
 
     dst, src = project / SURGICAL, gen / SURGICAL
     cur = read(dst)
     if cur is None:
-        msgs.append('  skip   %s（這個專案沒有這個檔）' % SURGICAL)
+        plan.skip(SURGICAL, '這個專案沒有這個檔')
     else:
         merged, err = merge_check_docs(read(src), cur)
         if err:
-            msgs.append('  FAIL   %s：%s' % (SURGICAL, err))
+            plan.fail(SURGICAL, err)
         elif merged == cur:
-            msgs.append('  ok     %s' % SURGICAL)
+            plan.ok(SURGICAL)
         else:
-            changed += 1
-            msgs.append('  UPDATE %s（保留專案設定區塊）' % SURGICAL)
-            if write_mode:
-                write(dst, merged)
+            plan.update(dst, SURGICAL, merged, '保留專案設定區塊')
 
-    changed += sync_wiring(project, gen, WIRING, write_mode, msgs)
+    sync_wiring(project, gen, WIRING, plan)
 
     dst, src = project / AG_WIRING, gen / AG_WIRING
     cur = read(dst)
     if cur is None:
-        msgs.append('  skip   %s（這個專案沒有這個檔）' % AG_WIRING)
+        plan.skip(AG_WIRING, '這個專案沒有這個檔')
     else:
         new, note, err = merge_ag_wiring(read(src), cur)
         if err:
-            msgs.append('  FAIL   %s：%s' % (AG_WIRING, err))
+            plan.fail(AG_WIRING, err)
         elif new is None:
-            msgs.append('  ok     %s' % AG_WIRING)
+            plan.ok(AG_WIRING)
         else:
-            changed += 1
-            msgs.append('  UPDATE %s（%s）' % (AG_WIRING, note))
-            if write_mode:
-                write(dst, new)
+            plan.update(dst, AG_WIRING, new, note)
 
     h = project / 'HANDOFF.md'
     cur = read(h)
     if cur is None:
-        msgs.append('  skip   HANDOFF.md（不存在）')
+        plan.skip('HANDOFF.md', '不存在')
     else:
         new = ensure_busy_field(cur)
-        if new is None:
-            msgs.append('  ok     HANDOFF.md（「工作中」欄位已在，或找不到 Git 狀態那節）'
-                        if '**工作中**' in cur else
-                        '  FAIL   HANDOFF.md：找不到「待續分支」或「## Git 狀態」，無法插入欄位')
+        if new is not None:
+            plan.update(h, 'HANDOFF.md', new, '補上「工作中」欄位')
+        elif '**工作中**' in cur:
+            plan.ok('HANDOFF.md（「工作中」欄位已在）')
         else:
-            changed += 1
-            msgs.append('  UPDATE HANDOFF.md（補上「工作中」欄位）')
-            if write_mode:
-                write(h, new)
+            plan.fail('HANDOFF.md', '找不到「待續分支」或「## Git 狀態」，無法插入欄位')
 
     gi = project / '.gitignore'
     cur = read(gi)
     if cur is None:
-        msgs.append('  skip   .gitignore（不存在）')
+        plan.skip('.gitignore', '不存在')
     else:
         new = ensure_gitignore(cur)
         if new is None:
-            msgs.append('  ok     .gitignore')
+            plan.ok('.gitignore')
         else:
-            changed += 1
-            msgs.append('  UPDATE .gitignore（補 %s）' % '、'.join(
+            plan.update(gi, '.gitignore', new, '補 %s' % '、'.join(
                 l for l in GITIGNORE_LINES if l not in cur.split('\n')))
-            if write_mode:
-                write(gi, new)
 
     cm = project / 'CLAUDE.md'
     cur = read(cm)
     if cur is None:
-        msgs.append('  skip   CLAUDE.md（不存在）')
+        plan.skip('CLAUDE.md', '不存在')
     else:
         new = ensure_claude_import(cur)
         if new is None:
-            msgs.append('  ok     CLAUDE.md（已有 @AGENTS.md import）')
+            plan.ok('CLAUDE.md（已有 @AGENTS.md import）')
         else:
-            changed += 1
-            msgs.append('  UPDATE CLAUDE.md（補上 @AGENTS.md import）')
-            if write_mode:
-                write(cm, new)
+            plan.update(cm, 'CLAUDE.md', new, '補上 @AGENTS.md import')
 
-    return changed, msgs
+    return plan
 
 
 def discover():
@@ -407,7 +503,8 @@ def main():
 
     version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
     tmp = pathlib.Path(tempfile.mkdtemp(prefix='sync-project-'))
-    total = 0
+    planned = applied = 0
+    failures = []
     try:
         extract(tmp)
         print('權威版 v%s（%d 個目標）\n' % (version, len(targets)))
@@ -420,28 +517,55 @@ def main():
             # 擋在這裡，而不是在文件裡寫一句「不要這樣做」——那種規則只在有人記得時有效。
             if project == ROOT:
                 print('%s\n  這是權威版 repo 自己，不是同步目標：它的兩份接線指向自己那支'
-                      ' repo-git-check.sh，覆蓋下去會指到這裡不存在的 git-freshness.sh\n' % project)
+                      ' repo-git-check.sh，覆蓋下去會指到這裡不存在的 git-freshness.sh\n'
+                      % project)
+                failures.append('%s：是權威版 repo 自己，拒絕同步' % project)
                 continue
             if not project.exists():
                 print('%s\n  找不到這個資料夾\n' % project)
+                failures.append('%s：找不到這個資料夾' % project)
                 continue
-            changed, msgs = sync(project, tmp, args.write, codex_only=args.codex_only)
-            total += changed
+            plan = sync(project, tmp, codex_only=args.codex_only)
             print('%s' % project)
-            print('\n'.join(msgs))
+            print('\n'.join(plan.msgs))
+            # 算不出來就整個目標跳過，一個檔都不寫（F03）：半套同步比沒同步更難查，
+            # 因為看起來像是「同步過了」。
+            if plan.errors:
+                print('  → 這個目標有 %d 項算不出來，整個跳過，一個檔都沒改' % len(plan.errors))
+                failures.append('%s：%s' % (project, '；'.join(plan.errors)))
+                print()
+                continue
+            planned += plan.changed
+            if args.write and plan.writes:
+                done, failed = apply_plan(plan)
+                applied += len(done)
+                if failed:
+                    rest = [r for _, _, r in plan.writes[len(done):]]
+                    print('  🔴 寫入失敗：%s（%s）' % failed)
+                    print('  已經套用：%s' % ('、'.join(done) or '無'))
+                    print('  還沒套用：%s' % '、'.join(rest))
+                    failures.append('%s：寫到 %s 失敗（%s），已套用 %d 項'
+                                    % (project, failed[0], failed[1], len(done)))
             print()
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    if not total:
+    if failures:
+        print('🔴 %d 個目標沒有完成：' % len(failures))
+        for f in failures:
+            print('   ' + f)
+    if not planned and not failures:
         print('全部都已經是 v%s，沒有東西要改。' % version)
         return 0
-    if args.write:
-        print('共改了 %d 項。**還沒 commit**——到各專案照 skill 的 B 模式收尾：'
-              '跑 check_docs.py、明確 stage 這幾個檔、看過 staged 清單再 commit。' % total)
-    else:
-        print('預演：共 %d 項要改。加 --write 才寫入。' % total)
-    return 0
+    if planned:
+        if args.write:
+            print('共套用 %d／%d 項。**還沒 commit**——到各專案照 skill 的 B 模式收尾：'
+                  '跑 check_docs.py、明確 stage 這幾個檔、看過 staged 清單再 commit。'
+                  % (applied, planned))
+        else:
+            print('預演：共 %d 項要改。加 --write 才寫入。' % planned)
+    # 任何目標沒完成就非零退出：呼叫方（人或 CI）唯一看得到的訊號就是結束碼。
+    return 1 if failures else 0
 
 
 if __name__ == '__main__':

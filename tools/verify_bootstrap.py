@@ -65,6 +65,8 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
   行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
                   git-freshness 可執行
+  同步安全     ——sync_project.py 只擁有指向骨架腳本的 handler（同組的自訂 hook 要留），
+                  且任一項算不出來就零寫入、失敗要非零退出（2026-11-02／F02、F03）
   同步清單     ——sync_project.py 的清單要涵蓋骨架每一個檔，且 hook 接線合併要真的換掉
                   舊值又保住專案自己的設定。兩份 JSON 接線從來不在清單裡，於是 matcher
                   的修正一年半沒發下去，pre-push 防呆在那些專案等於沒裝（2026-10-30 加入）
@@ -1344,10 +1346,11 @@ def step_codex_windows(dest, tmp):
     skill = project / '.claude/skills/handoff/SKILL.md'
     skill.parent.mkdir(parents=True)
     skill.write_text('project skill must stay untouched', encoding='utf-8')
-    preview, _ = sp.sync(project, dest, False, codex_only=True)
-    if preview != 2 or (project / sp.CODEX_LAUNCHER).exists():
+    preview = sp.sync(project, dest, codex_only=True)
+    if preview.changed != 2 or preview.errors or (project / sp.CODEX_LAUNCHER).exists():
         bad.append('Codex 限定預演沒有列出兩項，或竟然寫檔')
-    changed, _ = sp.sync(project, dest, True, codex_only=True)
+    plan = sp.sync(project, dest, codex_only=True)
+    changed = len(sp.apply_plan(plan)[0])
     got = json.loads(wiring.read_text(encoding='utf-8'))
     if changed != 2 or codex_wiring_problems(got, scripts):
         bad.append('舊專案沒同時升級接線與新增啟動器')
@@ -1355,11 +1358,11 @@ def step_codex_windows(dest, tmp):
         bad.append('Codex 限定同步竟改了 SKILL.md')
     if not any(h.get('command') == 'project-own' for g in got['hooks']['SessionStart'] for h in g['hooks']):
         bad.append('Codex 同步洗掉專案自己的 hook')
-    if sp.sync(project, dest, True, codex_only=True)[0] != 0:
+    if sp.sync(project, dest, codex_only=True).changed != 0:
         bad.append('Codex 限定同步重跑仍改檔')
     absent = tmp / 'codex-absent'
     absent.mkdir()
-    if sp.sync(absent, dest, True, codex_only=True)[0] or list(absent.iterdir()):
+    if sp.sync(absent, dest, codex_only=True).changed or list(absent.iterdir()):
         bad.append('沒有 Codex 接線的專案被自動補裝')
     if bad:
         record('FAIL', 'Codex 接線升級', '；'.join(bad))
@@ -1430,6 +1433,119 @@ def step_codex_windows(dest, tmp):
         return False
     record('OK', 'Codex Windows 啟動器',
            '原生 cmd 實跑：中文／空白路徑、不同 cwd、純文字標頭、stdin／輸出內容／stderr／exit 2 保留；缺 Git Bash 明確 exit 1')
+    return True
+
+
+def step_sync_safety(tmp):
+    """同步器的資料保全與失敗訊號（2026-11-02，查核報告 F02／F03）。
+
+    F02：骨架擁有的是**指向骨架腳本的 handler**，不是含它的整組。舊版 `cur[at] =
+    deepcopy(g)` 把整組當成骨架的，所以專案把自己的 hook 加在同一組裡（`hooks` 陣列
+    本來就放得下多個，完全合法）就會被靜默刪掉——而輸出還寫著「專案其他設定原樣保留」。
+    既有的「接線合併」把專案 hook 放在**另一組**，所以一直沒碰到這個形狀；這裡補的就是
+    同一組的那幾種。
+
+    F03：先算完整個計畫、驗完才寫。舊版邊算邊寫且 `WHOLE` 那圈在 JSON 驗證之前，於是
+    一份壞掉的接線會在覆蓋掉好幾個檔之後才被發現；而 FAIL 只進訊息列、不影響結束碼，
+    所以同步失敗一半照樣 exit 0，最後還印「全部都已經是 v…」。這裡釘的是
+    「任一檔算不出來→零寫入」與「任何目標沒完成→非零退出」。
+    """
+    import sync_project as sp
+    bad = []
+
+    def J(o):
+        return json.dumps(o, ensure_ascii=False, indent=2)
+
+    own = {'type': 'command', 'command': 'bash .claude/hooks/pre-push-handoff.sh'}
+    mine = {'type': 'command', 'command': 'echo project-own'}
+    auth = J({'hooks': {'PreToolUse': [{'matcher': 'Bash|PowerShell',
+                                        'hooks': [dict(own, timeout=30)]}]}})
+
+    # ① 同一組裡有專案自己的 handler，而骨架 handler 要更新 → 兩者都要在
+    cur = J({'hooks': {'PreToolUse': [{'matcher': 'Bash|PowerShell',
+                                       'hooks': [dict(own, timeout=10), mine]}]}})
+    new, _, err = sp.merge_wiring(auth, cur)
+    if err or new is None:
+        bad.append('同組自訂 hook：%s' % (err or '沒認出骨架 handler 要更新'))
+    else:
+        hs = json.loads(new)['hooks']['PreToolUse'][0]['hooks']
+        if not any(h.get('command') == 'echo project-own' for h in hs):
+            bad.append('同組自訂 hook 被刪掉了（F02 的原始缺陷）')
+        if not any(h.get('timeout') == 30 for h in hs):
+            bad.append('同組的骨架 handler 沒更新成權威版')
+
+    # ② 同一組裡有專案 handler，而權威版要改這一組的 matcher → 拒絕並說出新舊值，
+    #    不要靜默把專案那個 handler 的觸發條件一起換掉
+    stale = J({'hooks': {'PreToolUse': [{'matcher': 'Bash',
+                                         'hooks': [dict(own, timeout=30), mine]}]}})
+    new, _, err = sp.merge_wiring(auth, stale)
+    if not err or new is not None:
+        bad.append('matcher 衝突沒被拒絕——專案 handler 的觸發條件會被悄悄換掉')
+    elif 'Bash|PowerShell' not in err or 'matcher' not in err:
+        bad.append('matcher 衝突的訊息沒說出要改什麼（看不出該怎麼手動處理）')
+
+    # ③ 專案有兩組都指向同一支骨架腳本 → 不敢猜要更新哪一組
+    dup = J({'hooks': {'PreToolUse': [{'matcher': 'Bash', 'hooks': [own]},
+                                      {'matcher': 'Bash', 'hooks': [own]}]}})
+    if sp.merge_wiring(auth, dup)[2] is None:
+        bad.append('重複的骨架組沒被拒絕')
+
+    # ④ 分組方式跟權威版不同（兩支腳本擠在一組）→ 拒絕，不要在後面另外補一組，
+    #    否則同一支腳本掛兩次：開場印兩遍、防呆跑兩次
+    other = {'type': 'command', 'command': 'bash .claude/hooks/git-freshness.sh'}
+    lumped = J({'hooks': {'PreToolUse': [{'matcher': 'Bash', 'hooks': [own, other]}]}})
+    merged, _, err = sp.merge_wiring(auth, lumped)
+    if err is None:
+        hs = json.loads(merged)['hooks']['PreToolUse'] if merged else []
+        n = sum('pre-push-handoff.sh' in h.get('command', '')
+                for g in hs for h in g.get('hooks', []))
+        bad.append('分組方式不同卻照樣合併了（骨架腳本出現 %d 次）' % n)
+
+    # ⑤ 只有 commandWindows 的 handler 也要算成骨架的（Codex 的 Windows 接線就是這形狀）
+    if 'pre-push-handoff.sh' not in sp.handler_scripts(
+            {'type': 'command', 'commandWindows': 'cmd /d /c x.cmd pre-push-handoff.sh'}):
+        bad.append('只有 commandWindows 的 handler 沒被認成骨架的')
+
+    # ── F03：拿一個最小假專案跑真的 CLI
+    proj = tmp / 'sync-safety' / 'proj'
+    (proj / '.claude' / 'skills' / 'handoff').mkdir(parents=True)
+    skill = proj / '.claude' / 'skills' / 'handoff' / 'SKILL.md'
+    skill.write_text('stale skill', encoding='utf-8', newline='')
+    wiring = proj / '.claude' / 'settings.json'
+    wiring.write_text('{ not json', encoding='utf-8', newline='')
+
+    def cli(*args):
+        return run([sys.executable, '-X', 'utf8', 'tools/sync_project.py'] + list(args),
+                   cwd=ROOT)
+
+    r = cli(str(proj), '--write')
+    if r.returncode == 0:
+        bad.append('壞 JSON 的目標竟然 exit 0（F03 的原始缺陷）')
+    if skill.read_text(encoding='utf-8') != 'stale skill':
+        bad.append('算不出來卻已經寫了別的檔——preflight 沒有擋住部分寫入')
+    if '全部都已經是' in r.stdout:
+        bad.append('失敗卻宣稱「全部都已經是最新版」')
+
+    r = cli(str(tmp / 'sync-safety' / 'absent'))
+    if r.returncode == 0 or '全部都已經是' in r.stdout:
+        bad.append('不存在的目標竟然 exit 0 或宣稱最新版')
+
+    # 修好之後要真的寫得進去、而且 exit 0——修法不能嚴到什麼都不敢改
+    wiring.write_text('{"hooks":{}}', encoding='utf-8', newline='')
+    r = cli(str(proj), '--write')
+    if r.returncode != 0 or skill.read_text(encoding='utf-8') == 'stale skill':
+        bad.append('正常的目標沒同步成功（exit %d）' % r.returncode)
+    r = cli(str(proj))
+    if r.returncode != 0 or '全部都已經是' not in r.stdout:
+        bad.append('重跑沒有回到「全部都已經是」且 exit 0')
+
+    if bad:
+        record('FAIL', '同步安全', '；'.join(bad))
+        return False
+    record('OK', '同步安全',
+           'handler 層所有權：同組自訂 hook 保留、matcher 衝突與重複／異常分組拒絕、'
+           'commandWindows 認得出來；preflight：壞 JSON 零寫入、失敗非零退出、'
+           '修好後照樣同步得動')
     return True
 
 
@@ -1936,6 +2052,7 @@ def main():
         step_repo_handoff()
         step_sync_coverage(dest)
         step_sync_self_guard()
+        step_sync_safety(tmp)
         step_misc(dest, work)
     finally:
         if args.keep:
