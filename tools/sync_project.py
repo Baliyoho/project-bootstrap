@@ -397,6 +397,15 @@ def sync_wiring(project, gen, rels, plan):
 def sync(project, gen, codex_only=False):
     """算出這個目標要改什麼，**不寫任何檔**。回傳 Plan；寫入是 apply_plan 的事。"""
     plan = Plan()
+    if not codex_only:
+        core = read(project / '.claude/skills/handoff/SKILL.md') or ''
+        target = read(gen / '.claude/skills/handoff/SKILL.md') or ''
+        def source(text):
+            return next((s.strip() for s in text.splitlines() if '<!-- source:' in s), '無版本標記')
+        plan.msgs.append('  核心版本：%s → %s' % (source(core), source(target)))
+        protocol = read(project / 'docs/ai-notes/handover-protocol.md')
+        if protocol is not None and '**核心優先序：SKILL.md**' not in protocol:
+            plan.msgs.append('  MIGRATE docs/ai-notes/handover-protocol.md：舊實例須人工遷移優先序與 override；不覆蓋專案規則，新 skill 核心優先')
 
     for rel in WHOLE:
         if codex_only and rel != CODEX_LAUNCHER:

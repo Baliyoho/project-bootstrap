@@ -2957,6 +2957,50 @@ def step_flow_contract(dest, tmp):
            '兩支 hook 實跑 ahead-only／分岔／fetch 失敗均要求停止；舊 rebase 建議負向重現')
 
 
+def core_priority_problems(skill, protocol):
+    bad = []
+    for name, text in (('skill', skill), ('protocol', protocol)):
+        if text.count('**核心優先序：SKILL.md**') != 1:
+            bad.append(name + ' 核心優先序不唯一或不一致')
+        for token in ('不同步的專案實例', '升級時須人工遷移', '不得在單一專案就地修改共用 skill',
+                      'override', '使用者明確指示仍優先'):
+            if token not in text:
+                bad.append(name + ' 缺 ' + token)
+        if re.search(r'兩者衝突時.*(?:以協定為準|以本檔為準)', text):
+            bad.append(name + ' 恢復舊優先序')
+    return bad
+
+
+def step_core_priority(dest, tmp):
+    import sync_project as syncer
+    skill = read_lf(dest / '.claude/skills/handoff/SKILL.md')
+    protocol = read_lf(dest / 'docs/ai-notes/handover-protocol.md')
+    bad = core_priority_problems(skill, protocol)
+    for index in (0, 1):
+        for token in ('**核心優先序：SKILL.md**', '升級時須人工遷移', '不得在單一專案就地修改共用 skill'):
+            pair = [skill, protocol]
+            pair[index] = pair[index].replace(token, '舊規則')
+            if not core_priority_problems(*pair):
+                bad.append('負向測試未擋 ' + token)
+    # 不依賴 Git 歷史也可驗：把兩份文件頂端的舊宣告還原。
+    for index, line in enumerate(('兩者衝突時**以協定為準**，並就地修正本檔。',
+                                  '兩者衝突時**以本檔為準**，並就地修正 skill。')):
+        pair = [skill, protocol]
+        pair[index] = line + '\n' + pair[index]
+        if not core_priority_problems(*pair):
+            bad.append('反向優先序未擋')
+    project = tmp / 'priority-project'
+    shutil.copytree(dest, project)
+    write_lf(project / 'docs/ai-notes/handover-protocol.md', '舊協定，專案自訂規則保留\n')
+    plan = syncer.sync(project, dest)
+    if not any('MIGRATE' in m for m in plan.msgs) or not any('核心版本' in m for m in plan.msgs):
+        bad.append('同步未列核心版本與人工遷移需求')
+    if any(rel == 'docs/ai-notes/handover-protocol.md' for _, _, rel in plan.writes):
+        bad.append('同步覆蓋專案協定')
+    record('FAIL' if bad else 'OK', '核心與實例優先序', '；'.join(bad) if bad else
+           '兩份宣告一致、override 範圍明確、8 個負向測試；同步列核心版本與 MIGRATE，不覆蓋舊實例')
+
+
 def run_checks(dest, tmp):
     work = None
     seen = step_regenerate(dest) and step_fill(dest)
@@ -2986,6 +3030,7 @@ def run_checks(dest, tmp):
     step_misc(dest, work)
     step_zip_gate(tmp)
     step_flow_contract(dest, tmp)
+    step_core_priority(dest, tmp)
 
 
 def main():

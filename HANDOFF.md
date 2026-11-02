@@ -6,7 +6,7 @@
 ## 任務目標
 
 維護 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的協作制度。
-查核 16 條已修 12 條，剩 F10、F12、F13、F16；細節以
+查核 16 條已修 13 條，剩 F12、F13、F16；細節以
 [project-bootstrap-audit-progress.md](project-bootstrap-audit-progress.md) 為準，查核報告仍是凍結快照。
 
 ## Git 狀態
@@ -14,10 +14,12 @@
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
 - **工作中**：`DESKTOP-M8MRS05` ／ `Codex CLI` ／ `㊣　26110221｜接手剩餘查核｜工作中｜交棒0次`，2026-11-02 22:03 (+08) 開工
-- **骨架版本**：`2026-11-02.5`
+- **骨架版本**：`2026-11-02.6`
 - 本機能力：Windows、Python 3.13.15、Git Bash、PowerShell；本輪 fetch、開工 push 成功。
 
 ## 已完成
+
+- F10：核心優先序與 override 範圍；第 47 項與舊版負向實跑通過，版本 .6 已同步。
 
 - F11：六狀態表、ahead-only／fetch 失敗、切分支後重驗、A4 只記差異、B7 驗最終文件。
 - A5／C push 明列例外；C 保留占用不計交棒。兩支開場 hook 異常提示與程序一致。
@@ -27,7 +29,7 @@
 
 ## 未完成／下一步
 
-1. 從 F10 開始，再按 F12 → F13 → F16；先讀進度報告的驗收門檻。
+1. F10 已完成；接著做 F12 → F13 → F16，先讀驗收門檻。
 2. 六個專案同步變更仍各自在自己的 session 收尾，不在骨架 session 代提交。
 3. 本輪重跑文件檢查：兩個專案仍缺「待續分支」，一個仍有重複「已完成」章節，
    共三個 exit 2；其餘三個 exit 0。這些既有問題須在各專案處理。
@@ -35,7 +37,7 @@
 
 ## 地雷與注意事項
 
-- 既存協定是不同步的 INSTANCE，舊協定優先序衝突仍未解；下一項 F10，不可宣稱所有專案制度已一致。
+- F10 核心優先序已統一；六個專案舊協定仍須人工遷移，sync 會印 MIGRATE，不覆蓋專案實例。
 
 - 提醒只比字面 git push、目前分支與 origin；不解析選項／remote／refspec。
   GUI／script 可能漏判，純文字可能誤擋；已提交開工標記也會過，不代表已交棒。
@@ -45,7 +47,7 @@
 
 ## 服務查證與期望快照
 
-`python -X utf8 tools/verify_bootstrap.py`：exit 0、46 項全過、無 skip；重生骨架 22 檔。
+`python -X utf8 tools/verify_bootstrap.py`：exit 0、47 項全過、無 skip；重生骨架 22 檔。
 B4：沒有獨立 check_docs.py，由上述驗證涵蓋。F11 契約與 hook 情境全部通過。
 
 ## 懸置事項（AI 勿自行處理）

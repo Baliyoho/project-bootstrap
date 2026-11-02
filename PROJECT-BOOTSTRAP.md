@@ -10,7 +10,9 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-02.5**（2026-11-02／F11：補 A／B／C 狀態表、ahead-only 與 fetch 失敗判讀、切分支後重驗；A4 只記差異，B7 驗最終快照；A5／C push 明列例外，hook 分岔提示改為停下等待指示。skill 與兩支 hook 標記更新至 .5。）
+> 版本：**2026-11-02.6**（2026-11-02／F10：共用核心優先於不同步的協定實例，明列 override 範圍與人工遷移需求；不在單一專案就地改 skill。）
+>
+> 前一版 **2026-11-02.5**（2026-11-02／F11：補 A／B／C 狀態表、ahead-only 與 fetch 失敗判讀、切分支後重驗；A4 只記差異，B7 驗最終快照；A5／C push 明列例外，hook 分岔提示改為停下等待指示。skill 與兩支 hook 標記更新至 .5。）
 >
 > 前一版 **2026-11-02.4**（2026-11-02／F06：AI push 提醒移除未提交 HANDOFF 放行；明列命令／remote／refspec 邊界，擴充情境與舊捷徑負向測試。skill 的過度保證一併修正，因此 VERSION 與 skill／3.11 標記更新至 .4。）
 >
@@ -71,7 +73,7 @@
 | **AI push 提醒** | `.claude/hooks/pre-push-handoff.sh`（PreToolUse hook） | 有限字面判讀，缺已提交 HANDOFF 差異時提醒並阻擋；保障範圍見 3.11 |
 
 **分工**：`docs/ai-notes/handover-protocol.md`＝**規則與理由**（為什麼、什麼算對）；skill＝**怎麼做**（指令、判讀表、模板）。
-兩者衝突以協定為準。這樣才不會變成「同一套程序有兩份會各自演化的副本」。
+共用交接制度衝突時以同步的 skill 為準；協定保存理由與明確的專案 override，不覆蓋核心程序。這樣才不會讓不同步的舊實例推翻已升級的制度（2026-11-02／F10）。
 
 **還沒有這套制度的資料夾走 skill 的模式 0（建制）**：使用者講一句「幫我把交接機制建起來」，agent 就照本部署包逐檔生成，而不是憑印象重刻——憑印象生出來的版本缺的永遠是最貴的那部分（每條規則後面的「為什麼」、hook 的邊界條件），看起來像那套制度，實際擋不住任何事。
 這裡有個雞生蛋問題：skill 是部署**之後**才存在於專案裡的。所以模式 0 真正會被載入的地方是**全域副本**（`~/.claude/skills/handoff/`、`~/.codex/skills/handoff/`）；專案內那份仍保留模式 0，是為了讓副本可以無腦整份覆蓋，不必維護兩種版本。
@@ -676,7 +678,16 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 > 適用於同一模型換 session、跨模型、跨日及跨機器續作。
 > 建立：{{TODAY}}。最後更新：{{TODAY}}。
 >
-> **本檔＝規則與判準**（為什麼這樣做、什麼算做對）。**可執行程序**（指令序列、Git 判讀表、HANDOFF 模板）在 [handoff skill](../../.claude/skills/handoff/SKILL.md)，不在此重複——那是唯一該照著做的一份。兩者衝突時**以本檔為準**，並就地修正 skill。
+> **本檔＝規則與判準**（為什麼這樣做、什麼算做對）。**可執行程序**（指令序列、Git 判讀表、HANDOFF 模板）在 [handoff skill](../../.claude/skills/handoff/SKILL.md)，不在此重複。
+> **核心優先序：SKILL.md**。共用交接制度衝突時，以同步的 skill 為準；本檔是不同步的專案實例，升級時須人工遷移。不得在單一專案就地修改共用 skill，應回部署包修正再同步。
+
+## 專案 override
+
+只在此列出專案的額外限制、替代驗證入口及適用步驟，附日期、理由與授權來源；沒有就寫「無」。override 可加嚴或填補核心留給專案的設定，不能默默放寬同步、占用、驗證與發布門檻。使用者明確指示仍優先。升級時逐條比對新版核心，衝突先回報，不自動覆蓋專案規則。
+
+無。
+
+2026-11-02／F10：舊協定不同步卻自稱優先，會推翻新版程序；因此核心優先序只有一個家，實例只保存理由與有範圍的專案差異。
 
 ## 三層分工
 
@@ -865,12 +876,13 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02.6 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
 > **本檔＝程序**：做什麼、下哪些指令、什麼時候必須停下來問人。
-> **規則與理由**（三層分工、分支模型、SKIPPED 判準、事故史）在 `docs/ai-notes/handover-protocol.md`。兩者衝突時**以協定為準**，並就地修正本檔。
+> **核心優先序：SKILL.md**。共用交接制度衝突時，以本檔的同步版本為準，包含仍宣稱協定優先的舊實例。`docs/ai-notes/handover-protocol.md` 保存理由與明確的專案 override，是不同步的專案實例，升級時須人工遷移。
+> override 只可加嚴或填補核心留給專案的設定，不能默默放寬同步、占用、驗證與發布門檻；使用者明確指示仍優先。不得在單一專案就地修改共用 skill，應回部署包修正再同步（2026-11-02／F10：避免舊協定推翻新程序）。
 > **例外是模式 0（建制）**：那一段的權威是 `PROJECT-BOOTSTRAP.md` 部署包（協定檔本身也是它生出來的），衝突時以部署包為準。
 > 純 Markdown，任何模型（Claude／Gemini／Codex）都應直接讀取，不限某一家工具。
 
