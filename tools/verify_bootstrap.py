@@ -67,6 +67,12 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
   本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
+  verify_state ——失敗不得吞成 exit 0：命令非零退出、HTTP 500、連不上、200 但回應內容
+                  不對都要讓結束碼非零；缺憑證是 SKIP（`--strict` 才非零），未填仍回 0，
+                  祕密要遮罩。九個情境全部實跑（2026-11-02 加／F04）
+  交接快照     ——check_docs 的第 7 項：HANDOFF.md 不見了、超過 80 行、缺必要章節或欄位
+                  重複都要 exit 2，`--docs-only` 要真的關得掉；連結檢查不得把程式碼範例、
+                  帶 title 與角括號連結誤報，但真的死連結仍要抓到（2026-11-02 加／F08）
   Python 下限 ——兩支維護工具檔頭都有 MIN_PY 守門且同號、README 範本寫出部署後工具的
                   下限、四支 .py 都沒有用到高於下限的 API。掃描前先把註解與字串塗白，
                   否則「解釋為什麼不要用」會被判成用法（2026-11-02 加／F14）
@@ -102,8 +108,10 @@ import re
 import shutil
 import subprocess
 import sys
+import http.server
 import io
 import tempfile
+import threading
 import tokenize
 import zipfile
 from datetime import date
@@ -1128,7 +1136,14 @@ def step_self():
     dead = []
     for rel in mds:
         base = (ROOT / rel).parent
-        for link in re.findall(r'\]\(([^)]+)\)', (ROOT / rel).read_text(encoding='utf-8')):
+        # 行內 code span 先拿掉：寫在反引號裡的 `[x](path)` 是**程式碼範例**，不是連結，
+        # 那個路徑本來就不該存在。2026-11-02 踩到——3.14 的新 docstring 要解釋
+        # 「帶 title 的連結會被誤報」，而寫下那個例子本身就觸發了同一個誤報。
+        # 只拿掉行內 code，不拿掉圍欄：部署包的檔案範本整個在圍欄裡，跳過圍欄會讓
+        # template_link() 那層覆蓋（範本指向本 repo 檔案時要抓得到）整個消失。
+        body = re.sub(r'`[^`\n]*`', '',
+                      (ROOT / rel).read_text(encoding='utf-8'))
+        for link in re.findall(r'\]\(([^)]+)\)', body):
             if link.startswith(('http://', 'https://', 'mailto:', '#')):
                 continue
             target = link.split('#')[0]
@@ -2358,6 +2373,210 @@ def step_claims(dest):
     return True
 
 
+# ── verify_state 的失敗訊號（F04）────────────────────────────────────────
+# 驅動程式：把 CHECKS 從外面灌進去，不碰範本的「專案設定」區塊。用 import 而不是
+# 文字替換，是因為要驗的是 main() 的**行為**（狀態分類與結束碼），不是它長什麼樣。
+STATE_DRIVER = """import json
+import sys
+sys.path.insert(0, '.')
+import verify_state as vs
+cfg = json.loads(sys.argv[1])
+vs.BASE = cfg.get('base', '')
+vs.SECRET_FILE = cfg.get('secret_file', '.env')
+vs.HTTP_CHECKS = [tuple(x) for x in cfg.get('http', [])]
+vs.CMD_CHECKS = [tuple(x) for x in cfg.get('cmd', [])]
+vs.OPTIONAL = tuple(cfg.get('optional', []))
+sys.exit(vs.main(cfg.get('argv', [])))
+"""
+
+
+class _StateHandler(http.server.BaseHTTPRequestHandler):
+    """/good → 200 ＋ JSON；其餘 → 500。只聽 127.0.0.1，不碰網路。"""
+
+    def do_GET(self):
+        body = b'{"status": "ok"}' if self.path == '/good' else b'boom'
+        self.send_response(200 if self.path == '/good' else 500)
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):
+        pass
+
+
+def step_state_exit(dest):
+    """verify_state 不得把失敗吞成 exit 0（2026-11-02／查核報告 F04）。
+
+    原始缺陷：在生成的檢查裡放一個 exit 7 的命令，畫面上印著 `=rc7`，而 `main()` 仍然
+    `return 0`；HTTP 的 FAIL／ERROR 也只是印字。於是任何「跑 verify_state，exit 0 就算
+    服務驗過」的下游流程都會誤過關——而這支腳本存在的理由正是「把接手查證壓成一個回合」，
+    也就是說它的結束碼本來就會被當成結論用。
+
+    九個情境全部實跑（不是讀原始碼）：rc7、HTTP 500、連不上、200 但回應內容不對、
+    全綠、缺憑證（預設／`--strict`／列進 OPTIONAL）、未填 CHECKS，再加一個祕密遮罩。
+    `NOT_CONFIGURED` 仍然回 0 是刻意的，所以它也在表裡——免得下一棒「順手把它也改成非零」。
+    """
+    work = pathlib.Path(tempfile.mkdtemp(prefix='state-exit-'))
+    shutil.copyfile(dest / 'tools' / 'verify_state.py', work / 'verify_state.py')
+    write_lf(work / 'driver.py', STATE_DRIVER)
+    write_lf(work / 'empty.env', 'OTHER=1\n')
+    write_lf(work / 'real.env', 'API_KEY=supersecretvalue\n')
+
+    srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), _StateHandler)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    base = 'http://127.0.0.1:%d' % srv.server_address[1]
+    leak = [sys.executable, '-c', 'print("leak " + "supersecretvalue")']
+    cases = (
+        ('命令非零退出', {'cmd': [['boom', [sys.executable, '-c', 'import sys; sys.exit(7)']]]},
+         2, 'FAIL', None),
+        ('HTTP 500', {'base': base, 'http': [['bad', '/bad', False]]}, 2, 'FAIL', None),
+        ('連不上', {'http': [['down', 'http://127.0.0.1:1/', False]]}, 2, 'ERROR', None),
+        ('200 但內容不對', {'base': base, 'http': [['good', '/good', False, 'absent']]},
+         2, 'FAIL', None),
+        ('全綠', {'base': base, 'http': [['good', '/good', False, 'ok']],
+                  'cmd': [['fine', [sys.executable, '-c', 'pass']]]}, 0, 'PASS', None),
+        ('缺憑證（預設）', {'base': base, 'secret_file': 'empty.env',
+                            'http': [['needs', '/good', True]]}, 0, 'SKIP', None),
+        ('缺憑證（--strict）', {'base': base, 'secret_file': 'empty.env', 'argv': ['--strict'],
+                                'http': [['needs', '/good', True]]}, 3, 'SKIP', None),
+        ('缺憑證但列進 OPTIONAL', {'base': base, 'secret_file': 'empty.env',
+                                   'argv': ['--strict'], 'optional': ['needs'],
+                                   'http': [['needs', '/good', True]]}, 0, 'SKIP', None),
+        ('未填 CHECKS', {}, 0, 'NOT_CONFIGURED', None),
+        ('祕密遮罩', {'secret_file': 'real.env', 'cmd': [['leak', leak]]},
+         0, '***', 'supersecretvalue'),
+    )
+    bad = []
+    try:
+        for name, cfg, want_rc, want_in, forbid in cases:
+            r = run([sys.executable, '-X', 'utf8', 'driver.py', json.dumps(cfg)], cwd=work)
+            if r.returncode != want_rc:
+                bad.append('%s：期望 exit %d，實得 %d（%s）'
+                           % (name, want_rc, r.returncode,
+                              r.stdout.strip().replace('\n', ' / ')[:70] or r.stderr[:70]))
+            elif want_in not in r.stdout:
+                bad.append('%s：輸出裡沒有「%s」（%s）'
+                           % (name, want_in, r.stdout.strip()[:70]))
+            elif forbid and forbid in r.stdout:
+                bad.append('%s：祕密原文出現在輸出裡' % name)
+    finally:
+        srv.shutdown()
+        srv.server_close()
+        shutil.rmtree(work, ignore_errors=True)
+    if bad:
+        record('FAIL', 'verify_state 失敗訊號', '；'.join(bad[:4]))
+        return False
+    record('OK', 'verify_state 失敗訊號',
+           '%d 個情境實跑：非零退出與 HTTP 失敗讓結束碼非零、連不上算 ERROR、'
+           '200 但內容不對也算 FAIL、缺憑證是 SKIP（--strict 才非零，OPTIONAL 放行）、'
+           '未填仍回 0、祕密有遮罩' % len(cases))
+    return True
+
+
+# ── 交接快照檢查（F08）──────────────────────────────────────────────────
+# 連結誤報的 fixture：三種「看起來像連結但不是」的寫法都不該被報成死連結。
+LINK_FIXTURE = """\
+# 連結誤報測試
+
+> 最後更新：2026-11-02
+
+圍欄裡的程式碼範例不是連結：
+
+```python
+print('[x](does-not-exist.md)')
+```
+
+行內的 `[y](also-missing.md)` 也不是。
+
+真的連結要解析得對：[說明](README.md)、[帶 title](README.md "說明")、
+[角括號](<README.md>)。
+"""
+
+
+def step_snapshot_guard(dest):
+    """check_docs 的第 7 項：交接快照不見了必須擋下（2026-11-02／查核報告 F08）。
+
+    原始缺陷：第 6 項（「工作中」欄位）是「HANDOFF.md 有出現在輸入清單裡才驗」，所以
+    **部署後整份刪掉或改名時，它回報乾淨**——而那一刀正好把跨機器誤接棒防呆連根拔掉。
+    80 行、必要欄位與必要章節是 skill B6 的規則，在此之前只有骨架自己這個 repo 在驗，
+    使用者的專案拿不到（報告原話：「本 repo 有較強版本，但沒有部署給使用者」）。
+
+    七個情境都實跑 `check_docs.py`：刪檔、超行、缺章節、欄位重複各要 exit 2；
+    `--docs-only` 下刪檔要 exit 0（那個開關要真的是開關）；連結誤報的 fixture 要 exit 0；
+    最後放一個真的死連結進去，確認「不誤報」不是靠「什麼都不報」換來的。
+    """
+    handoff = dest / 'HANDOFF.md'
+    original = handoff.read_text(encoding='utf-8')
+    # 放在根目錄：fixture 裡那三個「真的連結」指向 README.md，放到 docs/ai-notes/
+    # 底下會解析不到，那會變成 fixture 自己製造的死連結（第一版就是這樣誤判）。
+    probe = dest / 'link-probe.md'
+
+    def check(args=()):
+        git(['add', '-A'], dest)
+        return run([sys.executable, '-X', 'utf8', 'tools/check_docs.py', *args], cwd=dest)
+
+    bad = []
+    try:
+        handoff.unlink()
+        r = check()
+        if r.returncode != 2 or 'HANDOFF.md' not in r.stdout:
+            bad.append('刪掉 HANDOFF.md 沒被擋下（exit %d）' % r.returncode)
+        write_lf(handoff, original)
+
+        # --docs-only 用「超行」驗，不用「刪檔」：刪掉 HANDOFF.md 會讓 README／AGENTS
+        # 指向它的連結變成**真的**死連結，於是 --docs-only 照樣 exit 2——那不是開關沒用。
+        write_lf(handoff, original.rstrip('\n') + '\n' + '- 填行\n' * 90)
+        r = check()
+        if r.returncode != 2 or '80 行' not in r.stdout:
+            bad.append('超過 80 行沒被擋下（exit %d）' % r.returncode)
+        r = check(['--docs-only'])
+        if r.returncode != 0:
+            bad.append('--docs-only 下仍然 exit %d（這個開關要真的關掉第 7 項）'
+                       % r.returncode)
+
+        write_lf(handoff, original.replace('## 已完成', '## 做完的'))
+        r = check()
+        if r.returncode != 2 or '已完成' not in r.stdout:
+            bad.append('缺必要章節沒被擋下（exit %d）' % r.returncode)
+
+        # 章節重複＝往下疊成日誌（B6 禁止）。2026-11-02 在真專案上量到一份有兩個
+        # 「## 已完成（日期）」——所以比對開頭、罰重複，而不是罰標題的措辭。
+        write_lf(handoff, original + '\n## 已完成（更早）\n\n- 舊的\n')
+        r = check()
+        if r.returncode != 2 or '不要往下疊' not in r.stdout:
+            bad.append('章節重複沒被擋下（exit %d）' % r.returncode)
+
+        write_lf(handoff, original.replace('- **交棒者**', '- **交接時間**', 1))
+        r = check()
+        if r.returncode != 2 or '交棒者' not in r.stdout:
+            bad.append('欄位重複／缺漏沒被擋下（exit %d）' % r.returncode)
+        write_lf(handoff, original)
+
+        write_lf(probe, LINK_FIXTURE)
+        r = check()
+        if r.returncode != 0:
+            bad.append('連結誤報：程式碼範例／帶 title／角括號被當成死連結（exit %d：%s）'
+                       % (r.returncode, r.stdout.strip()[:90]))
+        write_lf(probe, LINK_FIXTURE + '\n[真的死連結](no-such-file.md)\n')
+        r = check()
+        if r.returncode != 2 or 'no-such-file.md' not in r.stdout:
+            bad.append('真的死連結沒被抓到（exit %d）——不誤報不能靠什麼都不報換'
+                       % r.returncode)
+    finally:
+        write_lf(handoff, original)
+        probe.unlink(missing_ok=True)
+        git(['add', '-A'], dest)
+
+    if bad:
+        record('FAIL', '交接快照檢查', '；'.join(bad[:4]))
+        return False
+    record('OK', '交接快照檢查',
+           '刪檔／超 80 行／缺章節／章節重複／欄位重複都 exit 2，--docs-only 真的關得掉'
+           '（用超行情境驗，刪檔會連帶產生真的死連結）；'
+           '程式碼範例、帶 title 與角括號連結不誤報，真的死連結仍 exit 2')
+    return True
+
+
 def step_misc(dest, work=None):
     ok = True
     for label, rel in (('settings.json', '.claude/settings.json'),
@@ -2393,6 +2612,8 @@ def step_misc(dest, work=None):
     step_tool_prose(dest)
     step_python_floor(dest)
     step_claims(dest)
+    step_state_exit(dest)
+    step_snapshot_guard(dest)
 
     r = run([sys.executable, '-X', 'utf8', 'tools/verify_state.py'], cwd=dest)
     if r.returncode == 0 and 'NOT_CONFIGURED' in r.stdout:

@@ -10,7 +10,11 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-02**（**維護工具的 Python 下限，以及五處「已修正的主張又在範本裡復活」，一起修掉了。這一輪沒有動 `SKILL.md`、也沒有動任何帶 `source:` 標記的範本，所以 `VERSION` 與那些標記都不跳（鐵律 1、2）、`sync_project.py` 零改動、六個專案沒有新的同步債。**
+> 版本：**2026-11-02**（**兩支部署後腳本的錯誤訊號與保障範圍修掉了：`verify_state.py` 不再把失敗吞成 exit 0，`check_docs.py` 補上交接快照檢查並停止把程式碼範例報成死連結。**這一輪動到 3.14 與 3.15 兩個範本，所以它們的 `source:` 標記跳到 `v2026-11-02.3`（今天第三個帶標記的改動）；`SKILL.md` 一個字沒動，`VERSION` 與版本行照鐵律 1 不跳。
+> **F04（服務失敗仍回傳成功碼）**：舊版 `verify_state.py` **每一種情況都 `return 0`**——在檢查裡放一個 exit 7 的命令，畫面印著 `boom=rc7`，結束碼仍是 0（修正前實跑確認）。而這支腳本存在的理由正是「把接手查證壓成一個回合」，也就是說**它的結束碼本來就會被當成結論用**。現在每項檢查只回 PASS／FAIL／ERROR／SKIP／NOT_CONFIGURED 五種之一，最後印一行彙總：FAIL／ERROR→exit 2；SKIP 獨立列出（缺配置不等於通過），`--strict` 時 exit 3，真正可選的項目寫進 `OPTIONAL`；`NOT_CONFIGURED` 仍回 0（骨架還沒填不是故障，這是刻意保留的明示選擇）。另外兩件報告點到的事：HTTP 檢查可以填 `expect`（狀態碼或回應裡該出現的字），因為**只把「有回應」當成正常是不夠的**——200 配一個空的錯誤頁照樣會過；以及所有輸出都過一層遮罩，命令的 stdout／stderr 與例外訊息都不在我們控制下，而交接快照會被貼進 HANDOFF、對話與 issue。
+> **F08（文件檢查器的保障範圍不足）**：三件事。①**第 6 項「工作中」欄位是「HANDOFF.md 有出現在輸入清單裡才驗」**，所以整份被刪掉或改名時它回報乾淨——那一刀正好把跨機器誤接棒防呆連根拔掉。新增第 7 項「交接快照」：`HANDOFF.md` 必須存在，必要欄位與章節齊備、不超過 80 行（那是 skill B6 的規則，在此之前**只有骨架自己這個 repo 在驗**，使用者的專案拿不到）。⚠️ 修正前實跑時發現「刪掉整份」在標準骨架上其實會 exit 2，但那是**別的文件指向它的連結斷了**——訊息叫你去修連結，不是叫你把快照補回來，而不互相連結的專案連這個副作用都沒有。②連結檢查把圍欄與行內程式碼先塗白，並正確解析`[x](path "title")` 與角括號寫法：舊版會把文件裡的程式碼範例報成死連結，而「這支腳本的 FAIL 可以無視」一旦被學會，真的死連結也跟著被無視。③**名字改成實際範圍**：它查機械可判定的腐化模式，不是完整的 Markdown 驗證器，也不判斷待辦是否真的完成（那是 B6）——舊名「文檔一致性檢查」聽起來像驗過全部，於是「通過」被讀成「文件沒問題」。`--docs-only` 可以只查文件。
+> 守門人：新增第 42 項「verify_state 失敗訊號」（十個情境**全部實跑**：命令非零退出、HTTP 500、連不上、200 但內容不對、全綠、缺憑證的三種處置、未填、祕密遮罩）與第 43 項「交接快照檢查」（刪檔／超 80 行／缺章節／欄位重複都要 exit 2，`--docs-only` 要真的關得掉，連結誤報的 fixture 要 exit 0 而真的死連結仍要 exit 2——不誤報不能靠什麼都不報換）。**兩項都拿 `HEAD` 的舊範本實跑比對過**：舊 `verify_state` 兩個失敗情境都 exit 0，舊 `check_docs` 超 80 行 exit 0 且把 fixture 誤報成死連結，新版反過來。🔴 **代價要寫明：3.14 是 `sync_project.py` 的同步對象，而 `VERSION` 沒跳，所以各專案的落後偵測不會替你講這件事**——這一輪要手動同步，六個專案又多一個檔。寫這兩個測試時自己踩到兩次 fixture 的錯（把 fixture 放進 `docs/ai-notes/` 害它指向的 `README.md` 解析不到、拿「刪檔」去驗 `--docs-only` 而刪檔本身會製造真的死連結），都是**測試自己壞掉而畫面上像受測物壞掉**那一類。原始缺陷與證據見 [project-bootstrap-audit.md](project-bootstrap-audit.md) 的 F04／F08。）
+> 前一版 **2026-11-02**（**維護工具的 Python 下限，以及五處「已修正的主張又在範本裡復活」，一起修掉了。這一輪沒有動 `SKILL.md`、也沒有動任何帶 `source:` 標記的範本，所以 `VERSION` 與那些標記都不跳（鐵律 1、2）、`sync_project.py` 零改動、六個專案沒有新的同步債。**
 > **F14（Python 相容性前提未宣告）**：`verify_bootstrap.py` 用 `Path.read_text(..., newline='')`，而那個參數官方標「Changed in 3.13」；`write_text` 的 `newline` 也要 3.10。文件卻只說「`python` 不存在就用 `python3`」——**失敗的形狀是最壞的那一種**：舊版不會在啟動時說「版本太舊」，而是執行到那一行才炸成 TypeError，沒人會把它聯想到版本。兩支維護工具改用包著 `open(..., newline='')` 的 `read_lf`／`write_lf`，檔頭加 `MIN_PY = (3, 8)` 守門並清楚報錯；部署後兩支腳本本來就只用到 3.8 就有的 API，下限寫進 3.4 README 範本「`python` 不存在就用 `python3`」那一句旁邊。**部署後那兩支刻意不加守門**：`tools/check_docs.py` 是 `sync_project.py` 的同步對象，動它就得跳 `source:` 標記再把六個專案同步一輪，而 `VERSION` 不跟著動、落後偵測不會替你講——為一個「本來就跑得動」的版本宣告製造一筆無聲的同步債並不划算。下限是「不使用更新的 API」的**靜態擔保**，不是「在 3.8 上跑過」：這台機器只有 3.13，要變成實測得先有 CI。
 > **F15（已修正的主張在範本／操作卡復活）**：五處一起修。①3.4 README 範本寫著「其他工具（Gemini／Codex）沒有 skill 機制」，而能力表那一格 2026-10-30 就實測成 ✅（Codex 讀 `~/.codex/skills/` 與 repo 的 `.agents/skills/`，Antigravity 原生讀 `.agents/skills/`）——**新部署的專案第一眼讀到的就是那一句**。②第 6 節說序號算「部署包當天的第幾次修改（跟版本行同一個號）」，`AGENTS.md` 鐵律 2 說算「帶 `source:` 標記的改動」，**兩種說法都不對**，而且今天就有反例（標記到 `.2`、版本行是裸的 `2026-11-02`）；兩邊一起改成「當天第幾個帶標記的改動，跟版本行**不保證同號**——版本行與 `VERSION` 只跟著 `SKILL.md` 走」。③協定範本與接棒 prompt 把 `verify_state` 寫成「有憑證才跑」，那會讓**不需要憑證的本機與公開檢查整批漏掉**，而缺憑證本來只該讓個別層級記 SKIPPED。④README 範本的 prompt A＝交棒、B＝接棒，跟 skill 的 A 接棒／B 交棒**正好相反**，於是每次指路都要先做一次字母翻譯、而翻錯沒有徵兆；字母直接取消，標題改成「收工時／開工時」並寫出它跑哪個模式。⑤「可攜層到哪都成立」「三層自動發生」兩句過度保證改成「不需要任何設定就讀得到」「把漏做的機會壓低」，並寫明**載入、遵循、執行是三種不同的證據**——遵循那一種目前唯一的量測是 2026-11-01 的六個收尾 session，git 結果全對、其中兩個仍然漏了改 session 名稱。
 > 守門人：新增第 40 項「Python 版本下限」與第 41 項「已修正的主張沒復活」。後者**刻意不是一張禁句表**（F15 的改善建議明寫「新的措辭會再次繞過」）：每一項都綁在一個結構上——能力表的那一格、skill 的字母對應、同一條規則的單一定義；而「」裡的引用不算主張，因為鐵律 3 要求保留為什麼，而「為什麼」幾乎一定要引用被改掉的舊說法。**兩項都拿 `HEAD`（修正前）的內容實跑過：17 處矛盾與 3 處版本地雷全部判出來。**兩個踩到才知道的點：①掃 API 之前必須把註解與字串塗白，否則 `read_lf` 的 docstring 裡那句「不要改回 `Path.read_text(..., newline='')`」會被判成用法，而那種假陽性會逼下一棒把理由刪掉；②第一版的例外寫成「整行含 `handoff skill` 就放行」，而要擋的那一句所在的那一行開頭正好是「程序已經寫成 **handoff skill** 那個連結」——例外吃掉了唯一的目標，畫面上卻是 ok，所以例外縮到「命中的那一段」。原始缺陷與證據見 [project-bootstrap-audit.md](project-bootstrap-audit.md) 的 F14／F15。）
@@ -351,7 +355,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 │   │   └─ roadmap.md               ← 持久待辦總表
 │   └─ mockups/                     ← 選用：與使用者定案的 UI 規格
 └─ tools/
-    ├─ check_docs.py                ← 文檔一致性檢查
+    ├─ check_docs.py                ← 文件與交接快照的機械檢查
     └─ verify_state.py              ← 一鍵現況查證（骨架，依專案填）
 ```
 
@@ -556,8 +560,8 @@ tools/                              維運腳本（見下）
 
 | 腳本 | 做什麼 |
 |---|---|
-| `tools/verify_state.py` | **一鍵驗證**服務現況，輸出 key=value 事實快照，與 HANDOFF 的期望快照比對 |
-| `tools/check_docs.py` | **文檔一致性檢查**：死連結、過期網址、缺日期標頭、硬編數量、殘留佔位符。動過 `.md` 就跑 |
+| `tools/verify_state.py` | **一鍵驗證**服務現況，輸出 key=value 事實快照 ＋ 彙總行，與 HANDOFF 的期望快照比對。**結束碼有意義**：0＝沒有 FAIL／ERROR，2＝有，3＝`--strict` 且有缺配置的 SKIP |
+| `tools/check_docs.py` | **文件與交接快照的機械檢查**：死連結、過期網址、缺日期標頭、硬編數量、殘留佔位符、交接快照的欄位／章節／行數。動過 `.md` 就跑；`--docs-only` 只查文件。**它不判斷文件寫得對不對**，也不代替交接程序 B6 核對待辦 |
 
 ```bash
 python -X utf8 tools/verify_state.py
@@ -629,7 +633,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 | `.claude/settings.local.json` | 各機器本地設定（**不進 Git**） | 各機器自己 | 換機器 |
 | [.codex/hooks.json](.codex/hooks.json) | Codex CLI 的 hook 接線——掛的是上面**同樣那兩個 `.sh`**，不另存一份腳本 | 本專案 | 加減 hook |
 | [.agents/skills/handoff/SKILL.md](.agents/skills/handoff/SKILL.md) | Antigravity 原生讀 `.agents/`：只放指向權威版的指標 | 指向 `.claude/` 那份 | 幾乎不動 |
-| [tools/check_docs.py](tools/check_docs.py) | 文檔一致性檢查：死連結／過期字串／缺日期標頭／硬編數量／殘留佔位符 | 部署包（「專案設定」區塊除外，那塊本來就該依專案調） | 專案設定要調 |
+| [tools/check_docs.py](tools/check_docs.py) | 文件與交接快照的機械檢查：死連結／過期字串／缺日期標頭／硬編數量／殘留佔位符／交接快照結構 | 部署包（「專案設定」區塊除外，那塊本來就該依專案調） | 專案設定要調 |
 | [tools/verify_state.py](tools/verify_state.py) | 一鍵現況查證，輸出 key=value 事實快照 | 本專案（骨架來自部署包） | 服務或檢查項改變 |
 | [.gitignore](.gitignore)、[.gitattributes](.gitattributes) | 排除祕密與運行資料；行末強制 LF | 本專案 | 新增祕密檔或運行目錄 |
 
@@ -1690,13 +1694,20 @@ Thumbs.db
 ````python
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""文檔一致性檢查（交接用）。verify_state.py 查「服務現況」，本腳本查「文件本身」。
+"""文件與交接快照的機械檢查（交接用）。verify_state.py 查「服務現況」，本腳本查「文件本身」。
+
+**名字講的就是範圍**（2026-11-02 改／查核報告 F08）：它查**機械可判定**的腐化模式，
+不查「文件寫得對不對」。它不是完整的 Markdown 驗證器（連結檢查是 regex，而且刻意
+跳過圍欄與行內程式碼），也**不判斷待辦是否真的完成**——那是交接程序 B6 的事，沒有
+工具代替得了。舊版叫「文檔一致性檢查」，而「一致性」聽起來像它驗過全部，於是
+「通過」被讀成「文件沒問題」。
 
 用法（專案根目錄執行）：
-  python -X utf8 tools/check_docs.py           # 全部檢查
-  python -X utf8 tools/check_docs.py --quiet   # 只印問題與結論
+  python -X utf8 tools/check_docs.py              # 全部檢查
+  python -X utf8 tools/check_docs.py --quiet      # 只印問題與結論
+  python -X utf8 tools/check_docs.py --docs-only   # 只查文件，不查交接快照（第 7 項）
 
-檢查六項（都是實際發生過的腐化模式）：
+檢查七項（都是實際發生過的腐化模式）：
   1. 死連結     ——markdown 相對連結指向不存在的檔案（整併文件時最常見）
   2. 過期字串   ——換了網址／改了名稱後殘留的舊值（見下方 STALE_PATTERNS，依專案調整）
   3. 缺日期標頭 ——DATED_DIRS 底下每份都要有「最後更新」，否則無法判斷可信度
@@ -1711,11 +1722,17 @@ Thumbs.db
                   「欄位缺席」與「沒人在做」分不開，所以不接受「沒寫就是沒人」：必須明確寫
                   「無（已交棒）」。工具欄同理——少了它，同機器換工具的誤接棒會靜默退化成
                   「大概是你自己另一個視窗」，而退化後的畫面跟「沒這個機制」一模一樣。
-                  沒有 HANDOFF.md 的 repo 整項跳過）
+                  沒有 HANDOFF.md 的 repo 整項跳過——那個洞由第 7 項補）
+  7. 交接快照   ——`HANDOFF.md` 必須存在、必要欄位與章節齊備、不超過 80 行
+                  （2026-11-02 加入／查核報告 F08：第 6 項只在「HANDOFF.md 有出現在
+                  輸入清單裡」時才驗，所以**整份被刪掉或改名時它回報乾淨**，而那正好
+                  把跨機器誤接棒防呆連根拔掉。80 行與必要章節是 skill B6 的規則，
+                  在此之前較強的版本只存在於骨架自己的 repo，沒有部署給使用者。
+                  真的只想查文件時用 `--docs-only`）
 
 問題以結束碼 2 回報，乾淨為 0。本工具唯讀，絕不修改任何檔案。
 
-source: PROJECT-BOOTSTRAP.md v2026-11-02.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+source: PROJECT-BOOTSTRAP.md v2026-11-02.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 「專案設定」區塊以外的內容應與權威版一致；副本落後時用這一行辨識。
 """
 import argparse
@@ -1752,6 +1769,14 @@ PLACEHOLDER_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)
 # 原樣留下、只換掉其餘部分——沒有這個標記它就得用啟發式猜邊界，而猜錯就是把專案自己的
 # 過期字串規則與豁免路徑默默洗掉，然後沒有人會發現。
 
+# 第 7 項要求的欄位與章節。**這是制度的一部分，不是專案設定**——所以放在上面那個
+# 標記之外，`sync_project.py` 升級本檔時會跟著覆蓋。要改就改部署包。
+HANDOFF_FILE = 'HANDOFF.md'
+HANDOFF_FIELDS = ('交接時間', '交棒者', '待續分支', '工作中')
+HANDOFF_SECTIONS = ('任務目標', 'Git 狀態', '已完成', '未完成／下一步',
+                    '地雷與注意事項', '服務查證與期望快照', '懸置事項（AI 勿自行處理）')
+HANDOFF_MAX_LINES = 80
+
 COUNT_RE = re.compile(r'(共|計|全)\s*\d+\s*(份|個|支|條)|\d+\s*份(?!量)')
 COUNT_CONTEXT = ('份', '個檔', '支腳本', '知識庫')
 # 部署訪談會填的佔位符（第 1 節那張表）。這裡刻意用「名字的封閉清單」而不是「任何雙大括號」
@@ -1782,14 +1807,55 @@ def tracked_md():
     return tracked('*.md')
 
 
+FENCE_RE = re.compile(r'^\s*(```+|~~~+)')
+TITLE_RE = re.compile(r'\s+["\'][^"\']*["\']\s*$')
+
+
+def strip_code(text):
+    """把圍欄區塊與行內 code span 換成空白（行號不變）。
+
+    為什麼（2026-11-02／查核報告 F08）：文件裡的程式碼與範例常含 `[x](path)` 這種形狀，
+    那不是連結、那個路徑也不該存在。照掃就會**把正確的文件報成死連結**，而「這支腳本的
+    FAIL 可以無視」一旦被學會，真的死連結也跟著被無視——那比沒有這項檢查更糟。
+    """
+    out, fence = [], None
+    for line in text.split('\n'):
+        m = FENCE_RE.match(line)
+        if fence is not None:
+            out.append('')
+            if m and line.strip().startswith(fence):
+                fence = None
+            continue
+        if m:
+            fence = m.group(1)
+            out.append('')
+            continue
+        out.append(re.sub(r'`[^`]*`', lambda s: ' ' * len(s.group(0)), line))
+    return '\n'.join(out)
+
+
+def link_target(raw):
+    """從 `](...)` 裡取出真正的路徑：去掉 <>、去掉 "title"、去掉 anchor。
+
+    `[x](path "title")` 舊版會拿 `path "title"` 去開檔，必然不存在——又一種假警報。
+    """
+    link = raw.strip()
+    if link.startswith('<') and link.endswith('>'):
+        link = link[1:-1].strip()
+    else:
+        link = TITLE_RE.sub('', link).strip()
+    return link.split('#')[0].strip()
+
+
 def check_links(files):
     bad, total = [], 0
     for md in files:
         posix = md.as_posix()
         if any(posix == p or posix.startswith(p) for p in LINK_OK_PATHS):
             continue
-        for m in re.finditer(r'\[([^\]]*)\]\(([^)]+)\)', md.read_text(encoding='utf-8')):
-            link = m.group(2).split('#')[0].strip()
+        body = strip_code(md.read_text(encoding='utf-8'))
+        for m in re.finditer(r'\[([^\]]*)\]\(([^)]+)\)', body):
+            link = link_target(m.group(2))
             if not link or link.startswith(('http://', 'https://', 'mailto:')):
                 continue
             total += 1
@@ -1889,6 +1955,48 @@ def check_busy_field(files):
     return found, bad
 
 
+def check_snapshot(files):
+    """第 7 項：交接快照的結構（存在、必要欄位、必要章節、行數上限）。
+
+    為什麼第 6 項不夠（查核報告 F08）：它是「HANDOFF.md 有出現在輸入清單裡才驗」，
+    所以**整份被刪掉或改名時，它回報乾淨**——而那一刀正好把跨機器誤接棒防呆連根拔掉，
+    一聲不響。欄位唯一性、必要章節與 80 行這幾條是 skill B6 的規則，在 2026-11-02 之前
+    只有骨架自己的 repo 在驗，使用者的專案拿不到。
+
+    天花板：它驗結構，**不驗內容**。待辦是不是真的做完、快照寫得對不對，仍然只能靠 B6
+    逐項核對；這一項全過不代表狀態正確。
+    """
+    bad = []
+    target = [md for md in files if md.as_posix() == HANDOFF_FILE]
+    if not target:
+        return ['%s 不存在或沒被 git 追蹤——它是這套制度的核心檔，'
+                '少了它 A2.5 的跨機器防呆與 B6 的交接快照都沒有依據'
+                '（真的只想查文件請用 --docs-only）' % HANDOFF_FILE]
+    text = target[0].read_text(encoding='utf-8')
+    lines = text.splitlines()
+    if len(lines) > HANDOFF_MAX_LINES:
+        bad.append('%s 有 %d 行，超過 %d 行——它是當下快照，不是日誌（歷史查 Git；見 B6）'
+                   % (HANDOFF_FILE, len(lines), HANDOFF_MAX_LINES))
+    for label in HANDOFF_FIELDS:
+        hits = re.findall(r'^- \*\*' + re.escape(label) + r'\*\*：(.+)$', text, re.M)
+        if len(hits) != 1 or not hits[0].strip():
+            bad.append('%s 的「%s」欄位要有且只有一列、而且非空（讀到 %d 列）'
+                       % (HANDOFF_FILE, label, len(hits)))
+    for heading in HANDOFF_SECTIONS:
+        # 比對**開頭**而不是整行：標題後面加註記（`## 已完成（2026-11-01）`）無害，
+        # 真正的病是同一節出現兩次——那就是 B6 禁止的「往下疊成日誌」。2026-11-02 在
+        # 六個專案上實跑時量到：整行相等會把加了日期後綴的那一份判成「缺章節」，
+        # 訊息指著錯的方向，而同一份檔案真的有兩個「已完成」。
+        hits = re.findall(r'^## ' + re.escape(heading), text, re.M)
+        if len(hits) == 0:
+            bad.append('%s 缺少章節「## %s」（B6 的覆寫模板有這一節）'
+                       % (HANDOFF_FILE, heading))
+        elif len(hits) > 1:
+            bad.append('%s 有 %d 個「## %s」——它是當下快照，不要往下疊成日誌'
+                       '（歷史查 Git；見 B6）' % (HANDOFF_FILE, len(hits), heading))
+    return bad
+
+
 def check_counts(files):
     bad = []
     for md in files:
@@ -1904,6 +2012,8 @@ def check_counts(files):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--quiet', action='store_true')
+    ap.add_argument('--docs-only', action='store_true',
+                    help='只查文件，不查交接快照（第 7 項）')
     args = ap.parse_args()
 
     files = tracked_md()
@@ -1956,6 +2066,19 @@ def main():
         print('[busy]    HANDOFF.md 的「工作中」欄位在位' if found_handoff
               else '[busy]    沒有 HANDOFF.md，跳過這一項')
 
+    if args.docs_only:
+        if not args.quiet:
+            print('[snap]    --docs-only：跳過交接快照檢查')
+    else:
+        snap = check_snapshot(files)
+        if snap:
+            problems += len(snap)
+            print(f'[snap]    🔴 {len(snap)} 處交接快照問題：')
+            for b in snap:
+                print(f'            {b}')
+        elif not args.quiet:
+            print('[snap]    交接快照的欄位、章節與行數都合格（內容仍由 B6 核對）')
+
     counts = check_counts(files)
     if counts:
         print(f'[counts]  🟡 {len(counts)} 處硬編數量（會自己過期，建議改成不寫數字）：')
@@ -1966,7 +2089,7 @@ def main():
     if problems:
         print(f'FAIL：{problems} 個問題需修正（硬編數量僅提醒，不計入）')
         return 2
-    print('OK：文檔一致性檢查通過')
+    print('OK：機械檢查通過（語意與「待辦是否真的完成」仍由交接程序 B6 核對）')
     return 0
 
 
@@ -1983,14 +2106,31 @@ if __name__ == '__main__':
 
 用法（專案根目錄執行）：
   python -X utf8 tools/verify_state.py
+  python -X utf8 tools/verify_state.py --strict   # 連 SKIP 都算不通過（驗收／CI 用）
 
-輸出＝緊湊 key=value 事實快照；與 HANDOFF.md「服務查證與期望快照」區塊比對即完成查證。
-腳本只印事實、不做判斷——期望值放 HANDOFF（會隨進度變），避免兩處維護。
-缺少某一層憑證時印 SKIPPED，仍繼續查證其他可用層級。
+輸出＝緊湊 key=value 事實快照 ＋ 最後的彙總行；與 HANDOFF.md「服務查證與期望快照」比對
+即完成查證。腳本不判斷**期望值**（那放 HANDOFF，會隨進度變，避免兩處維護）——但
+**「這一項失敗了」本身就是事實**，所以它一定會反映在結束碼上。
 
-source: PROJECT-BOOTSTRAP.md v2026-08-05 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+結束碼（2026-11-02 加／查核報告 F04）：
+  0 ＝ 沒有 FAIL／ERROR
+  2 ＝ 有 FAIL 或 ERROR
+  3 ＝ `--strict` 且有非 OPTIONAL 的 SKIP
+舊版**每一種情況都回 0**：在生成的檢查裡放一個 exit 7 的命令，畫面印著 `=rc7`，結束碼
+仍是 0。於是任何「跑 verify_state，exit 0 就算驗過」的下游流程都會誤過關，而畫面上那行
+字沒人會回頭看。`NOT_CONFIGURED` 仍然回 0，那是刻意的（骨架還沒填不是故障），但它跟
+「真的失敗」從此分得開。
+
+每項檢查的狀態只有五種：PASS／FAIL／ERROR／SKIP／NOT_CONFIGURED。
+  FAIL  ＝ 服務回答了，但答得不對（HTTP 非 2xx、命令非零退出、expect 沒出現）
+  ERROR ＝ 根本沒問到（連線失敗、timeout、未預期例外）——不要自己推論成「未配置」
+  SKIP  ＝ 這台機器缺配置（憑證、BASE、執行檔）。**缺配置不等於通過**，所以它獨立列出；
+          必需項的 SKIP 在 `--strict` 下不通過，真正可選的項目寫進 OPTIONAL。
+
+source: PROJECT-BOOTSTRAP.md v2026-11-02.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 本檔的 CHECKS 區塊本來就該逐專案填寫；其餘內容應與權威版一致。
 """
+import argparse
 import json
 import os
 import subprocess
@@ -2003,14 +2143,25 @@ BASE = os.environ.get('PROJECT_BASE_URL', '')   # 例：https://example.com
 SECRET_FILE = '.env'                            # 憑證來源檔
 SECRET_KEY = 'API_KEY'                          # 檔內的變數名
 
-# (顯示名稱, 相對路徑或完整 URL, 是否需要憑證)
+# (顯示名稱, 相對路徑或完整 URL, 是否需要憑證[, 預期])
+# 第 4 個元素可省；省略＝只要 HTTP 2xx 就算 PASS。填 int＝必須正好是這個狀態碼
+# （例如 401，用來驗「保護真的生效」）；填 str＝這段字必須出現在回應裡。
+# **只把「有回應」當成正常是不夠的**：200 配一個空的錯誤頁照樣會 PASS，所以會
+# 影響交接判斷的那幾項請填 expect（查核報告 F04）。
 HTTP_CHECKS = [
-    # ('health', '/api/health', False),
+    # ('health', '/api/health', False, 'ok'),
 ]
 # (顯示名稱, 命令 list)
 CMD_CHECKS = [
     # ('containers', ['docker', 'ps', '--format', '{{ .Names }}']),
 ]
+# 這些檢查缺配置時算可接受，連 `--strict` 都不會因為它們而非零。
+# 沒列在這裡的項目，缺配置是「這台機器驗不了」，不是「驗過了」。
+OPTIONAL = ()
+# ── 專案設定結束 ──────────────────────────────────────────────
+
+OK_STATUS = range(200, 300)
+_SECRET = None
 
 
 def read_secret():
@@ -2024,7 +2175,23 @@ def read_secret():
     return None
 
 
-def http(name, path, key):
+def mask(text):
+    """把憑證值從要印出來的字串裡遮掉。
+
+    這一層是必要的，因為印出來的東西有兩個來源不在我們控制下：命令的 stdout／stderr，
+    以及例外訊息（urllib 的錯誤字串會帶上整個 URL，而有些服務把 token 放在 query）。
+    交接快照會被貼進 HANDOFF、貼進對話、貼進 issue——祕密只要漏一次就等於洩漏。
+    """
+    if not _SECRET or len(_SECRET) < 4:
+        return text
+    return text.replace(_SECRET, '***')
+
+
+def say(line):
+    print(mask(line))
+
+
+def http(name, path, key, expect=None):
     url = path if path.startswith('http') else BASE.rstrip('/') + path
     req = urllib.request.Request(url)
     if key:
@@ -2037,41 +2204,94 @@ def http(name, path, key):
                 brief = str(len(data)) + ' items' if isinstance(data, list) else 'json ok'
             except json.JSONDecodeError:
                 brief = f'{len(body)} bytes'
-            print(f'{name}=OK http={r.status} {brief}')
+            if isinstance(expect, int) and r.status != expect:
+                say(f'{name}=FAIL http={r.status} 預期 {expect}')
+                return 'FAIL'
+            if isinstance(expect, str) and expect not in body:
+                say(f'{name}=FAIL http={r.status} 回應裡沒有「{expect}」 {brief}')
+                return 'FAIL'
+            if expect is None and r.status not in OK_STATUS:
+                say(f'{name}=FAIL http={r.status} {brief}')
+                return 'FAIL'
+            say(f'{name}=PASS http={r.status} {brief}')
+            return 'PASS'
     except urllib.error.HTTPError as e:
-        print(f'{name}=FAIL http={e.code}')
+        # 4xx／5xx 也是回答。expect 指定了這個碼就算通過（驗「401 保護生效」用）。
+        if isinstance(expect, int) and e.code == expect:
+            say(f'{name}=PASS http={e.code}（預期）')
+            return 'PASS'
+        say(f'{name}=FAIL http={e.code}')
+        return 'FAIL'
     except Exception as e:                      # 連線層錯誤：印事實，不下「未配置」結論
-        print(f'{name}=ERROR {type(e).__name__}: {e}')
+        say(f'{name}=ERROR {type(e).__name__}: {e}')
+        return 'ERROR'
 
 
 def cmd(name, argv):
     try:
         p = subprocess.run(argv, capture_output=True, text=True, timeout=60)
         out = ' | '.join(l.strip() for l in p.stdout.strip().split('\n') if l.strip())
-        print(f'{name}=rc{p.returncode} {out[:300] or p.stderr.strip()[:200]}')
+        tail = out[:300] or p.stderr.strip()[:200]
+        # 非零退出碼**不得被吞掉**：舊版只印 `=rc7` 然後回 0（查核報告 F04）。
+        status = 'PASS' if p.returncode == 0 else 'FAIL'
+        say(f'{name}={status} rc{p.returncode} {tail}')
+        return status
     except FileNotFoundError:
-        print(f'{name}=SKIPPED（本機沒有 {argv[0]}）')
+        say(f'{name}=SKIP（本機沒有 {argv[0]}）')
+        return 'SKIP'
     except Exception as e:
-        print(f'{name}=ERROR {type(e).__name__}: {e}')
+        say(f'{name}=ERROR {type(e).__name__}: {e}')
+        return 'ERROR'
 
 
-def main():
+def main(argv=None):
+    global _SECRET
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--strict', action='store_true',
+                    help='非 OPTIONAL 的 SKIP 也算不通過（回 3）')
+    args = ap.parse_args(argv)
+
     if not HTTP_CHECKS and not CMD_CHECKS:
         print('verify_state=NOT_CONFIGURED（尚未填 HTTP_CHECKS／CMD_CHECKS，見本檔頂端）')
         return 0
 
-    key = read_secret()
-    for name, path, need_key in HTTP_CHECKS:
-        if need_key and not key:
-            print(f'{name}=SKIPPED（{SECRET_FILE} 沒有 {SECRET_KEY}——先確認是不是設定沒帶到，再下結論）')
+    _SECRET = read_secret()
+    results = []
+    for entry in HTTP_CHECKS:
+        name, path, need_key = entry[0], entry[1], entry[2]
+        expect = entry[3] if len(entry) > 3 else None
+        if need_key and not _SECRET:
+            say(f'{name}=SKIP（{SECRET_FILE} 沒有 {SECRET_KEY}'
+                '——先確認是不是設定沒帶到，再下結論）')
+            results.append((name, 'SKIP'))
             continue
         if not BASE and not path.startswith('http'):
-            print(f'{name}=SKIPPED（未設 PROJECT_BASE_URL）')
+            say(f'{name}=SKIP（未設 PROJECT_BASE_URL）')
+            results.append((name, 'SKIP'))
             continue
-        http(name, path, key if need_key else None)
+        results.append((name, http(name, path, _SECRET if need_key else None, expect)))
 
-    for name, argv in CMD_CHECKS:
-        cmd(name, argv)
+    for entry in CMD_CHECKS:
+        results.append((entry[0], cmd(entry[0], entry[1])))
+
+    tally = {}
+    for _, status in results:
+        tally[status] = tally.get(status, 0) + 1
+    print('verify_state=' + ' '.join(
+        '%s:%d' % (s, tally[s]) for s in ('PASS', 'FAIL', 'ERROR', 'SKIP') if tally.get(s)))
+
+    bad = [n for n, s in results if s in ('FAIL', 'ERROR')]
+    skipped = [n for n, s in results if s == 'SKIP' and n not in OPTIONAL]
+    if bad:
+        print('FAIL：%d 項沒通過（%s）——exit 0 的下游流程不能把這當驗收'
+              % (len(bad), '、'.join(bad)))
+        return 2
+    if skipped:
+        print('SKIP：%d 項這台機器驗不了（%s）。缺配置不等於通過；--strict 會因此非零'
+              % (len(skipped), '、'.join(skipped)))
+        if args.strict:
+            return 3
+    print('OK：所有可驗的項目都通過')
     return 0
 
 
