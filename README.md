@@ -148,6 +148,12 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 要 exit 0。它會重生骨架比對檔案清單、模擬部署填佔位符、跑 check_docs.py、負向測試佔位符
 檢查擋不擋得住、測 AI push 提醒情境與負向測試、查全檔 LF。印出 skip 的項目代表沒被驗證，要照實回報。
 
+需要 ZIP 時跑 `python -X utf8 tools/verify_bootstrap.py --zip`（可在 `--zip` 後指定路徑）。
+只有全過才產出正式包；FAIL 回 2、SKIP 回 1，兩者預設都不產出或覆寫 ZIP。
+若確實需要未完整驗證的調試包，明確加 `--allow-unverified-zip`：僅容許 SKIP，仍回 1，
+包內附 `UNVERIFIED.json`（跳過項目與原因），「讀我」也會標示未驗證；FAIL 仍禁止。
+這避免「缺 bash 的檢查被跳過，卻產出看似驗證全過的 ZIP」（2026-11-02／F07）。
+
 先用 3–5 行回報現況與你打算做什麼，再動手。破壞性操作、commit 或 push 之前先問我。
 ```
 

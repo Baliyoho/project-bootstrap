@@ -114,6 +114,8 @@ import tempfile
 import threading
 import tokenize
 import zipfile
+from contextlib import redirect_stdout, redirect_stderr
+from unittest.mock import patch
 from datetime import date
 
 # Python 版本下限（2026-11-02／查核報告 F14）。在檔頭就擋，而且訊息要說「版本太舊」——
@@ -2717,8 +2719,8 @@ chmod +x .claude/hooks/*.sh
 """
 
 
-def build_zip(out_path):
-    """把「剛剛通過驗證的那份骨架」打包成解壓即用的 zip。
+def build_zip(out_path, skipped=()):
+    """打包未填的骨架；呼叫端先檢查門檻，有 skipped 時明確標示未驗證。
 
     刻意從部署包重新抽一次未填的範本，不用驗證流程裡那份——那一份的佔位符已經
     被測試用假值填掉了，打包出去會讓人拿到「驗證用假專案」當專案名。
@@ -2728,7 +2730,14 @@ def build_zip(out_path):
         src = tmp / 'gen'
         src.mkdir()
         extract(src)
-        write_lf(src / '讀我-先看這個.md', ZIP_README)
+        warning = ''
+        if skipped:
+            # F07：顯式調試產物不能看起來像完整通過的發行包。
+            warning = '# 未驗證產物（UNVERIFIED）\n\n部分檢查被跳過；不可視為正式驗證通過。詳見 UNVERIFIED.json。\n\n'
+            manifest = {'status': 'UNVERIFIED', 'skipped': [
+                {'name': title, 'reason': detail} for _, title, detail in skipped]}
+            write_lf(src / 'UNVERIFIED.json', json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
+        write_lf(src / '讀我-先看這個.md', warning + ZIP_README)
         shutil.copyfile(KIT, src / KIT.name)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(out_path, 'w', zipfile.ZIP_DEFLATED) as z:
@@ -2742,11 +2751,121 @@ def build_zip(out_path):
                 info.external_attr = (0o755 if arc.endswith('.sh') else 0o644) << 16
                 info.compress_type = zipfile.ZIP_DEFLATED
                 z.writestr(info, f.read_bytes())
-        n = len(zipfile.ZipFile(out_path).namelist())
-        print(f'\n已打包 {n} 檔 → {out_path}')
+        with zipfile.ZipFile(out_path) as z:
+            n = len(z.namelist())
+        label = '未驗證產物（UNVERIFIED）' if skipped else '已驗證產物'
+        print(f'\n已打包 {label} {n} 檔 → {out_path}')
         return True
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def zip_gate_problems(entry, tmp):
+    """注入檢查結果走真正的 CLI main 與 ZIP 寫入，不啟動模型或外部發布。"""
+    problems = []
+    scenarios = (
+        ('全過', ('OK',), True, False, False, 0, True),
+        ('全過加例外', ('OK',), True, True, False, 0, True),
+        ('SKIP 不打包', ('SKIP',), False, False, False, 1, False),
+        ('SKIP 預設拒絕', ('SKIP',), True, False, False, 1, False),
+        ('SKIP 顯式調試', ('SKIP',), True, True, False, 1, True),
+        ('FAIL 拒絕', ('FAIL',), True, False, False, 2, False),
+        ('FAIL 不能覆寫', ('FAIL',), True, True, False, 2, False),
+        ('FAIL 優先於 SKIP', ('FAIL', 'SKIP'), True, True, False, 2, False),
+        ('SKIP 保留既有檔', ('SKIP',), True, False, True, 1, False),
+        ('FAIL 保留既有檔', ('FAIL',), True, True, True, 2, False),
+    )
+    for i, (name, statuses, zip_requested, allow, existing, want_rc, want_zip) in enumerate(scenarios):
+        out = tmp / ('gate-%d.zip' % i)
+        sentinel = b'existing artifact'
+        if existing:
+            out.write_bytes(sentinel)
+        rows = [(s, 'fixture-' + s, 'injected reason') for s in statuses]
+        argv = ['verify_bootstrap.py'] + (['--zip', str(out)] if zip_requested else [])
+        if allow:
+            argv.append('--allow-unverified-zip')
+        capture = io.StringIO()
+        # 使用獨立 results，巢狀 main 清空結果時不會吃掉外層驗證。
+        with patch.dict(entry.__globals__, {'results': [], 'run_checks': lambda d, t: results.extend(rows)}), \
+                patch.object(sys, 'argv', argv), redirect_stdout(capture), redirect_stderr(capture):
+            rc = entry()
+        if rc != want_rc:
+            problems.append('%s exit %s，期望 %s' % (name, rc, want_rc))
+        if want_zip:
+            if not out.exists() or not zipfile.is_zipfile(out):
+                problems.append(name + ' 缺 ZIP')
+                continue
+            with zipfile.ZipFile(out) as z:
+                unverified = 'SKIP' in statuses
+                has_manifest = 'UNVERIFIED.json' in z.namelist()
+                if has_manifest != unverified:
+                    problems.append(name + ' 未驗證 manifest 判定錯誤')
+                if unverified and has_manifest:
+                    manifest = json.loads(z.read('UNVERIFIED.json'))
+                    if manifest != {'status': 'UNVERIFIED', 'skipped': [
+                            {'name': 'fixture-SKIP', 'reason': 'injected reason'}]}:
+                        problems.append(name + ' manifest 沒有保留跳過項目與原因')
+                readme = z.read('讀我-先看這個.md').decode('utf-8')
+                if ('UNVERIFIED' in readme) != unverified:
+                    problems.append(name + ' 說明檔標示錯誤')
+        elif existing:
+            if out.read_bytes() != sentinel:
+                problems.append(name + ' 覆寫了既有產物')
+        elif out.exists():
+            problems.append(name + ' 不該產出 ZIP')
+        if 'SKIP' in statuses and 'FAIL' not in statuses and 'fixture-SKIP' not in capture.getvalue():
+            problems.append(name + ' 沒說明哪項 SKIP')
+    return problems
+
+
+def step_zip_gate(tmp):
+    problems = zip_gate_problems(main, tmp)
+    # 負向測試：移除 SKIP 提前返回的門檻，必須抓到錯誤產物與舊檔被覆寫。
+    import inspect
+    source = inspect.getsource(main)
+    guard = 'if not args.allow_unverified_zip:'
+    if guard not in source:
+        problems.append('負向測試找不到 SKIP 門檻')
+    else:
+        mutant = {}
+        exec(compile(source.replace(guard, 'if False:', 1), '<zip-gate-mutant>', 'exec'), globals(), mutant)
+        negative_dir = tmp / 'negative-zip'
+        negative_dir.mkdir()
+        caught = zip_gate_problems(mutant['main'], negative_dir)
+        if not any('不該產出 ZIP' in p for p in caught) or not any('覆寫了既有產物' in p for p in caught):
+            problems.append('負向測試沒有抓到移除門檻後的錯誤打包')
+    record('FAIL' if problems else 'OK', 'ZIP 發布門檻',
+           '；'.join(problems) if problems else '10 情境：SKIP 預設不打包、例外附未驗證清單且 exit 1、FAIL 不可覆寫、既有產物保留；移除門檻的負向測試確實失敗')
+
+
+def run_checks(dest, tmp):
+    work = None
+    seen = step_regenerate(dest) and step_fill(dest)
+    if seen and step_check_docs(dest):
+        step_placeholder_list(dest, seen)
+        step_placeholder_guard(dest)
+        step_date_guard(dest)
+        step_busy_tool_guard(dest)
+        step_deploy_shape(dest)
+        step_antigravity(dest)
+        step_codex_windows(dest, tmp)
+        step_wiring_cwd(dest, tmp)
+        step_portability(dest)
+        hooked = step_hook(dest, tmp)
+        work = hooked if isinstance(hooked, pathlib.Path) else None
+        step_busy(dest, work)
+        step_repo_busy(work)
+        step_version_check(work)
+        step_rename_line(dest)
+        step_session_resume(dest)
+    step_eol(dest)
+    step_self()
+    step_repo_handoff()
+    step_sync_coverage(dest)
+    step_sync_self_guard()
+    step_sync_safety(tmp)
+    step_misc(dest, work)
+    step_zip_gate(tmp)
 
 
 def main():
@@ -2754,7 +2873,12 @@ def main():
     ap.add_argument('--keep', action='store_true', help='保留產生的骨架，印出路徑')
     ap.add_argument('--zip', nargs='?', const='', metavar='PATH',
                     help='驗證全過時，額外輸出解壓即用的 zip（預設 dist/project-skeleton-<日期>.zip）')
+    ap.add_argument('--allow-unverified-zip', action='store_true',
+                    help='搭配 --zip：容許 SKIP 的調試產物，附未驗證清單且仍 exit 1；FAIL 不可覆寫')
     args = ap.parse_args()
+    if args.allow_unverified_zip and args.zip is None:
+        ap.error('--allow-unverified-zip 必須搭配 --zip')
+    results.clear()
 
     if not KIT.exists():
         print(f'找不到 {KIT}——請在本 repo 根目錄執行')
@@ -2764,33 +2888,8 @@ def main():
     dest = tmp / 'gen'
     dest.mkdir()
     print(f'重生骨架於 {dest}\n')
-    work = None
     try:
-        seen = step_regenerate(dest) and step_fill(dest)
-        if seen and step_check_docs(dest):
-            step_placeholder_list(dest, seen)
-            step_placeholder_guard(dest)
-            step_date_guard(dest)
-            step_busy_tool_guard(dest)
-            step_deploy_shape(dest)
-            step_antigravity(dest)
-            step_codex_windows(dest, tmp)
-            step_wiring_cwd(dest, tmp)
-            step_portability(dest)
-            hooked = step_hook(dest, tmp)
-            work = hooked if isinstance(hooked, pathlib.Path) else None
-            step_busy(dest, work)
-            step_repo_busy(work)
-            step_version_check(work)
-            step_rename_line(dest)
-            step_session_resume(dest)
-        step_eol(dest)
-        step_self()
-        step_repo_handoff()
-        step_sync_coverage(dest)
-        step_sync_self_guard()
-        step_sync_safety(tmp)
-        step_misc(dest, work)
+        run_checks(dest, tmp)
     finally:
         if args.keep:
             print(f'\n（--keep）骨架保留在 {dest}')
@@ -2805,12 +2904,18 @@ def main():
         if args.zip is not None:
             print('（有項目未通過，不產出 zip——沒驗過的東西不該發出去）')
         return 2
+    if skipped:
+        print(f'SKIP：{len(skipped)} 項未驗證 —— {"、".join(skipped)}')
+        if not args.allow_unverified_zip:
+            if args.zip is not None:
+                print('（有 SKIP，不產出 zip；既有檔案不覆寫。調試時可明確加 --allow-unverified-zip）')
+            return 1
     if args.zip is not None:
         out = pathlib.Path(args.zip) if args.zip else \
             ROOT / 'dist' / f'project-skeleton-{date.today().isoformat()}.zip'
-        build_zip(out)
+        build_zip(out, [r for r in results if r[0] == 'SKIP'])
     if skipped:
-        print(f'PASS（有 {len(skipped)} 項跳過：{"、".join(skipped)}）——跳過的項目沒有被驗證，回報時要寫明')
+        print('UNVERIFIED：僅供調試，跳過的項目沒有被驗證，結束碼仍為 1')
         return 1
     print('OK：部署包驗證全數通過')
     return 0
