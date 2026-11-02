@@ -33,6 +33,10 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   合起來就是「照說明部署的人 100% 會踩到」
   跨平台防呆   ——掃絕對路徑，以及「用了 python 卻整份沒交代 python3 退路」的檔案。
                   這兩類問題在原機器上完全正常，換一台才壞，而且壞得無聲無息
+  接線 cwd 定位 ——從子目錄實跑接線 JSON 裡原始的那一串命令（含空白與中文的 repo 路徑）。
+                  舊接線假設 cwd 是 repo 根目錄，`cd tools` 開的 session 直接 exit 127，
+                  而 SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣（2026-11-02／F05，
+                  附舊形式與 Windows 混合斜線兩個負向測試）
   hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
   VERSION 檔   ——跟部署包開頭的版本行一致。各專案靠抓它判斷自己落後沒有，
                   不一致＝落後偵測說謊，而且沒有任何徵兆（2026-10-30 加入）
@@ -1284,6 +1288,25 @@ def step_antigravity(dest):
     return True
 
 
+def wiring_command(script):
+    """接線裡那一串 Unix 命令的唯一來源。
+
+    期望值有兩份就是下一個會悄悄分岔的地方——這裡同時被「Codex Windows 接線」與
+    「接線 cwd 定位」兩項引用。
+    """
+    return 'bash "$(git rev-parse --show-cdup).claude/hooks/%s"' % script
+
+
+def wiring_command_windows(script):
+    r"""Windows 那一欄多一次斜線正規化：`--show-cdup` 回的是 `../`（正斜線），而
+    `cmd /d /c "../.claude\hooks\codex-hook.cmd"` 會死在 `'..' is not recognized`
+    （2026-11-02 實測）。`commandWindows` 由 Codex 外層的 PowerShell 執行，所以用
+    得上 `-replace`。
+    """
+    return (r"""cmd /d /c "$((git rev-parse --show-cdup) -replace '/','\')"""
+            + r""".claude\hooks\codex-hook.cmd" """ + script)
+
+
 def codex_wiring_problems(cfg, scripts):
     problems = []
     for event, script in scripts.items():
@@ -1293,9 +1316,9 @@ def codex_wiring_problems(cfg, scripts):
             problems.append('%s 的 %s 接線不是一份' % (event, script))
             continue
         h = hooks[0]
-        if h.get('command') != 'bash .claude/hooks/' + script:
+        if h.get('command') != wiring_command(script):
             problems.append('%s 的 Unix 接線改變了' % event)
-        windows = 'cmd /d /c .claude\\hooks\\codex-hook.cmd ' + script
+        windows = wiring_command_windows(script)
         if event == 'PreToolUse':
             windows += '; exit $LASTEXITCODE'
         if h.get('commandWindows') != windows:
@@ -1433,6 +1456,121 @@ def step_codex_windows(dest, tmp):
         return False
     record('OK', 'Codex Windows 啟動器',
            '原生 cmd 實跑：中文／空白路徑、不同 cwd、純文字標頭、stdin／輸出內容／stderr／exit 2 保留；缺 Git Bash 明確 exit 1')
+    return True
+
+
+def step_wiring_cwd(dest, tmp):
+    """接線必須從子目錄也找得到腳本（2026-11-02，查核報告 F05）。
+
+    hook 的 `command` 以 **session 的 cwd** 執行（Claude Code：handler「runs in the current
+    directory」；Codex 官方文件同樣明寫，並直接建議改從 Git root 解析 repo hook），而人會
+    從子目錄開 session——`cd tools && claude`。舊接線寫成 `bash .claude/hooks/git-freshness.sh`，
+    那時候是 exit 127、No such file，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模
+    一樣**：落後的本機、別台機器的「工作中」標記、骨架落後提醒三件事同時無聲消失。
+
+    所以這一項跑的是**接線 JSON 裡原始的那一串命令**，不是直接拿完整路徑跑腳本——後者在
+    任何 cwd 都會過，測不到入口（那正是查核報告的驗收條件）。fixture 的路徑同時含空白與
+    中文；版本偵測關掉，這一項不打網路。
+    """
+    files = {
+        '骨架 .claude/settings.json': dest / '.claude/settings.json',
+        '骨架 .codex/hooks.json': dest / '.codex/hooks.json',
+        '本 repo .claude/settings.json': ROOT / '.claude/settings.json',
+        '本 repo .codex/hooks.json': ROOT / '.codex/hooks.json',
+    }
+    bad = []
+    for name, path in files.items():
+        if not path.exists():
+            bad.append('%s 不存在' % name)
+            continue
+        cfg = json.loads(path.read_text(encoding='utf-8'))
+        for groups in cfg.get('hooks', {}).values():
+            for group in groups:
+                for h in group.get('hooks', []):
+                    for key in ('command', 'commandWindows'):
+                        cmd = h.get(key)
+                        if cmd and 'rev-parse --show-cdup' not in cmd:
+                            bad.append('%s 的 %s 沒從 Git root 定位：%s' % (name, key, cmd))
+    if bad:
+        record('FAIL', '接線 cwd 定位', '；'.join(bad))
+        return False
+
+    bash = find_bash()
+    if not bash:
+        record('SKIP', '接線 cwd 定位', '四份接線的文字檢查過了，但找不到看得懂 Windows 路徑的 bash，沒實跑')
+        return None
+
+    origin = tmp / 'cwd-origin.git'
+    work = tmp / '我的 專案 cwd'
+    run(['git', 'init', '-q', '--bare', str(origin)])
+    shutil.copytree(dest, work, ignore=shutil.ignore_patterns('.git'))
+    git(['init', '-q', '-b', 'main'], work)
+    git(['add', '-A'], work)
+    git(['commit', '-qm', 'init'], work)
+    git(['remote', 'add', 'origin', str(origin)], work)
+    git(['push', '-q', '-u', 'origin', 'main'], work)
+    # 未推送、而且沒動 HANDOFF 的 commit：pre-push 防呆該回 2。拿 exit 2 當「腳本真的跑到了」
+    # 的證據，比只看 exit 0 強——後者連「什麼都沒發生」都會過。
+    with (work / 'README.md').open('a', encoding='utf-8', newline='') as fh:
+        fh.write('\n驗證用改動\n')
+    git(['commit', '-qam', 'docs: touch'], work)
+
+    cfg = json.loads((work / '.codex/hooks.json').read_text(encoding='utf-8'))
+    handler = {e: [h for g in groups for h in g['hooks']][0]
+               for e, groups in cfg['hooks'].items()}
+    env = dict(GIT_ENV, BOOTSTRAP_VERSION_CHECK='off')
+    push = '{"tool_input":{"command":"git push origin main"}}'
+    cases = []
+
+    def check(name, ok, got):
+        cases.append((name, ok, got))
+
+    for sub in ('.', 'tools', 'docs/ai-notes'):
+        cwd = work if sub == '.' else work / sub
+        r = run([bash, '-c', handler['SessionStart']['command']], cwd=cwd, stdin='{}', env=env)
+        check('%s 開場檢查' % sub, r.returncode == 0 and '[git-check]' in r.stdout,
+              (r.returncode, r.stdout[:100], r.stderr[:100]))
+        r = run([bash, '-c', handler['PreToolUse']['command']], cwd=cwd, stdin=push, env=env)
+        check('%s push 防呆' % sub, r.returncode == 2, (r.returncode, r.stderr[:100]))
+
+    # 負向①：舊形式從子目錄必須失敗，否則這一項根本沒在量東西。
+    r = run([bash, '-c', 'bash .claude/hooks/git-freshness.sh'],
+            cwd=work / 'tools', stdin='{}', env=env)
+    check('舊形式從子目錄→失敗（負向）', r.returncode != 0 and '[git-check]' not in r.stdout,
+          (r.returncode, r.stdout[:80]))
+
+    if os.name == 'nt':
+        powershell = shutil.which('powershell') or shutil.which('pwsh')
+        if powershell:
+            win = handler['SessionStart']['commandWindows']
+            r = run([powershell, '-NoProfile', '-NonInteractive', '-Command', win],
+                    cwd=work / 'tools', stdin='{}', env=env)
+            check('Windows 啟動鏈從子目錄', r.returncode == 0 and '[git-check]' in r.stdout,
+                  (r.returncode, r.stdout[:100], r.stderr[:100]))
+            # 負向②：拿掉斜線正規化就會變成 `../.claude\...`，cmd 吃不下混合斜線。
+            naive = win.replace("$((git rev-parse --show-cdup) -replace '/','\\')",
+                                '$(git rev-parse --show-cdup)')
+            if naive == win:
+                check('混合斜線負向測試改到了命令', False, naive)
+            else:
+                r = run([powershell, '-NoProfile', '-NonInteractive', '-Command', naive],
+                        cwd=work / 'tools', stdin='{}', env=env)
+                check('混合斜線從子目錄→失敗（負向）',
+                      r.returncode != 0 and '[git-check]' not in r.stdout,
+                      (r.returncode, r.stdout[:80]))
+        else:
+            cases.append(('Windows 啟動鏈', None, '找不到 PowerShell'))
+
+    failed = ['%s：實得 %r' % (n, got) for n, ok, got in cases if ok is False]
+    if failed:
+        record('FAIL', '接線 cwd 定位', '；'.join(failed))
+        return False
+    skipped = [n for n, ok, _ in cases if ok is None]
+    done = '、'.join(n for n, ok, _ in cases if ok)
+    if skipped:
+        record('SKIP', '接線 cwd 定位', '%s；跳過：%s' % (done, '、'.join(skipped)))
+        return None
+    record('OK', '接線 cwd 定位', done)
     return True
 
 
@@ -2039,6 +2177,7 @@ def main():
             step_deploy_shape(dest)
             step_antigravity(dest)
             step_codex_windows(dest, tmp)
+            step_wiring_cwd(dest, tmp)
             step_portability(dest)
             hooked = step_hook(dest, tmp)
             work = hooked if isinstance(hooked, pathlib.Path) else None

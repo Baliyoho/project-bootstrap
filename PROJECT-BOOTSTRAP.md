@@ -1345,7 +1345,7 @@ git fetch origin && git status -sb
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/git-freshness.sh",
+            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh\"",
             "timeout": 30,
             "statusMessage": "檢查 git 是否與 origin 同步…"
           }
@@ -1358,7 +1358,7 @@ git fetch origin && git status -sb
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/pre-push-handoff.sh",
+            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/pre-push-handoff.sh\"",
             "timeout": 15
           }
         ]
@@ -1369,6 +1369,8 @@ git fetch origin && git status -sb
 ````
 
 > Codex 的接線見 3.17——它掛的是**同樣這兩個 `.sh`**，不要複製第二份腳本進 `.codex/`。兩份各自演化就會出現「Claude 端會擋、Codex 端不會擋」的不對稱。
+
+> 🔴 **腳本路徑前面那個 `$(git rev-parse --show-cdup)` 不是裝飾，拿掉就只有「從 repo 根目錄開的 session」才有防護。** hook 的 `command` 以 **session 的 cwd** 執行（Claude Code 的 handler「runs in the current directory」；Codex 官方文件同樣明寫，並直接建議改從 Git root 解析 repo hook），而人會從子目錄開 session——`cd tools && claude`。那時候 `bash .claude/hooks/git-freshness.sh` 是 **exit 127、No such file**，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**：落後的本機、別台機器的「工作中」標記、骨架落後提醒三件事同時無聲消失。`--show-cdup` 回傳的是**到 repo 根目錄的相對路徑**（根目錄是空字串、子目錄是 `../`），所以修掉這個洞之後接線裡**仍然沒有任何絕對路徑**，鐵律 5 原封不動；不在 git repo 裡時它是空字串，行為退回跟舊版一樣（多一行 git 的 fatal 到 stderr，刻意不消音——這套骨架的失效一向是太安靜而不是太吵）。2026-11-02 在 `tools/` 下重現 exit 127，修完在 root／`tools/`／`docs/ai-notes` 三處都正常；`verify_bootstrap.py` 的「接線 cwd 定位」把這三處、Windows 啟動鏈與兩個負向測試（舊形式、混合斜線）一起釘住（F05）。
 
 ### 3.10 `.claude/hooks/git-freshness.sh`
 
@@ -2101,6 +2103,7 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接�
 > hooks 與 Claude Code **同格式、同語意**：讀 `<repo>/.codex/hooks.json`，context 由 stdin 傳 JSON。所以這裡掛的是**同樣那兩個 `.sh`**，不要另外複製一份到 `.codex/hooks/`。
 > 功能**預設開啟**（`codex features list` 可以確認 `hooks  stable  true`；要關是 `[features] hooks = false`）。來源不只這一個檔：`~/.codex/hooks.json`、兩層 `config.toml` 的 `[hooks]`、plugin 都會**合併**進來，同一層同時用兩種寫法會在啟動時警告。
 > **路徑一律相對**——寫成 `C:\Users\...` 的絕對路徑，換到另一台機器或 macOS 必定失效，而且失效時是靜默的。
+> **但「不寫死絕對路徑」跟「可以假設 cwd 是 repo 根目錄」是兩件事**——後者就是 F05，所以路徑前面要掛 `$(git rev-parse --show-cdup)`（它回的也是相對路徑，理由見 3.9 那一段）。
 > 🔴 **要兩道信任，而且失敗是靜默的。** ①專案的 `.codex/` 整層要先被信任（記在 `~/.codex/config.toml` 的 `[projects.'<路徑>'] trust_level`）；②每一支非 managed 的 hook 還要按**當前雜湊**逐一審核（CLI 打 `/hooks`），所以改過接線定義要重新審核。2026-10-30 實測：在未信任的資料夾跑 `codex exec`，hook 完全沒跑，而且 **stderr 一個字都沒有**。所以部署完**一定要照第 5 節真的開一個 session**，不能看到檔案在就算裝好了。⚠️ **而且要在互動模式、而且要送出一句話**：2026-11-01 實測互動 TUI 開場不跑 `SessionStart`（跟著第一個 turn 才跑），所以盯著開場看是假陰性。互動模式的補償是 hook 失敗會印 `• Hook failed`，而 `codex exec` 連失敗都不吭聲。
 > **2026-10-31 實測完畢（`0.164.0`／Windows），兩個未知都收掉了，其中一個是問錯問題。**
 > ① **`statusMessage` 不是 Claude 專屬的 key**：官方把它列在 hook 定義的正式鍵裡（`type`／`command`／`commandWindows`／`timeout`／`statusMessage`／`additionalContextLimit`／`async`／`server`／`tool`／`input`），語意就是「Optional UI message」。所以它不會被當成雜訊，也不會讓設定失效。實測 `codex exec` 的 stdout／stderr **都不會出現它**（非互動沒有 UI 可顯示）；**互動 TUI 會顯示**——2026-11-01 在 `0.166.0` 量到它接在狀態行後面（`Working (1s • esc to interrupt) · <字串>`），所以互動模式下它是使用者唯一看得到的那行字。
@@ -2116,8 +2119,8 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接�
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/git-freshness.sh",
-            "commandWindows": "cmd /d /c .claude\\hooks\\codex-hook.cmd git-freshness.sh",
+            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh\"",
+            "commandWindows": "cmd /d /c \"$((git rev-parse --show-cdup) -replace '/','\\').claude\\hooks\\codex-hook.cmd\" git-freshness.sh",
             "timeout": 30,
             "statusMessage": "檢查 git 是否與 origin 同步…"
           }
@@ -2129,8 +2132,8 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接�
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/pre-push-handoff.sh",
-            "commandWindows": "cmd /d /c .claude\\hooks\\codex-hook.cmd pre-push-handoff.sh; exit $LASTEXITCODE",
+            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/pre-push-handoff.sh\"",
+            "commandWindows": "cmd /d /c \"$((git rev-parse --show-cdup) -replace '/','\\').claude\\hooks\\codex-hook.cmd\" pre-push-handoff.sh; exit $LASTEXITCODE",
             "timeout": 15
           }
         ]
@@ -2140,7 +2143,7 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接�
 }
 ````
 
-**Windows 用 `commandWindows` 經下面的啟動器找 Git Bash**，macOS／Linux 仍用原本的 `command`。它只處理管線，不複製任何 git 或交接判斷；stdin、stderr 與腳本結束碼原樣傳遞，否則 `PreToolUse` 的 exit 2 防呆會被吃掉；stdout 在原內容前加一行純文字標頭以免 JSON 誤判。相對接線仍從 repo 根目錄啟動；啟動器找到腳本時用 `%~dp0`，不靠當下 cwd。2026-11-01 在 Windows／CLI `0.166.0` 的真 repo 重現舊接線已信任卻 exit 1：PATH 的 `bash` 是 WSL，缺少 `/bin/bash`；直接改用 Git Bash 同一支 `.sh` 就成功。這是新的真部署案例，**不能倒推成稍早那組 exec／TUI 探針差異的原因**。
+**Windows 用 `commandWindows` 經下面的啟動器找 Git Bash**，macOS／Linux 仍用原本的 `command`。它只處理管線，不複製任何 git 或交接判斷；stdin、stderr 與腳本結束碼原樣傳遞，否則 `PreToolUse` 的 exit 2 防呆會被吃掉；stdout 在原內容前加一行純文字標頭以免 JSON 誤判。接線自己先用 `$(git rev-parse --show-cdup)` 算出 repo 根目錄（2026-11-02／F05：舊版這裡寫「相對接線仍從 repo 根目錄啟動」，那是**假設**而不是事實，子目錄開的 session 直接 exit 127），啟動器再用 `%~dp0` 找腳本，兩層都不靠當下 cwd。⚠️ **Windows 這一欄要多做一次斜線正規化**：`--show-cdup` 回的是 `../`（正斜線），而 `cmd /d /c "../.claude\hooks\codex-hook.cmd"` 會死在 `'..' is not recognized`（2026-11-02 從子目錄實測），所以用 PowerShell 的 `-replace '/','\'` 先換成反斜線——`commandWindows` 本來就由 Codex 外層的 PowerShell 執行，用得上它。2026-11-01 在 Windows／CLI `0.166.0` 的真 repo 重現舊接線已信任卻 exit 1：PATH 的 `bash` 是 WSL，缺少 `/bin/bash`；直接改用 Git Bash 同一支 `.sh` 就成功。這是新的真部署案例，**不能倒推成稍早那組 exec／TUI 探針差異的原因**。
 
 **`PreToolUse` 的 Windows 命令末尾必須保留 `; exit $LASTEXITCODE`。** 2026-11-01 補做真阻擋驗收時發現：只在原生 cmd 測到 exit 2 還不夠；Codex 外層的 PowerShell `-Command` 會把最後一個 native 命令的失敗折成 exit 1，於是畫面只報 Hook failed、工具仍被放行。加上明確 exit 才把 2 交回 Codex。驗證器同時測完整 PowerShell → cmd → Git Bash 啟動鏈與拿掉明確 exit 的負向情境，避免再用少一層的測試報成功。
 
@@ -2247,6 +2250,7 @@ if not defined BASH exit /b 0
 > **骨架只擁有 `handoff-git-check` 這一個頂層 key。** Antigravity 的設定檔形狀是「頂層 key ＝ hook 名稱」，所以專案自己要加 hook 就用自己的 key，兩邊不會互相踩到——`sync_project.py` 也只換這一個 key（這比 3.9／3.17 那兩份好處理，它們得在同一個 `hooks` 物件裡逐組比對）。
 > 🔴 **只接 `SessionStart`，刻意不接 `PreToolUse`。** 實測 `PreToolUse` **不明確回 `{"allow_tool": true}` 就等於拒絕**——回 `{}` 的那一輪 `agy` 把 `read_file` 與 `run_command` 全擋掉了。接上去之後，轉接層任何一次失敗都會變成「使用者的工具全部不能用」，那比「沒有防護」糟得多。要接之前先想清楚失敗路徑怎麼保證回 allow。
 > **路徑一律相對**（鐵律：寫死絕對路徑換機器就靜默失效）。這一點在 Antigravity 上不只是慣例——相對路徑是 Windows 這一面**唯一寫得出來**的形式。
+> **這一面刻意不加 3.9／3.17 那個 `$(git rev-parse --show-cdup)`**（它們為 F05 加了那一層）：`agy` 的 `command` 是**照空白切 token、不經 shell**（見 3.19），所以 `$( )` 不會被展開，只會變成檔名的一部分；而它的 cwd 依官方契約與實測就是 `hooks.json` 所在目錄、不是 session 的 cwd，所以這裡的 `../` 本來就是對的基準。**兩邊的定位基準不同，不要「順手統一」**（2026-11-02）。
 
 ````json
 {
@@ -2354,6 +2358,7 @@ git status -sb
 - [ ] `python -X utf8 tools/check_docs.py` → `OK`（一次涵蓋死連結與**殘留佔位符**；佔位符那一項掃 `.md`／`.py`／`.sh`／`.json`／`.gitignore`／`.gitattributes` 的 tracked 檔，所以要先 `git add`。本部署包自己被豁免——照最後一項刪掉它就好）
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
 - [ ] `bash .claude/hooks/git-freshness.sh` → 印出 `✅ 本機沒落後 origin`，且最後**兩**行是 `[handoff]` 的交接提醒與開工改名提示（後者長得像 `㊣　26110112｜<主題>｜工作中`，時間戳是當下的；2026-11-01 加）。沒有 upstream 會印警告，表示第 4 節沒做完
+- [ ] **子目錄也要有防護**（2026-11-02／F05）：`cd tools && sh -c 'bash "$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh"'; cd ..` → 要印出跟在根目錄一樣的 `[git-check]`。**要跑的是 `.claude/settings.json`／`.codex/hooks.json` 裡原始的那一串命令**，不是直接拿完整路徑跑腳本——後者在任何 cwd 都會過，測不到入口。hook 的 `command` 以 session 的 cwd 執行，而人會從子目錄開 session（`cd tools && claude`）；舊接線在那裡是 exit 127，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**
 - [ ] **工作中標記防呆**：把 `HANDOFF.md` 的「工作中」改成 `` `假機器名` ／ `Claude Code` ``，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 要印 🔴 並叫你走 A2.5；改成**這台機器**＋一個**別的工具名**（例如 `` `<本機名>` ／ `Codex CLI` ``）再跑 → 同樣要 🔴（這是 2026-10-31 補的同機器跨工具那個洞；若本機偵測不出自己是哪個工具，會退成 🟡 並把問題丟回給你答，那也是對的）；改回「無（已交棒）」、commit、push 後再跑 → 不該再印。**驗完記得改回來**
 - [ ] **骨架版本偵測**：`printf 2099-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要印 🟡「handoff 骨架落後」。快取裡放的是**上游最新版**，所以要餵一個比本機**新**的值；餵 2026-11-02 之前的舊日期只會印「比上游新」（2026-11-02 修正，見 F09——舊版這裡寫 `1999-01-01`，而那是本機領先，只是當時的實作不分方向所以照樣印落後）。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）
