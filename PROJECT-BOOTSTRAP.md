@@ -10,7 +10,11 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-02**（已交棒的 session 收到任何使用者新訊息，先恢復「工作中」，保留原時間與累計交棒次數；要改檔仍須重新走 A 模式。交棒次數記在 session 標題，只有 B 模式成功 push 才增加，不在 HANDOFF 累積 session 歷史。2026-11-02 使用者指出：agent 自主交棒後，同一 session 繼續對話卻留著「已交棒」，讓側欄狀態與實際活動不符。新增程序文字與入口觸發詞的負向測試；沒有新增逐訊息 hook 或模型探針。）
+> 版本：**2026-11-02**（**占用判讀與版本方向兩個錯誤安全訊號修掉了，`SKILL.md` 一個字沒動、`VERSION` 刻意不跳**（鐵律 1），所以 3.10 `git-freshness.sh` 與 3.14 `check_docs.py` 的 `source:` 標記跳到 `v2026-11-02.2`——今天第一個帶標記的改動是 `SKILL.md` 的 `v2026-11-02`，這是第二個。🔴 **代價要寫明：`VERSION` 沒跳，所以各專案的落後偵測不會替你講這件事**，而這次落後的副本正好會印錯誤的綠燈，所以得手動跑一次 `sync_project.py`。
+> **F01（占用誤判）**：兩支 hook 的 `case "$busy" in *無*)` 與 `check_docs.py` 的 `'無' in value` 都是子字串比對，於是**正常的任務名稱**就足以產生錯誤綠燈——標記寫著別台機器正在做、而 session 主題叫「修無效連結」，三處都會判成「無（已交棒）」。機器名比對有同一個洞：拿整列當乾草堆、`$me` 當針，所以 `desk` 與 `desk-win` 互為子字串時會讀成「同一台機器」，而那個方向的錯正好是放行。現在只有正規化後**完整等於**「無（已交棒）」才算空閒，其餘逐欄解析、機器欄要完整相等，欄位重複或解析不出機器欄都當成「有人在做」。`check_docs.py` 另外擋欄位重複與空機器欄。
+> **F09（版本方向）**：偵測只比 `!=`，訊息卻寫死「落後」，所以本機比上游**新**的時候（權威版還沒 push，或有人就地改了副本）它會叫你跑 `sync_project.py`——那會把新的蓋成舊的。現在把序號補成三位數後用 `sort` 判方向，領先時改印「比上游新」並明寫不要同步。**同一個方向錯誤也在測試與第 5 節自檢清單裡**：兩處都拿 `1999-01-01` 當「上游最新版」來驗落後提示，而那是本機領先——那個 fixture 不但沒守住方向，還會把任何正確的修法判成 FAIL，所以修實作的人一定要連它一起改。
+> 守門人：共用情境表加 4 個 F01 負向測試（主題含「無」、機器名含「無」、機器名互為子字串、欄位重複）＋1 個反向保險（已交棒前後有空白仍要 ✅），兩支 hook 同時套用；「工具欄（負向測試）」擴成「工作中欄位格式（負向測試）」共 4 種壞格式；版本偵測加「領先→不說落後」與「領先→勸退同步」。**退回舊實作實跑過，4 項確實 FAIL。**原始缺陷與證據見 [project-bootstrap-audit.md](project-bootstrap-audit.md) 的 F01／F09。）
+> 前一版 **2026-11-02**（已交棒的 session 收到任何使用者新訊息，先恢復「工作中」，保留原時間與累計交棒次數；要改檔仍須重新走 A 模式。交棒次數記在 session 標題，只有 B 模式成功 push 才增加，不在 HANDOFF 累積 session 歷史。2026-11-02 使用者指出：agent 自主交棒後，同一 session 繼續對話卻留著「已交棒」，讓側欄狀態與實際活動不符。新增程序文字與入口觸發詞的負向測試；沒有新增逐訊息 hook 或模型探針。）
 > 前一版 **2026-11-01.4**（Windows 的 Codex hook 改經 Git Bash 啟動器，保留 `.sh` 的判斷與結束碼；skill 的 B5 補上接線變更後必須重新審核、驗收實際執行的程序，所以 `VERSION` 同步跳版。）
 > 前一版 **2026-11-01.3**（**把「改 session 名稱」寫進 A5 與 B9 的回報模板，變成必填的一行。**2026-11-01 量到：六個收尾 session（全 Sonnet）裡只有四個照「session 命名」改成 `↗　…｜已交棒`，另外兩個用的還是派工時給的標題；六個的 git 結果**全部正確**，漏的只有命名。**為什麼漏沒有量過**，所以這次不針對某個原因下藥——改的是「有沒有做」看不看得出來：改名發生在 session 的外殼上，repo 裡不留痕跡，`check_docs.py`、`git-freshness.sh`、pre-push 防呆三層**全都看不到它**，漏掉完全無聲，而無聲的漏跟「沒有這條規則」在畫面上一模一樣。回報那一行是它唯一能有的守門人：改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>`（仍然不必為此停下來問使用者）。B9 同時從散文改成有編號的三件事（改名→確認 origin 的「工作中」已清→回報）——漏掉的那兩個 session 把 B1–B8 **有編號**的步驟全做對了，而改名是整個 B 模式裡唯一沒有編號的動作。順手補掉一個讀文字就看得出來的洞：舊版 B9 寫「前面的 `YYMMDDHH｜<主題>` 原封不動」，那句話**預設 A5 已經改過名**，A5 漏掉時它無從執行，而那時候唯一拿得到的時間是「現在」——重算會寫出交棒的小時，正是同日把時間戳搬進 hook 要修掉的那種靜默錯誤；所以補一條恢復路徑：前綴從 `HANDOFF.md`「工作中」欄位抄（它記的就是開工時間與當時的 session 名）。守門人：`verify_bootstrap.py` 新增「改名寫進回報模板」，釘 A5／B9 兩個模板各有一行 `session：`、而且都留著「不適用」這個選項，附三個負向測試（刪 A5 那行、刪 B9 那行、拿掉「不適用」）。**為什麼跳版**：這次真的動到 `SKILL.md`，`VERSION` 要跟著走（鐵律 1）。**序號為什麼是 `.2` 而不是 `.4`**：序號算的是**當天第幾個帶 `source:` 標記的改動**，不是當天第幾次碰部署包——當天前兩次只改敘述、沒有任何標記動過，第三次改了 3.10 拿到 `v2026-11-01`，這是第二個。所以 `版本行` 從來沒有過裸的 `2026-11-01`，那不是漏編號，是當天第三次刻意不跳版的結果。另外，A5／B9 標題裡的行數**刻意沒跟著改**（A5 仍是「3–5 行」、B9 仍是「≤5 行」）：那兩個數字在 `README.md`、`handover-protocol.md`、3.10 的開場提醒等**六個地方**都有副本，其中兩處是 `sync_project.py` 的 `INSTANCE`、永遠不會同步——改一個數字就會製造一處無聲分岔，而模板現在剛好是 5 行、本來就落在原範圍內。下一棒看到「必填 5 行卻寫 3–5」不要去修它。**`.2` 是同一輪 15 分鐘前推出去的同一件事**，只差 A5／B9 標題的行數；因為那一版已經 push，而 `VERSION` 的同一個號不該對應兩份不同的 `SKILL.md`（那正是鐵律 2 寫下來要防的事），所以還原行數時一起跳到 `.3`。那 15 分鐘裡沒有任何副本同步過 `.2`——六個專案實測都還在 `v2026-10-31`，全域兩份當場重新覆蓋）
 > 前一版 **2026-10-31**（「工作中」標記**加工具欄**，格式變成 `` `機器` ／ `工具` ／ `session 名`（可選） ``。舊格式只比機器名，於是**同一台機器換個工具**就落進「大概是你自己另一個視窗」的 🟡，而 A2.5 叫人去驗的那個證據（側欄有沒有 `㊣`）只有 Claude Code 有——同機器通常就是同一個工作樹，兩個 agent 會**即時互相覆寫**，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。四處一起改，缺一處就白做：A5 寫標記時填工具名；A2.5 的「指向這台機器」拆成同工具／別的工具／沒有工具欄三列，判準不再綁側欄；`git-freshness.sh` 的同機器分支拆成同工具→🟡／不同工具→🔴；`check_docs.py` 第 6 項擋「標記在工作中卻沒有工具欄」——否則新格式會靜默退化回舊行為，而靜默退化跟「沒這個機制」在畫面上一模一樣。**工具名由寫標記的那一棒自己填**：模型知道自己是誰，三個平台一致；環境變數只拿來**加嚴**（偵測到的工具跟標記不符就 🔴），一致或認不出來都只給 🟡 並把問題丟回給模型答——跨工具啟動時變數會被繼承、會說謊（2026-10-31 實測，見「工具身分」一節）。新舊格式靠 session 名裡的全形豎線分辨，所以同一段邏輯讀得了還沒升級的專案，不必先問「這個專案升級了沒」）
@@ -1368,7 +1372,7 @@ git fetch origin && git status -sb
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-01 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-02.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：git 新鮮度檢查（多機分岔防呆）
 # 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
 # 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
@@ -1417,55 +1421,92 @@ fi
 # 分不出來，而這個機制的全部價值就在於讓人知道「有沒有被查」。
 remote_handoff=$(git show "origin/$branch:HANDOFF.md" 2>/dev/null)
 if [ -n "$remote_handoff" ]; then
-  busy=$(printf '%s\n' "$remote_handoff" | grep -F '**工作中**' | head -1)
-  case "$busy" in
-    '')
-      echo "[git-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 $branch（這個專案的骨架還沒升級到有這個機制；下次交棒時照 B6 補上）。"
-      ;;
-    *無*)
-      echo "[git-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 $branch。"
-      ;;
-    *)
-      who=${busy#*：}
-      me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
-      same=no
-      [ -n "$me" ] && case "$busy" in *"$me"*) same=yes ;; esac
-      # 工具欄＝標記的第二欄（欄位用全形斜線 ／ 分隔）。2026-10-31 加：只比機器名的時候，
-      # 同一台機器換個工具就落進「大概是你自己另一個視窗」的 🟡——而同機器通常就是同一個
-      # 工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。
-      # 舊格式沒有工具欄，第二欄會是 session 名，而 session 名一定含全形豎線
-      # （`符號　YYMMDDHH｜主題｜狀態`）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
-      # 不必先知道這個專案升級了沒。全程只用參數展開，不用 sed：這段會被抄進各專案，
-      # 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西。
-      tool=''
-      case "$who" in
-        *／*)
-          rest=${who#*／}
-          tool=${rest%%／*}
-          tool=${tool# }
-          tool=${tool% }
-          tool=${tool#'`'}
-          tool=${tool%'`'}
-          ;;
+  # 「工作中」欄位的判讀。2026-11-02 從子字串比對改成精確解析（查核報告 F01）。
+  # 舊版 `case "$busy" in *無*)` 拿整列當子字串比，於是**正常的任務名稱**就足以產生錯誤
+  # 綠燈：標記寫著別台機器正在做、而 session 主題叫「修無效連結」，它會印「✅ 無（已交棒）」。
+  # 同一個洞在機器名比對上也有——舊版拿整列當乾草堆、`$me` 當針，所以 `desk` 與 `desk-win`
+  # 互為子字串時會錯判成「同一台機器」，而那個方向的錯正好是放行。
+  # 現在的規則：
+  #   ① 只有欄位值正規化後**完整等於** `無（已交棒）` 才算空閒；
+  #   ② 其餘一律逐欄解析，機器欄要**完整相等**（只忽略大小寫，不接受子字串）；
+  #   ③ 欄位重複、或解析不出機器欄，都當成「有人在做」——永遠不往放行的方向猜。
+  # 全程只用參數展開與 tr，不用 sed：這段會被抄進各專案，而一條充滿轉義的 sed 腳本是
+  # 最容易在抄寫時悄悄壞掉的東西。
+  trim_mark() {                      # 去頭尾的半形／全形空白與反引號
+    _s=$1
+    while :; do
+      case $_s in
+        ' '*) _s=${_s# } ;;
+        '　'*) _s=${_s#　} ;;
+        *' ') _s=${_s% } ;;
+        *'　') _s=${_s%　} ;;
+        '`'*) _s=${_s#'`'} ;;
+        *'`') _s=${_s%'`'} ;;
+        *) break ;;
       esac
-      case "$tool" in *｜*) tool='' ;; esac
-      # 自己是哪個工具：環境變數只拿來**加嚴**，不拿來放寬（2026-10-31 實測，理由見部署包
-      # 「工具身分」一節）。兩家以上的簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，
-      # 這時不猜——猜錯的方向會是「放行」，正好是最貴的那一種錯。
-      mytool=''
-      sigs=0
-      [ -n "${CODEX_VERSION:-}${CODEX_SESSION_ID:-}" ] && { mytool='Codex CLI'; sigs=$((sigs + 1)); }
-      [ -n "${GEMINI_CLI:-}" ] && { mytool='Gemini CLI'; sigs=$((sigs + 1)); }
-      [ -n "${CLAUDECODE:-}" ] && { mytool='Claude Code'; sigs=$((sigs + 1)); }
-      [ "$sigs" -gt 1 ] && mytool=''
-      # 比字串時不分大小寫，也接受標記寫得比偵測值長（例如 `Claude Code (desktop)`）：
-      # 寫法差一點就報 🔴 是在加嚴的方向，但也只是噪音，而噪音多了就會有人學會無視它。
-      mismatch=no
-      if [ -n "$mytool" ] && [ -n "$tool" ]; then
-        lc=$(printf '%s' "$tool" | tr 'A-Z' 'a-z')
-        mylc=$(printf '%s' "$mytool" | tr 'A-Z' 'a-z')
-        case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
-      fi
+    done
+    printf '%s' "$_s"
+  }
+  busy_all=$(printf '%s\n' "$remote_handoff" | grep -F '**工作中**')
+  busy_n=$(printf '%s\n' "$busy_all" | grep -c '[^[:space:]]' || true)
+  busy=$(printf '%s\n' "$busy_all" | head -1)
+  value=${busy#*：}
+  value=${value%%，*}                # 砍掉「，2026-… (+08) 開工」那段尾註
+  value=$(trim_mark "$value")
+  if [ "$busy_n" -eq 0 ]; then
+    echo "[git-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 $branch（這個專案的骨架還沒升級到有這個機制；下次交棒時照 B6 補上）。"
+  elif [ "$busy_n" -gt 1 ]; then
+    echo "[git-check] 🔴 origin 的 HANDOFF.md 有 $busy_n 列「工作中」欄位，判讀不出來誰握著 $branch。"
+    echo "[git-check]    不猜——照 A2.5 停下來問使用者。這一欄只能有一列（B6 是覆寫，不要往下疊）。"
+  elif [ "$value" = '無（已交棒）' ]; then
+    echo "[git-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 $branch。"
+  else
+    who=${busy#*：}
+    machine=$(trim_mark "${value%%／*}")
+    # 工具欄＝標記的第二欄（欄位用全形斜線 ／ 分隔）。2026-10-31 加：只比機器名的時候，
+    # 同一台機器換個工具就落進「大概是你自己另一個視窗」的 🟡——而同機器通常就是同一個
+    # 工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。
+    # 舊格式沒有工具欄，第二欄會是 session 名，而 session 名一定含全形豎線
+    # （`符號　YYMMDDHH｜主題｜狀態`）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
+    # 不必先知道這個專案升級了沒。全程只用參數展開，不用 sed：這段會被抄進各專案，
+    # 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西。
+    tool=''
+    case $value in
+      *／*)
+        rest=${value#*／}
+        tool=$(trim_mark "${rest%%／*}")
+        ;;
+    esac
+    case $tool in *｜*) tool='' ;; esac
+    me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
+    same=no
+    if [ -n "$me" ] && [ -n "$machine" ]; then
+      mlc=$(printf '%s' "$machine" | tr 'A-Z' 'a-z')
+      melc=$(printf '%s' "$me" | tr 'A-Z' 'a-z')
+      [ "$mlc" = "$melc" ] && same=yes
+    fi
+    # 自己是哪個工具：環境變數只拿來**加嚴**，不拿來放寬（2026-10-31 實測，理由見部署包
+    # 「工具身分」一節）。兩家以上的簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，
+    # 這時不猜——猜錯的方向會是「放行」，正好是最貴的那一種錯。
+    mytool=''
+    sigs=0
+    [ -n "${CODEX_VERSION:-}${CODEX_SESSION_ID:-}" ] && { mytool='Codex CLI'; sigs=$((sigs + 1)); }
+    [ -n "${GEMINI_CLI:-}" ] && { mytool='Gemini CLI'; sigs=$((sigs + 1)); }
+    [ -n "${CLAUDECODE:-}" ] && { mytool='Claude Code'; sigs=$((sigs + 1)); }
+    [ "$sigs" -gt 1 ] && mytool=''
+    # 比字串時不分大小寫，也接受標記寫得比偵測值長（例如 `Claude Code (desktop)`）：
+    # 寫法差一點就報 🔴 是在加嚴的方向，但也只是噪音，而噪音多了就會有人學會無視它。
+    mismatch=no
+    if [ -n "$mytool" ] && [ -n "$tool" ]; then
+      lc=$(printf '%s' "$tool" | tr 'A-Z' 'a-z')
+      mylc=$(printf '%s' "$mytool" | tr 'A-Z' 'a-z')
+      case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
+    fi
+    if [ -z "$machine" ]; then
+      echo "[git-check] 🔴 「工作中」欄位有值、但解析不出機器欄，判讀不出來誰握著 $branch：$who"
+      echo "[git-check]    當成有人在做處理。格式是「機器 ／ 工具 ／ session 名」（第三欄可選），見 skill 的 A5。"
+      echo "[git-check]    照 A2.5 停下來問使用者，不要直接接棒。"
+    else
       if [ "$same" = no ]; then
         echo "[git-check] 🔴 另一台機器正在 $branch 上工作，尚未交棒：$who"
         echo "[git-check]    依 single writer 規則，同一時間只能有一台機器動同一條分支。"
@@ -1481,8 +1522,8 @@ if [ -n "$remote_handoff" ]; then
         echo "[git-check] 🟡 這台機器（$me）上有一個「$tool」的 session 在 $branch 上沒交棒：$who"
         echo "[git-check]    你自己是不是「$tool」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
       fi
-      ;;
-  esac
+    fi
+  fi
 fi
 # origin 上沒有 HANDOFF.md（沒用這套制度，或這條分支還沒推過）就整段安靜跳過——
 # 那不是本 hook 該管的事，在這種 repo 裡每次開場嘮叨一句只會讓人學會無視 [git-check]。
@@ -1505,9 +1546,32 @@ if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
     latest=$(curl -fsS --max-time 5 "$UPSTREAM_VERSION_URL" 2>/dev/null | tr -d '\r\n \t')
     [ -n "$latest" ] && printf '%s' "$latest" > "$cache" 2>/dev/null
   fi
+  # 2026-11-02 修（查核報告 F09）：舊版只比 `!=`，訊息卻寫死「落後」——本機比上游**新**的
+  # 時候（權威版還沒 push，或有人就地改了副本）它一樣印「落後」並叫你跑 sync_project.py，
+  # 而那會把新的蓋成舊的。所以方向要自己判：版本號是 `YYYY-MM-DD` 或 `YYYY-MM-DD.N`，
+  # 把序號補成三位數之後日期與序號就能一起比字典序（`.2` 與 `.10` 才不會比反），再用 sort
+  # 挑出較小的那一個——不用 test 的 `<`，那不是 POSIX。
+  verkey() {
+    _d=${1%%.*}
+    _n=${1#"$_d"}
+    _n=${_n#.}
+    [ -n "$_n" ] || _n=0
+    case $_n in *[!0-9]*) _n=0 ;; esac
+    printf '%s.%03d' "$_d" "$_n"
+  }
   if [ -n "$mine" ] && [ -n "$latest" ] && [ "$mine" != "$latest" ]; then
-    echo "[git-check] 🟡 handoff 骨架落後：本機 v$mine，最新 v$latest。"
-    echo "[git-check]    到 project-bootstrap 跑：python -X utf8 tools/sync_project.py <本專案路徑>（python 不存在就用 python3）"
+    km=$(verkey "$mine")
+    kl=$(verkey "$latest")
+    if [ "$km" = "$kl" ]; then
+      :                              # 只是寫法不同（2026-11-02 與 2026-11-02.0），不吵
+    elif [ "$(printf '%s\n%s\n' "$km" "$kl" | sort | head -1)" = "$km" ]; then
+      echo "[git-check] 🟡 handoff 骨架落後：本機 v$mine，最新 v$latest。"
+      echo "[git-check]    到 project-bootstrap 跑：python -X utf8 tools/sync_project.py <本專案路徑>（python 不存在就用 python3）"
+    else
+      echo "[git-check] 🟡 本機 handoff 骨架比上游新：本機 v$mine，上游 v$latest。"
+      echo "[git-check]    這不是落後——可能是權威版還沒 push，或有人就地改了這個專案的副本（鐵律 1 禁止）。"
+      echo "[git-check]    不要跑 sync_project.py，那會把新的蓋成舊的；先確認權威版推上去了沒。"
+    fi
   fi
 fi
 
@@ -1639,7 +1703,7 @@ Thumbs.db
 
 問題以結束碼 2 回報，乾淨為 0。本工具唯讀，絕不修改任何檔案。
 
-source: PROJECT-BOOTSTRAP.md v2026-10-31 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+source: PROJECT-BOOTSTRAP.md v2026-11-02.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 「專案設定」區塊以外的內容應與權威版一致；副本落後時用這一行辨識。
 """
 import argparse
@@ -1760,6 +1824,11 @@ def check_placeholders(files):
     return bad
 
 
+# 交棒後「工作中」欄位唯一合法的值。hook 與這支檢查器都只接受它，
+# 不接受任何含「無」的字串（2026-11-02，查核報告 F01）。
+FREE_MARK = '無（已交棒）'
+
+
 def check_busy_field(files):
     # 第 6 項：HANDOFF.md 的「工作中」欄位必須在。這一欄是 handoff skill A2.5 判斷
     # 「同一條分支有沒有別人在做」的唯一依據，而它掉了不會有任何徵兆——下一棒
@@ -1781,14 +1850,27 @@ def check_busy_field(files):
         # 退化回舊行為，而退化後的畫面跟「沒這個機制」一模一樣，所以要擋在這裡。
         # 判別子是 session 名裡的全形豎線：`機器` ／ `工具` 的第二欄不會有它，
         # `機器` ／ `session 名`（舊格式）的第二欄一定有。
-        for num, line in enumerate(text.splitlines(), 1):
-            if '**工作中**' not in line:
+        # 2026-11-02 改成精確比對（查核報告 F01）。舊版用 `'無' in value` 判「已交棒」，
+        # 於是標記寫著別台機器正在做、而 session 主題叫「修無效連結」，整個格式驗證就被
+        # 跳過——兩支 hook 用同一個判準，所以同一個**正常的任務名稱**會讓它們印出錯誤的
+        # 綠燈。現在只有正規化後完整等於「無（已交棒）」才算空閒，其餘一律驗欄位。
+        # 同時擋「欄位重複」：hook 只讀第一列，重複的話判讀結果等於看運氣。
+        rows = [(n, l) for n, l in enumerate(text.splitlines(), 1) if '**工作中**' in l]
+        if len(rows) > 1:
+            bad.append('HANDOFF.md:%s  有 %d 列「工作中」欄位——這一欄只能有一列，'
+                       'hook 只會讀到第一列，其餘的靜默失效（B6 是覆寫，不要往下疊）'
+                       % ('、'.join(str(n) for n, _ in rows), len(rows)))
+        for num, line in rows:
+            # 砍掉「，2026-… (+08) 開工」那段尾註，再去頭尾的半形／全形空白與反引號
+            value = line.split('：', 1)[-1].split('，')[0].strip(' \t\u3000`').strip()
+            if value == FREE_MARK:
                 continue
-            value = line.split('：', 1)[-1]
-            if '無' in value:          # 「無（已交棒）」：沒人在做，不需要工具欄
-                continue
-            fields = [f.strip() for f in value.split('／')]
-            if len(fields) < 2 or '｜' in fields[1]:
+            fields = [f.strip(' \t\u3000`').strip() for f in value.split('／')]
+            if not fields[0]:
+                bad.append(f'HANDOFF.md:{num}  「工作中」欄位有值、但解析不出機器欄'
+                           f'（讀到：{value[:40]}）——交棒後要正好寫「{FREE_MARK}」，'
+                           '開工時寫 `機器` ／ `工具` ／ `session 名`（第三欄可選）')
+            elif len(fields) < 2 or '｜' in fields[1]:
                 bad.append(f'HANDOFF.md:{num}  「工作中」標記缺工具欄——格式是 '
                            '`機器` ／ `工具` ／ `session 名`（可選）。少了工具名，'
                            '同機器換工具的誤接棒就擋不住（見 handoff skill 的 A5）')
@@ -2269,7 +2351,7 @@ git status -sb
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
 - [ ] `bash .claude/hooks/git-freshness.sh` → 印出 `✅ 本機沒落後 origin`，且最後**兩**行是 `[handoff]` 的交接提醒與開工改名提示（後者長得像 `㊣　26110112｜<主題>｜工作中`，時間戳是當下的；2026-11-01 加）。沒有 upstream 會印警告，表示第 4 節沒做完
 - [ ] **工作中標記防呆**：把 `HANDOFF.md` 的「工作中」改成 `` `假機器名` ／ `Claude Code` ``，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 要印 🔴 並叫你走 A2.5；改成**這台機器**＋一個**別的工具名**（例如 `` `<本機名>` ／ `Codex CLI` ``）再跑 → 同樣要 🔴（這是 2026-10-31 補的同機器跨工具那個洞；若本機偵測不出自己是哪個工具，會退成 🟡 並把問題丟回給你答，那也是對的）；改回「無（已交棒）」、commit、push 後再跑 → 不該再印。**驗完記得改回來**
-- [ ] **骨架版本偵測**：`printf 1999-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要印 🟡「handoff 骨架落後」。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
+- [ ] **骨架版本偵測**：`printf 2099-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要印 🟡「handoff 骨架落後」。快取裡放的是**上游最新版**，所以要餵一個比本機**新**的值；餵 2026-11-02 之前的舊日期只會印「比上游新」（2026-11-02 修正，見 F09——舊版這裡寫 `1999-01-01`，而那是本機領先，只是當時的實作不分方向所以照樣印落後）。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）
 - [ ] **`CLAUDE.md` 只有 `@AGENTS.md` 這一行 import**，不是「去讀 AGENTS.md」那種句子——有 `CLAUDE.md` 時 Claude Code 不會自己讀 `AGENTS.md`，而用文字請它去讀不保證它真的開那個檔（理由見開頭「跨工具與跨平台」）。開一個 session 問它「`AGENTS.md` 的鐵律第 1 條是什麼」，答得出來才算接上
 - [ ] `ARCHITECT.md` 存在且有「最後更新」標頭（`check_docs.py` 會擋），「專案本體」那節寫的是**實況**——還沒有程式碼就照實寫，不要先畫一個想像中的架構

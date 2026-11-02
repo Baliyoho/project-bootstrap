@@ -462,21 +462,46 @@ def step_busy_tool_guard(dest):
     field = '- **工作中**：'
     line = next((ln for ln in original.split('\n') if ln.startswith(field)), None)
     if line is None:
-        record('FAIL', '工具欄（負向測試）', 'HANDOFF.md 範本找不到「工作中」欄位列')
+        record('FAIL', '工作中欄位格式（負向測試）', 'HANDOFF.md 範本找不到「工作中」欄位列')
         return False
-    stale = field + '`desk-win` ／ `㊣　26103009｜測試｜工作中`，2026-10-30 09:12 (+08) 開工'
+    sess = '`㊣　26103009｜測試｜工作中`'
+    # 四個都要被擋下。後三個是 2026-11-02 補的 F01 負向測試，在舊版（`'無' in value`
+    # 就跳過驗證、而且只看第一列）上**全部會 exit 0**：
+    #   ②「修無效連結」是完全正常的任務名稱，卻讓整個格式驗證被跳過；
+    #   ③ 第一列寫「無（已交棒）」、第二列是真的占用標記——hook 只讀第一列，所以
+    #      重複欄位等於讓人用一行字關掉防呆；
+    #   ④ 機器欄空白，舊版照樣當成合法的三欄標記。
+    bads = (
+        ('舊格式沒有工具欄', '缺工具欄',
+         '`desk-win` ／ ' + sess + '，2026-10-30 09:12 (+08) 開工'),
+        ('主題含「無」仍要驗格式', '缺工具欄',
+         '`other-box` ／ `㊣　26110209｜修無效連結｜工作中`'),
+        ('欄位重複', '列「工作中」欄位',
+         '無（已交棒）\n' + field + '`other-box` ／ `Codex CLI` ／ ' + sess),
+        ('機器欄空白', '解析不出機器欄', '／ `Codex CLI` ／ ' + sess),
+    )
     try:
+        for name, want, value in bads:
+            with open(target, 'w', encoding='utf-8', newline='') as fh:
+                fh.write(original.replace(line, field + value))
+            git(['add', '-A'], dest)
+            r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
+            if r.returncode != 2 or want not in r.stdout:
+                record('FAIL', '工作中欄位格式（負向測試）',
+                       f'「{name}」沒被擋下：期望 exit 2 並指出「{want}」，'
+                       f'實得 exit {r.returncode}——檢查 check_docs.py 的 check_busy_field')
+                return False
+        # 反向保險：修法不能嚴到連正常的已交棒值都認不出來（前後多幾個空白也要過）
         with open(target, 'w', encoding='utf-8', newline='') as fh:
-            fh.write(original.replace(line, stale))
+            fh.write(original.replace(line, field + '　無（已交棒）　'))
         git(['add', '-A'], dest)
         r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-        if r.returncode != 2 or '缺工具欄' not in r.stdout:
-            record('FAIL', '工具欄（負向測試）',
-                   f'期望 exit 2 並指出「缺工具欄」，實得 exit {r.returncode}'
-                   '——檢查 check_docs.py 的 check_busy_field')
+        if r.returncode != 0:
+            record('FAIL', '工作中欄位格式（負向測試）',
+                   f'「已交棒前後有空白」被誤擋：期望 exit 0，實得 exit {r.returncode}')
             return False
-        record('OK', '工具欄（負向測試）',
-               '舊格式標記（沒有工具欄）確實被擋下（exit 2）')
+        record('OK', '工作中欄位格式（負向測試）',
+               '%d 種壞格式都擋下（exit 2），正常的已交棒值不誤擋' % len(bads))
         return True
     finally:
         with open(target, 'w', encoding='utf-8', newline='') as fh:
@@ -592,6 +617,40 @@ def busy_cases(push_busy, me):
     # 八位數字、全形豎線，少一樣側欄上就排不整齊，而排不整齊就等於沒改名。
     cases.append(('印開工改名提示', '開工改名用' in out
                   and re.search('㊣　[0-9]{8}｜', out) is not None))
+
+    # ── F01 的負向測試（2026-11-02）。舊版 `case "$busy" in *無*)` 拿整列當子字串比，
+    # 機器名比對也拿整列當乾草堆，所以下面前四個情境在舊版上全是錯的，而且錯的方向
+    # 都是「放行」：前兩個直接印 ✅、第三個把別台機器讀成自己這台、第四個讓 head -1
+    # 替你選一列。第五個是反向保險——修法不能嚴到連正常的已交棒值都認不出來。
+    free = '✅ 「工作中」是'
+    other = '🔴 另一台機器正在'
+
+    out = push_busy('`other-box` ／ `Codex CLI` ／ `㊣　26110209｜修無效連結｜工作中｜交棒0次`',
+                    claude)
+    cases.append(('主題含「無」→🔴', other in out and free not in out))
+
+    out = push_busy('`無人機-box` ／ `Codex CLI` ／ ' + sess, claude)
+    cases.append(('機器名含「無」→🔴', other in out and free not in out))
+
+    # 機器名互為子字串：舊版拿 $me 當針、整列當乾草堆，所以 `<me>-2` 會被讀成「同一台」。
+    out = push_busy('`%s-2` ／ `Claude Code` ／ %s' % (me, sess), claude)
+    cases.append(('機器名互為子字串→🔴', other in out and '🟡 這台機器' not in out))
+
+    # 兩列欄位，第一列寫「無（已交棒）」、第二列是真的占用標記。舊版只讀第一列，
+    # 於是一行字就能無聲關掉整個防呆。
+    out = push_busy('無（已交棒）\n- **工作中**：`other-box` ／ `Codex CLI` ／ ' + sess, claude)
+    cases.append(('欄位重複→🔴不猜', '列「工作中」欄位' in out and free not in out))
+
+    # 機器欄空白：F01 新加的「解析不出來就當成有人在做」那條分支。順便釘住訊息的字面
+    # 寫法——它原本用反引號包欄位名，而反引號在雙引號裡是**命令替換**，shell 會真的去
+    # 執行「機器」，那三個欄位名就變成空白。改回反引號的話這串字會被吃掉，這一項就 FAIL。
+    out = push_busy('／ `Codex CLI` ／ ' + sess, claude)
+    cases.append(('機器欄空白→🔴且不猜',
+                  '解析不出機器欄' in out and free not in out
+                  and '「機器 ／ 工具 ／ session 名」' in out))
+
+    out = push_busy('　無（已交棒）　', claude)
+    cases.append(('已交棒前後有空白→✅', free in out and other not in out))
     return cases, out
 
 
@@ -715,7 +774,8 @@ def step_version_check(work):
     """骨架版本落後偵測（2026-10-30）。
 
     用快取檔餵假版本，所以**不打網路**：離線也驗得到，而且驗的正是比對邏輯本身
-    （真正會壞的是比對，不是 curl）。三個情境：落後要講、同版要閉嘴、關掉開關要閉嘴。
+    （真正會壞的是比對，不是 curl）。五個情境：落後要講、**領先不能說成落後**、
+    領先要勸退同步、同版要閉嘴、關掉開關要閉嘴。方向那兩項是 2026-11-02 補的（F09）。
     """
     bash = find_bash()
     if not bash or work is None:
@@ -725,15 +785,25 @@ def step_version_check(work):
     cache = work / '.claude' / '.bootstrap-version'
     mark = '骨架落後'
 
-    cache.write_text('1999-01-01', encoding='utf-8', newline='')
+    # 🔴 快取裡放的是「上游最新版」，所以落後的情境要餵一個**比本機新**的版本。
+    # 2026-11-02 修（查核報告 F09）：舊版這裡餵 1999-01-01——那是上游比本機**舊**，
+    # 也就是「本機領先」，卻被命名成「落後→講」並且通過。所以這個測試不但沒守住方向，
+    # 還會把任何正確的修法判成 FAIL。方向弄反時沒有任何徵兆，因為舊實作只比 `!=`。
+    cache.write_text('2099-01-01', encoding='utf-8', newline='')
     lag = run([bash, hook], cwd=work).stdout
     off = run([bash, hook], cwd=work, env=dict(GIT_ENV, BOOTSTRAP_VERSION_CHECK='off')).stdout
+    cache.write_text('1999-01-01', encoding='utf-8', newline='')
+    ahead = run([bash, hook], cwd=work).stdout
     cache.write_text((ROOT / 'VERSION').read_text(encoding='utf-8').strip(),
                      encoding='utf-8', newline='')
     same = run([bash, hook], cwd=work).stdout
     cache.unlink(missing_ok=True)
 
-    cases = [('落後→講', mark in lag), ('同版→閉嘴', mark not in same),
+    cases = [('落後→講', mark in lag),
+             ('領先→不說落後', mark not in ahead),
+             ('領先→說比上游新並勸退同步',
+              '比上游新' in ahead and '不要跑 sync_project.py' in ahead),
+             ('同版→閉嘴', mark not in same),
              ('開關 off→閉嘴', mark not in off)]
     bad = [n for n, good in cases if not good]
     if bad:

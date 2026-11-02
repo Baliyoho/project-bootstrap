@@ -60,55 +60,92 @@ fi
 # 分不出來，而這個機制的全部價值就在於讓人知道「有沒有被查」。
 remote_handoff=$(git show "origin/$branch:HANDOFF.md" 2>/dev/null)
 if [ -n "$remote_handoff" ]; then
-  busy=$(printf '%s\n' "$remote_handoff" | grep -F '**工作中**' | head -1)
-  case "$busy" in
-    '')
-      echo "[repo-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 $branch（下次交棒時照 B6 補回來）。"
-      ;;
-    *無*)
-      echo "[repo-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 $branch。"
-      ;;
-    *)
-      who=${busy#*：}
-      me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
-      same=no
-      [ -n "$me" ] && case "$busy" in *"$me"*) same=yes ;; esac
-      # 工具欄＝標記的第二欄（欄位用全形斜線 ／ 分隔）。2026-10-31 加：只比機器名的時候，
-      # 同一台機器換個工具就落進「大概是你自己另一個視窗」的 🟡——而同機器通常就是同一個
-      # 工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。
-      # 舊格式沒有工具欄，第二欄會是 session 名，而 session 名一定含全形豎線
-      # （`符號　YYMMDDHH｜主題｜狀態`）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
-      # 不必先知道這個專案升級了沒。全程只用參數展開，不用 sed：這段會被抄進各專案，
-      # 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西。
-      tool=''
-      case "$who" in
-        *／*)
-          rest=${who#*／}
-          tool=${rest%%／*}
-          tool=${tool# }
-          tool=${tool% }
-          tool=${tool#'`'}
-          tool=${tool%'`'}
-          ;;
+  # 「工作中」欄位的判讀。2026-11-02 從子字串比對改成精確解析（查核報告 F01）。
+  # 舊版 `case "$busy" in *無*)` 拿整列當子字串比，於是**正常的任務名稱**就足以產生錯誤
+  # 綠燈：標記寫著別台機器正在做、而 session 主題叫「修無效連結」，它會印「✅ 無（已交棒）」。
+  # 同一個洞在機器名比對上也有——舊版拿整列當乾草堆、`$me` 當針，所以 `desk` 與 `desk-win`
+  # 互為子字串時會錯判成「同一台機器」，而那個方向的錯正好是放行。
+  # 現在的規則：
+  #   ① 只有欄位值正規化後**完整等於** `無（已交棒）` 才算空閒；
+  #   ② 其餘一律逐欄解析，機器欄要**完整相等**（只忽略大小寫，不接受子字串）；
+  #   ③ 欄位重複、或解析不出機器欄，都當成「有人在做」——永遠不往放行的方向猜。
+  # 全程只用參數展開與 tr，不用 sed：這段會被抄進各專案，而一條充滿轉義的 sed 腳本是
+  # 最容易在抄寫時悄悄壞掉的東西。
+  trim_mark() {                      # 去頭尾的半形／全形空白與反引號
+    _s=$1
+    while :; do
+      case $_s in
+        ' '*) _s=${_s# } ;;
+        '　'*) _s=${_s#　} ;;
+        *' ') _s=${_s% } ;;
+        *'　') _s=${_s%　} ;;
+        '`'*) _s=${_s#'`'} ;;
+        *'`') _s=${_s%'`'} ;;
+        *) break ;;
       esac
-      case "$tool" in *｜*) tool='' ;; esac
-      # 自己是哪個工具：環境變數只拿來**加嚴**，不拿來放寬（2026-10-31 實測，理由見部署包
-      # 「工具身分」一節）。兩家以上的簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，
-      # 這時不猜——猜錯的方向會是「放行」，正好是最貴的那一種錯。
-      mytool=''
-      sigs=0
-      [ -n "${CODEX_VERSION:-}${CODEX_SESSION_ID:-}" ] && { mytool='Codex CLI'; sigs=$((sigs + 1)); }
-      [ -n "${GEMINI_CLI:-}" ] && { mytool='Gemini CLI'; sigs=$((sigs + 1)); }
-      [ -n "${CLAUDECODE:-}" ] && { mytool='Claude Code'; sigs=$((sigs + 1)); }
-      [ "$sigs" -gt 1 ] && mytool=''
-      # 比字串時不分大小寫，也接受標記寫得比偵測值長（例如 `Claude Code (desktop)`）：
-      # 寫法差一點就報 🔴 是在加嚴的方向，但也只是噪音，而噪音多了就會有人學會無視它。
-      mismatch=no
-      if [ -n "$mytool" ] && [ -n "$tool" ]; then
-        lc=$(printf '%s' "$tool" | tr 'A-Z' 'a-z')
-        mylc=$(printf '%s' "$mytool" | tr 'A-Z' 'a-z')
-        case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
-      fi
+    done
+    printf '%s' "$_s"
+  }
+  busy_all=$(printf '%s\n' "$remote_handoff" | grep -F '**工作中**')
+  busy_n=$(printf '%s\n' "$busy_all" | grep -c '[^[:space:]]' || true)
+  busy=$(printf '%s\n' "$busy_all" | head -1)
+  value=${busy#*：}
+  value=${value%%，*}                # 砍掉「，2026-… (+08) 開工」那段尾註
+  value=$(trim_mark "$value")
+  if [ "$busy_n" -eq 0 ]; then
+    echo "[repo-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 $branch（下次交棒時照 B6 補回來）。"
+  elif [ "$busy_n" -gt 1 ]; then
+    echo "[repo-check] 🔴 origin 的 HANDOFF.md 有 $busy_n 列「工作中」欄位，判讀不出來誰握著 $branch。"
+    echo "[repo-check]    不猜——照 A2.5 停下來問使用者。這一欄只能有一列（B6 是覆寫，不要往下疊）。"
+  elif [ "$value" = '無（已交棒）' ]; then
+    echo "[repo-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 $branch。"
+  else
+    who=${busy#*：}
+    machine=$(trim_mark "${value%%／*}")
+    # 工具欄＝標記的第二欄（欄位用全形斜線 ／ 分隔）。2026-10-31 加：只比機器名的時候，
+    # 同一台機器換個工具就落進「大概是你自己另一個視窗」的 🟡——而同機器通常就是同一個
+    # 工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。
+    # 舊格式沒有工具欄，第二欄會是 session 名，而 session 名一定含全形豎線
+    # （`符號　YYMMDDHH｜主題｜狀態`）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
+    # 不必先知道這個專案升級了沒。全程只用參數展開，不用 sed：這段會被抄進各專案，
+    # 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西。
+    tool=''
+    case $value in
+      *／*)
+        rest=${value#*／}
+        tool=$(trim_mark "${rest%%／*}")
+        ;;
+    esac
+    case $tool in *｜*) tool='' ;; esac
+    me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
+    same=no
+    if [ -n "$me" ] && [ -n "$machine" ]; then
+      mlc=$(printf '%s' "$machine" | tr 'A-Z' 'a-z')
+      melc=$(printf '%s' "$me" | tr 'A-Z' 'a-z')
+      [ "$mlc" = "$melc" ] && same=yes
+    fi
+    # 自己是哪個工具：環境變數只拿來**加嚴**，不拿來放寬（2026-10-31 實測，理由見部署包
+    # 「工具身分」一節）。兩家以上的簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，
+    # 這時不猜——猜錯的方向會是「放行」，正好是最貴的那一種錯。
+    mytool=''
+    sigs=0
+    [ -n "${CODEX_VERSION:-}${CODEX_SESSION_ID:-}" ] && { mytool='Codex CLI'; sigs=$((sigs + 1)); }
+    [ -n "${GEMINI_CLI:-}" ] && { mytool='Gemini CLI'; sigs=$((sigs + 1)); }
+    [ -n "${CLAUDECODE:-}" ] && { mytool='Claude Code'; sigs=$((sigs + 1)); }
+    [ "$sigs" -gt 1 ] && mytool=''
+    # 比字串時不分大小寫，也接受標記寫得比偵測值長（例如 `Claude Code (desktop)`）：
+    # 寫法差一點就報 🔴 是在加嚴的方向，但也只是噪音，而噪音多了就會有人學會無視它。
+    mismatch=no
+    if [ -n "$mytool" ] && [ -n "$tool" ]; then
+      lc=$(printf '%s' "$tool" | tr 'A-Z' 'a-z')
+      mylc=$(printf '%s' "$mytool" | tr 'A-Z' 'a-z')
+      case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
+    fi
+    if [ -z "$machine" ]; then
+      echo "[repo-check] 🔴 「工作中」欄位有值、但解析不出機器欄，判讀不出來誰握著 $branch：$who"
+      echo "[repo-check]    當成有人在做處理。格式是「機器 ／ 工具 ／ session 名」（第三欄可選），見 skill 的 A5。"
+      echo "[repo-check]    照 A2.5 停下來問使用者，不要直接接棒。"
+    else
       if [ "$same" = no ]; then
         echo "[repo-check] 🔴 另一台機器正在 $branch 上工作，尚未交棒：$who"
         echo "[repo-check]    依 single writer 規則，同一時間只能有一台機器動同一條分支。"
@@ -125,8 +162,8 @@ if [ -n "$remote_handoff" ]; then
         echo "[repo-check] 🟡 這台機器（$me）上有一個「$tool」的 session 在 $branch 上沒交棒：$who"
         echo "[repo-check]    你自己是不是「$tool」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
       fi
-      ;;
-  esac
+    fi
+  fi
 fi
 
 echo "[repo-check] 本 repo 刻意沒有 handoff skill、沒有 pre-push 防呆、沒有 check_docs.py（理由見 ARCHITECT.md「這個 repo 刻意沒有的東西」）：接棒程序讀全域 ~/.claude/skills/handoff/。HANDOFF.md 是當下交接快照與工作標記；B6 核對整份現況、移除已完成待辦（見 AGENTS.md「本 repo 的交接快照」）。改制度就改 PROJECT-BOOTSTRAP.md，改完跑 python -X utf8 tools/verify_bootstrap.py。"
