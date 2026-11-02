@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-01.4**（Windows 的 Codex hook 改經 Git Bash 啟動器，保留 `.sh` 的判斷與結束碼；skill 的 B5 補上接線變更後必須重新審核、驗收實際執行的程序，所以 `VERSION` 同步跳版。）
+> 版本：**2026-11-02**（已交棒的 session 收到任何使用者新訊息，先恢復「工作中」，保留原時間與累計交棒次數；要改檔仍須重新走 A 模式。交棒次數記在 session 標題，只有 B 模式成功 push 才增加，不在 HANDOFF 累積 session 歷史。2026-11-02 使用者指出：agent 自主交棒後，同一 session 繼續對話卻留著「已交棒」，讓側欄狀態與實際活動不符。新增程序文字與入口觸發詞的負向測試；沒有新增逐訊息 hook 或模型探針。）
+> 前一版 **2026-11-01.4**（Windows 的 Codex hook 改經 Git Bash 啟動器，保留 `.sh` 的判斷與結束碼；skill 的 B5 補上接線變更後必須重新審核、驗收實際執行的程序，所以 `VERSION` 同步跳版。）
 > 前一版 **2026-11-01.3**（**把「改 session 名稱」寫進 A5 與 B9 的回報模板，變成必填的一行。**2026-11-01 量到：六個收尾 session（全 Sonnet）裡只有四個照「session 命名」改成 `↗　…｜已交棒`，另外兩個用的還是派工時給的標題；六個的 git 結果**全部正確**，漏的只有命名。**為什麼漏沒有量過**，所以這次不針對某個原因下藥——改的是「有沒有做」看不看得出來：改名發生在 session 的外殼上，repo 裡不留痕跡，`check_docs.py`、`git-freshness.sh`、pre-push 防呆三層**全都看不到它**，漏掉完全無聲，而無聲的漏跟「沒有這條規則」在畫面上一模一樣。回報那一行是它唯一能有的守門人：改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>`（仍然不必為此停下來問使用者）。B9 同時從散文改成有編號的三件事（改名→確認 origin 的「工作中」已清→回報）——漏掉的那兩個 session 把 B1–B8 **有編號**的步驟全做對了，而改名是整個 B 模式裡唯一沒有編號的動作。順手補掉一個讀文字就看得出來的洞：舊版 B9 寫「前面的 `YYMMDDHH｜<主題>` 原封不動」，那句話**預設 A5 已經改過名**，A5 漏掉時它無從執行，而那時候唯一拿得到的時間是「現在」——重算會寫出交棒的小時，正是同日把時間戳搬進 hook 要修掉的那種靜默錯誤；所以補一條恢復路徑：前綴從 `HANDOFF.md`「工作中」欄位抄（它記的就是開工時間與當時的 session 名）。守門人：`verify_bootstrap.py` 新增「改名寫進回報模板」，釘 A5／B9 兩個模板各有一行 `session：`、而且都留著「不適用」這個選項，附三個負向測試（刪 A5 那行、刪 B9 那行、拿掉「不適用」）。**為什麼跳版**：這次真的動到 `SKILL.md`，`VERSION` 要跟著走（鐵律 1）。**序號為什麼是 `.2` 而不是 `.4`**：序號算的是**當天第幾個帶 `source:` 標記的改動**，不是當天第幾次碰部署包——當天前兩次只改敘述、沒有任何標記動過，第三次改了 3.10 拿到 `v2026-11-01`，這是第二個。所以 `版本行` 從來沒有過裸的 `2026-11-01`，那不是漏編號，是當天第三次刻意不跳版的結果。另外，A5／B9 標題裡的行數**刻意沒跟著改**（A5 仍是「3–5 行」、B9 仍是「≤5 行」）：那兩個數字在 `README.md`、`handover-protocol.md`、3.10 的開場提醒等**六個地方**都有副本，其中兩處是 `sync_project.py` 的 `INSTANCE`、永遠不會同步——改一個數字就會製造一處無聲分岔，而模板現在剛好是 5 行、本來就落在原範圍內。下一棒看到「必填 5 行卻寫 3–5」不要去修它。**`.2` 是同一輪 15 分鐘前推出去的同一件事**，只差 A5／B9 標題的行數；因為那一版已經 push，而 `VERSION` 的同一個號不該對應兩份不同的 `SKILL.md`（那正是鐵律 2 寫下來要防的事），所以還原行數時一起跳到 `.3`。那 15 分鐘裡沒有任何副本同步過 `.2`——六個專案實測都還在 `v2026-10-31`，全域兩份當場重新覆蓋）
 > 前一版 **2026-10-31**（「工作中」標記**加工具欄**，格式變成 `` `機器` ／ `工具` ／ `session 名`（可選） ``。舊格式只比機器名，於是**同一台機器換個工具**就落進「大概是你自己另一個視窗」的 🟡，而 A2.5 叫人去驗的那個證據（側欄有沒有 `㊣`）只有 Claude Code 有——同機器通常就是同一個工作樹，兩個 agent 會**即時互相覆寫**，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。四處一起改，缺一處就白做：A5 寫標記時填工具名；A2.5 的「指向這台機器」拆成同工具／別的工具／沒有工具欄三列，判準不再綁側欄；`git-freshness.sh` 的同機器分支拆成同工具→🟡／不同工具→🔴；`check_docs.py` 第 6 項擋「標記在工作中卻沒有工具欄」——否則新格式會靜默退化回舊行為，而靜默退化跟「沒這個機制」在畫面上一模一樣。**工具名由寫標記的那一棒自己填**：模型知道自己是誰，三個平台一致；環境變數只拿來**加嚴**（偵測到的工具跟標記不符就 🔴），一致或認不出來都只給 🟡 並把問題丟回給模型答——跨工具啟動時變數會被繼承、會說謊（2026-10-31 實測，見「工具身分」一節）。新舊格式靠 session 名裡的全形豎線分辨，所以同一段邏輯讀得了還沒升級的專案，不必先問「這個專案升級了沒」）
 > 再前一版 **2026-10-30.3**（`HANDOFF.md` 加**工作中標記**：接棒時（skill A5）確定要動手才把機器與 session 寫進 HANDOFF 並 push，交棒時（B6）改回「無（已交棒）」，下一棒接棒前（A2.5）先檢查。補的是跨機器接力的洞——A 機器忘記交棒就關掉，B 機器看到綠勾就接棒。既有三層防呆全都掛在「下一個動作」上，而**直接關掉視窗沒有下一個動作**；這個標記掛在「開工」，所以繞不過去。`git-freshness.sh` 同步讀它，並改掉那行誤導的 `✅ 與 origin 同步`——它只證明「本機沒落後」，不證明「沒有別台在做」，而一個綠勾會讓人直接往下做。`check_docs.py` 加第 6 項擋欄位不見，否則防呆會靜默失效。
@@ -839,10 +840,10 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 ````markdown
 ---
 name: handoff
-description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
+description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-01.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
@@ -888,21 +889,40 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 🔴 **但「跳過」要說出來，不能安靜跳過**（2026-11-01 加硬）。**A5 與 B9 的回報模板各有一行 `session：`，必填**：改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>`。那一行是這條規則唯一能有的守門人——改名發生在 session 的外殼上，repo 裡不留任何痕跡，`check_docs.py`、`git-freshness.sh`、pre-push 防呆**三層全都看不到它**，所以漏掉是完全無聲的，而無聲的漏跟「沒有這條規則」在畫面上一模一樣。2026-11-01 量到：六個收尾 session（全 Sonnet）裡**只有四個**改了名，六個的 git 結果全部正確——漏的只有命名。**為什麼漏沒有量過**，所以這次不針對某個原因下藥，改的是「有沒有做」看不看得出來。
 
 ```text
-<符號>　YYMMDDHH｜<主題>｜<狀態>
+<符號>　YYMMDDHH｜<主題>｜<狀態>｜交棒<N>次
 ```
 
 | 符號 | 狀態 | 什麼時候改 |
 |---|---|---|
-| `㊣` | 工作中 | **A5** 回報完之後，**不等開工標記**——只讀、只掃，或專案根本沒有 `HANDOFF.md` 的時候都寫不了標記，改名照樣要做 |
-| `↗` | 已交棒 | **B9**，而且是 **push 成功之後**（push 失敗不改，照 B8 那不算交棒）；**B9 的回報要寫出改成什麼** |
+| `㊣` | 工作中 | 首次接棒在 **A5** 回報完之後；已交棒後續聊在**收到新訊息時先改**，**不等開工標記**——只讀、只掃，或專案根本沒有 `HANDOFF.md` 的時候都寫不了標記，改名照樣要做 |
+| `↗` | 已交棒 | **B9**，而且是 **push 成功之後**（push 失敗不改、不加次數，照 B8 那不算交棒）；**B9 的回報要寫出改成什麼與累計次數** |
 | `※` | 待你決定 | **任何時候你把問題丟回去等回答就改**，不限「必須停下來問使用者」那張表 |
 
-範例（同一個 session 從接棒到交棒）：
+範例（同一個 session 兩次交棒，中間收到一則新訊息）：
 
 ```text
-㊣　26102414｜session改名｜工作中
-↗　26102414｜session改名｜已交棒
+㊣　26110209｜修續聊狀態｜工作中｜交棒0次
+↗　26110209｜修續聊狀態｜已交棒｜交棒1次
+㊣　26110209｜修續聊狀態｜工作中｜交棒1次
+↗　26110209｜修續聊狀態｜已交棒｜交棒2次
 ```
+
+### 已交棒後續聊（每則新訊息的入口）
+
+**每則使用者新訊息都先檢查 session 狀態，包含只問問題、補充、更正與致謝，不必等使用者再說「接棒」。** 上次是 `↗ 已交棒`（或 `※ 待你決定`）時，先用改名工具恢復 `㊣ 工作中`，再回答或執行任務；必要的標題讀取可先做。**保留原本的 `YYMMDDHH`、主題與交棒次數，不重算時間、不歸零、不另建 session。** 本輪後來真的需要使用者決定，仍依原規則轉成 `※`，並保留次數。
+
+- **只讀續聊不改 HANDOFF、不 commit、不 push，也不為了結束回答再交棒。** 改名已足以表達 session 正在活動，不能為了一句問答新增空的開工／交棒紀錄。
+- **續聊要改檔前重新走 A1–A5，重查 origin 的工作中標記。** 前次交棒已釋出分支，另一個 session 可能已接手；恢復側欄狀態不代表重新取得寫入權。通過 A 模式後才寫開工標記，push 失敗照 A5 停下。
+- **續聊回覆必須有 `session：` 一行，列出實際標題與交棒次數。** 沒有改名能力就寫 `不適用：<原因>；交棒<N>次`；有工具但呼叫失敗要如實寫失敗，不能宣稱已改。這是逐訊息的程序義務，SessionStart hook 不會因為同一 session 多一則訊息再跑一次，也不能宣稱只同步 skill 就讓所有舊 session 自動生效。
+
+### 同一 session 的交棒計數
+
+- **交棒次數的家是該 session 標題尾端的 `｜交棒<N>次`，新 session 從 0 起算。** A5、續聊、`※` 與模式 C 都保留 N。沒有改名能力的工具，以同一 session 最近一次 `session：` 回報保存 N；上下文壓縮後也要從標題或這一行恢復。HANDOFF 仍是當下快照，不新增逐 session 清單；工作中欄位引用當時的完整 session 名稱即可。
+- **只有 B1–B8 完成且 B8 push 成功，才在 B9 把 N 加 1。** 開工標記、中途安全點、失敗的 push 與重複回報同一次成功交棒都不增加；第幾次 commit 也不是第幾次交棒。同一輪跨多個 repo 收尾，以本 session 的一次 B9 回報計一次，必要的 push 全部成功後才加 1。先保存成功結果與新的 N，再改名並回報，改名失敗後重試仍使用同一個 N。
+- **舊標題沒有次數時，先查本 session 的成功交棒回報，不拿別的 session 或整個 repo 的交棒數代替。** 能確認總數就補上；只知道至少交棒一次而無法還原總數，就寫 `交棒≥1次`，之後成功一次變成 `交棒≥2次`，保留「至少」的語意，不把未知編成精確數字。確定本 session 尚未交棒才填 0。
+- **為什麼（2026-11-02）**：使用者指出 agent 會在任務階段結束時自主交棒；使用者仍在同一 session 對話，側欄卻一直是「已交棒」。只在 A5／B9 改名漏掉了「同一 session 再收到訊息」這個狀態轉換。用 session 自己的計數保留它曾交棒的事實，才能同時表達現在在做事、以前已交棒幾次，又不把 HANDOFF 變成歷史表。
+
+### 其他命名規則
 
 - **`YYMMDDHH` 取接棒當下的時間，之後永遠不更新。** 交棒時一起改掉的話，同一個 session 在側欄的名字會跳掉，使用者記得的時間點就對不上了。
 - **交棒才要補名字的時候，前綴去抄、不要用現在的時間重算。** A5 那一步漏掉的話，`YYMMDDHH` 從 `HANDOFF.md`「工作中」欄位抄（它記的就是開工時間，新格式連當時的 session 名都在裡面；B6 把它改回「無（已交棒）」之前先讀，已經改掉就 `git show <開工那個 commit>:HANDOFF.md`）。重算會寫出**交棒**的小時，而這個時間戳唯一的用途是讓人在側欄找回開工那一刻——錯了沒有任何徵兆。舊版 B9 只寫「前面的 `YYMMDDHH｜<主題>` 原封不動」，那句話**預設 A5 已經改過名**；沒改過的時候它無從執行，而唯一拿得到的時間正好是錯的那個。
@@ -914,7 +934,7 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 - **側欄的 `㊣` 不證明 origin 上有開工標記。** 跨機器防呆看的是 `HANDOFF.md` 的欄位（A2.5），側欄只是給人看的；別拿它當防呆的證據。
 - **模式 C 中途同步不改名**——狀態沒變。
 - 模式 0 建制照 B9 收尾，主題寫 `骨架建制`。
-- **改完這份規則、同步完副本之後，當下開著的 session 仍會照舊版做事。** `SKILL.md` 是 session 載入它的那一刻讀進 context 的快照，之後改磁碟上的檔案不會回溯生效——要重開 session 才會拿到新版，已經寫下的 session 名稱也不會自己更新，要補只能手動改名。2026-10-24 加上全形空格那條時就是這樣：副本 15:20 全部同步完，一個 15:29 才交棒的 session 名字裡照樣沒有空格——那不是漏同步，查錯方向會白花一輪。
+- **改完這份規則、同步完副本之後，當下開著的 session 不保證自動採用新版。** `SKILL.md` 是 session 載入它的那一刻讀進 context 的快照，之後改磁碟上的檔案不會回溯生效——舊 session 要明確重新讀取新版 skill，或重開 session 才會拿到新版；重新讀取時仍保留原 session 時間與次數。已經寫下的 session 名稱也不會自己更新，要補只能呼叫改名工具。2026-10-24 加上全形空格那條時就是這樣：副本 15:20 全部同步完，一個 15:29 才交棒的 session 名字裡照樣沒有空格——那不是漏同步，查錯方向會白花一輪。
 
 ---
 
@@ -1036,7 +1056,7 @@ git show "origin/$(git rev-parse --abbrev-ref HEAD):HANDOFF.md" | grep -F "**工
 2. 使用者確認那台已經沒在跑 → 授權在這裡接手，由本 session 清掉舊標記並照 **A6** 回推補交接
 3. 這次只讀不寫 → 不接棒、不寫標記、不動任何檔案
 
-同時把 session 名稱改成 `※　YYMMDDHH｜<主題>｜待你決定`（見「session 命名」）。
+同時把 session 名稱改成 `※　YYMMDDHH｜<主題>｜待你決定｜交棒<N>次`（見「session 命名」）。
 
 > **工具名的權威是寫標記的那一棒自己填的，不是環境變數。** 模型知道自己是哪個工具，三個平台都一致；
 > 而環境變數在「從一個工具的殼層啟動另一個工具」時會被繼承——Codex 的 session 會自稱 Claude Code
@@ -1075,19 +1095,19 @@ Git：<分支>、<與 origin 關係>、<待續分支>
 驗證：<verify_state 關鍵值／SKIPPED 與原因>
 現況：<用自己的話講一句現在做到哪>
 下一步：<我打算做的第一件事>
-session：㊣　<YYMMDDHH｜主題>｜工作中（已改）／不適用：<本工具不能改名>
+session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次
 ```
 
 不要重述整份 HANDOFF。有疑問就多一行問題。
 
-**回報完就改 session 名稱**成 `㊣　YYMMDDHH｜<主題>｜工作中`（規則見「session 命名」），**然後把結果寫進模板最後那行 `session：`**——改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>`，不必為此停下來問使用者。**那一行不能省**：寫不出來就是沒做，而這是唯一看得出來的地方。這一步跟下面的開工標記是兩件事，**不要等它**。
+**首次接棒回報完就改 session 名稱**成 `㊣　YYMMDDHH｜<主題>｜工作中｜交棒<N>次`（規則見「session 命名」）；**已交棒後續聊在收到新訊息時就先恢復工作中，不等 A5**。然後把實際結果寫進模板最後那行 `session：`——改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>` 並附交棒次數，不必為此停下來問使用者。**那一行不能省**：寫不出來就是沒做，而這是唯一看得出來的地方。這一步跟下面的開工標記是兩件事，**不要等它**。
 
 **確定要動手改東西，才寫開工標記。** 只讀、只問問題的 session 不寫——那會在權威分支的歷史裡堆一堆沒有內容的 commit，而被灌爆的歷史沒人會認真看。
 
 1. 把該分支 `HANDOFF.md` 的「工作中」欄位改成本機與本 session。舊專案沒有這一欄，就在「Git 狀態」那節補一列（這就是該專案的升級點，不用另外安排一次升級）：
 
    ```markdown
-   - **工作中**：`desk-win` ／ `Claude Code` ／ `㊣　26103009｜匯入格式｜工作中`，2026-10-30 09:12 (+08) 開工
+   - **工作中**：`desk-win` ／ `Claude Code` ／ `㊣　26103009｜匯入格式｜工作中｜交棒0次`，2026-10-30 09:12 (+08) 開工
    ```
 
    三欄，用全形斜線 `／` 分隔：**機器** ／ **工具** ／ **session 名**（最後一欄可選，環境沒有 session 名就省略）。
@@ -1240,7 +1260,7 @@ git fetch origin && git status -sb
 
 三件事，**依序做，回報是最後一件**。這一輪 B1–B8 全做對、卻漏掉改名的 session（2026-11-01 量到兩個）漏掉的正是唯一沒有編號的那一步，所以它現在有編號了。
 
-1. **push 成功之後**把 session 名稱的符號與尾綴換成 `↗` 與 `已交棒`，前面的 `YYMMDDHH｜<主題>` 原封不動（見「session 命名」）。push 失敗就不要改——那不算交棒。A5 漏了改名、現在才要補的話，前綴照「session 命名」那條去抄，**不要用現在的時間重算**。
+1. **push 成功之後**依「同一 session 的交棒計數」將 N 加 1，把 session 名稱的符號與狀態換成 `↗` 與 `已交棒`，尾端寫 `｜交棒<N>次`，前面的 `YYMMDDHH｜<主題>` 原封不動（見「session 命名」）。push 失敗就不要改、不要加次數——那不算交棒。同一次成功交棒重試改名或重複回報，不再加一次。A5 漏了改名、現在才要補的話，前綴照「session 命名」那條去抄，**不要用現在的時間重算**。
 2. 確認推上去的那一份「工作中」真的已經清掉（本機改對了但沒推上去，下一棒看到的還是舊的）：
 
    ```bash
@@ -1253,7 +1273,7 @@ git fetch origin && git status -sb
    結果：<做完什麼>
    驗證：<B3／B4 的結果；跳過的項目寫原因>
    分支／最終 commit：<branch> @ <hash>，已 push／未 push
-   session：↗　<YYMMDDHH｜主題>｜已交棒（已改）／不適用：<本工具不能改名>
+   session：↗　<YYMMDDHH｜主題>｜已交棒｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次
    接手最容易搞砸：<一件事>
    ```
 
@@ -1280,7 +1300,7 @@ git fetch origin && git status -sb
 - HANDOFF 沒授權的破壞性操作（刪檔、批次改資料、改 schema）
 - **建制（模式 0）**：資料夾不是空的、已有 Git 歷史或 README；要覆蓋既有的 `.gitignore`／`README.md`；建 GitHub repo 與第一次 push
 
-**停下來的同時把 session 名稱改成 `※　YYMMDDHH｜<主題>｜待你決定`**（見「session 命名」）。**不只這張表**——「接下來做哪一件」這種普通的徵詢也是在等人回答，一樣要改。否則使用者在側欄只看到一個「工作中」的 session，不會知道它其實卡在等他回答——這種等待很容易一整天沒人發現。
+**停下來的同時把 session 名稱改成 `※　YYMMDDHH｜<主題>｜待你決定｜交棒<N>次`**（見「session 命名」）。**不只這張表**——「接下來做哪一件」這種普通的徵詢也是在等人回答，一樣要改。否則使用者在側欄只看到一個「工作中」的 session，不會知道它其實卡在等他回答——這種等待很容易一整天沒人發現。
 
 ## 反例（真的發生過，別重演）
 
@@ -1301,6 +1321,7 @@ git fetch origin && git status -sb
 - ❌ 拿環境變數當工具身分的權威 → 在別的工具殼層裡啟動時變數被繼承，Codex 的 session 自稱 Claude Code，於是「同工具」成立、直接放行。變數只能加嚴。
 - ❌ 把改名綁在「開工標記 push 成功」之後 → 這輪只讀、或專案刻意沒有 `HANDOFF.md`，標記寫不了，側欄就永遠停在「接棒」。2026-10-30 在骨架自己的 repo 上發現：三個 session 全是 `↗ 已交棒`，一個 `㊣ 工作中` 都沒有過。
 - ❌ git 全做對、就是沒改 session 名稱 → 2026-11-01 量到六個收尾 session 裡有兩個這樣（全 Sonnet，git 結果全部正確，用的還是派工時給的標題）。**原因沒有量過**，所以別替它補一個；要知道的是**沒有任何檢查看得到這件事**（改名在 repo 外面），所以它只能靠 A5／B9 回報那一行 `session：` 露出來。
+- ❌ 已交棒後收到新訊息，因為使用者沒再說「接棒」就保留 `↗` → 使用者仍在續聊，側欄卻表示已結束；收到訊息就恢復 `㊣`、保留交棒次數，改檔前再跑 A 模式。單純答問不新增一次交棒（2026-11-02）。
 ````
 
 **同步規則（重要）**：這份 SKILL.md 會同時存在於 ①本部署包 ②每個專案的 `.claude/skills/handoff/` ③（選用）全域 `~/.claude/skills/handoff/`。
@@ -1974,10 +1995,10 @@ if __name__ == '__main__':
 ````markdown
 ---
 name: handoff
-description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來。Use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Triggers on 接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
+description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-10-30.3 — 本檔只是指標，改內容請改權威版 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02 — 本檔只是指標，改內容請改權威版 -->
 
 # 本檔只是指標，請讀權威版
 

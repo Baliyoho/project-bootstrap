@@ -55,6 +55,9 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   改 session 名稱發生在 repo 外面，check_docs、git-freshness、pre-push 三層
                   都看不到它，所以漏掉完全無聲；那一行是它唯一的守門人，被誰順手刪掉也同樣
                   無聲（2026-11-01 加入，起因是六個收尾 session 裡兩個漏了改名）
+  續聊狀態與計數——skill 與指標的 description 都要觸發已交棒後的新訊息；命名程序必須有
+                  先恢復工作中、只讀不寫 Git、改檔重查 A 模式與成功交棒才累加的規則。
+                  附負向測試；只驗程序文字沒有退化，不宣稱量到外部工具真的逐訊息改名
   工作中標記   ——HANDOFF.md 範本要有「工作中」欄位，且 git-freshness 讀 origin 那一份後
                   別台機器印 🔴、自己這台印 🟡、已交棒印 ✅、欄位不存在印 🟡。這條鏈斷掉
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
@@ -793,8 +796,8 @@ def step_rename_line(dest):
         return False
 
     # 負向測試：一個永遠回 ok 的檢查跟沒有這一項在畫面上一模一樣。
-    a5 = 'session：㊣　<YYMMDDHH｜主題>｜工作中（已改）／不適用：<本工具不能改名>'
-    b9 = 'session：↗　<YYMMDDHH｜主題>｜已交棒（已改）／不適用：<本工具不能改名>'
+    a5 = 'session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次'
+    b9 = 'session：↗　<YYMMDDHH｜主題>｜已交棒｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次'
     cases = (
         ('A5 那一行被刪掉', skill.replace(a5 + '\n', '')),
         ('B9 那一行被刪掉', skill.replace(b9 + '\n', '')),
@@ -812,6 +815,84 @@ def step_rename_line(dest):
         return False
     record('OK', '改名寫進回報模板',
            'A5／B9 模板各有一行 session：且留著「不適用」；三個負向測試都擋得住')
+    return True
+
+
+def session_resume_problems(skill, pointer):
+    """守住 2026-11-02 的程序契約；不模擬模型或外部 session 改名工具。"""
+    problems = []
+    for name, text in (('skill', skill), ('指標', pointer)):
+        description = re.search(r'^description: (.+)$', text, re.M)
+        if not description or 'every new user message after a handoff' not in description[1]:
+            problems.append(name + ' description 缺續聊觸發')
+    naming = re.search(r'^## session 命名.*?(?=^## 0\.)', skill, re.M | re.S)
+    naming = naming[0] if naming else ''
+    required = (
+        '每則使用者新訊息都先檢查 session 狀態',
+        '包含只問問題、補充、更正與致謝',
+        '先用改名工具恢復 `㊣ 工作中`，再回答或執行任務',
+        '保留原本的 `YYMMDDHH`、主題與交棒次數',
+        '只讀續聊不改 HANDOFF、不 commit、不 push，也不為了結束回答再交棒',
+        '續聊要改檔前重新走 A1–A5，重查 origin 的工作中標記',
+        '續聊回覆必須有 `session：` 一行',
+        '交棒次數的家是該 session 標題尾端的 `｜交棒<N>次`，新 session 從 0 起算',
+        '只有 B1–B8 完成且 B8 push 成功，才在 B9 把 N 加 1',
+        '開工標記、中途安全點、失敗的 push 與重複回報同一次成功交棒都不增加',
+        '交棒≥1次',
+        '沒有改名能力的工具，以同一 session 最近一次 `session：` 回報保存 N',
+        '舊 session 要明確重新讀取新版 skill',
+    )
+    problems.extend('命名程序缺規則：' + rule for rule in required if rule not in naming)
+    for heading in ('### A5 ', '### B9 '):
+        block = rename_block(skill, heading) or ''
+        session_line = next((l for l in block.splitlines() if l.strip().startswith(RENAME_LINE)), '')
+        # 可改名與不適用兩邊都要留計數，避免沒有工具時默默丟失 N。
+        if session_line.count('交棒<N>次') != 2:
+            problems.append(heading.strip() + ' 回報缺累計交棒次數')
+    b9 = skill.partition('### B9 ')[2].partition('## C.')[0]
+    if '依「同一 session 的交棒計數」將 N 加 1' not in b9:
+        problems.append('B9 沒套用交棒計數')
+    return problems
+
+
+def step_session_resume(dest):
+    skill = (dest / '.claude/skills/handoff/SKILL.md').read_text(encoding='utf-8')
+    pointer = (dest / '.agents/skills/handoff/SKILL.md').read_text(encoding='utf-8')
+    problems = session_resume_problems(skill, pointer)
+    # 每個守門條件都故意拿掉一次；沒有改到字串也必須失敗，不能空測。
+    rules = (
+        'every new user message after a handoff',
+        '每則使用者新訊息都先檢查 session 狀態',
+        '包含只問問題、補充、更正與致謝',
+        '先用改名工具恢復 `㊣ 工作中`，再回答或執行任務',
+        '保留原本的 `YYMMDDHH`、主題與交棒次數',
+        '只讀續聊不改 HANDOFF、不 commit、不 push，也不為了結束回答再交棒',
+        '續聊要改檔前重新走 A1–A5，重查 origin 的工作中標記',
+        '續聊回覆必須有 `session：` 一行',
+        '交棒次數的家是該 session 標題尾端的 `｜交棒<N>次`，新 session 從 0 起算',
+        '只有 B1–B8 完成且 B8 push 成功，才在 B9 把 N 加 1',
+        '開工標記、中途安全點、失敗的 push 與重複回報同一次成功交棒都不增加',
+        '交棒≥1次',
+        '沒有改名能力的工具，以同一 session 最近一次 `session：` 回報保存 N',
+        '舊 session 要明確重新讀取新版 skill',
+        '依「同一 session 的交棒計數」將 N 加 1',
+    )
+    cases = [(rule, skill.replace(rule, ''), pointer) for rule in rules]
+    cases.append(('指標續聊觸發', skill, pointer.replace('every new user message after a handoff', '')))
+    for heading in ('### A5 ', '### B9 '):
+        block = rename_block(skill, heading) or ''
+        cases.append((heading + '計數', skill.replace(block, block.replace('交棒<N>次', '')), pointer))
+    for name, changed_skill, changed_pointer in cases:
+        if (changed_skill, changed_pointer) == (skill, pointer):
+            problems.append('負向測試沒改到字串：' + name)
+        elif not session_resume_problems(changed_skill, changed_pointer):
+            problems.append('負向測試未擋住：' + name)
+    if problems:
+        record('FAIL', '續聊狀態與計數', '；'.join(problems))
+        return False
+    record('OK', '續聊狀態與計數',
+           '程序與兩個 description 涵蓋逐訊息恢復、只讀續聊、重查占用、累計與舊版恢復；'
+           '%d 個負向測試通過（未呼叫模型／改名工具）' % len(cases))
     return True
 
 
@@ -1779,6 +1860,7 @@ def main():
             step_repo_busy(work)
             step_version_check(work)
             step_rename_line(dest)
+            step_session_resume(dest)
         step_eol(dest)
         step_self()
         step_repo_handoff()
