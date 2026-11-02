@@ -8,6 +8,8 @@
 
 程序檔在**全域**副本：`~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）——**這個 repo 刻意沒有專案層的那一份**（理由見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有的東西」）。沒有全域副本、或工具不會自動載入 skill 的時候就直接開那個檔讀，它是純 Markdown。
 
+**接著要動查核報告那 16 條的話，先讀 [project-bootstrap-audit-progress.md](project-bootstrap-audit-progress.md)**：每一條的狀態、已修的那幾條守門人是哪一項、沒修的那幾條的建議作法與驗收門檻都在那裡。它 2026-11-02 在使用者要求「下一輪交棒給另一個模型」時產出，所以寫給**沒有那段對話記憶的接手者**；查核報告本身是凍結快照，狀態不寫進它裡面。
+
 照 A 模式做會踩到三處跟部署出去的專案不一樣的地方：
 
 - **A4 的一鍵驗證不是 `verify_state.py`**（那是骨架的檔，不部署到自己身上），改跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**（鐵律 4）。
