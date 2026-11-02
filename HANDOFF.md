@@ -19,7 +19,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：無（已交棒）
+- **工作中**：`DESKTOP-M8MRS05` ／ `Codex CLI` ／ `㊣　26110217｜續修查核缺陷｜工作中｜交棒0次`，2026-11-02 17:51 (+08) 開工
 - **骨架版本**：`2026-11-02`
 - 本機能力：Windows、Python 3.13.15、Git Bash、PowerShell 7；本輪 fetch、開工標記與收尾 push 均成功。
 
