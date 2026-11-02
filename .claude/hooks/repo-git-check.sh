@@ -22,7 +22,7 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
 
 if ! git fetch --quiet origin 2>/dev/null; then
-  echo "[repo-check] ⚠️ 無法 fetch origin（離線或金鑰問題）——無法確認本機是否最新。branch=$branch"
+  echo "[repo-check] ⚠️ 無法 fetch origin（離線或金鑰問題）——無法確認本機是否最新；停下回報並等待使用者指示。branch=$branch"
   exit 0
 fi
 
@@ -36,11 +36,11 @@ ahead=$(echo "$counts" | awk '{print $2}')
 dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "$behind" -gt 0 ] && [ "$ahead" -gt 0 ]; then
-  echo "[repo-check] 🔴 已分岔：落後 origin $behind、領先 $ahead（branch=$branch）。開工前必須先整合，禁止 push --force 或 reset --hard。"
+  echo "[repo-check] 🔴 已分岔：落後 origin $behind、領先 $ahead（branch=$branch）。停下回報並等待使用者指示；不得自行 rebase 或 merge，禁止 push --force 或 reset --hard。"
 elif [ "$behind" -gt 0 ]; then
   echo "[repo-check] 🔴 本機過時：落後 origin $behind 個 commit（branch=$branch）。先 git pull --ff-only 再動任何東西——部署包是權威版，對著舊快照改會分岔。"
 elif [ "$ahead" -gt 0 ]; then
-  echo "[repo-check] 🟡 有 $ahead 個未推送 commit（branch=$branch）。上一棒可能沒推完，收工前記得 push。"
+  echo "[repo-check] 🟡 有 $ahead 個未推送 commit（branch=$branch）。接棒時 ahead-only：停下回報未推送 commit 的來源，等待使用者指示，不自動 push。"
 else
   echo "[repo-check] ✅ 本機沒落後 origin（branch=$branch）——只比對本機與 origin，不代表沒有別台機器在做。"
 fi

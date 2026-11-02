@@ -2838,6 +2838,125 @@ def step_zip_gate(tmp):
            '；'.join(problems) if problems else '10 情境：SKIP 預設不打包、例外附未驗證清單且 exit 1、FAIL 不可覆寫、既有產物保留；移除門檻的負向測試確實失敗')
 
 
+def flow_contract_problems(skill):
+    """F11：檢查結構與關鍵操作契約，不宣稱測到模型遵循。"""
+    bad = []
+    table = re.search(r'### A／B／C 狀態轉移.*?(?=\n\*\*證據的範圍)', skill, re.S)
+    expected = {
+        '待接棒': ('A1', 'fetch exit 0', 'ahead=0、behind=0', '停下'),
+        '已定位': ('A4', '結束碼', 'A5 開工成功後'),
+        '開工中': ('HANDOFF', 'push exit 0', 'origin', '停止修改'),
+        '工作中': ('B7 → B8', 'exit 0', 'upstream', '工作中'),
+        '待交棒': ('B7', 'exit 0', '無（已交棒）', '不可發布'),
+        '已交棒': ('B9', 'origin', '重走 A'),
+    }
+    rows = {}
+    if table:
+        for line in table.group().splitlines():
+            if line.startswith('|'):
+                cells = [c.strip() for c in line.strip('|').split('|')]
+                if cells[0] in expected:
+                    if cells[0] in rows:
+                        bad.append('重複狀態：' + cells[0])
+                    rows[cells[0]] = cells
+    for state, tokens in expected.items():
+        cells = rows.get(state, [])
+        if len(cells) != 5 or not all(cells) or any(t not in ' '.join(cells) for t in tokens):
+            bad.append('狀態缺前提／操作／證據／失敗處理：' + state)
+
+    contracts = (
+        ('### A1 ', 'ahead-only（ahead > 0、behind = 0） | **停**'),
+        ('### A1 ', 'fetch 失敗（非零退出） | **停**'),
+        ('### A1 ', 'HEAD...@{upstream}'),
+        ('### A2 ', '切換到待續分支後重跑 A1'),
+        ('### A4 ', '此步只記錄差異與結束碼、不修改專案檔案'),
+        ('### A4 ', '開工標記 push 成功後'),
+        ('### A5 ', '這是開工 push 例外'),
+        ('### A5 ', 'push 成功後重讀 origin'),
+        ('### B7 ', 'B6 覆寫完成後'),
+        ('### B7 ', 'tools/check_docs.py'),
+        ('### B7 ', 'exit 0 才提交發布'),
+        ('### B7 ', 'B3 後改過，連 B3 也重跑'),
+        ('### B8 ', 'fetch 失敗 → **停下**'),
+        ('## C.', '保留本 session 的「工作中」標記'),
+        ('## C.', '不走 B6 的釋出標記與 B9 的交棒計數'),
+    )
+    for heading, token in contracts:
+        part = skill.split(heading, 1)[-1].split('\n### ', 1)[0].split('\n## ', 1)[0]
+        if heading not in skill or token not in part:
+            bad.append(heading + '缺契約：' + token)
+    mode = skill.split('## 判斷模式', 1)[-1].split('### A／B／C', 1)[0]
+    if '只有 **A5 開工標記**與 **C 中途安全點**例外' not in mode:
+        bad.append('push 模式缺 A5／C 例外')
+    return bad
+
+
+def step_flow_contract(dest, tmp):
+    skill = read_lf(dest / '.claude/skills/handoff/SKILL.md')
+    bad = flow_contract_problems(skill)
+    # 每種契約都故意拿掉一次，避免檢查器永遠回成功。
+    mutations = ('| 待接棒 |', '| 已定位 |', '| 開工中 |', '| 工作中 |', '| 待交棒 |', '| 已交棒 |',
+                 'ahead-only（ahead > 0、behind = 0）', 'fetch 失敗（非零退出）',
+                 '切換到待續分支後重跑 A1', '此步只記錄差異與結束碼、不修改專案檔案',
+                 '這是開工 push 例外', 'push 成功後重讀 origin', 'B6 覆寫完成後',
+                 'B3 後改過，連 B3 也重跑', 'fetch 失敗 → **停下**',
+                 '保留本 session 的「工作中」標記', '不走 B6 的釋出標記與 B9 的交棒計數',
+                 '只有 **A5 開工標記**與 **C 中途安全點**例外')
+    for token in mutations:
+        mutated = skill.replace(token, '移除契約')
+        if mutated == skill or not flow_contract_problems(mutated):
+            bad.append('負向測試未擋：' + token)
+    record('FAIL' if bad else 'OK', '協作狀態契約', '；'.join(bad) if bad else
+           '六狀態與 A1／A2／A4／A5／B7／B8／C 契約齊備；18 個負向測試通過（不代表模型遵循）')
+
+    bash = find_bash()
+    if not bash:
+        record('SKIP', 'Git 異常提示', '缺少可用 bash')
+        return
+    origin, work, peer = (tmp / n for n in ('flow-origin.git', 'flow-work', 'flow-peer'))
+    def must(args, cwd=None):
+        r = run(['git', *args], cwd=cwd)
+        if r.returncode:
+            raise RuntimeError('Git fixture 失敗：' + r.stderr)
+        return r
+    must(['init', '-q', '--bare', str(origin)])
+    must(['init', '-q', '-b', 'main', str(work)])
+    write_lf(work / 'file', 'init\n')
+    must(['add', 'file'], work)
+    must(['commit', '-qm', 'init'], work)
+    must(['remote', 'add', 'origin', str(origin)], work)
+    must(['push', '-qu', 'origin', 'main'], work)
+    must(['clone', '-q', '-b', 'main', str(origin), str(peer)])
+    write_lf(work / 'file', 'local\n')
+    must(['commit', '-qam', 'local'], work)
+    scripts = [('部署 hook', read_lf(dest / '.claude/hooks/git-freshness.sh')),
+               ('本 repo hook', read_lf(ROOT / '.claude/hooks/repo-git-check.sh'))]
+    issues = []
+    def check_scripts(state, marker):
+        for name, source in scripts:
+            path = tmp / 'flow-probe.sh'
+            write_lf(path, source)
+            r = run([bash, str(path)], cwd=work, env=tool_env(BOOTSTRAP_FRESHNESS='off'))
+            if r.returncode or marker not in r.stdout or '停下' not in r.stdout or '等待使用者指示' not in r.stdout or 'git pull --rebase' in r.stdout:
+                issues.append(name + ' ' + state + ' 未要求停止或仍建議 rebase')
+    check_scripts('ahead-only', 'ahead-only')
+    write_lf(peer / 'file', 'remote\n')
+    must(['commit', '-qam', 'remote'], peer)
+    must(['push', '-q', 'origin', 'main'], peer)
+    check_scripts('diverged', '已分岔')
+    # 在真分岔 fixture 上恢復舊建議，儀器必須辨識這是錯誤提示。
+    old = scripts[0][1].replace('停下回報並等待使用者指示；不得自行 rebase 或 merge', '開工前必須先整合（git pull --rebase）')
+    path = tmp / 'flow-old.sh'
+    write_lf(path, old)
+    r = run([bash, str(path)], cwd=work, env=tool_env(BOOTSTRAP_FRESHNESS='off'))
+    if '已分岔' not in r.stdout or 'git pull --rebase' not in r.stdout:
+        issues.append('負向測試未重現舊分岔建議')
+    must(['remote', 'set-url', 'origin', str(tmp / 'missing-origin.git')], work)
+    check_scripts('fetch failure', '無法 fetch')
+    record('FAIL' if issues else 'OK', 'Git 異常提示', '；'.join(issues) if issues else
+           '兩支 hook 實跑 ahead-only／分岔／fetch 失敗均要求停止；舊 rebase 建議負向重現')
+
+
 def run_checks(dest, tmp):
     work = None
     seen = step_regenerate(dest) and step_fill(dest)
@@ -2866,6 +2985,7 @@ def run_checks(dest, tmp):
     step_sync_safety(tmp)
     step_misc(dest, work)
     step_zip_gate(tmp)
+    step_flow_contract(dest, tmp)
 
 
 def main():

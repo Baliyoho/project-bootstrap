@@ -10,7 +10,9 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-02.4**（2026-11-02／F06：AI push 提醒移除未提交 HANDOFF 放行；明列命令／remote／refspec 邊界，擴充情境與舊捷徑負向測試。skill 的過度保證一併修正，因此 VERSION 與 skill／3.11 標記更新至 .4。）
+> 版本：**2026-11-02.5**（2026-11-02／F11：補 A／B／C 狀態表、ahead-only 與 fetch 失敗判讀、切分支後重驗；A4 只記差異，B7 驗最終快照；A5／C push 明列例外，hook 分岔提示改為停下等待指示。skill 與兩支 hook 標記更新至 .5。）
+>
+> 前一版 **2026-11-02.4**（2026-11-02／F06：AI push 提醒移除未提交 HANDOFF 放行；明列命令／remote／refspec 邊界，擴充情境與舊捷徑負向測試。skill 的過度保證一併修正，因此 VERSION 與 skill／3.11 標記更新至 .4。）
 >
 > 前一版 **2026-11-02**（**兩支部署後腳本的錯誤訊號與保障範圍修掉了：`verify_state.py` 不再把失敗吞成 exit 0，`check_docs.py` 補上交接快照檢查並停止把程式碼範例報成死連結。**這一輪動到 3.14 與 3.15 兩個範本，所以它們的 `source:` 標記跳到 `v2026-11-02.3`（今天第三個帶標記的改動）；`SKILL.md` 一個字沒動，`VERSION` 與版本行照鐵律 1 不跳。
 > **F04（服務失敗仍回傳成功碼）**：舊版 `verify_state.py` **每一種情況都 `return 0`**——在檢查裡放一個 exit 7 的命令，畫面印著 `boom=rc7`，結束碼仍是 0（修正前實跑確認）。而這支腳本存在的理由正是「把接手查證壓成一個回合」，也就是說**它的結束碼本來就會被當成結論用**。現在每項檢查只回 PASS／FAIL／ERROR／SKIP／NOT_CONFIGURED 五種之一，最後印一行彙總：FAIL／ERROR→exit 2；SKIP 獨立列出（缺配置不等於通過），`--strict` 時 exit 3，真正可選的項目寫進 `OPTIONAL`；`NOT_CONFIGURED` 仍回 0（骨架還沒填不是故障，這是刻意保留的明示選擇）。另外兩件報告點到的事：HTTP 檢查可以填 `expect`（狀態碼或回應裡該出現的字），因為**只把「有回應」當成正常是不夠的**——200 配一個空的錯誤頁照樣會過；以及所有輸出都過一層遮罩，命令的 stdout／stderr 與例外訊息都不在我們控制下，而交接快照會被貼進 HANDOFF、對話與 issue。
@@ -378,7 +380,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ## 開工第一件事（任何工具、任何模型都適用）
 
-**先讀 [`.claude/skills/handoff/SKILL.md`](.claude/skills/handoff/SKILL.md)，照 A 模式接棒；A 沒跑完之前不要修改任何檔案。** 收工時走 B 模式交棒，中途要拉最新或推安全點走 C 模式。
+**先讀 [`.claude/skills/handoff/SKILL.md`](.claude/skills/handoff/SKILL.md)，照 A 模式接棒；A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。** 收工時走 B 模式交棒，中途要拉最新或推安全點走 C 模式。
 
 那份檔案是純 Markdown，路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置——**其他工具直接讀它就好**，不要因為資料夾名字而略過。部分工具有自動化輔助（Claude Code 可打 `/handoff`、session 開始會自動檢查 git；Codex 可掛同樣的 hooks；Antigravity 原生讀 `.agents/skills/`），但**有沒有自動化都不改變義務**：沒有被自動提醒，就自己走。
 
@@ -697,8 +699,8 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 > ① SessionStart hook（`.claude/hooks/git-freshness.sh`）：session 開始自動 fetch，注入落後／分岔／未推送警告，讀 `origin` 的「工作中」標記揭露別台機器正在動同一條分支，並提醒走 handoff skill。
 > ② PreToolUse hook（`.claude/hooks/pre-push-handoff.sh`）：AI push 提醒只依字面命令、目前分支與 origin 判斷已提交 HANDOFF 差異（`HANDOFF_HOOK=off` 可停用）。不解析選項／remote／refspec，GUI／script 可能漏判、純文字可能誤擋；不是發布保證，見部署包 3.11。
 
-1. **先同步 Git**：**未同步前不要相信本機 HANDOFF。** 工作樹乾淨、有 upstream 且能 fast-forward 才可自行往下走（指令與完整判讀表見 skill A1）。
-2. **確認你該站在哪條分支**：讀 HANDOFF 的「待續分支」。**若它指向 feature branch，該分支才是主幹**——`main` 可能明顯落後。不要因為 `main` 是預設分支就以為它最新。
+1. **先同步 Git**：**未同步前不要相信本機 HANDOFF。** fetch 成功且工作樹乾淨、有 upstream、對齊或只落後可 fast-forward 才可自行往下走；ahead-only 與 fetch 失敗停下（指令與完整判讀表見 skill A1）。
+2. **確認你該站在哪條分支**：讀 HANDOFF 的「待續分支」。**若它指向 feature branch，該分支才是主幹**——`main` 可能明顯落後。不要因為 `main` 是預設分支就以為它最新。切換後重跑 skill A1 再查占用。
 3. **檢查這條分支有沒有人正在工作**：讀該分支 `HANDOFF.md` 的「工作中」欄位，**讀 `origin/` 那一份**（本機可能還沒 pull）。指向別台機器就**停下來問使用者**——同一條分支同時兩台違反 single writer。指向**這台機器但別的工具**同樣要停，而且更急：同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫（指令與判讀表見 skill **A2.5**）。
 4. **異常就停在安全點**：未知 dirty changes、diverged、遠端意外前進或 pull 不能 fast-forward 時，**禁止** `reset --hard`、force push、自動 stash 或覆寫。先辨認變更來源並回報。
 5. **最小讀取**：只讀 `AGENTS.md` ＋ `HANDOFF.md`。其他知識庫依實際任務 lazy load。
@@ -744,14 +746,14 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 4. **文檔驗證**：動過任何 `.md` 就跑 `tools/check_docs.py`——死連結、過期字串、缺日期標頭、硬編數量，**exit 2 表示要修**（這些 `verify_state.py` 一項都查不到）。
 5. **條件式例行檢查**：本專案若有固定流程（部署、版本號、測試），有動到就執行並記錄；未動就明記不適用。
 6. **更新 HANDOFF**：≤80 行，填服務快照、Git 狀態、下一步、待續分支與懸置決策。**不要在 HANDOFF 寫「它自己的最終 commit hash」**——那會因提交 HANDOFF 而立刻過時；最終 hash 放交棒回覆。
-7. **安全提交**：先 `git diff --check`；明確 stage 需要的檔案，檢查 `git diff --cached --name-only`／`--stat`，確保沒有祕密、runtime、備份或實際資料，再 commit。
+7. **安全提交**：先依 skill B7 重驗 B6 後的最終文件；服務或驗證依據改過也重跑服務驗證。再 `git diff --check`；明確 stage 需要的檔案，檢查 `git diff --cached --name-only`／`--stat`，確保沒有祕密、runtime、備份或實際資料，再 commit。
 8. **發布交棒**：`git fetch origin` 確認遠端未意外前進後 push；最後 `git status -sb` 必須 clean 且與 upstream 對齊。**push 失敗就不是完成交棒。**
 9. **最後回報**：5 行內列出結果、驗證、分支、最終 commit hash／是否已 push，以及**接手者最容易搞砸的一件事**。
 
 ## 四、接棒者義務
 
 1. 依「一、接棒」先同步 Git，確認站對分支，再讀 AGENTS ＋ HANDOFF。
-2. 比對 HANDOFF 的服務快照；不一致以**實況為準**並修文件。缺憑證先排除設定問題，再標 SKIPPED，不擴張權限。
+2. 比對 HANDOFF 的服務快照；不一致以**實況為準**，先只記錄差異，A5 開工成功後才修文件。缺憑證先排除設定問題，再標 SKIPPED，不擴張權限。
 3. 檢查 HANDOFF 指向的待續分支；要續作才 switch，**不能憑猜測合併或刪 branch**。
 4. 以 3–5 行回報後開始任務；結束依本協定交棒。
 
@@ -863,7 +865,7 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
@@ -892,9 +894,23 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 | session 剛開始／要續作／換機器／換模型 | **A 接棒** |
 | 工作告一段落、要收工或換人接手 | **B 交棒** |
 | 工作中想拉最新或推一個安全點，還沒要交棒 | **C 同步** |
-| 準備 `git push` | 先做 **B**——push 是交棒的最後一步，不是獨立動作 |
+| 準備 `git push` | 預設先做 **B**；只有 **A5 開工標記**與 **C 中途安全點**例外，分別照該節，不宣稱交棒、不增加次數 |
 
-不確定就走 A（不是 0）。**A 沒跑完之前不要修改任何檔案。**
+不確定就走 A（不是 0）。**A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。**
+
+### A／B／C 狀態轉移（2026-11-02／F11）
+
+| 狀態 | 前提 | 允許操作 | 成功證據 | 失敗處理 |
+|---|---|---|---|---|
+| 待接棒 | 尚未取得寫入資格 | A1 同步、A2 定位分支、A2.5 查占用 | fetch exit 0；乾淨；ahead=0、behind=0；origin 標記可依 A2.5 續行 | fetch 失敗／ahead-only／分岔／未知 dirty：停下回報，等待指示 |
+| 已定位 | A1／A2／A2.5 通過 | A3 讀取、A4 驗證並記錄差異、A5 回報 | 驗證結束碼、FAIL／ERROR／SKIP／NOT_CONFIGURED 與差異已列出 | 未驗證不可寫成通過；只讀記錄，修檔延至 A5 開工成功後 |
+| 開工中 | A5 回報完成且確定要改檔 | 只提交 HANDOFF 開工標記，fetch 確認遠端未意外前進後 push | push exit 0；origin 的工作中欄位是本 session | push 失敗停止修改，詢問是否接受沒有標記保護；遠端意外前進則停下 |
+| 工作中 | A5 開工成功 | 執行已授權任務；C 推安全點走 B7 → B8 | 最終文件檢查 exit 0；push exit 0；本地與 upstream 對齊；origin 仍是本 session 工作中 | 驗證失敗修正或明記風險；fetch／push 失敗不宣稱同步成功 |
+| 待交棒 | B1–B6 已完成 | B7 驗最終快照並安全提交，再走 B8 | 最終文件檢查 exit 0；push exit 0；工作樹乾淨且與 upstream 對齊；origin 標記為無（已交棒） | 最終文件檢查失敗不可發布；fetch／push 失敗不交棒、不加次數 |
+| 已交棒 | B8 成功且遠端標記已清 | B9 改名並增加一次；新訊息依續聊規則恢復活動 | origin 工作中欄位與 session 回報可核對 | 改名失敗如實回報，重試不重複計數；再改檔前重走 A |
+
+**證據的範圍**：驗證工具不存在或專案另有驗證入口時，依 AGENTS.md 執行並明記替代指令／不適用原因；不可把缺工具當成 exit 0。狀態表不把服務 FAIL／SKIP 自動變成通過，也不把工作中標記當成互斥鎖。
+**為什麼要列狀態**：舊程序漏掉 ahead-only／fetch 失敗，切分支後沿用舊檢查，A4 又在 A5 之前叫人修檔；B6 改了快照卻只引用 B4 的舊結果，且所有 push 都被描述成交棒。這些順序互相打架，不能靠接手者自行猜例外。
 
 > 模式 0 在**已經部署好的專案裡永遠用不到**——這裡有雞生蛋問題：skill 是部署之後才存在於專案的。
 > 它真正會被載入的地方是**全域副本**（`~/.claude/skills/handoff/`、`~/.codex/skills/handoff/`）。
@@ -932,7 +948,7 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 **每則使用者新訊息都先檢查 session 狀態，包含只問問題、補充、更正與致謝，不必等使用者再說「接棒」。** 上次是 `↗ 已交棒`（或 `※ 待你決定`）時，先用改名工具恢復 `㊣ 工作中`，再回答或執行任務；必要的標題讀取可先做。**保留原本的 `YYMMDDHH`、主題與交棒次數，不重算時間、不歸零、不另建 session。** 本輪後來真的需要使用者決定，仍依原規則轉成 `※`，並保留次數。
 
 - **只讀續聊不改 HANDOFF、不 commit、不 push，也不為了結束回答再交棒。** 改名已足以表達 session 正在活動，不能為了一句問答新增空的開工／交棒紀錄。
-- **續聊要改檔前重新走 A1–A5，重查 origin 的工作中標記。** 前次交棒已釋出分支，另一個 session 可能已接手；恢復側欄狀態不代表重新取得寫入權。通過 A 模式後才寫開工標記，push 失敗照 A5 停下。
+- **續聊要改檔前重新走 A1–A5，重查 origin 的工作中標記。** 前次交棒已釋出分支，另一個 session 可能已接手；恢復側欄狀態不代表重新取得寫入權。通過 A1–A4 並完成 A5 回報後才寫開工標記，push 失敗照 A5 停下。
 - **續聊回覆必須有 `session：` 一行，列出實際標題與交棒次數。** 沒有改名能力就寫 `不適用：<原因>；交棒<N>次`；有工具但呼叫失敗要如實寫失敗，不能宣稱已改。這是逐訊息的程序義務，SessionStart hook 不會因為同一 session 多一則訊息再跑一次，也不能宣稱只同步 skill 就讓所有舊 session 自動生效。
 
 ### 同一 session 的交棒計數
@@ -1027,7 +1043,7 @@ python -X utf8 tools/check_docs.py
 ### A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）
 
 ```bash
-git status -sb && git fetch origin && git log --oneline -3
+git status -sb && git fetch origin && git status -sb && git log --oneline -3
 ```
 
 判讀表——**只有前兩列可以自己往下走**：
@@ -1036,12 +1052,16 @@ git status -sb && git fetch origin && git log --oneline -3
 |---|---|
 | 乾淨、落後 origin | `git pull --ff-only` 後繼續 |
 | 乾淨、與 origin 一致 | 直接繼續 |
+| 乾淨但 ahead-only（ahead > 0、behind = 0） | **停**：列出未推送 commit 與來源，等待使用者指示；不得自動 push、reset 或把它當成已同步 |
+| fetch 失敗（非零退出） | **停**：保留錯誤輸出，遠端新鮮度未知；不得用舊 tracking ref 宣稱同步完成 |
 | 有未提交變更，來源不明 | **停**：貼 `git status --porcelain` 與 `git diff --stat`，問使用者這是誰留下的 |
 | 已分岔（同時 ahead＋behind） | **停**：回報落後／領先數與雙方 commit 標題，等指示 |
 | pull 不能 fast-forward | **停**：不要 rebase／merge 到一半才問 |
 | 沒有 upstream | **停**：回報，不要自行 `push -u` 建立 |
 
 🚫 全程禁止：`reset --hard`、`push --force`、自行 `stash`、覆寫他人 commit、刪 branch。
+
+fetch 成功後才判讀；用 `git rev-parse --abbrev-ref --symbolic-full-name @{upstream}` 確認 upstream，再用 `git rev-list --left-right --count HEAD...@{upstream}` 取得 ahead／behind（左／右）。PowerShell 請把 `@{upstream}` 引號包住。pull 成功後重查 `git status --porcelain` 與計數，乾淨且兩者為 0 才進 A2。detached HEAD、無法讀取計數或 upstream 不對應 `origin/<當前分支>` 時停下回報，不猜比較對象。
 
 ### A2 站對分支
 
@@ -1050,6 +1070,8 @@ git status -sb && git fetch origin && git log --oneline -3
 - 寫「無」→ 待在權威分支（通常 `main`）。
 - 指向 `feature/...` → **那條才是主幹，`main` 可能明顯落後**。要續作就 `git switch <branch>`；不要因為 `main` 是預設分支就以為它最新。
 - 要開新分支 → 從**現在的主幹**開，不是從 `main` 開。
+
+**切換到待續分支後重跑 A1**（含 fetch、upstream、dirty 與 ahead／behind 判讀），再讀該分支的 HANDOFF 並走 A2.5；不可沿用切換前的通過結果。切換失敗就停下，禁止自動 stash。
 
 ### A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）
 
@@ -1104,7 +1126,7 @@ python -X utf8 tools/verify_state.py
 ```
 
 （`python` 不存在就用 `python3`；腳本不存在就跳過並在回報寫明。）
-與 HANDOFF 的「服務查證與期望快照」比對。不一致時**以實況為準**，就地修文件並註記絕對日期。
+與 HANDOFF 的「服務查證與期望快照」比對。不一致時**以實況為準**，此步只記錄差異與結束碼、不修改專案檔案；到 A5 回報且開工標記 push 成功後，才修文件並註記絕對日期。FAIL／ERROR 是待修問題，SKIP／NOT_CONFIGURED 是未驗證，不能寫成通過。
 
 🔴 **標 SKIPPED 前先排除「設定沒帶到」**：連線失敗 ≠ 本機沒有憑證。先確認該機器的憑證路徑／環境變數是不是沒設，是不是暫時性網路錯誤（重試 2–3 次）。確認憑證真的不存在才寫 `SKIPPED（本機未配置）`。**不得**從系統資料庫、其他主機、Git history 或別台機器自行挖取／搬運憑證。
 
@@ -1138,7 +1160,7 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
      寫同義詞只會讓它多報一次 🔴——那是加嚴的方向，不會放行，但也是噪音。
    - 記 session 名稱比只記機器名有用——有側欄的工具可以直接拿它把那個 session 點開。
 
-2. **只** stage `HANDOFF.md`，commit 後 push 到**當前分支**。訊息用 `chore(handoff): <機器> 開工` 這類前綴，之後掃歷史時一眼可略過。
+2. **只** stage `HANDOFF.md`，核對 staged 清單後 commit；重新 fetch，確認遠端沒有比 A2.5 觀測值意外前進才 push 到**當前分支**。訊息用 `chore(handoff): <機器> 開工` 這類前綴，之後掃歷史時一眼可略過。這是開工 push 例外，不先走 B6 清標記、不宣稱交棒；push 成功後重讀 origin 的工作中欄位，確認是本 session，才開始任務修改。
 **push 失敗就不是「已標記」**：明確告訴使用者「這次沒有標記保護，別台機器不會知道我在做」，問他要不要在這個狀態下繼續。**不要靜默往下做**——你會以為有保護，實際上沒有。（名稱照樣是 `㊣`——它說的是「這個 session 在做事」，不是「標記已經在 origin 上」。）
 
 規則一句話：**側欄講的是這個 session，HANDOFF 講的是這條分支。** 只有 `↗ 已交棒` 是在宣稱一件 git 的事，所以只有它要等 push 成功。
@@ -1249,6 +1271,8 @@ python -X utf8 tools/check_docs.py
 
 ### B7 安全提交
 
+**先驗最終快照**：B6 覆寫完成後，重新跑 `python -X utf8 tools/check_docs.py`（無 `python` 用 `python3`；專案有替代入口依 AGENTS.md），exit 0 才提交發布。若 B6 之後又改文件，重新驗受影響的最終文件；缺工具明記不適用原因，不可引用 B4 的舊通過結果。服務程式、設定或驗證依據若在 B3 後改過，連 B3 也重跑；純粹填寫已取得的結果不必重新呼叫外部服務。2026-11-02／F11：先驗 B4 再寫 B6，舊結果不能證明最後那份快照合格。
+
 ```bash
 git diff --check && git status --porcelain
 ```
@@ -1273,7 +1297,7 @@ git diff --cached -U0 | grep -nEi "(api[_-]?key|secret|token|passwd|password|BEG
 git fetch origin && git status -sb
 ```
 
-遠端意外前進 → **停下**，禁止 force push，先整合或請使用者判斷。正常才 push；push 後 `git status -sb` 必須 clean 且與 upstream 對齊。
+fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **停下**，禁止 force push，回報並等待使用者指示。正常才 push；push 後 `git status -sb` 必須 clean 且與 upstream 對齊。
 **push 失敗就不是完成交棒**，不要在回覆裡寫「已交棒」。
 
 ### B9 收尾與回報（≤5 行）
@@ -1304,7 +1328,7 @@ git fetch origin && git status -sb
 ## C. 中途同步（還沒要交棒）
 
 - 拉最新：照 A1 判讀表走，異常一樣停。
-- 推安全點：B7 → B8（可略過 B6；但這批 commit 若會被別人或別台機器看到，仍要在 HANDOFF 補一句現況）。
+- 推安全點：這是中途 push 例外，走 B7 → B8；補齊 HANDOFF 的當下現況與風險，保留本 session 的「工作中」標記，不走 B6 的釋出標記與 B9 的交棒計數。更新後照 B7 驗最終文件，成功後重讀 origin 標記仍是本 session。不得把中途同步說成已交棒。
 - **換機器前一定要 push，下一台機器一定要先 fetch。**
 - **single writer**：同一時間只有一個 agent／一台機器可以改 `main` 與 `HANDOFF.md`。要換手就先交棒。
 
@@ -1312,7 +1336,7 @@ git fetch origin && git status -sb
 
 ## 必須停下來問使用者（不得自行決定）
 
-- Git 異常：dirty 來源不明、diverged、不能 fast-forward、遠端意外前進、沒有 upstream
+- Git 異常：dirty 來源不明、接棒時 ahead-only、fetch 失敗、diverged、不能 fast-forward、遠端意外前進、沒有 upstream
 - **A2.5 偵測到別台機器的「工作中」標記**（同一條分支同時兩台＝違反 single writer）
 - `push --force`、`reset --hard`、刪分支、改寫歷史
 - 功能分支要併進 `main`（需使用者驗收；文件／基建分支驗證過可自己併）
@@ -1390,7 +1414,7 @@ git fetch origin && git status -sb
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-02.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-02.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：git 新鮮度檢查（多機分岔防呆）
 # 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
 # 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
@@ -1401,7 +1425,7 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
 
 if ! git fetch --quiet origin 2>/dev/null; then
-  echo "[git-check] ⚠️ 無法 fetch origin（離線或金鑰問題）——無法確認本地是否最新，讀 HANDOFF 前請自行確認。branch=$branch"
+  echo "[git-check] ⚠️ 無法 fetch origin（離線或金鑰問題）——無法確認本地是否最新，停下回報並等待使用者指示，不用舊 tracking ref 宣稱同步。branch=$branch"
   exit 0
 fi
 
@@ -1415,11 +1439,11 @@ ahead=$(echo "$counts" | awk '{print $2}')
 dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "$behind" -gt 0 ] && [ "$ahead" -gt 0 ]; then
-  echo "[git-check] 🔴 已分岔：落後 origin $behind、領先 $ahead（branch=$branch）。開工前必須先整合（git pull --rebase），禁止直接 push 或 reset --hard。"
+  echo "[git-check] 🔴 已分岔：落後 origin $behind、領先 $ahead（branch=$branch）。停下回報並等待使用者指示；不得自行 rebase 或 merge，禁止直接 push 或 reset --hard。"
 elif [ "$behind" -gt 0 ]; then
   echo "[git-check] 🔴 本地過時：落後 origin $behind 個 commit（branch=$branch）。本地 HANDOFF.md／docs 可能是舊快照——先 git pull --ff-only 再讀任何文件、再動任何工作。"
 elif [ "$ahead" -gt 0 ]; then
-  echo "[git-check] 🟡 有 $ahead 個未推送 commit（branch=$branch）。上一棒可能沒完成交棒 push；收工前記得推。"
+  echo "[git-check] 🟡 有 $ahead 個未推送 commit（branch=$branch）。接棒時 ahead-only：停下回報未推送 commit 的來源，等待使用者指示，不自動 push。"
 else
   echo "[git-check] ✅ 本機沒落後 origin（branch=$branch）——這一行只比對本機與 origin 的落差，不代表沒有別台機器在做。"
 fi
@@ -1623,7 +1647,7 @@ exit 0
 # 其他情況（非 push 指令、feature 分支中途推進度、判斷不了）一律放行——寧可漏擋，不要誤擋。
 # 退出碼：0＝放行；2＝擋下並把 stderr 交給模型（模型會看到訊息並改走交棒程序）。
 # 臨時停用：HANDOFF_HOOK=off
-# source: PROJECT-BOOTSTRAP.md v2026-11-02.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-02.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 
 [ "$HANDOFF_HOOK" = "off" ] && exit 0
 
@@ -1649,7 +1673,7 @@ git diff --name-only "origin/$branch..HEAD" 2>/dev/null | grep -qx 'HANDOFF.md' 
 # F06：未提交的 staged／unstaged 修改不會隨 push 上傳，不可據此放行。
 
 >&2 echo "[handoff-check] AI push 提醒：目前 $branch 相對 origin 的已提交差異沒有更新 HANDOFF.md（未提交修改不算）。"
->&2 echo "[handoff-check] 依交接協定，push 是交棒的最後一步：先跑 handoff skill 的 B 模式（B2 知識落地、B3/B4 驗證、B6 更新 HANDOFF、B7 檢查 staged 清單）再 push。"
+>&2 echo "[handoff-check] 收工 push 先跑 handoff skill 的 B 模式並在 B7 驗最終快照；開工標記與中途安全點是例外，分別照 A5／C，不宣稱交棒。"
 >&2 echo "[handoff-check] 若真的只是中途推進度：改推 feature 分支，或本次設 HANDOFF_HOOK=off。"
 exit 2
 ````
