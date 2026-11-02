@@ -12,7 +12,8 @@
 用法（在本 repo 根目錄執行）：
   python -X utf8 tools/sync_project.py ../NAS_MAINT           # 預演，只印要改什麼
   python -X utf8 tools/sync_project.py ../NAS_MAINT --write   # 實際寫入
-  python -X utf8 tools/sync_project.py --all                  # 掃 ROOTS 找出所有裝過的專案
+  python -X utf8 tools/sync_project.py --all --root ../projects --exclude archived-project
+  python -X utf8 tools/sync_project.py --inventory ../private-projects.json
   python -X utf8 tools/sync_project.py --all --write
 
 **本工具只改檔案，不 commit、不 push。** 那是交接程序（skill B7／B8）的事：專案的工作樹
@@ -31,10 +32,12 @@ Python 版本下限見下面的 MIN_PY 與 `verify_bootstrap.py` 檔頭那一段
 """
 import argparse
 import copy
+import hashlib
 import json
 import os
 import pathlib
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -52,7 +55,7 @@ from verify_bootstrap import extract  # noqa: E402  重用範本抽取，不另�
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-# --all 要掃的根目錄。換一台機器、專案放別的地方就改這裡。
+# --all 的預設根目錄。其他位置用 --root 指定，不必改程式；固定範圍用私人 inventory。
 ROOTS = (pathlib.Path.home() / 'Desktop',)
 
 # 整份覆蓋就對的檔：純制度內容，沒有任何專案專屬的值。
@@ -493,32 +496,168 @@ def sync(project, gen, codex_only=False):
     return plan
 
 
-def discover():
-    """裝過骨架的專案＝有 handoff skill 的目錄。worktree 是同一個 repo 其他分支的
-    checkout，個別覆蓋只會製造互相打架的副本，所以排除——它們等分支合併才拿到。"""
-    found = []
-    for root in ROOTS:
-        if not root.exists():
+def git_output(project, *args):
+    r = subprocess.run(['git', '-C', str(project), *args], capture_output=True,
+                       encoding='utf-8', errors='replace')
+    if r.returncode:
+        raise ValueError('Git 查詢失敗：' + r.stderr.strip())
+    return r.stdout.strip()
+
+
+def target_reason(project):
+    if not (project / '.claude/skills/handoff/SKILL.md').is_file():
+        return '沒有 handoff skill'
+    try:
+        top = pathlib.Path(git_output(project, 'rev-parse', '--show-toplevel')).resolve()
+        if top != project.resolve():
+            return '不是 repo 根目錄'
+        gd = pathlib.Path(git_output(project, 'rev-parse', '--absolute-git-dir')).resolve()
+        common = pathlib.Path(git_output(project, 'rev-parse', '--git-common-dir'))
+        common = (project / common).resolve() if not common.is_absolute() else common.resolve()
+        if gd != common:
+            return 'Git linked worktree，等待主 checkout 同步'
+    except ValueError as e:
+        return str(e)
+    return None
+
+
+def discover_decisions(roots=None, excludes=()):
+    """只掃明列 root 下一層；每個候選都說明納入／排除原因，不猜專案是否已完結。"""
+    decisions, seen = [], set()
+    for root in (ROOTS if roots is None else roots):
+        if not root.is_dir():
+            decisions.append((root, '掃描根目錄不存在'))
             continue
-        for p in sorted(root.glob('*/.claude/skills/handoff/SKILL.md')):
-            found.append(p.parents[3])
-    return [p for p in found if 'worktrees' not in p.as_posix()]
+        for p in sorted(root.iterdir()):
+            if not p.is_dir() or p.resolve() in seen:
+                continue
+            p = p.resolve()
+            seen.add(p)
+            why = '明確排除' if str(p) in excludes or p.name in excludes else target_reason(p)
+            decisions.append((p, why))
+    return decisions
+
+
+def discover():
+    return [p for p, reason in discover_decisions() if reason is None]
+
+
+def inventory_decisions(path):
+    """私人清單不進權威 repo；相對路徑以清單所在目錄為基準。"""
+    data = json.loads(path.read_text(encoding='utf-8'))
+    if not isinstance(data, list) or not data:
+        raise ValueError('inventory 必須是非空陣列')
+    out, seen = [], set()
+    for item in data:
+        if not isinstance(item, dict) or not isinstance(item.get('path'), str) or item.get('status') not in ('active', 'archived'):
+            raise ValueError('inventory 每列須有 path 與 status（active／archived）')
+        p = pathlib.Path(item['path'])
+        p = (path.parent / p).resolve() if not p.is_absolute() else p.resolve()
+        if p in seen:
+            raise ValueError('inventory 路徑重複：' + str(p))
+        seen.add(p)
+        out.append((p, 'inventory 已完結' if item['status'] == 'archived' else target_reason(p)))
+    return out
+
+
+_published = None
+
+
+def shared_digest(rel, text):
+    if rel == SURGICAL:
+        parts = split_settings(text, require_end=False)
+        if parts is None:
+            raise ValueError('check_docs.py 共用程式區無法辨識')
+        text = '\n'.join(parts[0] + parts[2])
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+
+def published_hashes(gen):
+    """共用整份覆蓋檔的已發布內容；缺歷史時保守拒絕，不能把未知客製當舊版。"""
+    global _published
+    if _published is None:
+        _published = {rel: set() for rel in WHOLE + (SURGICAL,)}
+        def remember(folder):
+            for rel in WHOLE + (SURGICAL,):
+                text = read(folder / rel)
+                if text is not None:
+                    try:
+                        _published[rel].add(shared_digest(rel, text))
+                    except ValueError:
+                        pass  # 舊版無法辨識的區塊不列為可信來源。
+        remember(gen)
+        history = git_output(ROOT, 'log', '--format=%H', '--', 'PROJECT-BOOTSTRAP.md')
+        with tempfile.TemporaryDirectory(prefix='bootstrap-history-') as td:
+            folder = pathlib.Path(td)
+            for sha in history.splitlines():
+                extract(folder, git_output(ROOT, 'show', sha + ':PROJECT-BOOTSTRAP.md') + '\n')
+                remember(folder)
+    return _published
+
+
+def preflight(project, gen, plan, allow_dirty=False, accept_drift=()):
+    why = target_reason(project)
+    if why:
+        plan.fail('目標', why)
+        return
+    dirty = git_output(project, 'status', '--porcelain')
+    if dirty and not allow_dirty:
+        plan.fail('dirty', '有未提交變更；先檢視，單一目標可用 --allow-dirty 明確接受，不自動 stash／commit')
+    elif dirty:
+        plan.msgs.append('  REVIEW dirty：已明確接受，仍檢查占用與客製漂移')
+    h = read(project / 'HANDOFF.md') or ''
+    fields = [line.split('：', 1)[-1].strip() for line in h.splitlines() if line.startswith('- **工作中**：')]
+    if fields != ['無（已交棒）']:
+        plan.fail('占用', '工作中欄位缺失、重複或尚未釋出，不允許同步')
+    shared = WHOLE + (SURGICAL,)
+    if plan.errors or not any(rel in shared and read(project / rel) is not None for _, _, rel in plan.writes):
+        return
+    known = published_hashes(gen)
+    for _, _, rel in plan.writes:
+        if rel not in shared:
+            continue
+        text = read(project / rel)
+        if text is not None and shared_digest(rel, text) not in known[rel]:
+            if rel not in accept_drift:
+                plan.fail(rel, '客製漂移或來源不明，先人工比對；單一目標可用 --accept-drift ' + rel)
+            else:
+                plan.msgs.append('  REVIEW drift：明確接受覆蓋 ' + rel)
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('project', nargs='?', help='要同步的專案路徑')
     ap.add_argument('--all', action='store_true', help='掃 ROOTS 底下所有裝過骨架的專案')
+    ap.add_argument('--root', action='append', type=pathlib.Path, help='搭配 --all，掃此目錄下一層；可重複')
+    ap.add_argument('--exclude', action='append', default=[], help='搭配 --all 排除目錄名或完整路徑')
+    ap.add_argument('--inventory', type=pathlib.Path, help='明列 path／status 的 JSON 清單，archived 不寫入')
+    ap.add_argument('--allow-dirty', action='store_true', help='單一目標：接受已檢視的未提交變更，不略過占用與漂移')
+    ap.add_argument('--accept-drift', action='append', choices=WHOLE + (SURGICAL,), default=[], help='單一目標：接受覆蓋已人工比對的共用檔／程式區')
     ap.add_argument('--write', action='store_true', help='實際寫入（預設只預演）')
     ap.add_argument('--codex-only', action='store_true',
                     help='只更新 Codex 接線與其 Windows 啟動器，不更新 SKILL.md 或其他檔案')
     args = ap.parse_args()
+    if sum(bool(x) for x in (args.project, args.all, args.inventory)) != 1:
+        ap.error('project、--all、--inventory 必須擇一')
+    if (args.root or args.exclude) and not args.all:
+        ap.error('--root／--exclude 必須搭配 --all')
+    if (args.allow_dirty or args.accept_drift) and not args.project:
+        ap.error('接受 dirty／漂移只能明列單一專案，不可批次略過')
 
     if not (ROOT / 'PROJECT-BOOTSTRAP.md').exists():
         print('找不到 PROJECT-BOOTSTRAP.md——請在本 repo 根目錄執行')
         return 2
-    targets = discover() if args.all else ([pathlib.Path(args.project).resolve()]
-                                           if args.project else [])
+    try:
+        decisions = (inventory_decisions(args.inventory.resolve()) if args.inventory else
+                     discover_decisions(args.root, args.exclude) if args.all else
+                     [(pathlib.Path(args.project).resolve(), None)])
+    except (ValueError, OSError) as e:
+        print('目標清單錯誤：' + str(e))
+        return 2
+    print('範圍：只含以下專案；全域 skill 副本須另行同步，不在 --all 內。')
+    for p, reason in decisions:
+        print('%s %s：%s' % ('EXCLUDE' if reason else 'INCLUDE', p, reason or '明確目標／Git 主 checkout'))
+    targets = [p for p, reason in decisions if reason is None]
     if not targets:
         print('沒有目標。給一個專案路徑，或用 --all')
         return 2
@@ -548,6 +687,10 @@ def main():
                 failures.append('%s：找不到這個資料夾' % project)
                 continue
             plan = sync(project, tmp, codex_only=args.codex_only)
+            try:
+                preflight(project, tmp, plan, args.allow_dirty, args.accept_drift)
+            except (ValueError, OSError) as e:
+                plan.fail('preflight', str(e))
             print('%s' % project)
             print('\n'.join(plan.msgs))
             # 算不出來就整個目標跳過，一個檔都不寫（F03）：半套同步比沒同步更難查，

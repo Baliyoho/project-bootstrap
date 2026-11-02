@@ -262,8 +262,8 @@ def write_lf(path, text, encoding='utf-8'):
 
 
 # ── 1. 重生骨架 ────────────────────────────────────────────────
-def extract(dest):
-    lines = read_lf(KIT).split('\n')
+def extract(dest, text=None):
+    lines = (read_lf(KIT) if text is None else text).split('\n')
     heads = [i for i, ln in enumerate(lines) if HEAD_RE.match(ln)]
     written = set()
     for n, i in enumerate(heads):
@@ -315,7 +315,17 @@ def step_regenerate(dest):
 
 
 # ── 2. 填佔位符 ────────────────────────────────────────────────
-def step_fill(dest):
+def ignore_rules(answer):
+    """訪談的 Markdown 路徑清單 → .gitignore 的每行一個 pattern。"""
+    rules = re.findall(r'`([^`]+)`', answer) or answer.splitlines()
+    rules = [r.strip() for r in rules]
+    if not rules or any(not r.strip() or r.startswith('!') or '\n' in r or '\r' in r for r in rules):
+        raise ValueError('ignore 訪談須是非空且不含 ! 的路徑清單')
+    return '\n'.join(r.strip() for r in rules)
+
+
+def step_fill(dest, answers=None, report=True):
+    answers = ANSWERS if answers is None else answers
     unknown, seen, filled = set(), set(), 0
     for f in sorted(dest.rglob('*')):
         if not f.is_file():
@@ -327,10 +337,10 @@ def step_fill(dest):
         def sub(m):
             key = m.group(1)
             seen.add(key)
-            if key not in ANSWERS:
+            if key not in answers:
                 unknown.add(key)
                 return f'UNKNOWN_{key}'
-            return ANSWERS[key]
+            return ignore_rules(answers[key]) if f.name == '.gitignore' and key in ('SECRETS', 'RUNTIME_DIRS') else answers[key]
 
         new, n = PLACEHOLDER_RE.subn(sub, text)
         if n:
@@ -348,7 +358,8 @@ def step_fill(dest):
     if left:
         record('FAIL', '填佔位符', f'仍有殘留：{left}')
         return False
-    record('OK', '填佔位符', f'替換 {filled} 處、{len(seen)} 種，無殘留')
+    if report:
+        record('OK', '填佔位符', f'替換 {filled} 處、{len(seen)} 種，無殘留')
     return seen
 
 
@@ -1742,12 +1753,16 @@ def step_sync_safety(tmp):
     write_lf(skill, 'stale skill')
     wiring = proj / '.claude' / 'settings.json'
     write_lf(wiring, '{ not json')
+    write_lf(proj / 'HANDOFF.md', sp.BUSY_FIELD + '\n')
+    for args in (['init', '-q', '-b', 'main'], ['add', '.'], ['commit', '-qm', 'fixture']):
+        if git(args, proj).returncode:
+            raise RuntimeError('同步安全 Git fixture 建立失敗')
 
     def cli(*args):
         return run([sys.executable, '-X', 'utf8', 'tools/sync_project.py'] + list(args),
                    cwd=ROOT)
 
-    r = cli(str(proj), '--write')
+    r = cli(str(proj), '--write', '--allow-dirty', '--accept-drift', '.claude/skills/handoff/SKILL.md')
     if r.returncode == 0:
         bad.append('壞 JSON 的目標竟然 exit 0（F03 的原始缺陷）')
     if skill.read_text(encoding='utf-8') != 'stale skill':
@@ -1761,10 +1776,10 @@ def step_sync_safety(tmp):
 
     # 修好之後要真的寫得進去、而且 exit 0——修法不能嚴到什麼都不敢改
     write_lf(wiring, '{"hooks":{}}')
-    r = cli(str(proj), '--write')
+    r = cli(str(proj), '--write', '--allow-dirty', '--accept-drift', '.claude/skills/handoff/SKILL.md')
     if r.returncode != 0 or skill.read_text(encoding='utf-8') == 'stale skill':
         bad.append('正常的目標沒同步成功（exit %d）' % r.returncode)
-    r = cli(str(proj))
+    r = cli(str(proj), '--allow-dirty')
     if r.returncode != 0 or '全部都已經是' not in r.stdout:
         bad.append('重跑沒有回到「全部都已經是」且 exit 0')
 
@@ -2693,8 +2708,8 @@ ZIP_README = """# 先看這個——三步驟
 本資料夾已經解壓好一套 AI 協作管理骨架，檔案都在，但裡面還有 {{佔位符}} 沒填。
 請照 PROJECT-BOOTSTRAP.md 第 1 節的表格問我問題（一次問完），拿到答案後：
 1. 把所有檔案裡的 {{佔位符}} 換成我的答案，其他內容一個字都不要改、不要自行增刪制度。
-2. 依第 4 節把專案推上 GitHub（已經是 git repo 就只確認 upstream 有設好）。
-3. 跑第 5 節自檢清單，逐項回報通過／不適用／有問題。
+2. 依第 4 節先本機驗收（含 ignore、文件與執行位元），通過才提交及首次發布。
+3. 跑第 5 節遠端與工具驗收清單，逐項回報通過／不適用／有問題。
 4. 最後刪掉 PROJECT-BOOTSTRAP.md 與本說明檔。
 ```
 
@@ -3001,6 +3016,222 @@ def step_core_priority(dest, tmp):
            '兩份宣告一致、override 範圍明確、8 個負向測試；同步列核心版本與 MIGRATE，不覆蓋舊實例')
 
 
+def coordination_problems(skill, protocol):
+    bad = []
+    a25 = skill.split('### A2.5 ', 1)[-1].split('### A3 ', 1)[0]
+    a5 = skill.split('### A5 ', 1)[-1].split('### A6 ', 1)[0]
+    for label, text, tokens in (
+        ('A2.5', a25, ('接力式 single-writer', '協調訊號，不是互斥鎖', '同一工作樹不得同時有兩個 writer',
+                       '不得自動奪取 writer', '不是穩定 owner token', '同時記錄觀測到的', '原子 claim 尚未實作', '未做並行實驗')),
+        ('A5', a5, ('協調訊號，不是互斥鎖', 'SHA 與 A2.5 觀測值不同就停止', '不能當一般 merge 衝突合併', '不等於取得原子 claim')),
+        ('協定', protocol, ('接力式 single-writer', '協調訊號，不是互斥鎖', '不得自動奪取 writer', '原子 claim 尚未實作', '未做並行實驗'))):
+        for token in tokens:
+            if token not in text:
+                bad.append(label + ' 缺 ' + token)
+    return bad
+
+
+def step_coordination(dest):
+    skill = read_lf(dest / '.claude/skills/handoff/SKILL.md')
+    protocol = read_lf(dest / 'docs/ai-notes/handover-protocol.md')
+    bad = coordination_problems(skill, protocol)
+    probes = ('協調訊號，不是互斥鎖', '不得自動奪取 writer', '原子 claim 尚未實作', '未做並行實驗')
+    for i in (0, 1):
+        for token in probes:
+            pair = [skill, protocol]
+            pair[i] = pair[i].replace(token, '移除邊界')
+            if not coordination_problems(*pair):
+                bad.append('負向測試未擋 ' + token)
+    record('FAIL' if bad else 'OK', '接力協調邊界', '；'.join(bad) if bad else
+           'A2.5／A5／協定明列協調範圍、SHA 比對與禁止自動奪取；8 個負向測試，不代表並行互斥實測')
+
+
+def step_sync_scope(dest, tmp):
+    import sync_project as sp
+    folder = tmp / 'scope'
+    folder.mkdir()
+    folder = folder.resolve()  # Windows TEMP 可能是 8.3 短路徑；決策輸出已正規化。
+    bad = []
+    def must(args, cwd=None):
+        r = run(['git', *args], cwd=cwd)
+        if r.returncode:
+            raise RuntimeError('scope fixture: ' + r.stderr)
+        return r
+    def project(name):
+        p = folder / name
+        shutil.copytree(dest, p, ignore=shutil.ignore_patterns('.git'))
+        must(['init', '-q', '-b', 'main'], p)
+        must(['add', '.'], p)
+        must(['commit', '-qm', 'fixture'], p)
+        return p
+    normal = project('normal-worktrees-name')
+    archived = project('archived')
+    linked = folder / 'arbitrary-checkout'
+    must(['worktree', 'add', '-q', '-b', 'peer', str(linked)], normal)
+    decisions = dict(sp.discover_decisions([folder], ['archived']))
+    if decisions.get(normal, 'missing') is not None:
+        bad.append('名字含 worktrees 的普通目錄被排除')
+    if 'worktree' not in (decisions.get(linked) or ''):
+        bad.append('任意名稱的真 worktree 未排除')
+    if decisions.get(archived) != '明確排除':
+        bad.append('明確排除未列原因')
+    inv = folder / 'inventory.json'
+    write_lf(inv, json.dumps([{'path': normal.name, 'status': 'active'},
+                             {'path': archived.name, 'status': 'archived'}]))
+    if dict(sp.inventory_decisions(inv)).get(archived) != 'inventory 已完結':
+        bad.append('已完結專案未排除')
+    cli = [sys.executable, '-X', 'utf8', str(ROOT / 'tools/sync_project.py')]
+    r = run(cli + ['--inventory', str(inv)])
+    if r.returncode or 'INCLUDE' not in r.stdout or 'EXCLUDE' not in r.stdout or '全域' not in r.stdout:
+        bad.append('inventory CLI 範圍／排除原因未列出')
+    # 真的寫入入口：dirty、占用、客製漂移都必須零寫入、非零退出。
+    skill = normal / '.claude/skills/handoff/SKILL.md'
+    original = read_lf(skill)
+    def rejected(label, extra=()):
+        before = skill.read_bytes()
+        common = (normal / sp.SURGICAL).read_bytes()
+        r = run(cli + [str(normal), '--write', *extra])
+        if r.returncode == 0 or skill.read_bytes() != before or (normal / sp.SURGICAL).read_bytes() != common or label not in r.stdout:
+            bad.append(label + ' preflight 沒擋／已有寫入')
+    write_lf(normal / 'note', 'unfinished\n')
+    rejected('dirty')
+    (normal / 'note').unlink()
+    write_lf(normal / 'HANDOFF.md', '- **工作中**：`peer` ／ `Codex CLI`\n')
+    must(['commit', '-qam', 'busy'], normal)
+    rejected('占用')
+    write_lf(normal / 'HANDOFF.md', sp.BUSY_FIELD + '\n')
+    write_lf(skill, original + '\nproject custom rule\n')
+    must(['commit', '-qam', 'custom'], normal)
+    rejected('客製漂移')
+    r = run(cli + [str(normal), '--write', '--accept-drift', '.claude/skills/handoff/SKILL.md'])
+    if r.returncode or 'project custom rule' in read_lf(skill):
+        bad.append('明確接受單檔漂移後仍無法同步')
+    must(['add', '.'], normal)
+    must(['commit', '-qm', 'synced'], normal)
+    checker = normal / sp.SURGICAL
+    original_checker = read_lf(checker)
+    write_lf(checker, original_checker + '\n# project custom implementation\n')
+    must(['commit', '-qam', 'custom checker'], normal)
+    rejected('客製漂移')
+    write_lf(checker, original_checker)
+    # 反向測試：把新 preflight 拿掉，客製漂移會真的被覆蓋。
+    write_lf(skill, original + '\nproject custom rule\n')
+    plan = sp.sync(normal, dest)
+    done, error = sp.apply_plan(plan)
+    if error or '.claude/skills/handoff/SKILL.md' not in done or 'project custom rule' in read_lf(skill):
+        bad.append('移除 preflight 的負向測試未重現覆蓋')
+    record('FAIL' if bad else 'OK', '同步範圍與前置檢查', '；'.join(bad) if bad else
+           '真 worktree／含 worktrees 普通目錄／已完結 inventory；CLI 列原因，dirty／占用／整份檔與共用程式漂移拒絕且零寫入，移除守門確實覆蓋')
+
+
+def deployment_order_problems(kit, skill, zip_readme, readme):
+    bad = []
+    section = kit.split('## 4. ', 1)[-1].split('## 5. ', 1)[0]
+    sequence = ('### 4.1 本機驗收', 'git add .', 'git check-ignore',
+                'git update-index --chmod=+x .claude/hooks/ag-wrap.sh',
+                'python -X utf8 tools/check_docs.py', '### 4.2 首次發布',
+                'git commit -m', 'gh repo create')
+    positions = [section.find(token) for token in sequence]
+    if any(i < 0 for i in positions) or positions != sorted(positions):
+        bad.append('本機驗收／首次提交／發布順序缺失或反轉')
+    for name, text in (('skill', skill), ('ZIP', zip_readme), ('README', readme)):
+        if '先本機驗收' not in text and '先完成第 4 節的本機驗收' not in text:
+            bad.append(name + ' 入口未要求先本機驗收')
+    return bad
+
+
+def deployment_index_problems(work, paths):
+    bad = []
+    for path in paths:
+        if git(['check-ignore', '--no-index', '-q', '--', path], work).returncode:
+            bad.append('未忽略 ' + path)
+        if git(['ls-files', '--', path], work).stdout.strip():
+            bad.append('已進索引 ' + path)
+    mode = git(['ls-files', '--stage', '--', '.claude/hooks/ag-wrap.sh'], work)
+    if mode.returncode or not mode.stdout.startswith('100755 '):
+        bad.append('wrapper 索引 mode 不是 100755')
+    return bad
+
+
+def step_deployment_lifecycle(tmp):
+    work, remote, clone = (tmp / n for n in ('deploy-life', 'deploy-origin.git', 'deploy-clone'))
+    extract(work)
+    # manifest 是訪談輸入與預期的單一 fixture，全部是假資料，不需要外部帳戶。
+    manifest = dict(ANSWERS, SECRETS='`credentials/odd-session.fixture`、`keys/測試 key.fixture`',
+                    RUNTIME_DIRS='`run outputs/`')
+    if not step_fill(work, manifest, report=False):
+        record('FAIL', '部署生命週期', '訪談替換失敗')
+        return
+    paths = ['credentials/odd-session.fixture', 'keys/測試 key.fixture', 'run outputs/state.fixture']
+    for name in paths:
+        path = work / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        write_lf(path, 'synthetic deployment fixture only\n')
+    def must(args, cwd=None):
+        r = run(args, cwd=cwd)
+        if r.returncode:
+            raise RuntimeError('deployment fixture: ' + r.stderr + r.stdout)
+        return r
+    must(['git', 'init', '-q', '-b', 'main', str(work)])
+    must(['git', 'add', '.'], work)
+    kit = read_lf(KIT)
+    skill = read_lf(work / '.claude/skills/handoff/SKILL.md')
+    bad = deployment_order_problems(kit, skill, ZIP_README, read_lf(ROOT / 'README.md'))
+    for invalid in (' !fixture', '` !fixture`'):
+        try:
+            ignore_rules(invalid)
+        except ValueError:
+            pass
+        else:
+            bad.append('反向納入祕密的 ignore 輸入未拒絕')
+    # 從操作卡取出原始命令執行，避免只驗測試自己的固定命令。
+    command = re.search(r'^git update-index --chmod=\+x \.claude/hooks/ag-wrap\.sh$', kit, re.M)
+    if command:
+        must(command.group(0).split(), work)
+    else:
+        bad.append('部署包缺執行位元命令')
+    must([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], work)
+    state = must([sys.executable, '-X', 'utf8', 'tools/verify_state.py'], work)
+    if 'NOT_CONFIGURED' not in state.stdout:
+        bad.append('未填服務狀態未明列')
+    bad.extend(deployment_index_problems(work, paths))
+    # 移除自訂 ignore 規則和執行位元，儀器都必須真的擋得住。
+    ignore = read_lf(work / '.gitignore')
+    write_lf(work / '.gitignore', ignore.replace(ignore_rules(manifest['SECRETS']), '').replace(ignore_rules(manifest['RUNTIME_DIRS']), ''))
+    if not any('未忽略' in s for s in deployment_index_problems(work, paths)):
+        bad.append('負向測試未抓到自訂 ignore 缺失')
+    write_lf(work / '.gitignore', ignore)
+    must(['git', 'update-index', '--chmod=-x', '.claude/hooks/ag-wrap.sh'], work)
+    if not any('mode' in s for s in deployment_index_problems(work, paths)):
+        bad.append('負向測試未抓到 100644')
+    must(['git', 'update-index', '--chmod=+x', '.claude/hooks/ag-wrap.sh'], work)
+    for token in ('git check-ignore', 'git update-index --chmod=+x .claude/hooks/ag-wrap.sh', '### 4.1 本機驗收'):
+        if not deployment_order_problems(kit.replace(token, '移除門檻'), skill, ZIP_README, read_lf(ROOT / 'README.md')):
+            bad.append('順序負向測試未擋 ' + token)
+    if bad:
+        record('FAIL', '部署生命週期', '；'.join(bad))
+        return
+    must(['git', 'commit', '-qm', 'bootstrap verified locally'], work)
+    must(['git', 'init', '-q', '--bare', str(remote)])
+    must(['git', 'remote', 'add', 'origin', str(remote)], work)
+    must(['git', 'push', '-qu', 'origin', 'main'], work)
+    must(['git', 'clone', '-q', '-b', 'main', str(remote), str(clone)])
+    if git(['ls-tree', '-r', '--name-only', 'HEAD', '--', *paths], clone).stdout.strip():
+        bad.append('初次 commit 含假憑證或運行資料')
+    # clone 後仍驗索引與原始 wrapper；不呼叫模型、不測外部工具注入。
+    bad.extend(deployment_index_problems(clone, paths))
+    bash = find_bash()
+    if not bash:
+        record('SKIP', '部署生命週期', '缺少 Git Bash，無法驗 clone 後直接執行 wrapper')
+        return
+    r = run([bash, '-c', './.claude/hooks/ag-wrap.sh git-freshness.sh'], cwd=clone,
+            env=tool_env(BOOTSTRAP_FRESHNESS='off'))
+    if r.returncode or '[git-check]' not in r.stdout:
+        bad.append('clone 後 wrapper 直接執行失敗')
+    record('FAIL' if bad else 'OK', '部署生命週期', '；'.join(bad) if bad else
+           '自訂憑證／空白中文路徑 ignore；本機驗收→首 commit→local bare push→clone，100755 與 wrapper 直接執行；7 個負向測試，未呼叫模型或 GitHub')
+
+
 def run_checks(dest, tmp):
     work = None
     seen = step_regenerate(dest) and step_fill(dest)
@@ -3031,6 +3262,9 @@ def run_checks(dest, tmp):
     step_zip_gate(tmp)
     step_flow_contract(dest, tmp)
     step_core_priority(dest, tmp)
+    step_coordination(dest)
+    step_sync_scope(dest, tmp)
+    step_deployment_lifecycle(tmp)
 
 
 def main():

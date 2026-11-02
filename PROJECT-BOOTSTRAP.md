@@ -4,13 +4,17 @@
 >
 > ```text
 > 請完全依照本資料夾的 PROJECT-BOOTSTRAP.md 建立本專案的管理骨架：先做第 1 節訪談問我問題，
-> 拿到答案後照第 3 節逐檔建立（內容照抄、只替換佔位符），再依第 4 節上 GitHub，最後跑第 5 節自檢並回報。
+> 拿到答案後照第 3 節逐檔建立（內容照抄、只替換佔位符），依第 4 節先完成本機驗收才首次發布，再跑第 5 節遠端與工具驗收並回報。
 > 過程中不要自行增刪制度，也不要把佔位符留在檔案裡。
 > ```
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-02.6**（2026-11-02／F10：共用核心優先於不同步的協定實例，明列 override 範圍與人工遷移需求；不在單一專案就地改 skill。）
+> 版本：**2026-11-02.8**（2026-11-02／F16：自訂 ignore 規則進範本，本機驗收與 executable index mode 先於首 commit／發布；新增 local bare remote 部署生命週期測試。前一步 F12 完成協調邊界文件，原子 claim 依使用者決定留待另案；F13 同步範圍與 preflight 完成。）
+>
+> 前一版 **2026-11-02.7**（2026-11-02／F12：明列接力式 single-writer 的協調邊界、觀測 SHA 比對與失敗停止；原子 claim 未實作，沒有並行互斥保證。）
+>
+> 前一版 **2026-11-02.6**（2026-11-02／F10：共用核心優先於不同步的協定實例，明列 override 範圍與人工遷移需求；不在單一專案就地改 skill。）
 >
 > 前一版 **2026-11-02.5**（2026-11-02／F11：補 A／B／C 狀態表、ahead-only 與 fetch 失敗判讀、切分支後重驗；A4 只記差異，B7 驗最終快照；A5／C push 明列例外，hook 分岔提示改為停下等待指示。skill 與兩支 hook 標記更新至 .5。）
 >
@@ -689,6 +693,12 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 
 2026-11-02／F10：舊協定不同步卻自稱優先，會推翻新版程序；因此核心優先序只有一個家，實例只保存理由與有範圍的專案差異。
 
+## 接力式 single-writer 的邊界
+
+本制度支援接力式 single-writer。「工作中」是協調訊號，不是互斥鎖；同一工作樹不得同時有兩個 writer，標記的機器／工具／可變 session 標題不是穩定 owner token。A2.5 讀取到 A5 寫入仍有時間窗；Git 的 non-fast-forward 拒絕不能保護共用 index 與未提交檔案。
+
+時間戳不代表租約到期，不得自動奪取 writer；未知是否仍在工作時，保留標記並請使用者確認。遠端意外前進或開工 push 失敗時停止，不能把失敗的開工當一般 merge 衝突合併。原子 claim 尚未實作，也未做並行實驗，不宣稱有並行互斥保證（2026-11-02／F12：這是設計風險，沒有被量到的事故不能寫成事故）。
+
 ## 三層分工
 
 | 層 | 放哪裡 | 性質 |
@@ -876,7 +886,7 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02.6 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02.8 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
@@ -1022,10 +1032,11 @@ pwd && ls -a && git status -sb
 內容照抄、只換佔位符；**不要自行增刪制度**，也不要「順手優化」措辭——那些句子後面各有一次事故。
 全檔 LF。macOS／Linux 建完要 `chmod +x .claude/hooks/*.sh`。
 
-### 0-5 上 Git（部署包第 4 節）
+### 0-5 本機驗收後才首次發布（部署包第 4 節）
 
 ⚠️ **`.gitignore` 必須先就位再 `git add`**。順序反了祕密就進第一個 commit，之後刪不掉——那是要重建 repo 的等級。
 建 GitHub repo 與第一次 push 前**先問使用者確認**（owner／repo 名、public 或 private）：這是外部動作，不是本機檔案操作。
+先完成第 4 節的本機驗收（含 ignore、文件與可執行位元），全部通過才建立第一個 commit 並發布；不能等到上 GitHub 後才驗憑證是否已進 Git。
 
 ### 0-6 自檢（部署包第 5 節）
 
@@ -1087,6 +1098,9 @@ fetch 成功後才判讀；用 `git rev-parse --abbrev-ref --symbolic-full-name 
 
 ### A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）
 
+**本制度支援接力式 single-writer。「工作中」是協調訊號，不是互斥鎖。** 同一工作樹不得同時有兩個 writer；機器／工具／可變 session 標題不是穩定 owner token。A2.5 到 A5 仍有時間窗，Git 的 non-fast-forward 拒絕不能保護共用 index 與未提交檔案。
+**時間戳不代表租約到期，不得自動奪取 writer**；未知是否仍在工作時，保留標記並請使用者確認。原子 claim 尚未實作，也未做並行實驗，不宣稱有並行互斥保證（2026-11-02／F12）。
+
 **站對分支之後、讀文件之前**，看該分支 `HANDOFF.md` 的「工作中」欄位：
 
 ```bash
@@ -1094,6 +1108,7 @@ git show "origin/$(git rev-parse --abbrev-ref HEAD):HANDOFF.md" | grep -F "**工
 ```
 
 讀 `origin/` 那一份、**不讀本機的**——此刻可能還沒 pull，本機那份是舊快照。
+同時記錄觀測到的 `origin/<當前分支>` SHA，A5 再 fetch 時必須與此值比對；不能只看 ahead／behind 或標記文字。
 
 | 看到 | 動作 |
 |---|---|
@@ -1157,6 +1172,7 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
 **首次接棒回報完就改 session 名稱**成 `㊣　YYMMDDHH｜<主題>｜工作中｜交棒<N>次`（規則見「session 命名」）；**已交棒後續聊在收到新訊息時就先恢復工作中，不等 A5**。然後把實際結果寫進模板最後那行 `session：`——改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>` 並附交棒次數，不必為此停下來問使用者。**那一行不能省**：寫不出來就是沒做，而這是唯一看得出來的地方。這一步跟下面的開工標記是兩件事，**不要等它**。
 
 **確定要動手改東西，才寫開工標記。** 只讀、只問問題的 session 不寫——那會在權威分支的歷史裡堆一堆沒有內容的 commit，而被灌爆的歷史沒人會認真看。
+**開工標記是協調訊號，不是互斥鎖**；先確認同一工作樹只有一個 writer。遠端 SHA 與 A2.5 觀測值不同就停止；失敗的開工不能當一般 merge 衝突合併。push 後重讀 owner 只確認遠端標記內容，不等於取得原子 claim。
 
 1. 把該分支 `HANDOFF.md` 的「工作中」欄位改成本機與本 session。舊專案沒有這一欄，就在「Git 狀態」那節補一列（這就是該專案的升級點，不用另外安排一次升級）：
 
@@ -1717,9 +1733,13 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .obsidian/
+
+# Interview-specific rules: one Git ignore pattern per line, no Markdown backticks
+{{SECRETS}}
+{{RUNTIME_DIRS}}
 ````
 
-> 依訪談把 `{{SECRETS}}`／`{{RUNTIME_DIRS}}` 補進去，再加語言／框架專屬項目（`node_modules/`、`.venv/`、`dist/`、`.build/` …）。**寧可多擋不要少擋。**
+> 上面兩個佔位符必須依訪談替換成 Git ignore patterns，**每行一個、不含 Markdown 反引號或頓號，不可用 `!` 反向納入祕密**；文件其他位置仍可用反引號列出檔名。不要只填文件卻漏掉這份範本（2026-11-02／F16：原先追加規則的指令在圍欄外，測試抽不到）。再加語言／框架專屬項目（`node_modules/`、`.venv/`、`dist/`、`.build/` …）。**寧可多擋不要少擋。**
 
 ### 3.13 `.gitattributes`
 
@@ -2575,7 +2595,9 @@ description: Pointer to the authoritative copy in .claude/skills/. <一句話說
 
 ---
 
-## 4. 上 GitHub
+## 4. 先本機驗收，再首次發布
+
+### 4.1 本機驗收（第一個 commit 與 push 之前）
 
 ```bash
 git init -b main
@@ -2593,7 +2615,27 @@ git status --porcelain
 git add . && git diff --cached --name-only
 ```
 
-再次確認清單乾淨，然後提交並建 repo（需先裝好 `gh` 並登入）：
+依訪談逐一執行 `git check-ignore -- <憑證或運行路徑>`，必須列出該路徑；不要以檔案還沒建立為理由略過。核對 staged 清單沒有任何憑證或運行資料。關鍵字掃描只能降低風險，不能涵蓋所有祕密格式。
+
+部署了 Antigravity wrapper 時，所有平台都把它記成可執行（Windows 的檔案模式不會自動替你做這件事）；沒有採用此 wrapper 就明列此兩項不適用：
+
+```bash
+git update-index --chmod=+x .claude/hooks/ag-wrap.sh
+git ls-files --stage .claude/hooks/ag-wrap.sh
+```
+
+輸出必須是 `100755`。接著跑兩個本機檢查：
+
+```bash
+python -X utf8 tools/check_docs.py
+python -X utf8 tools/verify_state.py
+```
+
+沒有 `python` 就用 `python3`。文件必須 exit 0；服務 FAIL／ERROR 不得當通過，SKIP／NOT_CONFIGURED 明列原因與待配置事項。核對 `ARCHITECT.md` 與 `HANDOFF.md` 是實況。這些本機驗收全部完成才可往下；遠端與工具注入尚未驗證，留到第 5 節，不可預先寫成通過。
+
+### 4.2 首次發布（本機驗收完成後）
+
+再次確認 staged 清單乾淨，然後提交並建 repo（需先裝好 `gh` 並登入）；owner／repo 名與 public／private 須先取得使用者確認：
 
 ```bash
 git commit -m "chore: bootstrap project management skeleton"
@@ -2619,7 +2661,7 @@ git status -sb
 
 ## 5. 部署後自檢清單
 
-逐項確認，全過才算部署完成：
+第 4.1 節已先完成本機驗收。這一節補遠端、runtime 與工具實際注入的驗收；逐項回報，全過或明列不適用／未配置才算交代完整，未驗證不能宣稱通過。
 
 - [ ] `python -X utf8 tools/check_docs.py` → `OK`（一次涵蓋死連結與**殘留佔位符**；佔位符那一項掃 `.md`／`.py`／`.sh`／`.json`／`.gitignore`／`.gitattributes` 的 tracked 檔，所以要先 `git add`。本部署包自己被豁免——照最後一項刪掉它就好）
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
