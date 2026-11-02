@@ -33,7 +33,7 @@
 ├─ .claude/                         Claude Code
 │   ├─ settings.json                hook 設定
 │   ├─ hooks/git-freshness.sh       SessionStart：git 新鮮度檢查＋提醒走交接程序＋開工改名提示
-│   ├─ hooks/pre-push-handoff.sh    PreToolUse：沒更新 HANDOFF 就想 push 時擋下
+│   ├─ hooks/pre-push-handoff.sh    PreToolUse：AI push 提醒（有限覆蓋）
 │   ├─ hooks/ag-wrap.sh             Antigravity 轉接層：只做管線，把 stdout 包成 JSON
 │   ├─ hooks/codex-hook.cmd         Codex 的 Windows 啟動器（Git Bash、純文字標頭、結束碼）
 │   └─ skills/handoff/SKILL.md      交接與同步的可執行程序（0 建制／A 接棒／B 交棒／C 同步）＝權威版
@@ -55,7 +55,7 @@
 |---|---|---|
 | **觸發** | `hooks/git-freshness.sh` | 每次 session 開始自動 fetch，報告落後／分岔，提醒「接棒先走 handoff skill」，並把開工改名用的時間戳算好（agent 自己推小時會寫出不存在的時刻，而那是靜默的） |
 | **程序** | `skills/handoff/SKILL.md` | agent 判斷要接棒／交棒／同步時自動載入；也可打 `/handoff`（建制走模式 0，見下節） |
-| **防呆** | `hooks/pre-push-handoff.sh` | 要推到權威分支、但這批 commit 沒更新 `HANDOFF.md` → 擋下並要求先走交棒程序 |
+| **AI push 提醒** | `hooks/pre-push-handoff.sh` | 只依字面命令、目前分支與 origin 檢查已提交 HANDOFF 差異；選項／refspec／其他 remote／GUI／script 不保證，純文字可能誤擋；見部署包 3.11 |
 
 **分工**：`handover-protocol.md`＝規則與理由（為什麼、什麼算對）；`SKILL.md`＝怎麼做（指令、判讀表、模板）。
 兩者衝突以協定為準。這樣才不會變成「同一套程序有兩份會各自演化的副本」。
@@ -146,7 +146,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
     python -X utf8 tools/verify_bootstrap.py
 
 要 exit 0。它會重生骨架比對檔案清單、模擬部署填佔位符、跑 check_docs.py、負向測試佔位符
-檢查擋不擋得住、測 pre-push hook 五情境、查全檔 LF。印出 skip 的項目代表沒被驗證，要照實回報。
+檢查擋不擋得住、測 AI push 提醒情境與負向測試、查全檔 LF。印出 skip 的項目代表沒被驗證，要照實回報。
 
 先用 3–5 行回報現況與你打算做什麼，再動手。破壞性操作、commit 或 push 之前先問我。
 ```

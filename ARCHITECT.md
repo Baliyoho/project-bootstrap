@@ -62,7 +62,7 @@
 | 3.8 | `.claude/skills/handoff/SKILL.md` | **本骨架的核心**：0 建制／A 接棒／B 交棒／C 同步 |
 | 3.9 | `.claude/settings.json` | 兩個 hook 的接線 |
 | 3.10 | `.claude/hooks/git-freshness.sh` | SessionStart：git 新鮮度 |
-| 3.11 | `.claude/hooks/pre-push-handoff.sh` | PreToolUse：push 前防呆 |
+| 3.11 | `.claude/hooks/pre-push-handoff.sh` | PreToolUse：AI push 提醒（有限覆蓋，見部署包 3.11） |
 | 3.12 | `.gitignore` | 祕密與運行資料 |
 | 3.13 | `.gitattributes` | 行末 LF |
 | 3.14 | `tools/check_docs.py` | 文件與交接快照的機械檢查 |
@@ -99,7 +99,7 @@
 | 工作中欄位格式（負向） | 四種壞格式（舊格式沒工具欄、主題含「無」、欄位重複、機器欄空白）都要 exit 2，正常的已交棒值不誤擋。2026-11-02 從「工具欄（負向測試）」擴大 | `check_docs` 用子字串判「已交棒」，正常任務名稱就能跳過整個格式驗證（F01） |
 | 真實部署形狀 | 部署包在場＋非 ASCII 檔名時仍 exit 0 | 照說明部署的人一定會踩到 |
 | 跨平台防呆 | 無絕對路徑、有 `python3` 退路 | 換一台機器會靜默失效 |
-| pre-push hook 五情境 | 該擋的擋、該放的放 | 防呆變成誤擋或形同虛設 |
+| AI push 提醒情境 | staged／unstaged 不放行、已提交開工／交棒放行；命令選項、remote、refspec、GUI／script 的已知邊界；恢復舊捷徑的負向測試 | 未提交修改不會隨 push 上傳，不能拿來放行；有限提醒不能冒充發布保證（2026-11-02／F06） |
 | 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 後每種狀態各印對應結論（別台 🔴、自己這台 🟡、已交棒 ✅、欄位不存在 🟡），**且判讀是精確解析而非子字串**（2026-11-02／F01：主題或機器名含「無」要 🔴、機器名互為子字串要 🔴、欄位重複要 🔴，已交棒值前後有空白仍要 ✅） | 跨機器誤接棒防呆靜默失效——下一棒只會看到一切正常 |
 | `VERSION` 檔 | 與部署包版本行一致 | 落後偵測會說謊，落後的專案以為自己最新 |
 | 版本落後偵測 | 餵**比本機新**的版本要講落後、餵**比本機舊**的要說「比上游新」並勸退同步、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後，同步又回到靠人記得；方向弄反則會叫人把新版蓋成舊版（2026-11-02／F09，舊 fixture 本身就是反的） |

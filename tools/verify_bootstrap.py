@@ -37,7 +37,7 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   舊接線假設 cwd 是 repo 根目錄，`cd tools` 開的 session 直接 exit 127，
                   而 SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣（2026-11-02／F05，
                   附舊形式與 Windows 混合斜線兩個負向測試）
-  hook 五情境  ——pre-push：非 push／權威分支未更新 HANDOFF／已更新／feature／停用開關
+  AI push 提醒 ——18 情境，含未提交修改、命令邊界與舊捷徑負向測試
   VERSION 檔   ——跟部署包開頭的版本行一致。各專案靠抓它判斷自己落後沒有，
                   不一致＝落後偵測說謊，而且沒有任何徵兆（2026-10-30 加入）
   版本落後偵測 ——種一個假的快取版本，git-freshness 要講；同版與開關 off 要閉嘴。
@@ -567,11 +567,11 @@ def step_busy_tool_guard(dest):
         git(['add', '-A'], dest)
 
 
-# ── 5. pre-push hook 五情境 ────────────────────────────────────
+# ── 5. AI push 提醒情境 ────────────────────────────────────
 def step_hook(dest, tmp):
     bash = find_bash()
     if not bash:
-        record('SKIP', 'pre-push hook 五情境', '找不到看得懂 Windows 路徑的 bash（裝 Git for Windows 即可）')
+        record('SKIP', 'AI push 提醒情境', '找不到看得懂 Windows 路徑的 bash（裝 Git for Windows 即可）')
         return None
     origin = tmp / 'origin.git'
     work = tmp / 'hookwork'
@@ -601,14 +601,48 @@ def step_hook(dest, tmp):
     git(['commit', '-qam', 'docs: touch'], work)
     cases.append(('權威分支未更新 HANDOFF', 2, fire(push)))
 
+    def command(value):
+        return fire(json.dumps({'tool_input': {'command': value}}))
+
+    # F06：明列有限提醒的邊界，不把 substring 判讀冒充 shell／refspec 解析。
+    cases.append(('選項 -c（刻意漏判）', 0, command('git -c color.ui=false push origin main')))
+    cases.append(('其他 remote（仍看 origin，可能誤擋）', 2, command('git push backup main')))
+    cases.append(('其他 refspec（仍看目前分支，可能誤擋）', 2, command('git push origin HEAD:feature/x')))
+    cases.append(('僅提到 push（已知誤擋）', 2, command('echo git push')))
+    cases.append(('script 間接 push（刻意漏判）', 0, command('./publish.sh')))
+    cases.append(('GUI 無命令 payload（不覆蓋）', 0, fire('{}')))
+    cases.append(('停用開關確實繞過阻擋', 0, fire(push, env=dict(GIT_ENV, HANDOFF_HOOK='off'))))
+
     (work / 'HANDOFF.md').open('a', encoding='utf-8', newline='').write('\n- 驗證用\n')
+    cases.append(('HANDOFF 僅 unstaged', 2, fire(push)))
+    git(['add', 'HANDOFF.md'], work)
+    cases.append(('HANDOFF 僅 staged', 2, fire(push)))
+    (work / 'HANDOFF.md').open('a', encoding='utf-8', newline='').write('\n- 尚未提交\n')
+    cases.append(('HANDOFF staged 加 unstaged', 2, fire(push)))
+
+    # 負向儀器：把 F06 修正前的放行捷徑插回去，必須重現錯誤的 exit 0。
+    hook_path = pathlib.Path(hook)
+    fixed = read_lf(hook_path)
+    anchor = 'git diff --name-only "origin/$branch..HEAD"'
+    at = fixed.index(anchor)
+    try:
+        write_lf(hook_path, fixed[:at] + 'git diff --quiet -- HANDOFF.md 2>/dev/null || exit 0\n' + fixed[at:])
+        cases.append(('負向：舊捷徑重現錯誤放行', 0, fire(push)))
+    finally:
+        write_lf(hook_path, fixed)
     git(['commit', '-qam', 'chore: handoff'], work)
-    cases.append(('HANDOFF 已更新', 0, fire(push)))
+    cases.append(('交棒快照已提交', 0, fire(push)))
+    git(['push', '-q', 'origin', 'main'], work)
+    handoff = work / 'HANDOFF.md'
+    write_lf(handoff, read_lf(handoff).replace('無（已交棒）', '`fixture` ／ `Codex CLI`'))
+    git(['commit', '-qam', 'chore: claim'], work)
+    cases.append(('開工標記已提交（不等於交棒）', 0, fire(push)))
 
     git(['checkout', '-q', '-b', 'feature/x'], work)
     (work / 'README.md').open('a', encoding='utf-8', newline='').write('\nwip\n')
     git(['commit', '-qam', 'wip'], work)
     cases.append(('feature 分支', 0, fire('{"tool_input":{"command":"git push origin feature/x"}}')))
+    cases.append(('feature 推 main refspec（刻意漏判）', 0, command('git push origin HEAD:main')))
 
     git(['checkout', '-q', 'main'], work)
     cases.append(('HANDOFF_HOOK=off', 0, fire(push, env=dict(GIT_ENV, HANDOFF_HOOK='off'))))
@@ -618,9 +652,9 @@ def step_hook(dest, tmp):
         detail = '；'.join(bad)
         if noise:
             detail += '\n           hook stderr：' + ' | '.join(dict.fromkeys(noise))
-        record('FAIL', 'pre-push hook 五情境', detail)
+        record('FAIL', 'AI push 提醒情境', detail)
         return False
-    record('OK', 'pre-push hook 五情境', '、'.join(f'{n}→{want}' for n, want, _ in cases))
+    record('OK', 'AI push 提醒情境', '、'.join(f'{n}→{want}' for n, want, _ in cases))
     return work        # 有 origin、有 commit，git-freshness 才走得到比對邏輯
 
 

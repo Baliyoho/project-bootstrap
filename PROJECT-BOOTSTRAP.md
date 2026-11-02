@@ -10,7 +10,9 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-02**（**兩支部署後腳本的錯誤訊號與保障範圍修掉了：`verify_state.py` 不再把失敗吞成 exit 0，`check_docs.py` 補上交接快照檢查並停止把程式碼範例報成死連結。**這一輪動到 3.14 與 3.15 兩個範本，所以它們的 `source:` 標記跳到 `v2026-11-02.3`（今天第三個帶標記的改動）；`SKILL.md` 一個字沒動，`VERSION` 與版本行照鐵律 1 不跳。
+> 版本：**2026-11-02.4**（2026-11-02／F06：AI push 提醒移除未提交 HANDOFF 放行；明列命令／remote／refspec 邊界，擴充情境與舊捷徑負向測試。skill 的過度保證一併修正，因此 VERSION 與 skill／3.11 標記更新至 .4。）
+>
+> 前一版 **2026-11-02**（**兩支部署後腳本的錯誤訊號與保障範圍修掉了：`verify_state.py` 不再把失敗吞成 exit 0，`check_docs.py` 補上交接快照檢查並停止把程式碼範例報成死連結。**這一輪動到 3.14 與 3.15 兩個範本，所以它們的 `source:` 標記跳到 `v2026-11-02.3`（今天第三個帶標記的改動）；`SKILL.md` 一個字沒動，`VERSION` 與版本行照鐵律 1 不跳。
 > **F04（服務失敗仍回傳成功碼）**：舊版 `verify_state.py` **每一種情況都 `return 0`**——在檢查裡放一個 exit 7 的命令，畫面印著 `boom=rc7`，結束碼仍是 0（修正前實跑確認）。而這支腳本存在的理由正是「把接手查證壓成一個回合」，也就是說**它的結束碼本來就會被當成結論用**。現在每項檢查只回 PASS／FAIL／ERROR／SKIP／NOT_CONFIGURED 五種之一，最後印一行彙總：FAIL／ERROR→exit 2；SKIP 獨立列出（缺配置不等於通過），`--strict` 時 exit 3，真正可選的項目寫進 `OPTIONAL`；`NOT_CONFIGURED` 仍回 0（骨架還沒填不是故障，這是刻意保留的明示選擇）。另外兩件報告點到的事：HTTP 檢查可以填 `expect`（狀態碼或回應裡該出現的字），因為**只把「有回應」當成正常是不夠的**——200 配一個空的錯誤頁照樣會過；以及所有輸出都過一層遮罩，命令的 stdout／stderr 與例外訊息都不在我們控制下，而交接快照會被貼進 HANDOFF、對話與 issue。
 > **F08（文件檢查器的保障範圍不足）**：三件事。①**第 6 項「工作中」欄位是「HANDOFF.md 有出現在輸入清單裡才驗」**，所以整份被刪掉或改名時它回報乾淨——那一刀正好把跨機器誤接棒防呆連根拔掉。新增第 7 項「交接快照」：`HANDOFF.md` 必須存在，必要欄位與章節齊備、不超過 80 行（那是 skill B6 的規則，在此之前**只有骨架自己這個 repo 在驗**，使用者的專案拿不到）。⚠️ 修正前實跑時發現「刪掉整份」在標準骨架上其實會 exit 2，但那是**別的文件指向它的連結斷了**——訊息叫你去修連結，不是叫你把快照補回來，而不互相連結的專案連這個副作用都沒有。②連結檢查把圍欄與行內程式碼先塗白，並正確解析`[x](path "title")` 與角括號寫法：舊版會把文件裡的程式碼範例報成死連結，而「這支腳本的 FAIL 可以無視」一旦被學會，真的死連結也跟著被無視。③**名字改成實際範圍**：它查機械可判定的腐化模式，不是完整的 Markdown 驗證器，也不判斷待辦是否真的完成（那是 B6）——舊名「文檔一致性檢查」聽起來像驗過全部，於是「通過」被讀成「文件沒問題」。`--docs-only` 可以只查文件。
 > 守門人：新增第 42 項「verify_state 失敗訊號」（十個情境**全部實跑**：命令非零退出、HTTP 500、連不上、200 但內容不對、全綠、缺憑證的三種處置、未填、祕密遮罩）與第 43 項「交接快照檢查」（刪檔／超 80 行／缺章節／欄位重複都要 exit 2，`--docs-only` 要真的關得掉，連結誤報的 fixture 要 exit 0 而真的死連結仍要 exit 2——不誤報不能靠什麼都不報換）。**兩項都拿 `HEAD` 的舊範本實跑比對過**：舊 `verify_state` 兩個失敗情境都 exit 0，舊 `check_docs` 超 80 行 exit 0 且把 fixture 誤報成死連結，新版反過來。🔴 **代價要寫明：3.14 是 `sync_project.py` 的同步對象，而 `VERSION` 沒跳，所以各專案的落後偵測不會替你講這件事**——這一輪要手動同步，六個專案又多一個檔。寫這兩個測試時自己踩到兩次 fixture 的錯（把 fixture 放進 `docs/ai-notes/` 害它指向的 `README.md` 解析不到、拿「刪檔」去驗 `--docs-only` 而刪檔本身會製造真的死連結），都是**測試自己壞掉而畫面上像受測物壞掉**那一類。原始缺陷與證據見 [project-bootstrap-audit.md](project-bootstrap-audit.md) 的 F04／F08。）
@@ -64,7 +66,7 @@
 |---|---|---|
 | **觸發** | `.claude/hooks/git-freshness.sh`（SessionStart hook） | 每次 session 開始自動 fetch、報告落後／分岔、**讀 origin 的「工作中」標記揭露別台機器正在動同一條分支**，並提醒「接棒先走 handoff skill」 |
 | **程序** | `.claude/skills/handoff/SKILL.md` | agent 判斷要接棒／交棒／同步時自動載入；使用者也可打 `/handoff` 直接叫它 |
-| **防呆** | `.claude/hooks/pre-push-handoff.sh`（PreToolUse hook） | 要推到權威分支、但這批 commit 沒更新 `HANDOFF.md` 時擋下，要求先走交棒程序 |
+| **AI push 提醒** | `.claude/hooks/pre-push-handoff.sh`（PreToolUse hook） | 有限字面判讀，缺已提交 HANDOFF 差異時提醒並阻擋；保障範圍見 3.11 |
 
 **分工**：`docs/ai-notes/handover-protocol.md`＝**規則與理由**（為什麼、什麼算對）；skill＝**怎麼做**（指令、判讀表、模板）。
 兩者衝突以協定為準。這樣才不會變成「同一套程序有兩份會各自演化的副本」。
@@ -295,7 +297,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 | 純文件修正被「等功能驗收」擋住，接手者拿到過期文檔集 | **兩類分支**：功能分支需驗收才併；文件／基建分支驗證過就能併 `main` |
 | 連線失敗被誤判成「本機沒有憑證」，寫下錯誤結論 | **SKIPPED 判準**：先排除「設定沒帶到」才能標 SKIPPED；禁止自行挖憑證 |
 | 祕密／運行資料被推上 GitHub | 鐵律＋`.gitignore`＋提交前固定檢查 staged 清單 |
-| 交接品質看 agent 心情：有時漏驗證、有時忘了寫 HANDOFF 就 push | `handoff` skill 把協定變成**可執行程序**（判讀表、指令、停止判準）；SessionStart hook 自動提醒，pre-push hook 擋下沒交棒的 push |
+| 交接品質看 agent 心情：有時漏驗證、有時忘了寫 HANDOFF 就 push | `handoff` skill 把協定變成**可執行程序**（判讀表、指令、停止判準）；SessionStart hook 自動提醒，AI push 提醒檢查已提交 HANDOFF 差異（有限覆蓋，見 3.11） |
 
 **保留「為什麼」**：每條規則後面都有一次實際事故。移植時不要把理由砍掉——理由沒了，下一棒就會覺得規則是多餘的而繞過它。
 
@@ -339,7 +341,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 │   ├─ settings.json                ← hook 設定（進 Git）
 │   ├─ settings.local.json          ← 各機器本地設定（不進 Git）
 │   ├─ hooks/git-freshness.sh       ← SessionStart：git 新鮮度檢查＋提醒走交接程序
-│   ├─ hooks/pre-push-handoff.sh    ← PreToolUse：沒更新 HANDOFF 就想 push 時擋下
+│   ├─ hooks/pre-push-handoff.sh    ← PreToolUse：AI push 提醒（有限覆蓋，見 3.11）
 │   ├─ hooks/ag-wrap.sh             ← Antigravity 轉接層：只做管線，把 stdout 包成 JSON
 │   ├─ hooks/codex-hook.cmd         ← Codex 的 Windows 啟動器：找 Git Bash、加純文字標頭、保留結束碼
 │   ├─ skills/handoff/SKILL.md      ← 交接與同步的可執行程序（本骨架的核心、權威版）
@@ -628,7 +630,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 | [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md) | 持久待辦與決策記錄 | 本專案 | 有新待辦或決策 |
 | [.claude/skills/handoff/SKILL.md](.claude/skills/handoff/SKILL.md) | 交接的可執行程序（0 建制／A 接棒／B 交棒／C 同步） | **部署包**（本專案這份是副本，檔頭 `source:` 標記可辨識落後） | 改制度先改部署包，再整份覆蓋下來 |
 | [.claude/hooks/git-freshness.sh](.claude/hooks/git-freshness.sh) | SessionStart：自動 fetch、報告落後／分岔 | 同上 | 同上 |
-| [.claude/hooks/pre-push-handoff.sh](.claude/hooks/pre-push-handoff.sh) | PreToolUse：沒更新 HANDOFF 就想 push 時擋下 | 同上 | 同上 |
+| [.claude/hooks/pre-push-handoff.sh](.claude/hooks/pre-push-handoff.sh) | PreToolUse：AI push 提醒（有限覆蓋，見 3.11） | 同上 | 同上 |
 | [.claude/settings.json](.claude/settings.json) | 上面兩個 hook 的接線（進 Git） | 本專案 | 加減 hook |
 | `.claude/settings.local.json` | 各機器本地設定（**不進 Git**） | 各機器自己 | 換機器 |
 | [.codex/hooks.json](.codex/hooks.json) | Codex CLI 的 hook 接線——掛的是上面**同樣那兩個 `.sh`**，不另存一份腳本 | 本專案 | 加減 hook |
@@ -693,7 +695,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 
 > **自動防呆有兩層**（都只是保險，下面每一步仍必做——離線、非 Claude 端或設定沒載入時 hook 不會跑）：
 > ① SessionStart hook（`.claude/hooks/git-freshness.sh`）：session 開始自動 fetch，注入落後／分岔／未推送警告，讀 `origin` 的「工作中」標記揭露別台機器正在動同一條分支，並提醒走 handoff skill。
-> ② PreToolUse hook（`.claude/hooks/pre-push-handoff.sh`）：要推到權威分支、但這批 commit 沒更新 `HANDOFF.md` 時擋下（`HANDOFF_HOOK=off` 可停用）。
+> ② PreToolUse hook（`.claude/hooks/pre-push-handoff.sh`）：AI push 提醒只依字面命令、目前分支與 origin 判斷已提交 HANDOFF 差異（`HANDOFF_HOOK=off` 可停用）。不解析選項／remote／refspec，GUI／script 可能漏判、純文字可能誤擋；不是發布保證，見部署包 3.11。
 
 1. **先同步 Git**：**未同步前不要相信本機 HANDOFF。** 工作樹乾淨、有 upstream 且能 fast-forward 才可自行往下走（指令與完整判讀表見 skill A1）。
 2. **確認你該站在哪條分支**：讀 HANDOFF 的「待續分支」。**若它指向 feature branch，該分支才是主幹**——`main` 可能明顯落後。不要因為 `main` 是預設分支就以為它最新。
@@ -861,7 +863,7 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
@@ -1327,7 +1329,7 @@ git fetch origin && git status -sb
 - ❌ 純文件修正卡在功能分支等驗收 → 接手者同步 `main` 拿到過期文檔集。
 - ❌ 知識寫在對話裡或私有記憶 → 換模型、換機器後全部消失。
 - ❌ HANDOFF 愈疊愈長變成日誌 → 接手者要讀 20 分鐘才知道現在做到哪。
-- ❌ push 完才想起沒更新 HANDOFF → 下一棒拿到過期狀態（pre-push hook 會擋，但別靠它）。
+- ❌ push 完才想起沒更新 HANDOFF → 下一棒拿到過期狀態（AI push 提醒只有有限覆蓋，可能漏判；不能當發布保證）。
 - ❌ A 機器沒交棒就關掉，B 機器開 session 看到 `✅ 與 origin 同步` 就接棒 → 那個綠勾只證明「B 沒落後」，**不證明「沒有別台在做」**；A 的未提交變更整批被繞過。這就是「工作中」標記要擋的那件事。
 - ❌ 會花錢的那一輪跑完直接關掉視窗 → 數字還在磁碟上，**當時的判斷與取捨永久消失**；三層防呆全都掛在「下一個動作」上，擋不住這件事（Claude Code 與 Codex 的 `SessionEnd` 也擋不住：它不能阻止結束，也來不及 push）。
 - ❌ 建制時沒拿到部署包，憑印象生一套「差不多的」骨架 → 規則沒了理由、hook 沒了邊界條件，看起來有制度、實際擋不住任何事。
@@ -1606,20 +1608,22 @@ fi
 exit 0
 ````
 
-### 3.11 `.claude/hooks/pre-push-handoff.sh`（push 前防呆）
+### 3.11 `.claude/hooks/pre-push-handoff.sh`（AI push 提醒）
 
-> 只擋「推到權威分支、但這批 commit 沒更新 `HANDOFF.md`」這一種情況；feature 分支中途推進度不擋，判斷不了也放行。
+> **AI push 提醒，不是 Git 原生 pre-push 或發布保證。** 只對 payload 含字面 `git push` 的呼叫，依目前分支與本機 `origin` 追蹤 ref 判斷；不解析 shell、選項、實際 remote 或 refspec。`git -c … push`、GUI、間接執行的 script 可能漏判，文字只是提到 `git push` 也可能誤擋；feature 分支與判斷不了時放行。需要硬閘門時另評估 Git 原生 pre-push 與伺服器保護。
+> 2026-11-02／F06：移除「工作樹正在改，等一下會提交」的放行假設。staged／unstaged 修改都不會隨 push 上傳，只有已提交的 HANDOFF 差異才算；開工標記與交棒快照都能通過，**不代表內容已驗證或已交棒**。
 > 退出碼 2 會擋下該次 Bash 呼叫並把訊息交給模型——這是唯一能讓 agent「當場改走交棒程序」的機制，警告訊息模型不一定看得到。
 
 ````bash
 #!/usr/bin/env bash
-# PreToolUse hook：push 前確認 HANDOFF 已更新（交棒防呆，2026-08-05）
+# PreToolUse hook：AI push 提醒（不是 Git 原生 pre-push／發布保證）
 # 起因：push 完才想起沒寫 HANDOFF，下一棒拿到過期狀態。
-# 只在「要推到權威分支、且這批 commit 沒動過 HANDOFF.md」時擋下；
+# 只看字面 git push、目前分支與 origin 追蹤 ref，不解析選項／remote／refspec。
+# GUI／script 可能漏判，僅提到 git push 也可能誤擋；檢查已提交的 HANDOFF 差異。
 # 其他情況（非 push 指令、feature 分支中途推進度、判斷不了）一律放行——寧可漏擋，不要誤擋。
 # 退出碼：0＝放行；2＝擋下並把 stderr 交給模型（模型會看到訊息並改走交棒程序）。
 # 臨時停用：HANDOFF_HOOK=off
-# source: PROJECT-BOOTSTRAP.md v2026-09-30 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-02.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 
 [ "$HANDOFF_HOOK" = "off" ] && exit 0
 
@@ -1642,9 +1646,9 @@ main=${main#origin/}
 git rev-parse --quiet --verify "refs/remotes/origin/$branch" >/dev/null 2>&1 || exit 0
 [ -n "$(git rev-list "origin/$branch..HEAD" 2>/dev/null)" ] || exit 0   # 沒有要推的 commit
 git diff --name-only "origin/$branch..HEAD" 2>/dev/null | grep -qx 'HANDOFF.md' && exit 0
-git diff --quiet -- HANDOFF.md 2>/dev/null || exit 0                    # 工作樹正在改，等一下會提交
+# F06：未提交的 staged／unstaged 修改不會隨 push 上傳，不可據此放行。
 
->&2 echo "[handoff-check] 這批要推到 $branch 的 commit 沒有更新 HANDOFF.md。"
+>&2 echo "[handoff-check] AI push 提醒：目前 $branch 相對 origin 的已提交差異沒有更新 HANDOFF.md（未提交修改不算）。"
 >&2 echo "[handoff-check] 依交接協定，push 是交棒的最後一步：先跑 handoff skill 的 B 模式（B2 知識落地、B3/B4 驗證、B6 更新 HANDOFF、B7 檢查 staged 清單）再 push。"
 >&2 echo "[handoff-check] 若真的只是中途推進度：改推 feature 分支，或本次設 HANDOFF_HOOK=off。"
 exit 2
