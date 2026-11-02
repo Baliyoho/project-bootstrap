@@ -67,6 +67,13 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
   本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
+  Python 下限 ——兩支維護工具檔頭都有 MIN_PY 守門且同號、README 範本寫出部署後工具的
+                  下限、四支 .py 都沒有用到高於下限的 API。掃描前先把註解與字串塗白，
+                  否則「解釋為什麼不要用」會被判成用法（2026-11-02 加／F14）
+  主張沒復活   ——已修正的主張不得在範本、操作卡與入口文件裡復活：能力表 ✅ 的工具不得被
+                  散文說成沒有 skill、交接 prompt 不得有自己的 A／B 編號、verify_state 不得
+                  以憑證為前提、版本序號只有一種算法、可攜層不得寫成「到哪都成立」。綁的是
+                  結構不是禁句，`舊版 …` 的引用刻意放行（2026-11-02 加／F15）
   行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
                   git-freshness 可執行
   同步安全     ——sync_project.py 只擁有指向骨架腳本的 handler（同組的自訂 hook 要留），
@@ -74,6 +81,14 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
   同步清單     ——sync_project.py 的清單要涵蓋骨架每一個檔，且 hook 接線合併要真的換掉
                   舊值又保住專案自己的設定。兩份 JSON 接線從來不在清單裡，於是 matcher
                   的修正一年半沒發下去，pre-push 防呆在那些專案等於沒裝（2026-10-30 加入）
+
+
+
+Python 版本下限：這兩支維護工具（本檔與 `sync_project.py`）宣告的下限寫在下面的 MIN_PY，
+而且在檔頭就檢查、清楚報錯。那是**靜態擔保**（「不使用更新的 API」），不是「在那個版本上
+跑過」——實跑過的只有本機這一版。守門人是「Python 版本下限」那一項：它掃四支 .py（兩支
+維護工具＋兩支部署後工具）有沒有用到高於下限的 API，所以下一棒順手用一個新 API 時會當場
+FAIL，而不是在別人的舊 python 上才炸（查核報告 F14）。
 
 結束碼：0＝全過；1＝有跳過項（缺 bash 之類）但無失敗；2＝有失敗。
 本工具唯讀本 repo，只在系統暫存區寫檔。
@@ -87,9 +102,20 @@ import re
 import shutil
 import subprocess
 import sys
+import io
 import tempfile
+import tokenize
 import zipfile
 from datetime import date
+
+# Python 版本下限（2026-11-02／查核報告 F14）。在檔頭就擋，而且訊息要說「版本太舊」——
+# 高於下限的 API 不會在啟動時失敗，而是執行到那一行才炸成 TypeError／AttributeError，
+# 那種形狀沒人會聯想到版本。兩支維護工具的 MIN_PY 必須一致，由「Python 版本下限」那一
+# 項檢查釘住。
+MIN_PY = (3, 8)
+if sys.version_info < MIN_PY:
+    sys.exit('需要 Python %d.%d 以上，本機是 %d.%d——請改用較新的 python'
+             % (MIN_PY + sys.version_info[:2]))
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 KIT = ROOT / 'PROJECT-BOOTSTRAP.md'
@@ -207,9 +233,27 @@ def find_bash():
     return None
 
 
+def read_lf(path, encoding='utf-8'):
+    """讀檔，不做換行轉換（等同 Path.read_text(newline='')，但不需要 3.13）。
+
+    **不要改回 `Path.read_text(..., newline='')`**：那個參數官方標「Changed in 3.13」，
+    而這兩支維護工具宣告的下限是 MIN_PY。`open()` 的 newline 參數從一開始就有。
+    2026-11-02 之前這裡就是 3.13-only 的寫法，而文件只說「`python` 不存在就用
+    `python3`」——在 3.12 上它會在執行到那一行時才炸（查核報告 F14）。
+    """
+    with open(path, encoding=encoding, newline='') as fh:
+        return fh.read()
+
+
+def write_lf(path, text, encoding='utf-8'):
+    """寫檔，不做換行轉換（`Path.write_text` 的 newline 參數要 3.10，見 read_lf）。"""
+    with open(path, 'w', encoding=encoding, newline='') as fh:
+        fh.write(text)
+
+
 # ── 1. 重生骨架 ────────────────────────────────────────────────
 def extract(dest):
-    lines = KIT.read_text(encoding='utf-8', newline='').split('\n')
+    lines = read_lf(KIT).split('\n')
     heads = [i for i, ln in enumerate(lines) if HEAD_RE.match(ln)]
     written = set()
     for n, i in enumerate(heads):
@@ -695,8 +739,7 @@ def step_busy(dest, work):
         return False
 
     def push_busy(value, env=None):
-        target.write_text(base.replace(line, '- %s：%s' % (field, value)),
-                          encoding='utf-8', newline='')
+        write_lf(target, base.replace(line, '- %s：%s' % (field, value)))
         git(['commit', '-qam', 'chore: busy'], work)
         git(['push', '-q', 'origin', 'main'], work)
         return run([bash, hook], cwd=work, env=env or tool_env()).stdout
@@ -704,7 +747,7 @@ def step_busy(dest, work):
     cases, out = busy_cases(push_busy, me)
     # 欄位整列拿掉：舊骨架的樣子。要印 🟡 說「查不了」，不能安靜放過——
     # 安靜放過跟「查過了沒事」在畫面上一模一樣，那就回到了這個機制要解決的問題本身。
-    target.write_text(base.replace(line + '\n', ''), encoding='utf-8', newline='')
+    write_lf(target, base.replace(line + '\n', ''))
     git(['commit', '-qam', 'chore: drop busy field'], work)
     git(['push', '-q', 'origin', 'main'], work)
     out = run([bash, hook], cwd=work, env=tool_env()).stdout
@@ -758,7 +801,7 @@ def step_repo_busy(work):
         body = '\n'.join(base)
         if value is not None:
             body = body.rstrip('\n') + '\n- %s：%s\n' % (field, value)
-        target.write_text(body, encoding='utf-8', newline='')
+        write_lf(target, body)
         git(['commit', '-qam', 'chore: repo busy'], work)
         git(['push', '-q', 'origin', 'main'], work)
         return run([bash, hook.as_posix()], cwd=work, env=env or tool_env()).stdout
@@ -795,13 +838,12 @@ def step_version_check(work):
     # 2026-11-02 修（查核報告 F09）：舊版這裡餵 1999-01-01——那是上游比本機**舊**，
     # 也就是「本機領先」，卻被命名成「落後→講」並且通過。所以這個測試不但沒守住方向，
     # 還會把任何正確的修法判成 FAIL。方向弄反時沒有任何徵兆，因為舊實作只比 `!=`。
-    cache.write_text('2099-01-01', encoding='utf-8', newline='')
+    write_lf(cache, '2099-01-01')
     lag = run([bash, hook], cwd=work).stdout
     off = run([bash, hook], cwd=work, env=dict(GIT_ENV, BOOTSTRAP_VERSION_CHECK='off')).stdout
-    cache.write_text('1999-01-01', encoding='utf-8', newline='')
+    write_lf(cache, '1999-01-01')
     ahead = run([bash, hook], cwd=work).stdout
-    cache.write_text((ROOT / 'VERSION').read_text(encoding='utf-8').strip(),
-                     encoding='utf-8', newline='')
+    write_lf(cache, (ROOT / 'VERSION').read_text(encoding='utf-8').strip())
     same = run([bash, hook], cwd=work).stdout
     cache.unlink(missing_ok=True)
 
@@ -1237,8 +1279,7 @@ def step_antigravity(dest):
     # 轉接層的管線：拿一支會吐引號、反斜線與換行的腳本餵它，JSON 要合法且原樣還原。
     probe = dest / '.claude' / 'hooks' / '_probe.sh'
     payload = 'he said "hi"\\path\tand\nsecond line'
-    probe.write_text('#!/usr/bin/env bash\nprintf \'%s\\n\' \'' + payload + '\'\n',
-                     encoding='utf-8', newline='')
+    write_lf(probe, '#!/usr/bin/env bash\nprintf \'%s\\n\' \'' + payload + '\'\n')
     for name, args, want in (
             ('正常注入', ['_probe.sh'], payload),
             ('少參數', [], '少了參數'),
@@ -1399,9 +1440,9 @@ def step_codex_windows(dest, tmp):
     fixture.mkdir(parents=True)
     shim = fixture / 'codex-hook.cmd'
     shim.write_bytes(raw)
-    (fixture / 'probe.sh').write_text(
-        '#!/usr/bin/env bash\nIFS= read -r payload\nprintf "[git-check] %s\\n" "$payload"\n'
-        'printf "err:%s\\n" "$payload" >&2\nexit 2\n', encoding='utf-8', newline='')
+    write_lf(fixture / 'probe.sh',
+             '#!/usr/bin/env bash\nIFS= read -r payload\nprintf "[git-check] %s\\n" "$payload"\n'
+             'printf "err:%s\\n" "$payload" >&2\nexit 2\n')
     command = '"%s" /d /s /c ""%s" probe.sh"' % (os.environ['COMSPEC'], shim)
     r = run(command, cwd=tmp, stdin='stdin-survives\n')
     if (r.returncode != 2 or r.stdout.strip() != 'Git status check:\n[git-check] stdin-survives'
@@ -1443,11 +1484,10 @@ def step_codex_windows(dest, tmp):
         shim.write_bytes(raw)
     # Windows 啟動 cmd 時會重建 ProgramFiles；須在同一個 cmd 裡設定，負向情境才真的沒 Git。
     missing = fixture / 'missing-git.cmd'
-    missing.write_text('@echo off\nset "ProgramFiles=%~dp0missing"\n'
-                       'set "ProgramFiles(x86)=%~dp0missing"\n'
-                       'set "LOCALAPPDATA=%~dp0missing"\n'
-                       'call "%~dp0codex-hook.cmd" probe.sh\nexit /b %ERRORLEVEL%\n',
-                       encoding='ascii', newline='')
+    write_lf(missing, '@echo off\nset "ProgramFiles=%~dp0missing"\n'
+             'set "ProgramFiles(x86)=%~dp0missing"\n'
+             'set "LOCALAPPDATA=%~dp0missing"\n'
+             'call "%~dp0codex-hook.cmd" probe.sh\nexit /b %ERRORLEVEL%\n', encoding='ascii')
     missing_command = '"%s" /d /s /c ""%s""' % (os.environ['COMSPEC'], missing)
     env = dict(os.environ, PATH=os.environ['SystemRoot'] + '\\System32')
     r = run(missing_command, cwd=tmp, env=env, stdin='no-git\n')
@@ -1648,9 +1688,9 @@ def step_sync_safety(tmp):
     proj = tmp / 'sync-safety' / 'proj'
     (proj / '.claude' / 'skills' / 'handoff').mkdir(parents=True)
     skill = proj / '.claude' / 'skills' / 'handoff' / 'SKILL.md'
-    skill.write_text('stale skill', encoding='utf-8', newline='')
+    write_lf(skill, 'stale skill')
     wiring = proj / '.claude' / 'settings.json'
-    wiring.write_text('{ not json', encoding='utf-8', newline='')
+    write_lf(wiring, '{ not json')
 
     def cli(*args):
         return run([sys.executable, '-X', 'utf8', 'tools/sync_project.py'] + list(args),
@@ -1669,7 +1709,7 @@ def step_sync_safety(tmp):
         bad.append('不存在的目標竟然 exit 0 或宣稱最新版')
 
     # 修好之後要真的寫得進去、而且 exit 0——修法不能嚴到什麼都不敢改
-    wiring.write_text('{"hooks":{}}', encoding='utf-8', newline='')
+    write_lf(wiring, '{"hooks":{}}')
     r = cli(str(proj), '--write')
     if r.returncode != 0 or skill.read_text(encoding='utf-8') == 'stale skill':
         bad.append('正常的目標沒同步成功（exit %d）' % r.returncode)
@@ -2016,6 +2056,307 @@ def step_tool_prose(dest):
            % (len(documents) * len(regressions)))
     return True
 
+# ── Python 版本下限（F14）────────────────────────────────────────────────
+# 這張表只收「寫得出來、但舊版 python 沒有」的 API。每一條都要註明需要的版本，因為
+# 這一項報錯時要能直接回答「那我最低要幾」——只說「不要用」會逼下一棒去翻官方文件。
+PY_FEATURES = (
+    (re.compile(r'read_text\([^)]*newline'), (3, 13), "Path.read_text 的 newline 參數"),
+    (re.compile(r'write_text\([^)]*newline'), (3, 10), "Path.write_text 的 newline 參數"),
+    (re.compile(r'\.(?:removeprefix|removesuffix)\('), (3, 9), 'str.removeprefix／removesuffix'),
+    (re.compile(r'\.is_relative_to\('), (3, 9), 'Path.is_relative_to'),
+    (re.compile(r'functools\.cache\b'), (3, 9), 'functools.cache'),
+    (re.compile(r'^\s*match\s+[^\n]+:\s*$', re.M), (3, 10), 'match 語句'),
+    (re.compile(r'zip\([^)]*strict='), (3, 10), 'zip(strict=)'),
+    (re.compile(r'\btomllib\b'), (3, 11), 'tomllib'),
+    (re.compile(r'datetime\.UTC\b'), (3, 11), 'datetime.UTC'),
+    (re.compile(r'\bdirs_exist_ok='), (3, 8), 'shutil.copytree(dirs_exist_ok=)'),
+)
+
+
+def code_only(text):
+    """把註解與字串塗成空白後的原始碼（位置保留，所以正規表示式還是對得上行）。
+
+    為什麼非去不可：這一項掃的是「有沒有用到比下限新的 API」，而那些 API 的名字在
+    **解釋為什麼不要用它**的註解與 docstring 裡一定會出現——`read_lf` 的 docstring 就
+    寫著 `Path.read_text(..., newline='')`。掃全檔會把說明判成用法，於是正確的修法反而
+    FAIL，而那種假陽性會逼下一棒把理由刪掉，正好砍掉鐵律 3 要保的東西。
+    """
+    lines = text.split('\n')
+    try:
+        toks = list(tokenize.generate_tokens(io.StringIO(text).readline))
+    except (tokenize.TokenError, IndentationError, SyntaxError):
+        return text  # 壞檔讓語法本身去報；這裡寧可多掃，不要少掃
+    for tok in toks:
+        if tok.type not in (tokenize.COMMENT, tokenize.STRING):
+            continue
+        (sr, sc), (er, ec) = tok.start, tok.end
+        for r in range(sr - 1, min(er, len(lines))):
+            line = lines[r]
+            a = sc if r == sr - 1 else 0
+            b = ec if r == er - 1 else len(line)
+            lines[r] = line[:a] + ' ' * max(0, b - a) + line[b:]
+    return '\n'.join(lines)
+
+
+def py_floor_problems(sources, floor):
+    """sources：{標籤: 原始碼}。回傳問題清單（空＝沒有用到高於 floor 的 API）。"""
+    problems = []
+    for label in sorted(sources):
+        code = code_only(sources[label])
+        for pat, need, what in PY_FEATURES:
+            if need > floor and pat.search(code):
+                problems.append('%s 用了 %s：要 Python %d.%d，宣告的下限是 %d.%d'
+                                % ((label, what) + need + floor))
+    return problems
+
+
+def step_python_floor(dest):
+    """宣告 Python 版本下限，並守住「沒有人順手用了更新的 API」。
+
+    2026-11-02 加（查核報告 F14）。起因：`verify_bootstrap.py` 用 `Path.read_text(
+    ..., newline='')`，而那個參數官方標「Changed in 3.13」——文件卻只說「`python` 不存在
+    就用 `python3`」。**失敗的形狀是最壞的那一種**：舊版不會在啟動時說「版本太舊」，而是
+    執行到那一行才炸成 TypeError，沒人會把它聯想到版本。
+
+    守三件事：①兩支維護工具檔頭都有 `MIN_PY` 守門、而且兩邊同號（同一個事實兩個家，所以
+    要釘住）；②部署後兩支腳本的下限有寫在 `README.md` 範本——那是**人的入口**，而部署出去
+    的專案看不到這個 repo 的驗證器；③四支 .py 都沒有用到高於下限的 API。
+
+    天花板要講明白：**下限是「不使用更新的 API」的靜態擔保，不是「在那個版本上跑過」。**
+    這台機器只有 3.13，沒有舊版可測；要把它變成實測，得先有 CI（查核報告第 6 節）。
+    部署後那兩支**刻意不加 `MIN_PY` 守門**：`tools/check_docs.py` 是 `sync_project.py` 的
+    同步對象，動它就得跳 `source:` 標記、再把六個專案同步一輪，而 `VERSION` 不跟著動
+    （鐵律 1），於是落後偵測不會替你講——為了一個「本來就跑得動」的版本宣告製造一筆無聲的
+    同步債並不划算。它們的保障是這一項的靜態掃描。
+    """
+    maint = {}
+    for rel in ('tools/verify_bootstrap.py', 'tools/sync_project.py'):
+        maint[rel] = read_lf(ROOT / rel)
+    problems, floors = [], {}
+    for rel, text in maint.items():
+        m = re.search(r'^MIN_PY = \((\d+), (\d+)\)$', text, re.M)
+        if not m:
+            problems.append('%s 檔頭沒有 `MIN_PY = (x, y)`——沒有宣告就沒有下限' % rel)
+            continue
+        floors[rel] = (int(m.group(1)), int(m.group(2)))
+        if 'if sys.version_info < MIN_PY' not in text or '需要 Python' not in text:
+            problems.append('%s 宣告了 MIN_PY 卻沒有在檔頭擋下舊版並清楚報錯' % rel)
+    if len(set(floors.values())) > 1:
+        problems.append('兩支維護工具的 MIN_PY 不一致：%s' % floors)
+    if problems:
+        record('FAIL', 'Python 版本下限', '；'.join(problems))
+        return False
+
+    floor = sorted(floors.values())[0]
+    want = '需要 Python %d.%d 以上' % floor
+    if want not in read_lf(dest / 'README.md'):
+        record('FAIL', 'Python 版本下限',
+               'README.md 範本沒有寫「%s」——部署出去的專案看不到這個 repo 的驗證器' % want)
+        return False
+
+    sources = dict(maint)
+    for rel in ('tools/check_docs.py', 'tools/verify_state.py'):
+        sources['骨架 ' + rel] = read_lf(dest / rel)
+    problems = py_floor_problems(sources, floor)
+    if problems:
+        record('FAIL', 'Python 版本下限', '；'.join(problems))
+        return False
+
+    # 負向測試：掃描器要真的掃得到，而且不能把「解釋為什麼不要用」判成用法。
+    cases = (
+        ('3.13 的 read_text(newline=)', "s = p.read_text(encoding='utf-8', newline='')\n"),
+        ('3.10 的 write_text(newline=)', "p.write_text(s, encoding='utf-8', newline='')\n"),
+        ('3.9 的 removeprefix', "s = s.removeprefix('a')\n"),
+        ('3.11 的 tomllib', 'import tomllib\n'),
+    )
+    missed = [name for name, src in cases if not py_floor_problems({'x.py': src}, floor)]
+    excuse = ('"""不要改回 Path.read_text(..., newline=\'\') ——那要 3.13。"""\n'
+              '# 也不要 p.write_text(s, newline="")\n')
+    if py_floor_problems({'x.py': excuse}, floor):
+        missed.append('把註解／docstring 裡的說明判成用法')
+    if missed:
+        record('FAIL', 'Python 版本下限', '負向測試沒排到：%s' % '、'.join(missed))
+        return False
+
+    record('OK', 'Python 版本下限',
+           '兩支維護工具都有 MIN_PY=%d.%d 守門且同號、README 範本寫出下限、四支 .py 沒有'
+           '用到更新的 API；%d 個負向測試＋1 個反向保險通過（下限是靜態擔保，不是實跑過）'
+           % (floor + (len(cases),)))
+    return True
+
+
+# ── 已修正的主張不得在別處復活（F15）──────────────────────────────────────
+# 這裡刻意**不是**一張「禁句表」：查核報告 F15 的改善建議明寫「不要只增加特定舊句的禁止
+# regex，因為新的措辭會再次繞過」。所以每一項都綁在一個**結構**上——能力表的那一格、
+# skill 的字母對應、同一條規則的單一定義——句子怎麼改寫都還是得跟那個結構對得起來。
+CLAIM_SERIAL = '當天第幾個帶 `source:` 標記的改動'
+CLAIM_STALE_SERIAL = '部署包當天的第幾次修改'
+# 否認句要**跟工具名相鄰**才算在講那個工具：`AGENTS.md` 有一行同時提到 Codex 與「沒有全域
+# 副本、或工具不會自動載入 skill」，那是在講這個 repo 少一個檔，不是在講 Codex 少一層機制。
+# 兩件事同形，只靠「同一行」分不開（加這一項的當下就誤判到）。
+CLAIM_DENY = r'%s[^。\n]{0,20}(?:沒有|不支援)[^。\n]{0,16}skill'
+CLAIM_QUOTE = re.compile(r'「[^」]*」')
+
+
+def claim_text(line):
+    """把「」裡的內容拿掉之後的那一行——引用不算主張。
+
+    鐵律 3 要求保留每條規則的「為什麼」，而「為什麼」幾乎一定要引用被改掉的舊說法
+    （「舊版寫『有憑證就跑』」）。不區分引用與主張的話，守門人就會逼下一棒把理由刪掉，
+    正好砍掉這份骨架最值錢的那一半。2026-11-02 加這一項的當下就被自己的修正文字誤判。
+    """
+    return CLAIM_QUOTE.sub('', line)
+
+
+def claim_problems(docs):
+    """docs：{'kit', 'readme', 'dep_readme', 'dep_protocol', 'agents'} → 問題清單。"""
+    problems = []
+
+    # ① 散文不得否認能力表裡已經 ✅ 的工具（2026-11-02 之前 README 範本還寫著
+    #    「其他工具（Gemini／Codex）沒有 skill 機制」，而那一格 2026-10-30 就實測成 ✅）。
+    cols, rows = tool_matrix(tool_section(docs['kit']))
+    if not rows.get('自動載入程序檔'):
+        problems.append('部署包能力表找不到「自動載入程序檔」那一列，這一項無從判斷')
+    else:
+        yes = set()
+        for col, verdict in zip(cols, rows['自動載入程序檔']):
+            if verdict == '✅':
+                yes.add(col.replace(' CLI', '').replace(' 桌面 App', '').strip())
+        for name in sorted(docs):
+            for line in docs[name].split('\n'):
+                bare = claim_text(line)
+                for tool in sorted(yes):
+                    for hit in re.finditer(CLAIM_DENY % re.escape(tool), bare):
+                        # 「…沒有 handoff skill」講的是少一個檔，不是少一層機制。例外只能
+                        # 看**命中的那一段**：2026-11-02 第一版寫成「整行含 handoff skill
+                        # 就放行」，而要擋的那一句所在的那一行開頭正好是「程序已經寫成
+                        # **[handoff skill](…)**」——例外把唯一的目標吃掉了，而畫面上是 ok。
+                        if 'handoff skill' in hit.group(0):
+                            continue
+                        problems.append('%s 有一句說「%s 沒有 skill」，但能力表那一格是 ✅：%s'
+                                        % (name, tool, hit.group(0)[:40]))
+
+    # ② 交接 prompt 不得有自己的字母編號（舊版 A＝交棒、B＝接棒，跟 skill 正好相反），
+    #    而且每一段都要寫出它要跑的模式。
+    if '**A 接棒**' not in docs['kit'] or '**B 交棒**' not in docs['kit']:
+        problems.append('部署包的 skill 模式表沒有「**A 接棒**／**B 交棒**」，字母對應無從比對')
+    sec = docs['dep_readme']
+    i = sec.find('## 換一個 AI 接手工作')
+    sec = sec[i:sec.find('\n## ', i + 3)] if i >= 0 else ''
+    if not sec:
+        problems.append('README 範本找不到「## 換一個 AI 接手工作」那一節')
+    else:
+        if re.search(r'^### *[AB] *[.．、]', sec, re.M):
+            problems.append('交接 prompt 又長出自己的 A／B 編號——字母只留 skill 那一套')
+        for word, mode in (('交棒', 'B 模式'), ('接棒', 'A 模式')):
+            heads = [l for l in sec.split('\n') if l.startswith('### ') and word in l]
+            if not heads:
+                problems.append('README 範本沒有「%s」那一段 prompt' % word)
+            elif not any(mode in h for h in heads):
+                problems.append('「%s」那段 prompt 的標題沒寫出它跑 skill 的 %s' % (word, mode))
+
+    # ③ verify_state 不得被「有憑證」這個不相干的前提擋掉。
+    for name in sorted(docs):
+        for line in docs[name].split('\n'):
+            if 'verify_state' in line and re.search(r'有憑證(?:才|就)', claim_text(line)):
+                problems.append('%s 把 verify_state 寫成有憑證才跑：%s'
+                                % (name, line.strip()[:50]))
+    if '一律跑' not in docs['dep_protocol']:
+        problems.append('協定範本的一鍵驗證沒有寫「一律跑」')
+
+    # ④ 版本序號只有一種算法，而且要講明它跟版本行不保證同號。
+    for name in ('kit', 'agents'):
+        if CLAIM_SERIAL not in docs[name]:
+            problems.append('%s 沒有把序號規則寫成「%s」' % (name, CLAIM_SERIAL))
+        if '不保證同號' not in docs[name]:
+            problems.append('%s 沒有講明序號跟版本行不保證同號' % name)
+    for name in sorted(docs):
+        for line in docs[name].split('\n'):
+            if CLAIM_STALE_SERIAL in claim_text(line):
+                problems.append('%s 還在用舊的序號算法（只有引用舊版時才能出現）：%s'
+                                % (name, line.strip()[:50]))
+
+    # ⑤ 可攜層不得被寫成「到哪都成立」——載入、遵循、執行是三種不同的證據。
+    if '載入、遵循、執行是三種不同的證據' not in docs['kit']:
+        problems.append('部署包沒有把「載入／遵循／執行是三種證據」寫出來')
+    for name in sorted(docs):
+        for line in docs[name].split('\n'):
+            if '到哪都成立' in claim_text(line):
+                problems.append('%s 還在寫「可攜層到哪都成立」：%s' % (name, line.strip()[:50]))
+    if '三層自動發生' in docs['readme']:
+        problems.append('README 還在寫「三層自動發生」——三層壓低漏做的機會，不保證發生')
+    return problems
+
+
+def step_claims(dest):
+    """已修正的主張不得在範本、操作卡與入口文件裡復活。
+
+    2026-11-02 加（查核報告 F15）。那份報告點名五處：README 範本說「其他工具沒有 skill
+    機制」（能力表 2026-10-30 就改成 ✅）、第 6 節的版本序號算法跟 `AGENTS.md` 鐵律 2 不同、
+    協定與接棒 prompt 把 `verify_state` 寫成「有憑證才跑」（漏掉不需要憑證的本機／公開
+    檢查）、README 的 prompt A／B 跟 skill 的 A／B 正好相反、以及「可攜層到哪都成立」
+    「三層自動發生」這兩句過度保證。
+
+    **為什麼不是一張禁句表**：報告的改善建議明寫「不要只增加特定舊句的禁止 regex，因為新的
+    措辭會再次繞過」。所以每一項都綁在一個結構上——能力表的那一格、skill 的字母對應、
+    同一條規則的單一定義、`舊版` 引用之外不得出現的舊算法。
+
+    天花板：它守的是**可機械判定的那一面**（表格的格子、字母對應、關鍵定義是否單一），
+    守不了一段敘述整體的準確度；而「舊版 …」這個例外是故意的——鐵律 3 要求保留為什麼，
+    所以引用舊說法的那些行必須放行。
+    """
+    docs = {
+        'kit': read_lf(KIT),
+        'readme': read_lf(ROOT / 'README.md'),
+        'agents': read_lf(ROOT / 'AGENTS.md'),
+        'dep_readme': read_lf(dest / 'README.md'),
+        'dep_protocol': read_lf(dest / 'docs' / 'ai-notes' / 'handover-protocol.md'),
+    }
+    problems = claim_problems(docs)
+    if problems:
+        record('FAIL', '已修正的主張沒復活', '；'.join(problems[:6]))
+        return False
+
+    # 負向測試：五項各自要擋得住一次真的退化。
+    cases = (
+        ('能力表 ✅ 卻說沒有 skill', 'dep_readme',
+         lambda t: t.replace('## 換一個 AI 接手工作',
+                             '## 換一個 AI 接手工作\n\nCodex 沒有 skill 機制。')),
+        ('prompt 又長出 A／B 編號', 'dep_readme',
+         lambda t: t.replace('### 收工時：', '### A. 收工時：')),
+        ('prompt 標題不寫模式', 'dep_readme',
+         lambda t: t.replace('（skill 的 **B 模式**）', '')),
+        ('verify_state 又變成有憑證才跑', 'dep_protocol',
+         lambda t: t.replace('**一律跑** `tools/verify_state.py`',
+                             '有憑證才跑 `tools/verify_state.py`')),
+        ('協定不寫一律跑', 'dep_protocol', lambda t: t.replace('一律跑', '跑')),
+        ('序號算法退回舊版', 'agents',
+         lambda t: t.replace(CLAIM_SERIAL, CLAIM_STALE_SERIAL)),
+        ('不再講明跟版本行同不同號', 'kit', lambda t: t.replace('不保證同號', '一樣')),
+        ('可攜層又寫成到哪都成立', 'kit',
+         lambda t: t.replace('- **可攜層——不需要任何設定就讀得到**',
+                             '- **可攜層——到哪都成立**')),
+        ('README 又寫三層自動發生', 'readme',
+         lambda t: t.replace('## 核心：交接不靠人記，靠三層把漏做的機會壓低',
+                             '## 核心：交接不靠人記，靠三層自動發生')),
+    )
+    missed = []
+    for name, key, mutate in cases:
+        bad = dict(docs)
+        bad[key] = mutate(docs[key])
+        if bad[key] == docs[key]:
+            missed.append('%s（改寫沒命中，測試本身壞了）' % name)
+        elif not claim_problems(bad):
+            missed.append(name)
+    if missed:
+        record('FAIL', '已修正的主張沒復活', '負向測試沒排到：%s' % '、'.join(missed))
+        return False
+
+    record('OK', '已修正的主張沒復活',
+           '能力表與散文一致、字母只剩 skill 那一套、verify_state 不以憑證為前提、'
+           '序號規則單一定義、可攜層不過度保證；%d 個負向測試通過' % len(cases))
+    return True
+
 
 def step_misc(dest, work=None):
     ok = True
@@ -2050,6 +2391,8 @@ def step_misc(dest, work=None):
     step_readme_table()
     step_zip_readme()
     step_tool_prose(dest)
+    step_python_floor(dest)
+    step_claims(dest)
 
     r = run([sys.executable, '-X', 'utf8', 'tools/verify_state.py'], cwd=dest)
     if r.returncode == 0 and 'NOT_CONFIGURED' in r.stdout:
@@ -2130,7 +2473,7 @@ def build_zip(out_path):
         src = tmp / 'gen'
         src.mkdir()
         extract(src)
-        (src / '讀我-先看這個.md').write_text(ZIP_README, encoding='utf-8', newline='')
+        write_lf(src / '讀我-先看這個.md', ZIP_README)
         shutil.copyfile(KIT, src / KIT.name)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(out_path, 'w', zipfile.ZIP_DEFLATED) as z:

@@ -26,6 +26,8 @@ B7 存在的理由。跑完請到各專案照 B 模式收尾。
 兩份 hook 接線（`.claude/settings.json`、`.codex/hooks.json`）是 2026-10-30 才補進來的，
 補的理由寫在 WIRING 那段註解——它們是 JSON，塞不進 `source:` 版本標記，所以落後偵測也
 看不到它們，三個專案就這樣停在舊版 matcher 一年半。
+
+Python 版本下限見下面的 MIN_PY 與 `verify_bootstrap.py` 檔頭那一段（查核報告 F14）。
 """
 import argparse
 import copy
@@ -35,6 +37,15 @@ import pathlib
 import shutil
 import sys
 import tempfile
+
+# Python 版本下限（2026-11-02／查核報告 F14）。在檔頭就擋，而且訊息要說「版本太舊」——
+# 高於下限的 API 不會在啟動時失敗，而是執行到那一行才炸成 TypeError／AttributeError，
+# 那種形狀沒人會聯想到版本。兩支維護工具的 MIN_PY 必須一致，由「Python 版本下限」那一
+# 項檢查釘住。
+MIN_PY = (3, 8)
+if sys.version_info < MIN_PY:
+    sys.exit('需要 Python %d.%d 以上，本機是 %d.%d——請改用較新的 python'
+             % (MIN_PY + sys.version_info[:2]))
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from verify_bootstrap import extract  # noqa: E402  重用範本抽取，不另寫一份
@@ -102,7 +113,9 @@ def read(p):
 
 
 def write(p, text):
-    p.write_text(text, encoding='utf-8', newline='')
+    # 不用 Path.write_text(newline='')：那個參數要 3.10，見 verify_bootstrap.write_lf。
+    with open(p, 'w', encoding='utf-8', newline='') as fh:
+        fh.write(text)
 
 
 def split_settings(text, require_end):
@@ -357,7 +370,7 @@ def apply_plan(plan):
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             tmp = path.with_name(path.name + '.sync-tmp')
-            tmp.write_text(text, encoding='utf-8', newline='')
+            write(tmp, text)
             os.replace(tmp, path)
             done.append(rel)
         except OSError as e:

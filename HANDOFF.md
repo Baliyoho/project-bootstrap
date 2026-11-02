@@ -1,70 +1,72 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-02 15:54（+08）
-- **交棒者**：Claude Code ／ `DESKTOP-M8MRS05`（修 F05 接線定位，並把副本發到六個專案）
+- **交接時間**：2026-11-02 17:05（+08）
+- **交棒者**：Claude Code ／ `DESKTOP-M8MRS05`（修查核報告的 F14 與 F15）
 
 ## 任務目標
 
 維護 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的協作制度。依
-[project-bootstrap-audit.md](project-bootstrap-audit.md) 分批修正；已修 **F01、F09、F02、F03、F05**
-（五條 P1），其餘 11 條未實作。
+[project-bootstrap-audit.md](project-bootstrap-audit.md) 分批修正；16 條裡**已修 7 條**
+（F01、F09、F02、F03、F05、F14、F15），其餘 **9 條未實作**（F04、F06、F07、F08、F10–F13、F16）。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26110216｜修 F14／F15｜工作中｜交棒0次`，2026-11-02 16:11 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-02`
 - 本機能力：Windows、Python 3.13.15、Git Bash、PowerShell 7；本輪 fetch、開工標記與收尾 push 均成功。
 
 ## 已完成
 
-- **F05（接線 cwd 定位）**：hook 的 `command` 以 **session 的 cwd** 執行，所以從子目錄開 session
-  （`cd tools && claude`）時 `bash .claude/hooks/git-freshness.sh` 是 **exit 127**——在 `tools/` 下
-  重現過，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**。四份接線（部署包 3.9 兩條、
-  3.17 兩條 Unix ＋兩條 Windows，以及本 repo 自己的 `.claude/settings.json`、`.codex/hooks.json`）
-  改成 `$(git rev-parse --show-cdup)` 前綴；它回的是**相對**路徑，所以鐵律 5 原封不動。Windows
-  那一欄多一次 `-replace '/','\'`：`cmd` 吃不下 `../.claude\hooks\...` 的混合斜線（從子目錄實測
-  `'..' is not recognized`）。**Antigravity（3.20）刻意不跟**——`agy` 的 `command` 不經 shell、
-  cwd 是 `.agents/`，基準不同。
-- 守門人：驗證器新增第 39 項「接線 cwd 定位」——四份接線的文字檢查，加上在**含空白與中文**路徑的
-  fixture repo 上，從 `.`／`tools`／`docs/ai-notes` 實跑接線 JSON 裡**原始的那一串命令**（開場檢查
-  要 exit 0 並印 `[git-check]`；pre-push 要 exit 2——拿 exit 2 當「腳本真的跑到了」的證據，exit 0
-  連「什麼都沒發生」都會過），外加 Windows 完整啟動鏈與兩個負向測試（舊形式、拿掉斜線正規化）。
-  **退回舊接線實跑過，確實 FAIL（exit 2）。** `tools/verify_bootstrap.py`：exit 0、**39 項全過**、無 skip。
-- **副本已發下**：六個專案（`Grist_test`、`NAA_TR`、`NAS_MAINT`、`摘要skill設計`、
-  `第三批56箱後檢查`、`解決網路速度問題`）各 2 項、共 12 項全部 exit 0；每個專案的 diff 就是那兩份
-  接線的命令各 3 行，專案自己的 `permissions` 與自有 hook 都在。驗收不只看檔案：六個專案都**從
-  `tools/` 實跑接線裡原始的那一串命令**，exit 0 且印出 `[git-check]`（那正是 F05 修的情境），
-  `check_docs.py` 六個都 exit 0；`Grist_test` 另外走完 **PowerShell → cmd → Git Bash** 的 Windows
-  啟動鏈，也是從 `tools/` 起跑。`序號卡` 已完結，**刻意排除**（它現在落後 4 項）。
+- **F14（Python 下限未宣告）**：`verify_bootstrap.py` 用 `Path.read_text(..., newline='')`——那個
+  參數要 **3.13**（`write_text` 的要 3.10），而文件只說「`python` 不存在就用 `python3`」。
+  **失敗的形狀是最壞的那一種**：舊版不是啟動時說「版本太舊」，而是執行到那一行才炸成
+  TypeError。兩支維護工具改用包著 `open(..., newline='')` 的 `read_lf`／`write_lf`，檔頭加
+  `MIN_PY = (3, 8)` 守門並清楚報錯；部署後兩支腳本本來就只用到 3.8 的 API，下限寫進 3.4
+  README 範本。**部署後那兩支刻意不加守門**：`check_docs.py` 是同步對象，動它要跳 `source:`
+  標記再同步六個專案，而 `VERSION` 不跟著動、落後偵測不會替你講。
+- **F15（已修正的主張在範本復活）**：五處一起修——①README 範本說「其他工具沒有 skill 機制」
+  （能力表 2026-10-30 就是 ✅）；②第 6 節的序號算法與鐵律 2 不同，**兩種說法都不對**，改成
+  「當天第幾個帶 `source:` 標記的改動，跟版本行**不保證同號**」；③`verify_state` 被寫成
+  「有憑證才跑」，會讓不需要憑證的檢查整批漏掉；④README 的 prompt A／B 跟 skill 的
+  A 接棒／B 交棒相反，字母取消、改成「收工時／開工時」並寫出模式；⑤「可攜層到哪都成立」
+  「三層自動發生」改成「讀得到／壓低漏做的機會」，並寫明**載入、遵循、執行是三種不同的證據**。
+- 守門人：新增第 **40** 項「Python 版本下限」與第 **41** 項「已修正的主張沒復活」。後者綁的是
+  **結構**（能力表那一格、字母對應、單一定義）而不是禁句表，`「」` 裡的引用不算主張。
+  **兩項都拿 `HEAD`（修正前）的內容實跑過：17 處矛盾與 3 處版本地雷全部判出來。**
+  `tools/verify_bootstrap.py`：exit 0、**41 項全過**、無 skip。
+- **這一輪沒有新的同步債**：`SKILL.md` 與所有帶 `source:` 標記的範本都沒動，`VERSION` 不跳，
+  `sync_project.py` 零改動。改的是 `tools/*.py`（不部署）、不同步的範本（README、協定）、
+  部署包敘述與本 repo 的入口文件。
 
 ## 未完成／下一步
 
-1. **六個專案都有未提交的變更，每個要在自己的 session 照 B 模式收尾。** 2026-11-02 使用者明確決定
-   不在骨架這個 session 代做。五個專案各 4 個檔（上一輪的 `git-freshness.sh`、`check_docs.py`
-   ＋本輪的兩份接線）；`解決網路速度問題` 有 8 個——多了上一輪補的兩份 `SKILL.md`，以及**兩個與
-   這些都無關的 `docs/ai-notes/` 檔（使用者說過不用管）**，所以那個專案要**明確 stage**，
-   不可 `git add -A`。⚠️ 四個在權威分支（`Grist_test`、`NAS_MAINT`、`第三批56箱後檢查`、
-   `解決網路速度問題`）不更新 `HANDOFF.md` 就會被 pre-push 防呆擋下（exit 2）。
-2. **接線改過的專案，Codex 那一面要重新審核 hook**（信任綁當前雜湊，而且只有互動模式會問）；
-   本 repo 自己的 `.codex/hooks.json` 也改過。Claude Code 這一面的端到端證據是**下一個 session
-   開場那幾行 `[repo-check]`／`[git-check]`**——沒印出來就是接線壞了，請立刻回報。
-3. 其餘 11 條未實作。複核過的優先序：**F15／F14 → F08**；F06（push 防呆的漏判）與 F05 相鄰，但是 P2。
+1. **六個專案仍有上一輪（F05 接線）的未提交變更**，每個要在自己的 session 照 B 模式收尾；
+   2026-11-02 使用者明確決定不在骨架這個 session 代做。五個各 4 檔；`解決網路速度問題` 有 8 檔
+   （多兩份 `SKILL.md` ＋兩個與本制度無關、使用者說過不用管的 `docs/ai-notes/` 檔），所以那個
+   專案要**明確 stage**，不可 `git add -A`。⚠️ 四個在權威分支的專案不更新 `HANDOFF.md` 會被
+   pre-push 防呆擋下（exit 2）。**本輪沒有再增加任何要同步的檔。**
+2. **接線改過的專案，Codex 那一面要重新審核 hook**（信任綁當前雜湊，只有互動模式會問）；
+   本 repo 自己的 `.codex/hooks.json` 也在內。Claude Code 這一面的端到端證據是開場那幾行
+   `[repo-check]`——本輪開場有印出來，所以這個 repo 的接線是好的。
+3. 其餘 9 條未實作。下一個優先是 **F08**（文件檢查器的保障範圍不足）；F06（push 防呆的漏判）
+   與已修的 F05 相鄰，但是 P2。
 
 ## 地雷與注意事項
 
-- **不要為了讓各專案知道而跳 `VERSION`**：它是「`SKILL.md` 的版本」，跳了各專案會永遠印「骨架
-  落後」而且同步修不掉（鐵律 1）。本輪沒動 `SKILL.md`，也沒有任何 `source:` 標記要跳——所以這次
-  是**手動**同步，落後偵測不會替你講這件事。
-- **不要「順手統一」Antigravity 的接線**：它的 `command` 不經 shell，`$( )` 不會展開，只會變成
-  檔名的一部分（理由寫在 3.20）。
-- 六個專案的 Windows 啟動鏈只在 `Grist_test` 上實跑過，另外五個驗的是 Unix 命令與檔案內容；
-  也**沒有**在真的 Codex session 裡重驗（那要互動模式並重新審核）。
+- **不要為了讓各專案知道而跳 `VERSION`**：它是「`SKILL.md` 的版本」，跳了各專案會永遠印
+  「骨架落後」而且同步修不掉（鐵律 1）。
+- **Python 下限是靜態擔保，不是實測**：這台機器只有 3.13，沒有舊版可跑。要變成實測得先有 CI
+  （查核報告第 6 節）。別把「41 項全過」說成「在 3.8 上驗過」。
+- **新的第 41 項守不了散文整體的準確度**，只守可機械判定的那一面；而「`「」` 裡的引用不算主張」
+  是刻意的例外（鐵律 3 要留為什麼），所以把舊說法寫在引號外就會被擋、寫在引號內不會。
+- 改 `verify_bootstrap.py` 的掃描時記得：掃 API 之前要把註解與字串塗白，否則「解釋為什麼不要
+  用它」會被判成用法，而那種假陽性會逼下一棒把理由刪掉。
 
 ## 服務查證與期望快照
 
-`python -X utf8 tools/verify_bootstrap.py`：exit 0、39 項全過、重生骨架 22 檔，無 skip。
+`python -X utf8 tools/verify_bootstrap.py`：exit 0、41 項全過、重生骨架 22 檔，無 skip。
 B4：本 repo 沒有 `check_docs.py`，由上述完整驗證涵蓋。
 
 ## 懸置事項（AI 勿自行處理）
