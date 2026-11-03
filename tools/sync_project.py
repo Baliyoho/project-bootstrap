@@ -149,8 +149,19 @@ def merge_check_docs(authority, current):
     return '\n'.join(a[0] + c[1] + a[2]), None
 
 
+def known_hook_commands(script):
+    """只承認已發布的命令形狀，不用 shell 解析猜所有權（2026-11-03／R01）。"""
+    return {
+        'bash .claude/hooks/' + script,
+        'bash "$(git rev-parse --show-cdup).claude/hooks/' + script + '"',
+        'cmd /d /c "$(git rev-parse --show-cdup).claude/hooks/codex-hook.cmd" ' + script,
+        'cmd /d /c "$((git rev-parse --show-cdup) -replace \'/\',\'\\\').claude\\hooks\\codex-hook.cmd" ' + script,
+        'cmd /d /c "$((git rev-parse --show-cdup) -replace \'/\',\'\\\').claude\\hooks\\codex-hook.cmd" ' + script + '; exit $LASTEXITCODE',
+    }
+
+
 def handler_scripts(handler):
-    """這一個 handler 指向哪些骨架腳本。
+    """這一個 handler 可確認由骨架擁有哪些腳本。
 
     `commandWindows` 也要看（2026-11-02）：Codex 的 Windows 接線把腳本名寫在那一欄，
     只看 `command` 的話「只有 Windows 命令」的 handler 會被當成專案自己的，於是骨架
@@ -158,12 +169,18 @@ def handler_scripts(handler):
     """
     if not isinstance(handler, dict):
         return frozenset()
-    cmd = '%s %s' % (handler.get('command', ''), handler.get('commandWindows', ''))
-    return frozenset(s for s in OWNED_SCRIPTS if s in cmd)
+    if handler.get('type') != 'command':
+        return frozenset()
+    commands = [handler[k] for k in ('command', 'commandWindows') if k in handler]
+    for script in OWNED_SCRIPTS:
+        if commands and all(isinstance(cmd, str) and cmd in known_hook_commands(script)
+                            for cmd in commands):
+            return frozenset((script,))
+    return frozenset()
 
 
 def scripts_in(group):
-    """這一組 hook 指向哪些骨架腳本。用檔名比對，不挑路徑寫法。"""
+    """這一組 hook 裡可確認的骨架 handler；僅提到檔名不代表所有權。"""
     if not isinstance(group, dict):
         return frozenset()
     found = set()
@@ -188,7 +205,10 @@ def merge_group(auth_group, cur_group, event, key):
     auth_own = [h for h in auth_group.get('hooks', []) if handler_scripts(h)]
     meta_now = {k: v for k, v in cur_group.items() if k != 'hooks'}
     meta_auth = {k: v for k, v in auth_group.items() if k != 'hooks'}
-    clash = sorted(k for k, v in meta_auth.items() if k in meta_now and meta_now[k] != v)
+    # 缺 matcher 的預設是全事件，不能當成「沒有設定所以可直接補」（R02）。
+    # 其餘組層欄位也保守比較；同組自訂 handler 的語意不得隨骨架升級改變。
+    clash = sorted(k for k in set(meta_now) | set(meta_auth)
+                   if meta_now.get(k) != meta_auth.get(k))
     if foreign and clash:
         return None, (
             '%s 的「%s」那一組裡有專案自己的 handler（%s），而權威版要改這一組的 %s'
@@ -197,8 +217,8 @@ def merge_group(auth_group, cur_group, event, key):
             % (event, '、'.join(sorted(key)),
                '、'.join(str(h.get('command', h))[:40] for h in foreign),
                '、'.join(clash),
-               '、'.join(str(meta_now[k]) for k in clash),
-               '、'.join(str(meta_auth[k]) for k in clash)))
+               '、'.join(str(meta_now.get(k, '<未設定>')) for k in clash),
+               '、'.join(str(meta_auth.get(k, '<未設定>')) for k in clash)))
     merged = dict(meta_now)
     merged.update(meta_auth)
     merged['hooks'] = ([copy.deepcopy(h) for h in auth_own]
@@ -251,6 +271,22 @@ def merge_wiring(authority, current):
         return None, None, '專案這份不是合法 JSON，不敢動——請人工比對：%s' % e
     if not isinstance(c, dict) or not isinstance(c.get('hooks', {}), dict):
         return None, None, '專案這份的結構不是預期的 {"hooks": {...}}，不敢動——請人工比對'
+
+    # 僅提到腳本名、同名客製腳本或複合命令均不自動認領，也不另補可能重複的 hook。
+    # 回 conflict 保持整份零寫入，讓人明確決定如何拆開（R01）。
+    for event, groups in c.get('hooks', {}).items():
+        if not isinstance(groups, list):
+            return None, None, event + ' 的分組不是陣列，不敢動'
+        for group in groups:
+            if not isinstance(group, dict) or not isinstance(group.get('hooks', []), list):
+                return None, None, event + ' 的 hook 分組格式不合法，不敢動'
+            for handler in group.get('hooks', []):
+                if not isinstance(handler, dict):
+                    return None, None, event + ' 的 handler 不是物件，不敢動'
+                mentions = any(s in str(handler.get(k, '')) for s in OWNED_SCRIPTS
+                               for k in ('command', 'commandWindows'))
+                if mentions and not handler_scripts(handler):
+                    return None, None, event + ' 有提到骨架腳本但無法確認所有權的命令，請人工比對；未改任何接線'
 
     want = copy.deepcopy(c)
     hooks = want.setdefault('hooks', {})
@@ -556,7 +592,10 @@ def inventory_decisions(path):
         if p in seen:
             raise ValueError('inventory 路徑重複：' + str(p))
         seen.add(p)
-        out.append((p, 'inventory 已完結' if item['status'] == 'archived' else target_reason(p)))
+        reason = 'inventory 已完結' if item['status'] == 'archived' else target_reason(p)
+        if item['status'] == 'active' and reason:
+            reason = 'inventory active 無法處理：' + reason
+        out.append((p, reason))
     return out
 
 
@@ -655,17 +694,24 @@ def main():
         print('目標清單錯誤：' + str(e))
         return 2
     print('範圍：只含以下專案；全域 skill 副本須另行同步，不在 --all 內。')
+    # 明列 active 的目標失效是失敗，不是掃描時的正常排除（R05）。
+    failures = ['%s：%s' % (p, reason) for p, reason in decisions
+                if reason and reason.startswith('inventory active 無法處理：')]
     for p, reason in decisions:
-        print('%s %s：%s' % ('EXCLUDE' if reason else 'INCLUDE', p, reason or '明確目標／Git 主 checkout'))
+        label = ('FAIL' if reason and reason.startswith('inventory active 無法處理：') else
+                 'EXCLUDE' if reason else 'INCLUDE')
+        print('%s %s：%s' % (label, p, reason or '明確目標／Git 主 checkout'))
     targets = [p for p, reason in decisions if reason is None]
     if not targets:
-        print('沒有目標。給一個專案路徑，或用 --all')
+        if failures:
+            print('🔴 %d 個 active 目標無法處理，沒有可同步目標。' % len(failures))
+        else:
+            print('沒有目標。給一個專案路徑，或用 --all')
         return 2
 
     version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
     tmp = pathlib.Path(tempfile.mkdtemp(prefix='sync-project-'))
     planned = applied = 0
-    failures = []
     try:
         extract(tmp)
         print('權威版 v%s（%d 個目標）\n' % (version, len(targets)))

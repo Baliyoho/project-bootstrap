@@ -1676,6 +1676,51 @@ def step_wiring_cwd(dest, tmp):
     return True
 
 
+def wiring_preservation_problems(sp):
+    """R01／R02：保存內容與觸發條件，不能只靠成功退出推定。"""
+    own = {'type': 'command', 'command': 'bash .claude/hooks/pre-push-handoff.sh'}
+    auth_group = {'matcher': 'Bash|PowerShell', 'hooks': [dict(own, timeout=30)]}
+    auth = json.dumps({'hooks': {'PreToolUse': [auth_group]}})
+    bad = []
+    commands = [
+        'python audit_hook.py --watch git-freshness.sh',
+        'echo pre-push-handoff.sh',
+        'bash project/pre-push-handoff.sh',
+        own['command'] + ' && echo project-audit',
+    ]
+    for field in ('command', 'commandWindows'):
+        for command in commands:
+            custom = {'type': 'command', field: command}
+            group = dict(auth_group, hooks=[own, custom])
+            cur = json.dumps({'hooks': {'PreToolUse': [group]}})
+            new, _, err = sp.merge_wiring(auth, cur)
+            if not err or new is not None or sp.handler_scripts(custom):
+                bad.append('R01 未拒絕不明命令：' + field + ' ' + command)
+    # 任一命令欄不明，就不能認領整個雙平台 handler。
+    mixed = dict(own, commandWindows='echo pre-push-handoff.sh')
+    if sp.handler_scripts(mixed):
+        bad.append('R01 雙平台命令只認得一欄仍被認領')
+    for matcher in (None, '', '*', 'Bash', 'Bash|PowerShell'):
+        group = {'hooks': [own, {'type': 'command', 'command': 'echo all-tools-audit'}]}
+        if matcher is not None:
+            group['matcher'] = matcher
+        cur = json.dumps({'hooks': {'PreToolUse': [group]}})
+        new, _, err = sp.merge_wiring(auth, cur)
+        if matcher != 'Bash|PowerShell':
+            if not err or new is not None:
+                bad.append('R02 matcher 語意被改：' + repr(matcher))
+        elif err or not new or json.loads(new)['hooks']['PreToolUse'][0]['hooks'][-1] != group['hooks'][-1]:
+            bad.append('R02 一致 matcher 的自訂 handler 沒保留')
+    for side in ('current', 'authority'):
+        cur_group = dict(auth_group, hooks=[own, {'type': 'command', 'command': 'echo custom'}])
+        ag = dict(auth_group)
+        (cur_group if side == 'current' else ag)['extra-setting'] = True
+        if not sp.merge_wiring(json.dumps({'hooks': {'PreToolUse': [ag]}}),
+                               json.dumps({'hooks': {'PreToolUse': [cur_group]}}))[2]:
+            bad.append('R02 組層欄位變動未拒絕：' + side)
+    return bad
+
+
 def step_sync_safety(tmp):
     """同步器的資料保全與失敗訊號（2026-11-02，查核報告 F02／F03）。
 
@@ -1691,7 +1736,25 @@ def step_sync_safety(tmp):
     「任一檔算不出來→零寫入」與「任何目標沒完成→非零退出」。
     """
     import sync_project as sp
-    bad = []
+    bad = wiring_preservation_problems(sp)
+    # 負向測試恢復兩種舊判準；同一套行為斷言必須能抓到缺口。
+    import types
+    source = read_lf(ROOT / 'tools/sync_project.py')
+    start = source.index('def handler_scripts(')
+    end = source.index('\n\ndef scripts_in(', start)
+    old_handler = '''def handler_scripts(handler):
+    cmd = '%s %s' % (handler.get('command', ''), handler.get('commandWindows', ''))
+    return frozenset(s for s in OWNED_SCRIPTS if s in cmd)
+'''
+    mutants = [source[:start] + old_handler + source[end:],
+               source.replace('if meta_now.get(k) != meta_auth.get(k)',
+                              'if k in meta_now and k in meta_auth and meta_now[k] != meta_auth[k]')]
+    for i, text in enumerate(mutants):
+        mutant = types.ModuleType('sync_mutant')
+        mutant.__file__ = str(ROOT / 'tools/sync_project.py')
+        exec(compile(text, mutant.__file__, 'exec'), mutant.__dict__)
+        if not wiring_preservation_problems(mutant):
+            bad.append('R01／R02 負向測試沒抓到舊判準 ' + str(i))
 
     def J(o):
         return json.dumps(o, ensure_ascii=False, indent=2)
@@ -1743,7 +1806,8 @@ def step_sync_safety(tmp):
 
     # ⑤ 只有 commandWindows 的 handler 也要算成骨架的（Codex 的 Windows 接線就是這形狀）
     if 'pre-push-handoff.sh' not in sp.handler_scripts(
-            {'type': 'command', 'commandWindows': 'cmd /d /c x.cmd pre-push-handoff.sh'}):
+            {'type': 'command', 'commandWindows':
+             'cmd /d /c "$((git rev-parse --show-cdup) -replace \'/\',\'\\\').claude\\hooks\\codex-hook.cmd" pre-push-handoff.sh; exit $LASTEXITCODE'}):
         bad.append('只有 commandWindows 的 handler 沒被認成骨架的')
 
     # ── F03：拿一個最小假專案跑真的 CLI
@@ -1761,6 +1825,18 @@ def step_sync_safety(tmp):
     def cli(*args):
         return run([sys.executable, '-X', 'utf8', 'tools/sync_project.py'] + list(args),
                    cwd=ROOT)
+
+    for group in (
+        {'matcher': 'Bash|PowerShell', 'hooks': [own, {'type': 'command',
+          'command': 'python audit_hook.py --watch git-freshness.sh'}]},
+        {'hooks': [own, mine]},
+    ):
+        text = J({'hooks': {'PreToolUse': [group]}})
+        write_lf(wiring, text)
+        r = cli(str(proj), '--write', '--allow-dirty', '--accept-drift', '.claude/skills/handoff/SKILL.md')
+        if r.returncode == 0 or read_lf(wiring) != text or read_lf(skill) != 'stale skill':
+            bad.append('R01／R02 CLI 未拒絕或未維持零寫入')
+    write_lf(wiring, '{ not json')
 
     r = cli(str(proj), '--write', '--allow-dirty', '--accept-drift', '.claude/skills/handoff/SKILL.md')
     if r.returncode == 0:
@@ -1788,7 +1864,7 @@ def step_sync_safety(tmp):
         return False
     record('OK', '同步安全',
            'handler 層所有權：同組自訂 hook 保留、matcher 衝突與重複／異常分組拒絕、'
-           'commandWindows 認得出來；preflight：壞 JSON 零寫入、失敗非零退出、'
+           'commandWindows 認得出來；R01／R02 命令所有權與缺省 matcher 組合、兩個負向變異通過；preflight：壞 JSON 零寫入、失敗非零退出、'
            '修好後照樣同步得動')
     return True
 
@@ -2972,7 +3048,7 @@ def step_flow_contract(dest, tmp):
            '兩支 hook 實跑 ahead-only／分岔／fetch 失敗均要求停止；舊 rebase 建議負向重現')
 
 
-def core_priority_problems(skill, protocol):
+def core_priority_problems(skill, protocol, readme=None):
     bad = []
     for name, text in (('skill', skill), ('protocol', protocol)):
         if text.count('**核心優先序：SKILL.md**') != 1:
@@ -2983,6 +3059,12 @@ def core_priority_problems(skill, protocol):
                 bad.append(name + ' 缺 ' + token)
         if re.search(r'兩者衝突時.*(?:以協定為準|以本檔為準)', text):
             bad.append(name + ' 恢復舊優先序')
+    if readme is not None:
+        plain = readme.replace('**', '')
+        if '核心優先序：SKILL.md' not in plain or '使用者明確指示仍優先' not in plain:
+            bad.append('README 缺核心優先序或使用者優先宣告')
+        if re.search(r'兩者衝突(?:時)?.*以協定為準', plain):
+            bad.append('README 恢復舊優先序')
     return bad
 
 
@@ -2991,6 +3073,13 @@ def step_core_priority(dest, tmp):
     skill = read_lf(dest / '.claude/skills/handoff/SKILL.md')
     protocol = read_lf(dest / 'docs/ai-notes/handover-protocol.md')
     bad = core_priority_problems(skill, protocol)
+    readme = read_lf(ROOT / 'README.md')
+    bad.extend(core_priority_problems(skill, protocol, readme))
+    for mutant in (readme.replace('核心優先序：SKILL.md', '舊優先序'),
+                   readme + '\n兩者衝突以協定為準。\n',
+                   readme + '\n兩者衝突時**以協定為準**。\n'):
+        if not core_priority_problems(skill, protocol, mutant):
+            bad.append('R06 README 負向測試沒擋住反向或缺失宣告')
     for index in (0, 1):
         for token in ('**核心優先序：SKILL.md**', '升級時須人工遷移', '不得在單一專案就地修改共用 skill'):
             pair = [skill, protocol]
@@ -3013,7 +3102,7 @@ def step_core_priority(dest, tmp):
     if any(rel == 'docs/ai-notes/handover-protocol.md' for _, _, rel in plan.writes):
         bad.append('同步覆蓋專案協定')
     record('FAIL' if bad else 'OK', '核心與實例優先序', '；'.join(bad) if bad else
-           '兩份宣告一致、override 範圍明確、8 個負向測試；同步列核心版本與 MIGRATE，不覆蓋舊實例')
+           '核心兩份與 README 宣告一致、override 範圍明確、11 個負向測試；同步列核心版本與 MIGRATE，不覆蓋舊實例')
 
 
 def coordination_problems(skill, protocol):
@@ -3044,6 +3133,25 @@ def step_coordination(dest):
                 bad.append('負向測試未擋 ' + token)
     record('FAIL' if bad else 'OK', '接力協調邊界', '；'.join(bad) if bad else
            'A2.5／A5／協定明列協調範圍、SHA 比對與禁止自動奪取；8 個負向測試，不代表並行互斥實測')
+
+
+def inventory_cli_problems(cli, folder, normal):
+    """R05：active 失效不能冒充成功；archived 與重複路徑另驗。"""
+    bad = []
+    inv = folder / 'active-cases.json'
+    active = {'path': str(normal), 'status': 'active'}
+    missing = {'path': 'missing-active', 'status': 'active'}
+    cases = [([active, missing], False),
+             ([active, dict(missing, status='archived')], True),
+             ([missing], False), ([active, active], False)]
+    for i, (items, success) in enumerate(cases):
+        write_lf(inv, json.dumps(items))
+        r = run(cli + ['--inventory', str(inv), '--write'])
+        if (r.returncode == 0) != success or (not success and '全部都已經是' in r.stdout):
+            bad.append('R05 inventory CLI 結果錯誤 ' + str(i))
+        if i == 0 and ('FAIL' not in r.stdout or '沒有完成' not in r.stdout):
+            bad.append('R05 混合 active 失敗未列入彙總')
+    return bad
 
 
 def step_sync_scope(dest, tmp):
@@ -3084,6 +3192,16 @@ def step_sync_scope(dest, tmp):
     r = run(cli + ['--inventory', str(inv)])
     if r.returncode or 'INCLUDE' not in r.stdout or 'EXCLUDE' not in r.stdout or '全域' not in r.stdout:
         bad.append('inventory CLI 範圍／排除原因未列出')
+    bad.extend(inventory_cli_problems(cli, folder, normal))
+    # 負向測試恢復「active 失效當正常排除」，走相同真 CLI 案例。
+    mutant = folder / 'sync-mutant.py'
+    source = read_lf(ROOT / 'tools/sync_project.py')
+    write_lf(mutant, source.replace("reason = 'inventory active 無法處理：' + reason", 'reason = reason'))
+    wrapper = ('import sys; sys.path.insert(0, %r); __file__=%r; '
+               'exec(compile(open(%r, encoding="utf-8").read(), __file__, "exec"))'
+               % (str(ROOT / 'tools'), str(ROOT / 'tools/sync_project.py'), str(mutant)))
+    if not inventory_cli_problems([sys.executable, '-X', 'utf8', '-c', wrapper], folder, normal):
+        bad.append('R05 負向測試沒抓到 active 失效被排除')
     # 真的寫入入口：dirty、占用、客製漂移都必須零寫入、非零退出。
     skill = normal / '.claude/skills/handoff/SKILL.md'
     original = read_lf(skill)
@@ -3121,7 +3239,7 @@ def step_sync_scope(dest, tmp):
     if error or '.claude/skills/handoff/SKILL.md' not in done or 'project custom rule' in read_lf(skill):
         bad.append('移除 preflight 的負向測試未重現覆蓋')
     record('FAIL' if bad else 'OK', '同步範圍與前置檢查', '；'.join(bad) if bad else
-           '真 worktree／含 worktrees 普通目錄／已完結 inventory；CLI 列原因，dirty／占用／整份檔與共用程式漂移拒絕且零寫入，移除守門確實覆蓋')
+           '真 worktree／含 worktrees 普通目錄／已完結 inventory；R05 active 失效、archived、重複路徑與 CLI 負向變異；dirty／占用／整份檔與共用程式漂移拒絕且零寫入，移除守門確實覆蓋')
 
 
 def deployment_order_problems(kit, skill, zip_readme, readme):
