@@ -11,10 +11,10 @@
 
 用法（在本 repo 根目錄執行）：
   python -X utf8 tools/sync_project.py ../NAS_MAINT           # 預演，只印要改什麼
-  python -X utf8 tools/sync_project.py ../NAS_MAINT --write   # 實際寫入
+  python -X utf8 tools/sync_project.py ../NAS_MAINT --owner '<本 session 工作中欄位完整值>' --write
   python -X utf8 tools/sync_project.py --all --root ../projects --exclude archived-project
   python -X utf8 tools/sync_project.py --inventory ../private-projects.json
-  python -X utf8 tools/sync_project.py --all --write
+  python -X utf8 tools/sync_project.py --all                 # 批次僅預演；逐專案 A1–A5 後寫入
 
 **本工具只改檔案，不 commit、不 push。** 那是交接程序（skill B7／B8）的事：專案的工作樹
 可能有別人未提交的變更，替它 commit 會把那些一起包進去——而「明確 stage 需要的檔案」正是
@@ -634,7 +634,36 @@ def published_hashes(gen):
     return _published
 
 
-def preflight(project, gen, plan, allow_dirty=False, accept_drift=()):
+def sync_owner_check(project, owner=None, writing=False):
+    """R03：驗 A1 與 A5 可核對的前提；不是 owner 身分驗證或原子鎖。"""
+    branch = git_output(project, 'symbolic-ref', '--short', 'HEAD')
+    upstream = git_output(project, 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}')
+    if upstream != 'origin/' + branch:
+        raise ValueError('upstream 必須是 origin/' + branch)
+    git_output(project, 'fetch', 'origin')  # 失敗即停止，不能信舊 tracking ref。
+    head = git_output(project, 'rev-parse', 'HEAD')
+    remote = git_output(project, 'rev-parse', upstream)
+    if head != remote:
+        raise ValueError('HEAD 與 upstream 未對齊，先完成 A1；不得接受 ahead／behind／分岔')
+    def fields(text):
+        return [line.split('：', 1)[-1].strip() for line in text.splitlines()
+                if line.startswith('- **工作中**：')]
+    local = fields(read(project / 'HANDOFF.md') or '')
+    distant = fields(git_output(project, 'show', remote + ':HANDOFF.md'))
+    if local != distant or len(local) != 1:
+        raise ValueError('占用欄位缺失、重複或本機與遠端不一致')
+    if owner is None:
+        if writing or local != ['無（已交棒）']:
+            raise ValueError('占用：寫入須先 A5 並以 --owner 明確提供本 session 的完整標記；空閒僅可預演')
+    else:
+        parts = owner.split('／')
+        if (len(parts) < 2 or not all(p.strip().strip('`').strip() for p in parts[:2])
+                or owner == '無（已交棒）' or local != [owner]):
+            raise ValueError('占用：--owner 必須精確等於已推送的本 session 工作中標記')
+    return head
+
+
+def preflight(project, gen, plan, allow_dirty=False, accept_drift=(), owner=None, writing=False):
     why = target_reason(project)
     if why:
         plan.fail('目標', why)
@@ -644,10 +673,10 @@ def preflight(project, gen, plan, allow_dirty=False, accept_drift=()):
         plan.fail('dirty', '有未提交變更；先檢視，單一目標可用 --allow-dirty 明確接受，不自動 stash／commit')
     elif dirty:
         plan.msgs.append('  REVIEW dirty：已明確接受，仍檢查占用與客製漂移')
-    h = read(project / 'HANDOFF.md') or ''
-    fields = [line.split('：', 1)[-1].strip() for line in h.splitlines() if line.startswith('- **工作中**：')]
-    if fields != ['無（已交棒）']:
-        plan.fail('占用', '工作中欄位缺失、重複或尚未釋出，不允許同步')
+    try:
+        plan.claim_head = sync_owner_check(project, owner, writing)
+    except ValueError as e:
+        plan.fail('同步資格', str(e))
     shared = WHOLE + (SURGICAL,)
     if plan.errors or not any(rel in shared and read(project / rel) is not None for _, _, rel in plan.writes):
         return
@@ -673,6 +702,7 @@ def main():
     ap.add_argument('--allow-dirty', action='store_true', help='單一目標：接受已檢視的未提交變更，不略過占用與漂移')
     ap.add_argument('--accept-drift', action='append', choices=WHOLE + (SURGICAL,), default=[], help='單一目標：接受覆蓋已人工比對的共用檔／程式區')
     ap.add_argument('--write', action='store_true', help='實際寫入（預設只預演）')
+    ap.add_argument('--owner', help='單一目標：A5 已推送的工作中欄位完整值，聲明本 session 為該 writer')
     ap.add_argument('--codex-only', action='store_true',
                     help='只更新 Codex 接線與其 Windows 啟動器，不更新 SKILL.md 或其他檔案')
     args = ap.parse_args()
@@ -682,6 +712,10 @@ def main():
         ap.error('--root／--exclude 必須搭配 --all')
     if (args.allow_dirty or args.accept_drift) and not args.project:
         ap.error('接受 dirty／漂移只能明列單一專案，不可批次略過')
+    if args.owner and not args.project:
+        ap.error('--owner 只能明列單一專案；先逐專案接棒')
+    if args.write and (not args.project or not args.owner):
+        ap.error('--write 須單一專案搭配 --owner；先 A1–A5，批次僅可預演')
 
     if not (ROOT / 'PROJECT-BOOTSTRAP.md').exists():
         print('找不到 PROJECT-BOOTSTRAP.md——請在本 repo 根目錄執行')
@@ -734,7 +768,7 @@ def main():
                 continue
             plan = sync(project, tmp, codex_only=args.codex_only)
             try:
-                preflight(project, tmp, plan, args.allow_dirty, args.accept_drift)
+                preflight(project, tmp, plan, args.allow_dirty, args.accept_drift, args.owner, args.write)
             except (ValueError, OSError) as e:
                 plan.fail('preflight', str(e))
             print('%s' % project)
@@ -748,6 +782,13 @@ def main():
                 continue
             planned += plan.changed
             if args.write and plan.writes:
+                # 漂移檢查可能耗時；套用前再次 fetch／核對，不把 preflight 的舊值當新證據。
+                try:
+                    if sync_owner_check(project, args.owner, True) != plan.claim_head:
+                        raise ValueError('觀測後 HEAD／遠端已前進，停止套用')
+                except ValueError as e:
+                    failures.append('%s：套用前同步資格失效：%s' % (project, e))
+                    continue
                 done, failed = apply_plan(plan)
                 applied += len(done)
                 if failed:

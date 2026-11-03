@@ -158,13 +158,17 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒�
 先用 3–5 行回報現況與你打算做什麼，再動手。破壞性操作、commit 或 push 之前先問我。
 ```
 
-Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_project.py <專案路徑> --codex-only --write` 單獨升級，不改專案的 SKILL 或其他設定。接線變更後要重新審核並驗收實際執行，條件與理由見部署包 3.17。
+Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_project.py <專案路徑> --codex-only` 預演；實際寫入依下節先接棒並加 `--owner`，不改專案的 SKILL 或其他設定。接線變更後要重新審核並驗收實際執行，條件與理由見部署包 3.17。
 
 ## handoff skill 的副本同步規則
 
 `sync_project.py --all` 預設只掃 Desktop 下一層；可用 `--root <目錄>` 改掃描根目錄、`--exclude <目錄名>` 排除已完結專案。工具列出每個候選的納入／排除原因，透過 Git 的 git-dir／common-dir 排除 linked worktree，全域 skill 副本仍須另行同步。
 
 固定範圍建議使用私人 inventory：`--inventory <清單.json>`，內容如 `[{"path":"../project-a","status":"active"},{"path":"../project-b","status":"archived"}]`；相對路徑以清單所在目錄為準，清單不要提交到公開骨架。預演與寫入都檢查 dirty、工作中標記、整份覆蓋檔與 `check_docs.py` 共用程式區的客製漂移。已檢視的 dirty 僅能在單一專案加 `--allow-dirty`；未知共用內容須人工比對後逐檔加 `--accept-drift <路徑>`，占用不能略過。不 stash、不 commit；這些檢查也不是並行鎖（2026-11-02／F13）。
+
+**跨專案寫入先逐一 A1–A5 接棒**（2026-11-03／R03）：在目標專案推送本 session 的開工標記，再以 `--owner '<工作中欄位完整值>'` 聲明目前 writer。同步器會 fetch origin、確認 HEAD 與 `origin/<目前分支>` 完全一致，並核對本機與遠端的標記都精確等於 owner；套用前再查一次。離線、無 upstream、領先／落後／分岔、他人標記或本機標記漂移均拒絕，`--allow-dirty` 不豁免。owner 是呼叫者明確核對的協調證據，不是身分認證或原子鎖，仍須確認同工作樹只有一個 writer。
+
+`--all`／inventory 僅供批次預演；`--write` 必須指定單一專案與 owner，空閒標記不能寫入。同步後留在該專案完成 B7 最終檔案檢查、B8 發布與清標記；若要中途安全點則走 C，保留占用。這修正了舊工具「正常 A5 writer 被拒絕、陳舊空閒 checkout 卻能寫」的矛盾。
 
 `SKILL.md` 會同時存在於：**本 repo 的部署包內**（權威版）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
 

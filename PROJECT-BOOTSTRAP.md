@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-02.8**（2026-11-02／F16：自訂 ignore 規則進範本，本機驗收與 executable index mode 先於首 commit／發布；新增 local bare remote 部署生命週期測試。前一步 F12 完成協調邊界文件，原子 claim 依使用者決定留待另案；F13 同步範圍與 preflight 完成。）
+> 版本：**2026-11-03**（複審 R04／R07–R09：先遮罩再摘要；先 stage 並拒絕文件／檢查器部分 stage；空工具欄與角括號 title 組合修正。R03 同步資格檢查在維護工具，依 README 逐專案 A1–A5。）
+> 前一版 **2026-11-02.8**（2026-11-02／F16：自訂 ignore 規則進範本，本機驗收與 executable index mode 先於首 commit／發布；新增 local bare remote 部署生命週期測試。前一步 F12 完成協調邊界文件，原子 claim 依使用者決定留待另案；F13 同步範圍與 preflight 完成。）
 >
 > 前一版 **2026-11-02.7**（2026-11-02／F12：明列接力式 single-writer 的協調邊界、觀測 SHA 比對與失敗停止；原子 claim 未實作，沒有並行互斥保證。）
 >
@@ -767,7 +768,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 4. **文檔驗證**：動過任何 `.md` 就跑 `tools/check_docs.py`——死連結、過期字串、缺日期標頭、硬編數量，**exit 2 表示要修**（這些 `verify_state.py` 一項都查不到）。
 5. **條件式例行檢查**：本專案若有固定流程（部署、版本號、測試），有動到就執行並記錄；未動就明記不適用。
 6. **更新 HANDOFF**：≤80 行，填服務快照、Git 狀態、下一步、待續分支與懸置決策。**不要在 HANDOFF 寫「它自己的最終 commit hash」**——那會因提交 HANDOFF 而立刻過時；最終 hash 放交棒回覆。
-7. **安全提交**：先依 skill B7 重驗 B6 後的最終文件；服務或驗證依據改過也重跑服務驗證。再 `git diff --check`；明確 stage 需要的檔案，檢查 `git diff --cached --name-only`／`--stat`，確保沒有祕密、runtime、備份或實際資料，再 commit。
+7. **安全提交**：B6 後先明確 stage 本次檔案，再依 skill B7 執行 `tools/check_docs.py --staged` 重驗最終文件；stage 集合或內容再變就重驗，服務或驗證依據改過也重跑服務驗證。接著 `git diff --check`；明確 stage 需要的檔案，檢查 `git diff --cached --name-only`／`--stat`，確保沒有祕密、runtime、備份或實際資料，再 commit。
 8. **發布交棒**：`git fetch origin` 確認遠端未意外前進後 push；最後 `git status -sb` 必須 clean 且與 upstream 對齊。**push 失敗就不是完成交棒。**
 9. **最後回報**：5 行內列出結果、驗證、分支、最終 commit hash／是否已 push，以及**接手者最容易搞砸的一件事**。
 
@@ -886,7 +887,7 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-02.8 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-03 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（可執行）
 
@@ -1299,7 +1300,7 @@ python -X utf8 tools/check_docs.py
 
 ### B7 安全提交
 
-**先驗最終快照**：B6 覆寫完成後，重新跑 `python -X utf8 tools/check_docs.py`（無 `python` 用 `python3`；專案有替代入口依 AGENTS.md），exit 0 才提交發布。若 B6 之後又改文件，重新驗受影響的最終文件；缺工具明記不適用原因，不可引用 B4 的舊通過結果。服務程式、設定或驗證依據若在 B3 後改過，連 B3 也重跑；純粹填寫已取得的結果不必重新呼叫外部服務。2026-11-02／F11：先驗 B4 再寫 B6，舊結果不能證明最後那份快照合格。
+**先驗最終快照**：B6 覆寫完成後，先明確 stage 本次檔案，再執行下列檢查。2026-11-03／R07：檢查器用 Git 檔案集合，先驗再 stage 會漏掉新增文件；部分 stage 又可能讓工作樹的好內容遮住 index 的壞內容。
 
 ```bash
 git diff --check && git status --porcelain
@@ -1310,6 +1311,8 @@ git diff --check && git status --porcelain
 ```bash
 git diff --cached --name-only && git diff --cached --stat
 ```
+
+清單確認後執行 `python -X utf8 tools/check_docs.py --staged`（無 `python` 用 `python3`；專案有替代入口依 AGENTS.md），exit 0 才提交發布。`--staged` 拒絕本次待提交文件或檢查器同時有未暫存變更，不允許部分 stage 驗證依據。其餘驗證用到的程式／設定也須確認 index 與工作樹一致；不能用工作樹結果證明不同的提交內容。之後若改文件內容或 stage 集合，必須重新驗證；缺工具明記不適用原因，不可引用 B4 的舊通過結果。服務程式、設定或驗證依據若在 B3 後改過，連 B3 也重跑；純粹填寫已取得的結果不必重新呼叫外部服務。2026-11-02／F11：先驗 B4 再寫 B6，舊結果不能證明最後那份快照合格。
 
 祕密掃描（有輸出就停下來逐條確認）：
 
@@ -1792,7 +1795,7 @@ Thumbs.db
 
 問題以結束碼 2 回報，乾淨為 0。本工具唯讀，絕不修改任何檔案。
 
-source: PROJECT-BOOTSTRAP.md v2026-11-02.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+source: PROJECT-BOOTSTRAP.md v2026-11-03 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 「專案設定」區塊以外的內容應與權威版一致；副本落後時用這一行辨識。
 """
 import argparse
@@ -1900,10 +1903,10 @@ def link_target(raw):
     `[x](path "title")` 舊版會拿 `path "title"` 去開檔，必然不存在——又一種假警報。
     """
     link = raw.strip()
+    # R09：先去 title，再去 destination 的角括號；兩種合法寫法可以同時出現。
+    link = TITLE_RE.sub('', link).strip()
     if link.startswith('<') and link.endswith('>'):
         link = link[1:-1].strip()
-    else:
-        link = TITLE_RE.sub('', link).strip()
     return link.split('#')[0].strip()
 
 
@@ -2008,7 +2011,7 @@ def check_busy_field(files):
                 bad.append(f'HANDOFF.md:{num}  「工作中」欄位有值、但解析不出機器欄'
                            f'（讀到：{value[:40]}）——交棒後要正好寫「{FREE_MARK}」，'
                            '開工時寫 `機器` ／ `工具` ／ `session 名`（第三欄可選）')
-            elif len(fields) < 2 or '｜' in fields[1]:
+            elif len(fields) < 2 or not fields[1] or '｜' in fields[1]:
                 bad.append(f'HANDOFF.md:{num}  「工作中」標記缺工具欄——格式是 '
                            '`機器` ／ `工具` ／ `session 名`（可選）。少了工具名，'
                            '同機器換工具的誤接棒就擋不住（見 handoff skill 的 A5）')
@@ -2069,13 +2072,32 @@ def check_counts(files):
     return bad
 
 
+def check_staged_consistency():
+    """R07：本次文件／檢查器不得部分 stage，才能用工作樹檢查證明提交內容。"""
+    def names(*args):
+        p = subprocess.run(['git', 'diff', '--name-only', '-z', *args],
+                           capture_output=True, text=True, encoding='utf-8')
+        if p.returncode:
+            raise RuntimeError('無法讀取 Git 提交集合')
+        return set(filter(None, p.stdout.split('\0')))
+    staged = names('--cached')
+    dirty = names()
+    return sorted(p for p in staged & dirty if p.endswith('.md') or p == 'tools/check_docs.py')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--quiet', action='store_true')
+    ap.add_argument('--staged', action='store_true', help='提交前檢查，拒絕本次文件／檢查器部分 stage')
     ap.add_argument('--docs-only', action='store_true',
                     help='只查文件，不查交接快照（第 7 項）')
     args = ap.parse_args()
 
+    if args.staged:
+        partial = check_staged_consistency()
+        if partial:
+            print('[index] 🔴 本次文件／檢查器有未暫存變更，請先核對並重新 stage：' + '、'.join(partial))
+            return 2
     files = tracked_md()
     if not files:
         print('找不到 tracked markdown——請在專案根目錄執行，且檔案已 git add')
@@ -2187,7 +2209,7 @@ if __name__ == '__main__':
   SKIP  ＝ 這台機器缺配置（憑證、BASE、執行檔）。**缺配置不等於通過**，所以它獨立列出；
           必需項的 SKIP 在 `--strict` 下不通過，真正可選的項目寫進 OPTIONAL。
 
-source: PROJECT-BOOTSTRAP.md v2026-11-02.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+source: PROJECT-BOOTSTRAP.md v2026-11-03 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 本檔的 CHECKS 區塊本來就該逐專案填寫；其餘內容應與權威版一致。
 """
 import argparse
@@ -2290,8 +2312,9 @@ def http(name, path, key, expect=None):
 def cmd(name, argv):
     try:
         p = subprocess.run(argv, capture_output=True, text=True, timeout=60)
-        out = ' | '.join(l.strip() for l in p.stdout.strip().split('\n') if l.strip())
-        tail = out[:300] or p.stderr.strip()[:200]
+        # R04：先遮罩完整字串，再做換行整理與截斷，否則憑證跨摘要邊界會洩出前綴。
+        out = ' | '.join(l.strip() for l in mask(p.stdout).strip().split('\n') if l.strip())
+        tail = out[:300] or mask(p.stderr).strip()[:200]
         # 非零退出碼**不得被吞掉**：舊版只印 `=rc7` 然後回 0（查核報告 F04）。
         status = 'PASS' if p.returncode == 0 else 'FAIL'
         say(f'{name}={status} rc{p.returncode} {tail}')

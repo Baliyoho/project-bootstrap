@@ -1676,6 +1676,25 @@ def step_wiring_cwd(dest, tmp):
     return True
 
 
+def fixture_origin(project, claim=False):
+    """本機 bare remote，讓同步測試遵守真實 A1／A5 前提。"""
+    def must(args):
+        r = git(args, project)
+        if r.returncode:
+            raise RuntimeError('fixture origin: ' + r.stderr)
+    remote = project.parent / (project.name + '-origin.git')
+    must(['init', '--bare', '-q', str(remote)])
+    must(['remote', 'add', 'origin', str(remote)])
+    must(['push', '-qu', 'origin', 'HEAD'])
+    owner = '`fixture-machine` ／ `Codex CLI` ／ `fixture-session`，2026-11-03 開工'
+    if claim:
+        write_lf(project / 'HANDOFF.md', '- **工作中**：' + owner + '\n')
+        must(['add', 'HANDOFF.md'])
+        must(['commit', '-qm', 'A5 claim'])
+        must(['push', '-q', 'origin', 'HEAD'])
+    return owner
+
+
 def wiring_preservation_problems(sp):
     """R01／R02：保存內容與觸發條件，不能只靠成功退出推定。"""
     own = {'type': 'command', 'command': 'bash .claude/hooks/pre-push-handoff.sh'}
@@ -1821,9 +1840,11 @@ def step_sync_safety(tmp):
     for args in (['init', '-q', '-b', 'main'], ['add', '.'], ['commit', '-qm', 'fixture']):
         if git(args, proj).returncode:
             raise RuntimeError('同步安全 Git fixture 建立失敗')
+    owner = fixture_origin(proj, claim=True)
 
     def cli(*args):
-        return run([sys.executable, '-X', 'utf8', 'tools/sync_project.py'] + list(args),
+        extra = ['--owner', owner] if str(proj) in args else []
+        return run([sys.executable, '-X', 'utf8', 'tools/sync_project.py'] + list(args) + extra,
                    cwd=ROOT)
 
     for group in (
@@ -2573,6 +2594,11 @@ def step_state_exit(dest):
         ('祕密遮罩', {'secret_file': 'real.env', 'cmd': [['leak', leak]]},
          0, '***', 'supersecretvalue'),
     )
+    # R04：跨 stdout 300／stderr 200 摘要邊界，以及換行先於遮罩的組合。
+    for stream, size in (('stdout', 290), ('stderr', 190)):
+        argv = [sys.executable, '-c', 'import sys; sys.%s.write("x"*%d+"supersecretvalue")' % (stream, size)]
+        cases += ((stream + ' 邊界遮罩', {'secret_file': 'real.env', 'cmd': [['boundary', argv]]},
+                   0, '***', 'supersecr'),)
     bad = []
     try:
         for name, cfg, want_rc, want_in, forbid in cases:
@@ -2586,6 +2612,13 @@ def step_state_exit(dest):
                            % (name, want_in, r.stdout.strip()[:70]))
             elif forbid and forbid in r.stdout:
                 bad.append('%s：祕密原文出現在輸出裡' % name)
+        original_script = read_lf(work / 'verify_state.py')
+        old_script = original_script.replace('mask(p.stdout)', 'p.stdout').replace('mask(p.stderr)', 'p.stderr')
+        write_lf(work / 'verify_state.py', old_script)
+        cfg = cases[-2][1]
+        r = run([sys.executable, '-X', 'utf8', 'driver.py', json.dumps(cfg)], cwd=work)
+        if 'supersecr' not in r.stdout:
+            bad.append('R04 負向測試沒有重現摘要邊界洩出前綴')
     finally:
         srv.shutdown()
         srv.server_close()
@@ -2644,6 +2677,55 @@ def step_snapshot_guard(dest):
 
     bad = []
     try:
+        # R07：未追蹤新文件先 stage 後才能進提交驗證集合。
+        write_lf(probe, '[dead](missing-r07.md)\n')
+        git(['add', '--', probe.name], dest)
+        r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py', '--staged'], cwd=dest)
+        if r.returncode != 2 or 'missing-r07.md' not in r.stdout:
+            bad.append('R07 新增文件 stage 後沒抓到死連結')
+        write_lf(probe, '[good](README.md)\n')
+        r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py', '--staged'], cwd=dest)
+        if r.returncode != 2 or '[index]' not in r.stdout:
+            bad.append('R07 工作樹好內容遮住 index 壞內容')
+        # 移除 index 門檻會錯誤通過；驗證新守門確實改變行為。
+        checker = dest / 'tools/check_docs.py'
+        checker_original = read_lf(checker)
+        write_lf(checker, checker_original.replace('if args.staged:', 'if False:'))
+        r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py', '--staged'], cwd=dest)
+        if r.returncode != 0:
+            bad.append('R07 負向測試沒重現部分 stage 被錯放')
+        write_lf(checker, checker_original)
+        probe.unlink()
+        git(['add', '-A'], dest)
+
+        for value in ('`machine` ／ ``', '`machine` ／ `   `', '`` ／ `Codex CLI`'):
+            write_lf(handoff, original.replace('無（已交棒）', value))
+            r = check()
+            if r.returncode != 2:
+                bad.append('R08 空機器／工具欄沒擋下：' + value)
+        write_lf(handoff, original.replace('無（已交棒）', '`machine` ／ ``'))
+        write_lf(checker, checker_original.replace('or not fields[1] ', ''))
+        if check().returncode != 0:
+            bad.append('R08 負向測試沒重現空工具欄被放行')
+        write_lf(checker, checker_original)
+        write_lf(handoff, original)
+
+        spaced = dest / 'existing file.md'
+        write_lf(spaced, '# Existing\n')
+        write_lf(probe, '[valid](<existing file.md> "title")\n')
+        r = check()
+        if r.returncode:
+            bad.append('R09 角括號／空白／title 合用誤報')
+        old_order = checker_original.replace(
+            "    link = TITLE_RE.sub('', link).strip()\n    if link.startswith('<') and link.endswith('>'):\n        link = link[1:-1].strip()",
+            "    if link.startswith('<') and link.endswith('>'):\n        link = link[1:-1].strip()\n    else:\n        link = TITLE_RE.sub('', link).strip()")
+        write_lf(checker, old_order)
+        if check().returncode != 2:
+            bad.append('R09 負向測試沒重現角括號 title 誤報')
+        write_lf(checker, checker_original)
+        spaced.unlink()
+        probe.unlink()
+
         handoff.unlink()
         r = check()
         if r.returncode != 2 or 'HANDOFF.md' not in r.stdout:
@@ -2700,7 +2782,7 @@ def step_snapshot_guard(dest):
     record('OK', '交接快照檢查',
            '刪檔／超 80 行／缺章節／章節重複／欄位重複都 exit 2，--docs-only 真的關得掉'
            '（用超行情境驗，刪檔會連帶產生真的死連結）；'
-           '程式碼範例、帶 title 與角括號連結不誤報，真的死連結仍 exit 2')
+           '程式碼範例、帶 title 與角括號連結不誤報，真的死連結仍 exit 2；R07 stage 集合／部分 stage、R08 空欄、R09 空白角括號 title 組合與負向變異')
     return True
 
 
@@ -2979,6 +3061,11 @@ def flow_contract_problems(skill):
     mode = skill.split('## 判斷模式', 1)[-1].split('### A／B／C', 1)[0]
     if '只有 **A5 開工標記**與 **C 中途安全點**例外' not in mode:
         bad.append('push 模式缺 A5／C 例外')
+    b7 = skill.split('### B7 ', 1)[-1].split('### B8 ', 1)[0]
+    stage_pos = b7.find('git diff --cached --name-only')
+    verify_pos = b7.find('tools/check_docs.py --staged')
+    if stage_pos < 0 or verify_pos < stage_pos:
+        bad.append('R07 必須先檢視 stage 集合再執行 --staged 驗證')
     return bad
 
 
@@ -2993,12 +3080,13 @@ def step_flow_contract(dest, tmp):
                  'B3 後改過，連 B3 也重跑', 'fetch 失敗 → **停下**',
                  '保留本 session 的「工作中」標記', '不走 B6 的釋出標記與 B9 的交棒計數',
                  '只有 **A5 開工標記**與 **C 中途安全點**例外')
+    mutations += ('tools/check_docs.py --staged', 'git diff --cached --name-only')
     for token in mutations:
         mutated = skill.replace(token, '移除契約')
         if mutated == skill or not flow_contract_problems(mutated):
             bad.append('負向測試未擋：' + token)
     record('FAIL' if bad else 'OK', '協作狀態契約', '；'.join(bad) if bad else
-           '六狀態與 A1／A2／A4／A5／B7／B8／C 契約齊備；18 個負向測試通過（不代表模型遵循）')
+           '六狀態與 A1／A2／A4／A5／B7／B8／C 契約齊備；20 個負向測試通過，含 R07 stage 順序（不代表模型遵循）')
 
     bash = find_bash()
     if not bash:
@@ -3135,6 +3223,80 @@ def step_coordination(dest):
            'A2.5／A5／協定明列協調範圍、SHA 比對與禁止自動奪取；8 個負向測試，不代表並行互斥實測')
 
 
+def sync_owner_cli_problems(cli, folder, gen, scenarios=None):
+    """R03：真 local bare origin；成功流程與拒絕情境都檢查檔案內容。"""
+    bad = []
+    for scenario in (scenarios or ('own', 'other', 'ahead', 'behind', 'diverged', 'offline', 'no-upstream', 'local-marker')):
+        work = folder / ('owner-' + scenario)
+        shutil.copytree(gen, work, ignore=shutil.ignore_patterns('.git'))
+        step_fill(work, report=False)
+        wiring = work / '.codex/hooks.json'
+        write_lf(wiring, '{"hooks":{}}\n')
+        def must(args, cwd=work):
+            r = git(args, cwd)
+            if r.returncode:
+                raise RuntimeError('owner fixture: ' + r.stderr)
+            return r
+        must(['init', '-q', '-b', 'main'])
+        must(['add', '.'])
+        must(['commit', '-qm', 'fixture'])
+        owner = fixture_origin(work)
+        handoff = work / 'HANDOFF.md'
+        text = read_lf(handoff).replace('無（已交棒）', owner)
+        write_lf(handoff, text)
+        must(['commit', '-qam', 'A5 own claim'])
+        must(['push', '-q', 'origin', 'HEAD'])
+        if scenario in ('behind', 'diverged'):
+            peer = folder / ('peer-' + scenario)
+            must(['clone', '-q', str(work.parent / (work.name + '-origin.git')), str(peer)])
+            # bare HEAD 的預設分支可能不是 main，明確切換。
+            must(['checkout', '-q', 'main'], peer)
+            write_lf(peer / 'HANDOFF.md', read_lf(peer / 'HANDOFF.md').replace(owner, '`peer` ／ `Codex CLI`'))
+            must(['commit', '-qam', 'peer busy'], peer)
+            must(['push', '-q', 'origin', 'HEAD'], peer)
+        if scenario in ('ahead', 'diverged'):
+            write_lf(work / 'local-note', 'local commit\n')
+            must(['add', 'local-note'])
+            must(['commit', '-qm', 'local ahead'])
+        if scenario == 'offline':
+            must(['remote', 'set-url', 'origin', str(folder / 'absent-origin.git')])
+        if scenario == 'no-upstream':
+            must(['branch', '--unset-upstream'])
+        if scenario == 'local-marker':
+            write_lf(handoff, text.replace(owner, '`peer` ／ `Codex CLI`'))
+        before = {str(p.relative_to(work)): p.read_bytes() for p in work.rglob('*')
+                  if p.is_file() and '.git' not in p.relative_to(work).parts}
+        if scenario == 'own':
+            for invalid in ([str(work), '--write'], ['--all', '--root', str(folder), '--write'],
+                            [str(work), '--write', '--owner', '無（已交棒）']):
+                if run(cli + invalid).returncode == 0 or wiring.read_bytes() != before[str(wiring.relative_to(work))]:
+                    bad.append('R03 無 owner／批次／空閒 writer 未拒絕')
+        args = [str(work), '--codex-only', '--write', '--owner',
+                '`someone-else` ／ `Codex CLI`' if scenario == 'other' else owner, '--allow-dirty']
+        r = run(cli + args)
+        if scenario != 'own':
+            after = {str(p.relative_to(work)): p.read_bytes() for p in work.rglob('*')
+                     if p.is_file() and '.git' not in p.relative_to(work).parts}
+            if r.returncode == 0 or after != before:
+                bad.append('R03 未拒絕或非零寫入：' + scenario)
+            continue
+        if r.returncode or read_lf(wiring) != read_lf(gen / '.codex/hooks.json'):
+            bad.append('R03 自身 A5 claim 無法同步')
+            continue
+        # B7／B8：驗最終文件，明確 stage，發布清標記快照。
+        write_lf(handoff, read_lf(handoff).replace(owner, '無（已交棒）'))
+        must(['add', 'HANDOFF.md', '.codex/hooks.json'])
+        checked = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=work)
+        if checked.returncode:
+            bad.append('R03 同步後 B7 文件檢查失敗：' + checked.stdout)
+        must(['commit', '-qm', 'B7 final snapshot'])
+        must(['fetch', '-q', 'origin'])
+        must(['push', '-q', 'origin', 'HEAD'])
+        if '無（已交棒）' not in must(['show', 'origin/main:HANDOFF.md']).stdout or must(['status', '--porcelain']).stdout:
+            bad.append('R03 B8 未清標記或工作樹不乾淨')
+    return bad
+
+
 def inventory_cli_problems(cli, folder, normal):
     """R05：active 失效不能冒充成功；archived 與重複路徑另驗。"""
     bad = []
@@ -3146,7 +3308,7 @@ def inventory_cli_problems(cli, folder, normal):
              ([missing], False), ([active, active], False)]
     for i, (items, success) in enumerate(cases):
         write_lf(inv, json.dumps(items))
-        r = run(cli + ['--inventory', str(inv), '--write'])
+        r = run(cli + ['--inventory', str(inv)])
         if (r.returncode == 0) != success or (not success and '全部都已經是' in r.stdout):
             bad.append('R05 inventory CLI 結果錯誤 ' + str(i))
         if i == 0 and ('FAIL' not in r.stdout or '沒有完成' not in r.stdout):
@@ -3174,6 +3336,8 @@ def step_sync_scope(dest, tmp):
         return p
     normal = project('normal-worktrees-name')
     archived = project('archived')
+    owner = fixture_origin(normal)
+    fixture_origin(archived)
     linked = folder / 'arbitrary-checkout'
     must(['worktree', 'add', '-q', '-b', 'peer', str(linked)], normal)
     decisions = dict(sp.discover_decisions([folder], ['archived']))
@@ -3202,13 +3366,29 @@ def step_sync_scope(dest, tmp):
                % (str(ROOT / 'tools'), str(ROOT / 'tools/sync_project.py'), str(mutant)))
     if not inventory_cli_problems([sys.executable, '-X', 'utf8', '-c', wrapper], folder, normal):
         bad.append('R05 負向測試沒抓到 active 失效被排除')
+    bad.extend(sync_owner_cli_problems(cli, folder, dest))
+    owner_mutant = folder / 'owner-mutant.py'
+    first = source.index('def sync_owner_check(')
+    last = source.index('\n\ndef preflight(', first)
+    write_lf(owner_mutant, source[:first] +
+             "def sync_owner_check(project, owner=None, writing=False):\n    return git_output(project, 'rev-parse', 'HEAD')\n" + source[last:])
+    owner_wrapper = ('import sys; sys.path.insert(0, %r); __file__=%r; '
+                     'exec(compile(open(%r, encoding="utf-8").read(), __file__, "exec"))'
+                     % (str(ROOT / 'tools'), str(ROOT / 'tools/sync_project.py'), str(owner_mutant)))
+    negative_folder = folder / 'owner-negative'
+    negative_folder.mkdir()
+    if not sync_owner_cli_problems([sys.executable, '-X', 'utf8', '-c', owner_wrapper], negative_folder, dest, ('other',)):
+        bad.append('R03 移除資格檢查的 CLI 負向測試沒抓到錯誤寫入')
+    write_lf(normal / 'HANDOFF.md', '- **工作中**：' + owner + '\n')
+    must(['commit', '-qam', 'A5 claim'], normal)
+    must(['push', '-q', 'origin', 'HEAD'], normal)
     # 真的寫入入口：dirty、占用、客製漂移都必須零寫入、非零退出。
     skill = normal / '.claude/skills/handoff/SKILL.md'
     original = read_lf(skill)
     def rejected(label, extra=()):
         before = skill.read_bytes()
         common = (normal / sp.SURGICAL).read_bytes()
-        r = run(cli + [str(normal), '--write', *extra])
+        r = run(cli + [str(normal), '--write', '--owner', owner, *extra])
         if r.returncode == 0 or skill.read_bytes() != before or (normal / sp.SURGICAL).read_bytes() != common or label not in r.stdout:
             bad.append(label + ' preflight 沒擋／已有寫入')
     write_lf(normal / 'note', 'unfinished\n')
@@ -3216,20 +3396,24 @@ def step_sync_scope(dest, tmp):
     (normal / 'note').unlink()
     write_lf(normal / 'HANDOFF.md', '- **工作中**：`peer` ／ `Codex CLI`\n')
     must(['commit', '-qam', 'busy'], normal)
+    must(['push', '-q', 'origin', 'HEAD'], normal)
     rejected('占用')
-    write_lf(normal / 'HANDOFF.md', sp.BUSY_FIELD + '\n')
+    write_lf(normal / 'HANDOFF.md', '- **工作中**：' + owner + '\n')
     write_lf(skill, original + '\nproject custom rule\n')
     must(['commit', '-qam', 'custom'], normal)
+    must(['push', '-q', 'origin', 'HEAD'], normal)
     rejected('客製漂移')
-    r = run(cli + [str(normal), '--write', '--accept-drift', '.claude/skills/handoff/SKILL.md'])
+    r = run(cli + [str(normal), '--write', '--owner', owner, '--accept-drift', '.claude/skills/handoff/SKILL.md'])
     if r.returncode or 'project custom rule' in read_lf(skill):
         bad.append('明確接受單檔漂移後仍無法同步')
     must(['add', '.'], normal)
     must(['commit', '-qm', 'synced'], normal)
+    must(['push', '-q', 'origin', 'HEAD'], normal)
     checker = normal / sp.SURGICAL
     original_checker = read_lf(checker)
     write_lf(checker, original_checker + '\n# project custom implementation\n')
     must(['commit', '-qam', 'custom checker'], normal)
+    must(['push', '-q', 'origin', 'HEAD'], normal)
     rejected('客製漂移')
     write_lf(checker, original_checker)
     # 反向測試：把新 preflight 拿掉，客製漂移會真的被覆蓋。
@@ -3239,7 +3423,7 @@ def step_sync_scope(dest, tmp):
     if error or '.claude/skills/handoff/SKILL.md' not in done or 'project custom rule' in read_lf(skill):
         bad.append('移除 preflight 的負向測試未重現覆蓋')
     record('FAIL' if bad else 'OK', '同步範圍與前置檢查', '；'.join(bad) if bad else
-           '真 worktree／含 worktrees 普通目錄／已完結 inventory；R05 active 失效、archived、重複路徑與 CLI 負向變異；dirty／占用／整份檔與共用程式漂移拒絕且零寫入，移除守門確實覆蓋')
+           '真 worktree／含 worktrees 普通目錄／已完結 inventory；R03 自身 writer→同步→B7→B8、七種資格拒絕與負向變異；R05 active 失效、archived、重複路徑與 CLI 負向變異；dirty／占用／整份檔與共用程式漂移拒絕且零寫入')
 
 
 def deployment_order_problems(kit, skill, zip_readme, readme):
