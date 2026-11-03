@@ -632,7 +632,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 |---|---|---|---|
 | [README.md](README.md) | 人的入口 | 本專案 | 對外說明或連線方式改變 |
 | [AGENTS.md](AGENTS.md) | AI 的入口：鐵律、連線資料、知識庫地圖 | 本專案 | 多一條鐵律、多一份知識庫 |
-| [CLAUDE.md](CLAUDE.md)、[GEMINI.md](GEMINI.md) | 指標，內容只有一句「去讀 AGENTS.md」 | 指向 AGENTS.md | 幾乎不動 |
+| [CLAUDE.md](CLAUDE.md)、[GEMINI.md](GEMINI.md) | Claude 用 `@AGENTS.md` import；Gemini 用文字指標 | 指向 AGENTS.md | 幾乎不動 |
 | [HANDOFF.md](HANDOFF.md) | 當下狀態（≤80 行、覆寫不累積） | 本專案 | **每次交棒** |
 | 本檔 | 結構 | 本專案 | 只有結構變動 |
 | [docs/ai-notes/handover-protocol.md](docs/ai-notes/handover-protocol.md) | 交接的規則與理由 | 本專案 | 協定本身改變 |

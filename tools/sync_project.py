@@ -410,6 +410,10 @@ def apply_plan(plan):
             path.parent.mkdir(parents=True, exist_ok=True)
             tmp = path.with_name(path.name + '.sync-tmp')
             write(tmp, text)
+            # 2026-11-03：replace 換的是 inode；新暫存檔不會繼承原檔的 x bit。
+            # 複製失敗須在替換前停止，否則 hook 內容升級了卻無法直接執行。
+            if path.exists():
+                shutil.copymode(path, tmp)
             os.replace(tmp, path)
             done.append(rel)
         except OSError as e:

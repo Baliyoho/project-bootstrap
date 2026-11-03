@@ -3534,6 +3534,117 @@ def step_deployment_lifecycle(tmp):
            '自訂憑證／空白中文路徑 ignore；本機驗收→首 commit→local bare push→clone，100755 與 wrapper 直接執行；7 個負向測試，未呼叫模型或 GitHub')
 
 
+def sync_mode_problems(sp, dest, tmp):
+    """同一套斷言用於現行實作及移除 copymode 的負向變異。"""
+    from unittest import mock
+    import stat
+    def must(args, cwd=None):
+        result = run(args, cwd=cwd)
+        if result.returncode:
+            raise RuntimeError('%r: %s' % (args, result.stderr))
+        return result
+    work = tmp / 'mode-upgrade'
+    work.mkdir(parents=True, exist_ok=True)
+    wrapper = work / '.claude/hooks/ag-wrap.sh'
+    wrapper.parent.mkdir(parents=True, exist_ok=True)
+    original = read_lf(dest / '.claude/hooks/ag-wrap.sh')
+    write_lf(wrapper, original + '\n# before upgrade\n')
+    write_lf(wrapper.parent / 'git-freshness.sh', '#!/bin/sh\necho mode-upgrade-ok\n')
+    wrapper.chmod(0o755)
+    must(['git', 'init', '-q', work.as_posix()])
+    must(['git', 'config', 'core.filemode', 'true'], work)
+    must(['git', 'add', '.'], work)
+    must(['git', 'update-index', '--chmod=+x', '.claude/hooks/ag-wrap.sh'], work)
+    must(['git', 'commit', '-qm', 'before mode upgrade'], work)
+    plan = sp.Plan()
+    plan.update(wrapper, '.claude/hooks/ag-wrap.sh', original + '\n# after upgrade\n')
+    bad = []
+    copier = sp.shutil.copymode
+    with mock.patch.object(sp.shutil, 'copymode', wraps=copier) as copied:
+        done, error = sp.apply_plan(plan)
+        if copied.call_args_list != [mock.call(wrapper, wrapper.with_name('ag-wrap.sh.sync-tmp'))]:
+            bad.append('替換前未複製既存 mode')
+    if error or done != ['.claude/hooks/ag-wrap.sh'] or '# after upgrade' not in read_lf(wrapper):
+        bad.append('升級內容未完成')
+    if os.name == 'posix':
+        if stat.S_IMODE(wrapper.stat().st_mode) != 0o755:
+            bad.append('0755 升級後 mode 改變')
+        diff = must(['git', 'diff', '--summary'], work).stdout
+        if 'mode change' in diff:
+            bad.append('Git 出現 mode change')
+        try:
+            result = run([str(wrapper), 'git-freshness.sh'], cwd=work)
+            if result.returncode or 'mode-upgrade-ok' not in result.stdout:
+                bad.append('升級後原始 wrapper 無法直接執行')
+        except OSError:
+            bad.append('升級後原始 wrapper 拒絕執行')
+        ordinary = work / 'config.txt'
+        write_lf(ordinary, 'before')
+        ordinary.chmod(0o640)
+        config_plan = sp.Plan()
+        config_plan.update(ordinary, 'config.txt', 'after')
+        if sp.apply_plan(config_plan)[1] or stat.S_IMODE(ordinary.stat().st_mode) != 0o640:
+            bad.append('一般檔案 0640 未保留')
+    before = wrapper.read_bytes()
+    with mock.patch.object(sp.shutil, 'copymode', side_effect=OSError('fixture denied')):
+        done, error = sp.apply_plan(plan)
+    if done or not error or wrapper.read_bytes() != before:
+        bad.append('權限複製失敗仍替換原檔或回報成功')
+    # 新依賴沒有原檔，應照原本的建立流程，不向不存在的路徑複製權限。
+    missing = work / 'new.cmd'
+    new_plan = sp.Plan()
+    new_plan.update(missing, 'new.cmd', 'new')
+    with mock.patch.object(sp.shutil, 'copymode', side_effect=OSError('must not copy')):
+        if sp.apply_plan(new_plan)[1] or read_lf(missing) != 'new':
+            bad.append('新增依賴被既存 mode 流程擋住')
+    return bad
+
+
+def step_sync_mode(dest, tmp):
+    """2026-11-03：同步升級要保留 mode；Windows 只驗呼叫與失敗契約。"""
+    import sync_project as sp
+    import types
+    bad = sync_mode_problems(sp, dest, tmp / 'current-mode')
+    source = read_lf(ROOT / 'tools/sync_project.py')
+    mutant = types.ModuleType('sync_mode_mutant')
+    mutant.__file__ = str(ROOT / 'tools/sync_project.py')
+    exec(compile(source.replace('shutil.copymode(path, tmp)', 'pass'), mutant.__file__, 'exec'), mutant.__dict__)
+    if not sync_mode_problems(mutant, dest, tmp / 'mutant-mode'):
+        bad.append('移除 mode 保留的負向變異未失敗')
+    record('FAIL' if bad else 'OK', '同步升級 mode', '；'.join(bad) if bad else
+           ('POSIX 0755／0640、原始 wrapper 直接執行、Git 無 mode diff；' if os.name == 'posix' else
+            'Windows 僅驗 copymode 呼叫契約（非 POSIX 實測）；') +
+           '複製失敗保留原檔、新增依賴、移除保留的負向變異')
+
+
+def step_architecture_summary(dest):
+    def problems(docs):
+        bad = []
+        for name, text in docs.items():
+            rows = [line for line in text.splitlines() if line.startswith('|')]
+            pointers = [line for line in rows if 'CLAUDE.md' in line and 'GEMINI.md' in line]
+            if not pointers or any('import' not in line or '文字指標' not in line for line in pointers):
+                bad.append(name + ' 未區分 Claude import 與 Gemini 文字指標')
+            if name == 'repo':
+                prompts = [line for line in rows if '3.4' in line]
+                if not prompts or any('收工交棒／開工接棒' not in line for line in prompts):
+                    bad.append('README prompt 摘要與現行命名分岔')
+        return bad
+    docs = {'repo': read_lf(ROOT / 'ARCHITECT.md'), 'generated': read_lf(dest / 'ARCHITECT.md')}
+    bad = problems(docs)
+    for name in docs:
+        mutant = dict(docs)
+        mutant[name] = docs[name].replace('import', '只有標題不同')
+        if not problems(mutant):
+            bad.append('負向測試未抓到指標摘要退化：' + name)
+    mutant = dict(docs)
+    mutant['repo'] = docs['repo'].replace('收工交棒／開工接棒', 'A／B')
+    if not problems(mutant):
+        bad.append('負向測試未抓到 prompt 字母退化')
+    record('FAIL' if bad else 'OK', '結構摘要一致性', '；'.join(bad) if bad else
+           '本 repo 與生成 ARCHITECT 區分 import／文字指標、prompt 用收工／開工；三個負向測試')
+
+
 def run_checks(dest, tmp):
     work = None
     seen = step_regenerate(dest) and step_fill(dest)
@@ -3566,6 +3677,8 @@ def run_checks(dest, tmp):
     step_core_priority(dest, tmp)
     step_coordination(dest)
     step_sync_scope(dest, tmp)
+    step_sync_mode(dest, tmp)
+    step_architecture_summary(dest)
     step_deployment_lifecycle(tmp)
 
 
