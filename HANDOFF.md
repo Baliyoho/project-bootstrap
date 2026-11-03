@@ -1,54 +1,52 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-03 10:34（+08）
-- **交棒者**：Codex ／ `DESKTOP-M8MRS05`（六個維護中專案的制度收尾）
+- **交接時間**：2026-11-03 16:44（+08）
+- **交棒者**：Codex ／ `DESKTOP-M8MRS05`（保存第二輪複審，供下一輪先讀）
 
 ## 任務目標
 
 維護 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的協作制度。
-查核約定範圍已完成：15 條修正＋F12 協調邊界；原子 claim 另案。
-本輪四項收尾均完成：六專案文件修正、協定遷移、Codex hook 信任與注入驗收、同步變更發布。
-條目證據以 [project-bootstrap-audit-progress.md](project-bootstrap-audit-progress.md) 為準。
+使用者明確要求：下一輪接棒完成 A 模式後，開始任務前先讀 [project-bootstrap-reaudit-2026-11-03.md](project-bootstrap-reaudit-2026-11-03.md)。
+第二輪複審提出 R01–R09；本輪只保存報告與接棒指引，尚未實作這九項修正。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Codex CLI` ／ `㊣　26110310｜複審協作制度｜工作中｜交棒0次`，2026-11-03 (+08) 開工（保存複審交接）
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-02.8`
-- 本機能力：Windows、Python 3.13、Git Bash、PowerShell；六專案 fetch／開工與收尾 push 成功。
+- 本機能力：Windows、Python 3.13、Git Bash、PowerShell；本輪獨立探針只用假資料及本機 bare remote。
 
 ## 已完成
 
-- 六專案接棒均與各自 upstream 對齊、無占用；既有制度 dirty 已與權威版核對。
-- 修正三份快照：兩份「待續分支」改成標準欄位、一份合併重複「已完成」章節；六份文件檢查均 exit 0。
-- 六份舊協定人工遷移核心優先序、override、協調邊界與最終文件驗證；保留專案限制、理由與業務待辦。
-- 前輪同步的 skill／hook／接線／文件檢查器已明確 stage、提交並推送原分支；功能分支未合併。
-- 六專案 Windows 兩個 hook 原始命令從 tools 子目錄共 12 次實跑 exit 0；已透過正常互動介面儲存兩個 hook 的信任。
-- 使用者明確授權後，六專案各一則 ChatGPT 訂閱最小探針均回 `HOOK_PRESENT`、exit 0、工具呼叫 0；新 session 的開場輸出進入 context。
-- 六專案遠端標記均已清；五個 clean，另一個僅留使用者明示保留的兩份文件，雜湊未變、未提交。
-- 未改業務程式、資料、NAS／路由器設定；只呼叫獲准的六個最小訂閱探針；部署、模型選型與 schema 例行檢查不適用。
+- 系統複審完成，報告保存到 repo；AGENTS 增加下一輪先讀要求，ARCHITECT 登記快照。
+- 9 項問題有重現或明確文件證據：4 項 P1、4 項 P2、1 項 P3；位置、原因、改善與驗收在複審報告。
+- 舊 F01–F16 的原修正多數成立，但修正邊界與跨步驟銜接仍有缺口；不可只看前輪結案或驗證全過。
+- 前輪六專案制度收尾已完成，原記錄見 [project-bootstrap-audit-progress.md](project-bootstrap-audit-progress.md)；本輪未重查六專案。
+- 未改部署包、skill、hook、同步器或驗證器；VERSION 不變，副本同步與接線信任重審不適用。
 
 ## 未完成／下一步
 
-- 本輪四項制度收尾已完成；後續依使用者指定的新任務。
-- 原子 claim 與兩 clone／同工作樹並行實驗，依使用者 2026-11-02 決定留待另案。
+1. 先讀第二輪複審報告，再依新任務決定修正範圍；建議優先 R01–R04（handler 保全、matcher、同步占用流程、遮罩）。
+2. R05–R08 是 inventory 失敗彙總、README 優先序、B7 新文件漏驗、空工具欄；R09 是合法連結誤報，均未修。
+3. 原始 review_probe.py／review-results.json 僅在本次審查聊天產物，未入 Git；換機器依報告重建反例，不宣稱原始檔已取得。
+4. 複審另列 POSIX 同步後 mode 保留的靜態風險，尚未在其他 OS 實跑；不要寫成已重現。
 
 ## 地雷與注意事項
 
-- 工作中標記與 preflight 都不是並行鎖；同一工作樹只允許一個 writer，不自動奪權。
-- 不無範圍地用 `--all --write`；私人 inventory 與各專案身分不寫進公開 repo。
-- `--allow-dirty`／逐檔 `--accept-drift` 只適用人工檢視的單一目標；不能略過占用。
-- 漂移比對依權威 Git 歷史；缺歷史時保守拒絕。AI push 提醒仍是有限覆蓋，不是發布保證。
+- 報告是凍結查核快照，不是制度權威；修制度仍改部署包並遵守 VERSION／source 與副本規則。
+- 新增守門檢查須有負向測試；測試數量不代表模型遵循或跨元件流程正確。
+- 同步器存在本次已知缺口，不無範圍地 --all --write；工作中標記也不是並行鎖。
+- 私人 inventory、原始結果中的本機路徑及專案身分不寫進公開 repo。
 
 ## 服務查證與期望快照
 
-`python -X utf8 tools/verify_bootstrap.py`：exit 0、50 項全過、無 skip。骨架仍 22 檔；文件檢查由此工具涵蓋。
-六專案最終 `check_docs.py` 全 exit 0；兩個既有服務驗證 errors=0 skipped=0，四個 NOT_CONFIGURED（非服務實測）。
-Windows hook 原始命令 12 次均 exit 0；Codex CLI 0.166.0 正常信任流程＋新 session 訂閱探針 6／6 通過。沒有使用信任 bypass，也未直接修改信任資料。
-Python 3.8 下限仍是靜態擔保；本機部署生命週期不代表跨 OS／外部工具注入實測。
+`python -X utf8 tools/verify_bootstrap.py`：本輪交棒驗證 exit 0、50 項全過、無 skip；已涵蓋新增複審報告（10 份 Markdown）。
+獨立 review_probe.py 在隔離 fixture 重跑完成（腳本 exit 0 代表探針執行成功，不代表受測系統通過），結果見複審報告。
+骨架仍 22 檔；本輪未呼叫額外模型、未重跑六專案服務或工具注入探針。
+Python 3.8 下限與 POSIX mode 尚無本輪實機結果；原子 claim 未實作。
 
 ## 懸置事項（AI 勿自行處理）
 
-- 各專案業務懸置事項仍在各自 repo；本輪授權不延伸至額外模型實跑或業務改動。
-- 原子 claim 留待另案；Antigravity IDE hook 原因仍未知、不再追查。
+- 原子 claim 與兩 clone／同工作樹並行實驗仍留待另案；Antigravity IDE 未解原因不再追查。
+- 額外模型探針須使用者另行授權且只用訂閱額度；不得把保存報告的授權延伸為業務或模型實跑。
