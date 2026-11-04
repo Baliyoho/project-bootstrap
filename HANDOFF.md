@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：無（已交棒）
+- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26110417｜需求審閱評估｜工作中｜交棒0次`，2026-11-04 18:39 (+08) 開工
 - **骨架版本**：`2026-11-03`
 - 本機能力：Windows、Python 3.13、Git Bash、PowerShell；本輪首次驗證受沙箱暫存權限阻擋，放寬執行後通過。
 
