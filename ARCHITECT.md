@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 2026-11-04 最新結構登記：新增 [需求修訂再評估](project-bootstrap-requirements-response-2026-11-04.md)，核對 Opus 回覆與修訂，屬未採納審閱快照，不部署、不同步。本 repo 15 份 Markdown；驗證仍 52 項，骨架仍 22 檔。下列舊登記保留歷史理由。
+
 > 2026-11-04 本次結構登記：使用者採納需求定義的 v2 修訂，[project-bootstrap-requirements.md](project-bootstrap-requirements.md) 改成 v2 全文、原 v1 內容刪除（在 git 歷史，基準 `81a8cff`）；中途那個帶版號的臨時檔已 `git mv` 到權威路徑並不再存在——**檔名不帶版號**，否則版號本身會腱化，而 `AGENTS.md` 與審閱意見檔的連結會断。根目錄淨增一檔（審閱回覆），本 repo 14 份 Markdown；驗證項仍 52 項、骰架仍 22 檔，skill／hook／接線／VERSION 皆未動。前次登記：根目錄新增 `project-bootstrap-requirements-v2.md`（已不存在，已搬到權威路徑） 與 [project-bootstrap-requirements-review-reply-2026-11-04.md](project-bootstrap-requirements-review-reply-2026-11-04.md)——前者是依 Q1–Q7 逐項評估修訂的需求草案（新增 F40 證據時效、「强度」詞彙與 9 項驗收區塊，收緊 D1 與 F11、F13、F26、F28，刪掉「6 個專案時 F30／F31 可以不要」），**尚未採納，權威仍是 v1，採納後應取代並刪除 v1**；後者是對審閱意見的逐項回覆與同意／不同意的理由。兩者都不部署、不同步，驗證項仍 52 項、骨架仍 22 檔，skill／hook／接線／VERSION 皆未動。前次登記：新增需求審閱意見 project-bootstrap-requirements-review-2026-11-04.md，供下一棒討論，尚未採納、不部署、不同步。原登記：根目錄新增 [project-bootstrap-requirements.md](project-bootstrap-requirements.md)——與使用者逐項定案的功能需求（F1–F39）與前提決定（D1–D8），是「要什麼」的唯一家；現況對照與工具評估尚未做，刻意不寫進它裡面。不部署、不同步，驗證項仍 52 項、骨架仍 22 檔，skill／hook／接線／VERSION 皆未動；`AGENTS.md` 的開工段加一段指向它。前次 2026-11-03：驗證新增「同步升級 mode」與「結構摘要一致性」，共 52 項、骨架仍 22 檔。同步器原子替換前複製既有檔案權限；否則 POSIX 的可執行 wrapper 會隨 inode 替換失去 x bit。Windows 只驗呼叫與失敗契約，POSIX 分支另驗 0755／0640、直接執行與 Git mode diff。結構摘要區分 Claude import／Gemini 文字指標與收工／開工 prompt。只改工具及 ARCHITECT 範本，不改 skill／hook，VERSION 與 source 標記不跳；ARCHITECT 是專案實例，不自動覆蓋既有專案。
 
 > **本檔＝結構的唯一權威**：`project-bootstrap` 由什麼組成、每樣東西的家在哪、改哪裡會影響到什麼。
@@ -29,6 +31,7 @@
 | [project-bootstrap-requirements.md](project-bootstrap-requirements.md) | **功能需求定義（權威版）**：終極目標、D1–D8 前提（**是方案約束**，會刻意排除部分實作形式）與 F1–F40 功能清單（含必要／想要與「強度」）。不含「現在有沒有」的判断。2026-11-04 採納 v2 修訂取代原 v1，**檔名不帶版號**；第 8 節是那次改動的理由。不部署、不同步 | 需求或前提決定改變時；現況對照與工具評估另案 |
 | [project-bootstrap-requirements-review-2026-11-04.md](project-bootstrap-requirements-review-2026-11-04.md) | 需求審閱建議快照 Q1–Q7，供下一棒 Opus 討論；未採納，不改變需求權威或現行程序。不部署、不同步 | 本次審閱快照；採納結果另改需求文件 |
 | [project-bootstrap-requirements-review-reply-2026-11-04.md](project-bootstrap-requirements-review-reply-2026-11-04.md) | **對 Q1–Q7 的逐項評估回覆**：每項的理解、同意／不同意的理由與最後做法，含三點整體判讀與建議處理順序。2026-11-04 全部判定已被採納，所以它是那次修訂的理由記錄。不部署、不同步 | 評估結論改變時；它不是需求權威 |
+| [project-bootstrap-requirements-response-2026-11-04.md](project-bootstrap-requirements-response-2026-11-04.md) | 對 Opus 修訂及 Q1–Q7 回覆的再評估；未採納建議，不改變需求權威、不部署、不同步 | 本輪審閱快照，採納結果另改權威文件 |
 | 本檔 | 結構 | 只有結構變動 |
 | [LICENSE](LICENSE) | MIT（2026-09-07 起公開） | 授權改變 |
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
