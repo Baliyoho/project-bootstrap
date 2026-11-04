@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
 - **交接時間**：2026-11-04 16:20（+08）
-- **交棒者**：Claude Code ／ `DESKTOP-M8MRS05`（重新定義 AI 協作功能需求；**中途安全點，不是交棒**）
+- **交棒者**：Claude Code ／ `DESKTOP-M8MRS05`（重新定義 AI 協作功能需求）
 
 ## 任務目標
 
@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　26110412｜重定義協作需求｜工作中｜交棒0次`，2026-11-04 16:05 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
 - 本機能力：Windows、Python 3.13、Git Bash、PowerShell；驗證 fixture 需沙箱外執行。
 
@@ -21,6 +21,7 @@
 - 與使用者逐項定案 D1–D8：分支層並行（同分支永遠單 writer）、查核強度（機器查得到的必查，查不到必須顯示「未驗證」）、制度改走指標、預設跟最新＋主動宣告例外、拿不到最新制度就停寫入、專案內容自由差異但制度只能加嚴或填空、新專案取得改成拿一個包、規模按 20 個專案設計。
 - 需求與評估刻意分離：需求文件只說「要什麼」，不含現況判斷、不含實作選擇。
 - 本輪未改部署包、skill、hook、接線、`VERSION`，不需要同步副本或重審 hook 信任。
+- 成果已 commit 並 push 到 `main`；收工時工作樹乾淨、與 upstream 對齊。
 
 ## 未完成／下一步
 
@@ -41,6 +42,7 @@
 
 本輪 A4：`python -u -X utf8 tools/verify_bootstrap.py` exit 0、52 項全過、無 skip；22 個生成檔、本 repo 11 份 Markdown。
 落檔後依 R07 順序先 stage 再驗：同一指令 exit 0、52 項全過、無 skip；本 repo 已是 12 份 Markdown、交接快照檢查通過，index 與工作樹一致。
+收工前再驗一次：同一指令 exit 0、52 項全過、無 skip。本 repo 沒有 `check_docs.py`，B4 由本指令涵蓋；B5 例行檢查不適用——skill／hook／接線／`VERSION` 皆未動，無同步與 hook 信任重審需求。
 前輪 Linux mode fixture 為隔離測試，不是完整跨 OS suite；Python 3.8 仍僅靜態擔保。此次不重跑業務服務／私人專案、不驗模型遵循。
 
 ## 懸置事項（AI 勿自行處理）
