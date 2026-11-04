@@ -1,24 +1,26 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-04 22:27（+08）
+- **交接時間**：2026-11-04 22:35（+08）
 - **交棒者**：Codex ／ Windows（評估 Opus 需求修訂與回覆）
 
 ## 任務目標
 
-先釐清需求，再對照現況與評估工具。本輪依使用者要求完成 Opus 修訂及逐項回覆的再評估；未改需求權威版。
+先釐清需求，再對照現況與評估工具。已完成 Opus 修訂及逐項回覆的再評估；本輪依使用者要求為報告檔名補上時分並交棒，未改需求權威版。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Codex CLI` ／ `㊣　26110422｜釐清骨架需求｜工作中｜交棒1次`，2026-11-04 22:35 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
 - 本機能力：Windows、Python 3.13、Git Bash、PowerShell；驗證需正常暫存權限。
 
 ## 已完成
 
+- 回覆報告檔名加上原提交時間 2230（台北時間），避免同日多輪混淆；ARCHITECT 與 HANDOFF 引用已更新，報告正文不變。
+
 - 前輪使用者已採納需求 v2 修訂；權威家仍是 [需求定義](project-bootstrap-requirements.md)，[Opus 回覆](project-bootstrap-requirements-review-reply-2026-11-04.md)保存理由。
-- 本輪逐項比對原 Q1–Q7、Opus 回覆及需求修訂，新增[再評估報告](project-bootstrap-requirements-response-2026-11-04.md)，ARCHITECT 登記新檔。
+- 本輪逐項比對原 Q1–Q7、Opus 回覆及需求修訂，新增[再評估報告](project-bootstrap-requirements-response-2026-11-04-2230.md)，ARCHITECT 登記新檔。
 - 結論：架構與多項修訂值得保留；S1–S6 指出耦合推論、覆寫驗收、通知時機、知識來源範圍、中斷保證與授權政策缺口。報告含反例、建議措辭及對原審閱的自我校正，尚未採納。
 - 未修改程式、需求權威版、skill、hook、接線或 VERSION；未安裝框架、未同步其他專案。
 
@@ -41,8 +43,8 @@
 
 ## 服務查證與期望快照
 
-本輪 A4：`python -u -X utf8 tools/verify_bootstrap.py`，正常權限 exit 0、52 項全過、無 skip（14 份 Markdown）；沙箱初跑因暫存目錄 PermissionError exit 1，非受測功能失敗。
-最終文件提交前重跑同指令；結果以本輪交棒回覆為準，新增後應為 15 份 Markdown。
+本輪 A4：`python -u -X utf8 tools/verify_bootstrap.py`，exit 0、52 項全過、無 skip（15 份 Markdown）。
+最終文件提交前重跑同指令；結果以本輪交棒回覆為準，改名後仍為 15 份 Markdown。
 本 repo 無 verify_state.py／check_docs.py，依 AGENTS 使用 verify_bootstrap.py；同步與 hook 重審不適用（未改相關內容）。
 未測其他 OS、Python 3.8、私人專案、外部服務或模型遵循，未呼叫額外模型。
 
