@@ -12,7 +12,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：無（已交棒）
+- **工作中**：`baliyohodeMini` ／ `Codex CLI` ／ `㊣　26110616｜整理需求決策｜工作中｜交棒2次`，2026-11-06 21:07 (+08) 開工
 - **骨架版本**：`2026-11-03`
 - 本輪只新增規劃與更新入口／快照；未改部署包、skill、hook、接線、VERSION 或遠端保護設定。
 - 本機能力：Mac、Python 3.15（用 python3）、bash 3.2；Windows／Linux 未在本輪重驗。
