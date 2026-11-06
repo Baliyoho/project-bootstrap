@@ -33,6 +33,10 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   合起來就是「照說明部署的人 100% 會踩到」
   跨平台防呆   ——掃絕對路徑，以及「用了 python 卻整份沒交代 python3 退路」的檔案。
                   這兩類問題在原機器上完全正常，換一台才壞，而且壞得無聲無息
+  bash 3.2 多位元組變數——shell 腳本裡 `$變數` 後面不得緊接中文或全形字，要寫 `${變數}`。
+                  macOS 的 /bin/bash 3.2 在 UTF-8 語系下會把那個字的第一個位元組吃進變數名，
+                  訊息印成亂碼、「$tool」整個消失；Windows 的 Git Bash（bash 5）不重現，所以
+                  只靠實跑永遠是綠的（2026-11-06 第一次在 Mac 上跑才發現，附負向測試）
   接線 cwd 定位 ——從子目錄實跑接線 JSON 裡原始的那一串命令（含空白與中文的 repo 路徑）。
                   舊接線假設 cwd 是 repo 根目錄，`cd tools` 開的 session 直接 exit 127，
                   而 SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣（2026-11-02／F05，
@@ -100,6 +104,7 @@ FAIL，而不是在別人的舊 python 上才炸（查核報告 F14）。
 本工具唯讀本 repo，只在系統暫存區寫檔。
 """
 import argparse
+import atexit
 import datetime
 import json
 import os
@@ -164,11 +169,23 @@ PLACEHOLDER_RE = re.compile(r'\{\{([A-Z][A-Z0-9_]{1,40})\}\}')
 HEAD_RE = re.compile(r'^### 3\.\d+ ')
 FENCE_RE = re.compile(r'^(`{3,})(\w*)\s*$')
 
+# 測試用的全域 git 設定：只關掉自動維護（2026-11-06）。
+# Git 2.54（macOS 的 Apple Git-157）每次 commit／push 後都會 `git maintenance run --auto --detach`，
+# 小 repo 也做 geometric repack 並寫 MIDX。背景打包跟緊接的本機 clone 撞在一起時，
+# clone 會因為要硬連結的鬆散物件已經被打包刪掉而失敗（R03 owner 情境在 Mac 上約一半機率）。
+# 不能用 GIT_CONFIG_COUNT：本機 push 啟動遠端 receive-pack 時 git 會清掉那組變數，
+# origin 那一端看不到；GIT_CONFIG_GLOBAL 指向的檔案兩端都讀得到。
+_GITCONFIG_DIR = tempfile.mkdtemp(prefix='verify-gitconfig-')
+atexit.register(shutil.rmtree, _GITCONFIG_DIR, True)
+_GITCONFIG = os.path.join(_GITCONFIG_DIR, 'gitconfig')
+with open(_GITCONFIG, 'w', encoding='utf-8', newline='') as _f:
+    _f.write('[maintenance]\n\tauto = false\n')
+
 GIT_ENV = dict(
     os.environ,
     GIT_AUTHOR_NAME='verify', GIT_AUTHOR_EMAIL='verify@example.com',
     GIT_COMMITTER_NAME='verify', GIT_COMMITTER_EMAIL='verify@example.com',
-    GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_SYSTEM=os.devnull,
+    GIT_CONFIG_GLOBAL=_GITCONFIG, GIT_CONFIG_SYSTEM=os.devnull,
 )
 
 # 工具身分的環境變數簽章（2026-10-31）。測 hook 的「同工具／不同工具」分支時必須先把
@@ -429,6 +446,50 @@ def step_portability(dest):
         record('FAIL', '跨平台防呆', f'{len(bad)} 處：\n           ' + '\n           '.join(bad[:8]))
         return False
     record('OK', '跨平台防呆', '無絕對路徑、無缺 python3 退路的 python 呼叫')
+    return True
+
+
+# bash 3.2 在 UTF-8 語系下的變數名界線（2026-11-06）。
+# `$name` 後面緊接多位元組字元時，bash 3.2 會把那個字的第一個位元組當成變數名的一部分：
+# `（branch=$branch）` 印成 `（branch=��`。判斷邏輯不受影響，壞的是每一句結論訊息。
+# 用靜態掃描而不是實跑：維護者多在 Windows 的 bash 5 上跑驗證，那裡不會重現。
+MB_VAR_RE = re.compile(r'\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7f])')
+
+
+def mb_var_hits(text):
+    """回傳 (行號, 命中) 清單；整行註解不求值，略過。"""
+    hits = []
+    for n, line in enumerate(text.split('\n'), 1):
+        if line.lstrip().startswith('#'):
+            continue
+        hits += [(n, m.group()) for m in MB_VAR_RE.finditer(line)]
+    return hits
+
+
+def step_bash32_multibyte(dest):
+    # 負向測試：壞寫法一定要抓到，正確寫法與註解不能誤報
+    probes = [
+        ('echo "（b=$b）"', 1), ('echo "「$tool」"', 1), ('echo "$a、$b"', 1),
+        ('echo "（b=${b}）"', 0), ('# 註解裡的 $b） 不求值', 0), ('echo "$b ok"', 0),
+    ]
+    wrong = [s for s, want in probes if len(mb_var_hits(s)) != want]
+    if wrong:
+        record('FAIL', 'bash 3.2 多位元組變數', '偵測器本身壞了：' + '；'.join(wrong))
+        return False
+    files = [f for f in sorted(dest.rglob('*.sh')) if '.git' not in f.parts]
+    files += sorted((ROOT / '.claude' / 'hooks').glob('*.sh'))
+    bad = []
+    for f in files:
+        rel = f.relative_to(dest).as_posix() if dest in f.parents else \
+            '本 repo:' + f.relative_to(ROOT).as_posix()
+        for n, hit in mb_var_hits(f.read_text(encoding='utf-8')):
+            bad.append(f'{rel}:{n}  {hit}…（改成 ${{{hit[1:]}}}）')
+    if bad:
+        record('FAIL', 'bash 3.2 多位元組變數',
+               f'{len(bad)} 處：\n           ' + '\n           '.join(bad[:8]))
+        return False
+    record('OK', 'bash 3.2 多位元組變數',
+           f'骨架與本 repo 共 {len(files)} 支 .sh 無「$變數緊接全形字」；{len(probes)} 個正負向探針通過（靜態，未在 bash 3.2 實跑）')
     return True
 
 
@@ -3665,6 +3726,7 @@ def run_checks(dest, tmp):
         step_codex_windows(dest, tmp)
         step_wiring_cwd(dest, tmp)
         step_portability(dest)
+        step_bash32_multibyte(dest)
         hooked = step_hook(dest, tmp)
         work = hooked if isinstance(hooked, pathlib.Path) else None
         step_busy(dest, work)

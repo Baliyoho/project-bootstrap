@@ -36,13 +36,13 @@ ahead=$(echo "$counts" | awk '{print $2}')
 dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "$behind" -gt 0 ] && [ "$ahead" -gt 0 ]; then
-  echo "[repo-check] 🔴 已分岔：落後 origin $behind、領先 $ahead（branch=$branch）。停下回報並等待使用者指示；不得自行 rebase 或 merge，禁止 push --force 或 reset --hard。"
+  echo "[repo-check] 🔴 已分岔：落後 origin ${behind}、領先 ${ahead}（branch=${branch}）。停下回報並等待使用者指示；不得自行 rebase 或 merge，禁止 push --force 或 reset --hard。"
 elif [ "$behind" -gt 0 ]; then
-  echo "[repo-check] 🔴 本機過時：落後 origin $behind 個 commit（branch=$branch）。先 git pull --ff-only 再動任何東西——部署包是權威版，對著舊快照改會分岔。"
+  echo "[repo-check] 🔴 本機過時：落後 origin $behind 個 commit（branch=${branch}）。先 git pull --ff-only 再動任何東西——部署包是權威版，對著舊快照改會分岔。"
 elif [ "$ahead" -gt 0 ]; then
-  echo "[repo-check] 🟡 有 $ahead 個未推送 commit（branch=$branch）。接棒時 ahead-only：停下回報未推送 commit 的來源，等待使用者指示，不自動 push。"
+  echo "[repo-check] 🟡 有 $ahead 個未推送 commit（branch=${branch}）。接棒時 ahead-only：停下回報未推送 commit 的來源，等待使用者指示，不自動 push。"
 else
-  echo "[repo-check] ✅ 本機沒落後 origin（branch=$branch）——只比對本機與 origin，不代表沒有別台機器在做。"
+  echo "[repo-check] ✅ 本機沒落後 origin（branch=${branch}）——只比對本機與 origin，不代表沒有別台機器在做。"
 fi
 if [ "$dirty" -gt 0 ]; then
   echo "[repo-check] 🟡 工作區有 $dirty 個未提交變更（先辨認來源再動）。"
@@ -93,12 +93,12 @@ if [ -n "$remote_handoff" ]; then
   value=${value%%，*}                # 砍掉「，2026-… (+08) 開工」那段尾註
   value=$(trim_mark "$value")
   if [ "$busy_n" -eq 0 ]; then
-    echo "[repo-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 $branch（下次交棒時照 B6 補回來）。"
+    echo "[repo-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 ${branch}（下次交棒時照 B6 補回來）。"
   elif [ "$busy_n" -gt 1 ]; then
-    echo "[repo-check] 🔴 origin 的 HANDOFF.md 有 $busy_n 列「工作中」欄位，判讀不出來誰握著 $branch。"
+    echo "[repo-check] 🔴 origin 的 HANDOFF.md 有 $busy_n 列「工作中」欄位，判讀不出來誰握著 ${branch}。"
     echo "[repo-check]    不猜——照 A2.5 停下來問使用者。這一欄只能有一列（B6 是覆寫，不要往下疊）。"
   elif [ "$value" = '無（已交棒）' ]; then
-    echo "[repo-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 $branch。"
+    echo "[repo-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 ${branch}。"
   else
     who=${busy#*：}
     machine=$(trim_mark "${value%%／*}")
@@ -142,7 +142,7 @@ if [ -n "$remote_handoff" ]; then
       case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
     fi
     if [ -z "$machine" ]; then
-      echo "[repo-check] 🔴 「工作中」欄位有值、但解析不出機器欄，判讀不出來誰握著 $branch：$who"
+      echo "[repo-check] 🔴 「工作中」欄位有值、但解析不出機器欄，判讀不出來誰握著 ${branch}：$who"
       echo "[repo-check]    當成有人在做處理。格式是「機器 ／ 工具 ／ session 名」（第三欄可選），見 skill 的 A5。"
       echo "[repo-check]    照 A2.5 停下來問使用者，不要直接接棒。"
     else
@@ -152,15 +152,15 @@ if [ -n "$remote_handoff" ]; then
         echo "[repo-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
         echo "[repo-check]    注意：那台未提交的變更只在那台的磁碟上，這裡拿不到——標記只告訴你東西在哪。"
       elif [ -z "$tool" ]; then
-        echo "[repo-check] 🟡 這台機器（$me）還有一個 session 在 $branch 上沒交棒：$who"
+        echo "[repo-check] 🟡 這台機器（${me}）還有一個 session 在 $branch 上沒交棒：$who"
         echo "[repo-check]    這個標記是舊格式、沒有工具欄，分不出是哪個工具寫的。確認是你自己這個工具開的另一個視窗才繼續，不是就照 A2.5 停下來。"
       elif [ "$mismatch" = yes ]; then
-        echo "[repo-check] 🔴 同一台機器（$me）上另一個工具正在 $branch 上工作，尚未交棒：$who"
-        echo "[repo-check]    標記寫的是「$tool」，這個 session 的環境看起來是「$mytool」。同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫——比跨機器那個洞更貴。"
+        echo "[repo-check] 🔴 同一台機器（${me}）上另一個工具正在 $branch 上工作，尚未交棒：$who"
+        echo "[repo-check]    標記寫的是「${tool}」，這個 session 的環境看起來是「${mytool}」。同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫——比跨機器那個洞更貴。"
         echo "[repo-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
       else
-        echo "[repo-check] 🟡 這台機器（$me）上有一個「$tool」的 session 在 $branch 上沒交棒：$who"
-        echo "[repo-check]    你自己是不是「$tool」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
+        echo "[repo-check] 🟡 這台機器（${me}）上有一個「${tool}」的 session 在 $branch 上沒交棒：$who"
+        echo "[repo-check]    你自己是不是「${tool}」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
       fi
     fi
   fi

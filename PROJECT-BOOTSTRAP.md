@@ -11,6 +11,8 @@
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
 > 版本：**2026-11-03**（複審 R04／R07–R09：先遮罩再摘要；先 stage 並拒絕文件／檢查器部分 stage；空工具欄與角括號 title 組合修正。R03 同步資格檢查在維護工具，依 README 逐專案 A1–A5。）
+> 2026-11-06（**刻意不跳版**：`SKILL.md` 一個字沒動）：**3.10 `git-freshness.sh` 與 3.18 `ag-wrap.sh` 的訊息裡，`$變數` 後面緊接中文或全形標點的地方一律改成 `${變數}`**。macOS 內建的 `/bin/bash` 是 3.2，在 UTF-8 語系（`LANG=zh_TW.UTF-8` 之類，或 Python 3.7+ 對 C 語系的 locale coercion 把子程序設成 `C.UTF-8`）下，它會把緊接的多位元組字元的第一個位元組吃進變數名：`（branch=$branch）` 印成 `（branch=��`，「`$tool`」整個消失，`ag-wrap.sh` 找不到腳本時連 JSON 都吐不出來。判斷邏輯沒有壞（參數展開、`case`、`grep` 對中文都正常），壞的是每一句給人與模型看的結論。2026-11-06 第一次在 Mac 上跑 `verify_bootstrap.py` 時三項 FAIL 才發現——之前所有驗證都在 Windows 的 Git Bash（bash 5）上跑，那裡不會重現。兩檔 `source:` 標記更新為 `v2026-11-06`；`verify_bootstrap.py` 加「bash 3.2 多位元組變數」靜態檢查與負向測試，因為只有在 Mac 上實跑才看得到的錯，Windows 上的驗證永遠是綠的。
+>
 > 前一版 **2026-11-02.8**（2026-11-02／F16：自訂 ignore 規則進範本，本機驗收與 executable index mode 先於首 commit／發布；新增 local bare remote 部署生命週期測試。前一步 F12 完成協調邊界文件，原子 claim 依使用者決定留待另案；F13 同步範圍與 preflight 完成。）
 >
 > 前一版 **2026-11-02.7**（2026-11-02／F12：明列接力式 single-writer 的協調邊界、觀測 SHA 比對與失敗停止；原子 claim 未實作，沒有並行互斥保證。）
@@ -1445,7 +1447,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-02.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-06 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：git 新鮮度檢查（多機分岔防呆）
 # 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
 # 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
@@ -1470,13 +1472,13 @@ ahead=$(echo "$counts" | awk '{print $2}')
 dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "$behind" -gt 0 ] && [ "$ahead" -gt 0 ]; then
-  echo "[git-check] 🔴 已分岔：落後 origin $behind、領先 $ahead（branch=$branch）。停下回報並等待使用者指示；不得自行 rebase 或 merge，禁止直接 push 或 reset --hard。"
+  echo "[git-check] 🔴 已分岔：落後 origin ${behind}、領先 ${ahead}（branch=${branch}）。停下回報並等待使用者指示；不得自行 rebase 或 merge，禁止直接 push 或 reset --hard。"
 elif [ "$behind" -gt 0 ]; then
-  echo "[git-check] 🔴 本地過時：落後 origin $behind 個 commit（branch=$branch）。本地 HANDOFF.md／docs 可能是舊快照——先 git pull --ff-only 再讀任何文件、再動任何工作。"
+  echo "[git-check] 🔴 本地過時：落後 origin $behind 個 commit（branch=${branch}）。本地 HANDOFF.md／docs 可能是舊快照——先 git pull --ff-only 再讀任何文件、再動任何工作。"
 elif [ "$ahead" -gt 0 ]; then
-  echo "[git-check] 🟡 有 $ahead 個未推送 commit（branch=$branch）。接棒時 ahead-only：停下回報未推送 commit 的來源，等待使用者指示，不自動 push。"
+  echo "[git-check] 🟡 有 $ahead 個未推送 commit（branch=${branch}）。接棒時 ahead-only：停下回報未推送 commit 的來源，等待使用者指示，不自動 push。"
 else
-  echo "[git-check] ✅ 本機沒落後 origin（branch=$branch）——這一行只比對本機與 origin 的落差，不代表沒有別台機器在做。"
+  echo "[git-check] ✅ 本機沒落後 origin（branch=${branch}）——這一行只比對本機與 origin 的落差，不代表沒有別台機器在做。"
 fi
 if [ "$dirty" -gt 0 ]; then
   echo "[git-check] 🟡 工作區有 $dirty 個未提交變更（可能是上一棒未收斂，先辨認來源再動）。"
@@ -1527,12 +1529,12 @@ if [ -n "$remote_handoff" ]; then
   value=${value%%，*}                # 砍掉「，2026-… (+08) 開工」那段尾註
   value=$(trim_mark "$value")
   if [ "$busy_n" -eq 0 ]; then
-    echo "[git-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 $branch（這個專案的骨架還沒升級到有這個機制；下次交棒時照 B6 補上）。"
+    echo "[git-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 ${branch}（這個專案的骨架還沒升級到有這個機制；下次交棒時照 B6 補上）。"
   elif [ "$busy_n" -gt 1 ]; then
-    echo "[git-check] 🔴 origin 的 HANDOFF.md 有 $busy_n 列「工作中」欄位，判讀不出來誰握著 $branch。"
+    echo "[git-check] 🔴 origin 的 HANDOFF.md 有 $busy_n 列「工作中」欄位，判讀不出來誰握著 ${branch}。"
     echo "[git-check]    不猜——照 A2.5 停下來問使用者。這一欄只能有一列（B6 是覆寫，不要往下疊）。"
   elif [ "$value" = '無（已交棒）' ]; then
-    echo "[git-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 $branch。"
+    echo "[git-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 ${branch}。"
   else
     who=${busy#*：}
     machine=$(trim_mark "${value%%／*}")
@@ -1576,7 +1578,7 @@ if [ -n "$remote_handoff" ]; then
       case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
     fi
     if [ -z "$machine" ]; then
-      echo "[git-check] 🔴 「工作中」欄位有值、但解析不出機器欄，判讀不出來誰握著 $branch：$who"
+      echo "[git-check] 🔴 「工作中」欄位有值、但解析不出機器欄，判讀不出來誰握著 ${branch}：$who"
       echo "[git-check]    當成有人在做處理。格式是「機器 ／ 工具 ／ session 名」（第三欄可選），見 skill 的 A5。"
       echo "[git-check]    照 A2.5 停下來問使用者，不要直接接棒。"
     else
@@ -1585,15 +1587,15 @@ if [ -n "$remote_handoff" ]; then
         echo "[git-check]    依 single writer 規則，同一時間只能有一台機器動同一條分支。"
         echo "[git-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
       elif [ -z "$tool" ]; then
-        echo "[git-check] 🟡 這台機器（$me）還有一個 session 在 $branch 上沒交棒：$who"
+        echo "[git-check] 🟡 這台機器（${me}）還有一個 session 在 $branch 上沒交棒：$who"
         echo "[git-check]    這個標記是舊格式、沒有工具欄，分不出是哪個工具寫的。確認是你自己這個工具開的另一個視窗才繼續，不是就照 A2.5 停下來。"
       elif [ "$mismatch" = yes ]; then
-        echo "[git-check] 🔴 同一台機器（$me）上另一個工具正在 $branch 上工作，尚未交棒：$who"
-        echo "[git-check]    標記寫的是「$tool」，這個 session 的環境看起來是「$mytool」。同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫——比跨機器那個洞更貴。"
+        echo "[git-check] 🔴 同一台機器（${me}）上另一個工具正在 $branch 上工作，尚未交棒：$who"
+        echo "[git-check]    標記寫的是「${tool}」，這個 session 的環境看起來是「${mytool}」。同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫——比跨機器那個洞更貴。"
         echo "[git-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
       else
-        echo "[git-check] 🟡 這台機器（$me）上有一個「$tool」的 session 在 $branch 上沒交棒：$who"
-        echo "[git-check]    你自己是不是「$tool」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
+        echo "[git-check] 🟡 這台機器（${me}）上有一個「${tool}」的 session 在 $branch 上沒交棒：$who"
+        echo "[git-check]    你自己是不是「${tool}」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
       fi
     fi
   fi
@@ -1638,10 +1640,10 @@ if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
     if [ "$km" = "$kl" ]; then
       :                              # 只是寫法不同（2026-11-02 與 2026-11-02.0），不吵
     elif [ "$(printf '%s\n%s\n' "$km" "$kl" | sort | head -1)" = "$km" ]; then
-      echo "[git-check] 🟡 handoff 骨架落後：本機 v$mine，最新 v$latest。"
+      echo "[git-check] 🟡 handoff 骨架落後：本機 v${mine}，最新 v${latest}。"
       echo "[git-check]    到 project-bootstrap 跑：python -X utf8 tools/sync_project.py <本專案路徑>（python 不存在就用 python3）"
     else
-      echo "[git-check] 🟡 本機 handoff 骨架比上游新：本機 v$mine，上游 v$latest。"
+      echo "[git-check] 🟡 本機 handoff 骨架比上游新：本機 v${mine}，上游 v${latest}。"
       echo "[git-check]    這不是落後——可能是權威版還沒 push，或有人就地改了這個專案的副本（鐵律 1 禁止）。"
       echo "[git-check]    不要跑 sync_project.py，那會把新的蓋成舊的；先確認權威版推上去了沒。"
     fi
@@ -2491,7 +2493,7 @@ exit /b %ERRORLEVEL%
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-10-31.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-06 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # Antigravity hook 轉接層：只做管線，不含任何程序知識。
 # 用法：bash .claude/hooks/ag-wrap.sh <要跑的腳本檔名> [參數...]
 set -u
@@ -2519,7 +2521,7 @@ shift
 here=$(CDPATH= cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd) || emit "[ag-wrap] ⚠️ 取不到轉接層自己的位置。"
 root=$(CDPATH= cd -- "$here/../.." >/dev/null 2>&1 && pwd) || emit "[ag-wrap] ⚠️ 取不到專案根目錄。"
 script=$here/$target
-[ -f "$script" ] || emit "[ag-wrap] ⚠️ 找不到 $target（應該在 .claude/hooks/ 底下）。"
+[ -f "$script" ] || emit "[ag-wrap] ⚠️ 找不到 ${target}（應該在 .claude/hooks/ 底下）。"
 
 out=$(CDPATH= cd -- "$root" && bash "$script" "$@" 2>&1)
 [ -n "$out" ] || { printf '{}\n'; exit 0; }
