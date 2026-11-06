@@ -2,7 +2,7 @@
 
 > 最後更新：2026-11-05
 > 時間：2026-11-05 16:06（Asia/Taipei）；回覆者：Codex。
-> 基準：`main @ 69b8427` 的[需求權威版](project-bootstrap-requirements.md)與[1545 回覆](project-bootstrap-requirements-response-review-reply-2026-11-05-1545.md)。
+> 基準：`main @ 69b8427` 的[需求權威版](project-bootstrap-requirements-history.md)與[1545 回覆](project-bootstrap-requirements-response-review-reply-2026-11-05-1545.md)。
 > 性質：文字、一致性與可驗收性審閱；以下建議尚未採納，不改變需求權威。沒有重排優先序、重做功能探索或評估外部工具。
 
 ## 結論

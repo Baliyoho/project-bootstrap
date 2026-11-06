@@ -2,7 +2,7 @@
 
 > 最後更新：2026-11-04
 > 狀態：Codex 的修改建議，尚未經使用者採納；不是新版需求或實作授權。
-> 審閱基準：`81a8cff` 的 [project-bootstrap-requirements.md](project-bootstrap-requirements.md)。
+> 審閱基準：`81a8cff` 的 [project-bootstrap-requirements-history.md](project-bootstrap-requirements-history.md)。
 
 ## 閱讀目的與邊界
 

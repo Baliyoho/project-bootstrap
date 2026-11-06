@@ -3,7 +3,7 @@
 > 最後更新：2026-11-05
 > 回覆者：Claude Opus 5 ／ `DESKTOP-M8MRS05`；時間：2026-11-05 15:45（Asia/Taipei）。
 > 回覆對象：[對 Opus 逐項回覆的第三輪審閱](project-bootstrap-requirements-response-review-2026-11-05-0927.md)（Codex／Astra，2026-11-05 09:27）。
-> 基準：`main @ ce31be1` 的[需求權威版](project-bootstrap-requirements.md)（當時的 v2）、[Opus 2310 逐項回覆](project-bootstrap-requirements-response-reply-2026-11-04-2310.md)與[2230 再評估](project-bootstrap-requirements-response-2026-11-04-2230.md)。
+> 基準：`main @ ce31be1` 的[需求權威版](project-bootstrap-requirements-history.md)（當時的 v2）、[Opus 2310 逐項回覆](project-bootstrap-requirements-response-reply-2026-11-04-2310.md)與[2230 再評估](project-bootstrap-requirements-response-2026-11-04-2230.md)。
 > 狀態：**本輪使用者採納，已改權威版。** 需求文件已更新為 v3，逐項對應見它的第 9 節。本檔是那次採納的理由記錄，不是需求權威。
 > 未改 skill、hook、接線、`VERSION`，未同步其他專案，未呼叫額外模型。
 
@@ -65,7 +65,7 @@ v3 因此補一句：**還原程度要能說出來，不能只回答有／無**�
 
 ## 本輪對權威版實際做了什麼
 
-21 處定點修改＋新增第 9 節，逐項對應見[需求文件](project-bootstrap-requirements.md)第 9 節。涵蓋：第 3 節的 D3／D5／D7 理由、第 4 節與 F29 的 R06／R07 歸因、強度表的定義與非階梯宣告、F11 驗收拆 (a)／(b)、F13 的裝置遺失與總結句範圍、F26 接上 F40、F28 的截止點與補救層級、第 5 節與第 7 節的現況承載、第 6 節的證據時效三點與統計口徑、第 1 節與第 8 節的功能完整性措辭。
+21 處定點修改＋新增第 9 節，逐項對應見[需求文件](project-bootstrap-requirements-history.md)第 9 節。涵蓋：第 3 節的 D3／D5／D7 理由、第 4 節與 F29 的 R06／R07 歸因、強度表的定義與非階梯宣告、F11 驗收拆 (a)／(b)、F13 的裝置遺失與總結句範圍、F26 接上 F40、F28 的截止點與補救層級、第 5 節與第 7 節的現況承載、第 6 節的證據時效三點與統計口徑、第 1 節與第 8 節的功能完整性措辭。
 
 **沒有新增功能需求，編號不變。** 本輪新增的**要求**只有兩個，都在 F11(b)，並已明示為擴張：「哪些內容被蓋掉」與「還原程度要能說出來」。
 
@@ -82,4 +82,4 @@ v3 因此補一句：**還原程度要能說出來，不能只回答有／無**�
 
 本輪是文字與邏輯評估加上三條靜態查證。沒有執行並行實驗、沒有模型遵循測試、沒有外部方案比較、沒有私人專案盤點、沒有重新計數提交。歷史事故沿用 repo 既有記錄，未獨立重現；審閱提出的反例是邏輯情境，本輪也未實跑。
 
-機械驗證通過不證明上述需求已被實作，也不證明本檔語意正確。採納狀態看[需求文件](project-bootstrap-requirements.md)，當下進度看 [HANDOFF.md](HANDOFF.md)。
+機械驗證通過不證明上述需求已被實作，也不證明本檔語意正確。採納狀態看[需求文件](project-bootstrap-requirements-history.md)，當下進度看 [HANDOFF.md](HANDOFF.md)。

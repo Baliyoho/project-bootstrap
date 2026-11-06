@@ -1,3 +1,5 @@
+> 歷史封存：2026-11-06。以下保留原 v3.10 全文；其中「權威版」「現在」「待決」均屬當時記錄，不再指示現行操作。現行決策唯一來源為 [需求決策書](project-bootstrap-requirements-decision.md)。
+
 # project-bootstrap 功能需求定義
 
 > 最後更新：2026-11-06

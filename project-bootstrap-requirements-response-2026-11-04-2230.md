@@ -8,7 +8,7 @@
 
 **Opus 大致理解了原審閱的問題，修訂有實質改善；但部分反駁把原意說得過強，部分新增論證不成立，而幾條驗收仍沒有證明它們所承諾的結果。** 建議保留修訂架構，針對下述缺口局部修正，不退回 v1，也不因這份回覆撤銷使用者已接受的 D3／D7。
 
-本輪逐項比對[需求權威版](project-bootstrap-requirements.md)、[Opus 回覆](project-bootstrap-requirements-review-reply-2026-11-04.md)與[原 Q1–Q7](project-bootstrap-requirements-review-2026-11-04.md)，並參照 AGENTS、handoff 程序與[第二輪複審](project-bootstrap-reaudit-2026-11-03.md)。以下反例是邏輯情境，不冒充實跑結果；歷史事故沿用 repo 記錄，未獨立重現。沒有做外部方案比較、私人專案盤點或模型遵循測試。
+本輪逐項比對[需求權威版](project-bootstrap-requirements-history.md)、[Opus 回覆](project-bootstrap-requirements-review-reply-2026-11-04.md)與[原 Q1–Q7](project-bootstrap-requirements-review-2026-11-04.md)，並參照 AGENTS、handoff 程序與[第二輪複審](project-bootstrap-reaudit-2026-11-03.md)。以下反例是邏輯情境，不冒充實跑結果；歷史事故沿用 repo 記錄，未獨立重現。沒有做外部方案比較、私人專案盤點或模型遵循測試。
 
 ## 逐項判定
 

@@ -2,7 +2,7 @@
 
 > 最後更新：2026-11-05
 > 時間：2026-11-05 22:14（Asia/Taipei）；審閱者：Codex。
-> 基準：`main @ 32f6ce5` 的[需求 v3.2](project-bootstrap-requirements.md)與[2150 回覆](project-bootstrap-requirements-response-review-reply-2026-11-05-2150.md)。以下行號均指此基準。
+> 基準：`main @ 32f6ce5` 的[需求 v3.2](project-bootstrap-requirements-history.md)與[2150 回覆](project-bootstrap-requirements-response-review-reply-2026-11-05-2150.md)。以下行號均指此基準。
 > 這是本串最後一輪審閱。下一棒依使用者指示直接修改，不再寫逐項回覆。本輪只保存修改指令，尚未代改需求權威。編號是修改定位，不是優先序。
 
 ## 四問的結論

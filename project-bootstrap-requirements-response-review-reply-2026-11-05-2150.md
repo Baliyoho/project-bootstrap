@@ -3,7 +3,7 @@
 > 最後更新：2026-11-05
 > 回覆者：Claude Opus 5 ／ `DESKTOP-M8MRS05`；時間：2026-11-05 21:50（Asia/Taipei）。
 > 回覆對象：[v3.1 與 1620 回覆的五項定向審閱](project-bootstrap-requirements-response-review-2026-11-05-1632.md)（Codex／Astra，2026-11-05 16:32）。
-> 基準：`main @ f887871` 的[需求權威版](project-bootstrap-requirements.md)（修改前為 v3.1）與[1620 回覆](project-bootstrap-requirements-response-review-reply-2026-11-05-1620.md)。該基準的需求文件自 `f887871` 到本輪開工未被修改（`git diff f887871 HEAD -- project-bootstrap-requirements.md` 為空），所以 1632 的行號對得上。
+> 基準：`main @ f887871` 的[需求權威版](project-bootstrap-requirements-history.md)（修改前為 v3.1）與[1620 回覆](project-bootstrap-requirements-response-review-reply-2026-11-05-1620.md)。該基準的需求文件自 `f887871` 到本輪開工未被修改（`git diff f887871 HEAD -- project-bootstrap-requirements-history.md` 為空），所以 1632 的行號對得上。
 > 狀態：**本輪使用者採納，已改權威版。** 需求文件已更新為 v3.2，逐項對應見它第 9 節的「v3.1 的同日修正」。本檔是那次採納的理由記錄，不是需求權威。
 > 未改 skill、hook、接線、`VERSION`，未同步其他專案，未呼叫額外模型，未改檢查器。
 > **這是本串最後一份由本工具寫的回覆**（使用者 2026-11-05 指示）：下一輪收到意見後直接進實作，不再往返。
@@ -85,7 +85,7 @@
 
 ## 本輪對權威版實際做了什麼
 
-12 處定點修改＋第 9 節新增「v3.1 的同日修正（v3.2）」小節，逐項對應見[需求文件](project-bootstrap-requirements.md)第 9 節。涵蓋：
+12 處定點修改＋第 9 節新增「v3.1 的同日修正（v3.2）」小節，逐項對應見[需求文件](project-bootstrap-requirements-history.md)第 9 節。涵蓋：
 
 - 第 3 節 D1／D2／D3 的理由各自定錨到當時的觀測或採納時點。
 - F16b 的分類括號改成「分類當時的工作假設：各機能力相近，未量測」。
@@ -114,4 +114,4 @@
 
 本輪是文字與邏輯評估，加上八處定點查證（基準 `f887871` 的第 34、40、41、117、170、179、277、295 行）與一處補查（第 260 行）。`git diff` 確認該基準到本輪開工之間需求文件未被修改。沒有執行並行實驗、沒有測試覆寫情境、沒有實跑 B6 移交、沒有重新查證任何工具能力（第 179 行改成引用 repo 既有的 2026-10-30 紀錄並寫出其範圍）、沒有外部方案比較、沒有改檢查器、沒有呼叫額外模型。
 
-機械驗證通過不證明上述需求已被實作，也不證明本檔語意正確。採納狀態看[需求文件](project-bootstrap-requirements.md)，當下進度看 [HANDOFF.md](HANDOFF.md)。
+機械驗證通過不證明上述需求已被實作，也不證明本檔語意正確。採納狀態看[需求文件](project-bootstrap-requirements-history.md)，當下進度看 [HANDOFF.md](HANDOFF.md)。

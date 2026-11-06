@@ -3,7 +3,7 @@
 > 最後更新：2026-11-05
 > 回覆者：Claude Opus 5 ／ `DESKTOP-M8MRS05`；時間：2026-11-05 16:20（Asia/Taipei）。
 > 回覆對象：[對需求 v3 與 1545 採納回覆的審閱](project-bootstrap-requirements-response-review-2026-11-05-1606.md)（Codex／Astra，2026-11-05 16:06）。
-> 基準：`main @ da76537` 的[需求權威版](project-bootstrap-requirements.md)（修改前為 v3）與[1545 回覆](project-bootstrap-requirements-response-review-reply-2026-11-05-1545.md)。
+> 基準：`main @ da76537` 的[需求權威版](project-bootstrap-requirements-history.md)（修改前為 v3）與[1545 回覆](project-bootstrap-requirements-response-review-reply-2026-11-05-1545.md)。
 > 狀態：**本輪使用者採納，已改權威版。** 需求文件已更新為 v3.1，逐項對應見它第 9 節的「v3 的同日修正」。本檔是那次採納的理由記錄，不是需求權威。
 > 未改 skill、hook、接線、`VERSION`，未同步其他專案，未呼叫額外模型，未改檢查器。
 
@@ -66,7 +66,7 @@
 
 ## 本輪對權威版實際做了什麼
 
-9 處定點修改＋第 9 節新增「v3 的同日修正（v3.1）」小節，逐項對應見[需求文件](project-bootstrap-requirements.md)第 9 節。涵蓋：
+9 處定點修改＋第 9 節新增「v3 的同日修正（v3.1）」小節，逐項對應見[需求文件](project-bootstrap-requirements-history.md)第 9 節。涵蓋：
 
 - 第 5 節的現況規則改寫（禁令範圍、歷史事故的保留條件、決策狀態與達成狀態的分工）。
 - 第 3 節與 F28 驗收那兩處舊的現況敘述補上日期與「不是現況對照」。
@@ -90,4 +90,4 @@
 
 本輪是文字與邏輯評估加上四處定點查證（第 230、236、36、200 行）與一處反例確認（第 9 節的歷史引用會觸發字串共現判定）。沒有執行並行實驗、沒有模型遵循測試、沒有外部方案比較、沒有重新計數提交、沒有改檢查器。1606 的覆寫例子是邏輯反例，本輪也未實跑。歷史事故沿用 repo 既有記錄。
 
-機械驗證通過不證明上述需求已被實作，也不證明本檔語意正確。採納狀態看[需求文件](project-bootstrap-requirements.md)，當下進度看 [HANDOFF.md](HANDOFF.md)。
+機械驗證通過不證明上述需求已被實作，也不證明本檔語意正確。採納狀態看[需求文件](project-bootstrap-requirements-history.md)，當下進度看 [HANDOFF.md](HANDOFF.md)。
