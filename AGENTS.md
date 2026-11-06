@@ -34,7 +34,7 @@
 
 唯一的例外是 `tools/verify_bootstrap.py`——它是**部署包的測試**，不是骨架的一部分，也不會被部署出去。
 
-另一個例外是 [HANDOFF.md](HANDOFF.md)：2026-10-30 起這個 repo 多機維護，所以補上跨機器「工作中」標記（`.claude/hooks/repo-git-check.sh` 開場讀 origin 那一份）。**它同時必須是可信的當下交接快照**；只保留現況、未完成事項與接手限制，事故史與規則仍放回各自的家。本 repo 依然刻意沒有 handoff skill、沒有 `pre-push-handoff.sh`、沒有 `check_docs.py`——它是制度的**來源**，不是一個交接中的工作專案（理由見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有的東西」）。
+另一個例外是 [HANDOFF.md](HANDOFF.md)：2026-10-30 起這個 repo 多機維護，所以補上跨機器「工作中」標記（`.claude/hooks/repo-git-check.sh` 開場讀 origin 那一份）。**它同時必須是可信的當下交接快照**；只保留現況、未完成事項與接手限制，事故史與規則仍放回各自的家。本 repo 依然刻意沒有 handoff skill、沒有 `pre-push-handoff.sh`、沒有 `check_docs.py`——它是制度的**來源**，不是一個交接中的工作專案（理由見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有的東西」）。⚠️ **2026-11-06 起這三項是「已宣告的例外」，不是空白**：需求 v3.10 新增的 F46 要求來源自身的保護不低於產物，使用者當天選了 D4／F34 的宣告路線而非補裝，正式宣告寫在 ARCHITECT 那一節的開頭。**但宣告不等於 F46 已達成**——F46 的強度是偵測，還要求缺的項目被印出來，而現在不會印，所以 F46 仍未實作、未驗收。要撤銷宣告改成補裝，是改使用者的決定。
 
 ## 鐵律
 
