@@ -13,7 +13,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支：`main`。
 - **待續分支**：無。
-- **工作中**：無（已交棒）
+- **工作中**：`baliyohodeMini` ／ `Claude Code` ／ `㊣　26110616｜Mac同步接棒｜工作中｜交棒1次`，2026-11-06 16:55 (+08) 開工
 - **骨架版本**：`2026-11-03`
 - 本輪刻意不跳版：`SKILL.md` 沒動，只改了 3.10／3.18 兩支 hook（鐵律 1）。
 - 本機能力：`DESKTOP-M8MRS05`＝Windows 11、Python 3.13、Git Bash、PowerShell；`baliyohodeMini`＝macOS、Python 3.15（只有 `python3`）、`/bin/bash` 3.2.57。
