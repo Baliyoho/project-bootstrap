@@ -16,6 +16,8 @@
 
 [需求歷史原件](project-bootstrap-requirements-history.md)保存 v3.10 與全部修訂理由，僅供追溯；其中舊的「權威版」「現在」「待決」不再指示現行操作。不要讓歷史段落覆蓋決策書，也不要把現行程序當成已符合新需求。
 
+需求實現與開源技術棧選型見 [實現規劃](project-bootstrap-implementation-plan.md)（2026-11-06）：50 項需求映射、現有能力基準、候選比較、保障邊界與分期驗收。它是建議方案，未部署，不授權略過現行程序；實作進度仍看 HANDOFF。處理選型或架構實作時再讀，不列常態接棒必讀。
+
 效率改善的設計提案見 [project-bootstrap-efficiency-plan.md](project-bootstrap-efficiency-plan.md)（2026-11-03）。它尚未生效，不是每輪必讀文件，也不授權省略本檔或全域 skill 的現行程序；只有處理效率改造時才讀，實作進度仍看 HANDOFF。
 
 照 A 模式做會踩到三處跟部署出去的專案不一樣的地方：

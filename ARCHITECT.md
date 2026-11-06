@@ -1,5 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 2026-11-06 最新結構登記：新增 [需求實現規劃](project-bootstrap-implementation-plan.md)，根目錄 Markdown 總數 26；內容為技術棧選型與 50 項需求映射，不是已部署架構。部署包、skill、hook、接線與 VERSION 未變。
 > 2026-11-06 需求文件分家：原 requirements 改名 history，新增 decision 為現行唯一權威；本 repo 共 25 份 Markdown。下方舊結構登記只描述當時狀態。
 > 2026-11-06 最新結構登記：功能完整性複查（v3.9）與八項缺口全部納入（v3.10），**根目錄新增 [project-bootstrap-requirements-completeness-audit-2026-11-06.md](project-bootstrap-requirements-completeness-audit-2026-11-06.md)**，本 repo **24 份 Markdown**（前次 23）。[需求權威版](project-bootstrap-requirements-history.md)第 4 節**新增第九類「不該流出去的東西」與八條 F42–F49**，條目數 42→50；第 6 節留「已更正」指標並記 C01–C08→F42–F49 的對應；第 9 節新增兩個小節。本檔「這個 repo 刻意沒有的東西」那節**新增一條正式例外宣告**（F46 的落地方式，使用者 2026-11-06 決定）。驗證 52 項與骨架 22 檔不變，skill／hook／接線／`VERSION` 皆未動，**未改檢查器**，不部署、不同步。⚠️ **本檔漏了一輪**：新增那份報告的 commit（`3d7b991`）按「改本檔的時機」就該同時改本檔，當時沒改——`verify_bootstrap.py` 只查本檔的日期標頭，查不到「根目錄多一個檔案而本檔沒登記」，所以這一類漏掉目前沒有守門人（它正是新納入的 F45 要擋的形狀，而 F45 還沒實作）。
 >
@@ -46,6 +47,7 @@
 | [project-bootstrap-reaudit-2026-11-03.md](project-bootstrap-reaudit-2026-11-03.md) | **第二輪複審快照**：R01–R09 的證據、改善與驗收門檻、原 F01–F16 的複審判定；2026-11-03 使用者要求下一輪先讀。不部署、不同步，原始探針留在審查聊天產物 | 查核結論需勘誤時；當下實作進度看 HANDOFF |
 | [project-bootstrap-efficiency-plan.md](project-bootstrap-efficiency-plan.md) | **效率改進設計提案**：接棒分流、驗證分層、必讀內容精簡、原始碼與部署產物分離；尚未實施，不部署、不同步，不取代現行程序 | 設計決策改變時；實作進度看 HANDOFF |
 | [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 現行需求唯一權威：D1–D8、50 條需求、驗收、待決與變更理由。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
+| [project-bootstrap-implementation-plan.md](project-bootstrap-implementation-plan.md) | 依決策書評估既有程式與開源工具；推薦技術棧、50 項映射、可行性門檻、遷移與驗收。不承載滾動達成狀態，不部署、不同步 | 選型或實現方案改變時 |
 | [project-bootstrap-requirements-history.md](project-bootstrap-requirements-history.md) | 原 v3.10 全文與修訂理由，歷史封存；不再指示現行操作 | 僅補帶日期的歷史勘誤 |
 | [project-bootstrap-requirements-review-2026-11-04.md](project-bootstrap-requirements-review-2026-11-04.md) | 需求審閱建議快照 Q1–Q7，供下一棒 Opus 討論；未採納，不改變需求權威或現行程序。不部署、不同步 | 本次審閱快照；採納結果另改需求文件 |
 | [project-bootstrap-requirements-review-reply-2026-11-04.md](project-bootstrap-requirements-review-reply-2026-11-04.md) | **對 Q1–Q7 的逐項評估回覆**：每項的理解、同意／不同意的理由與最後做法，含三點整體判讀與建議處理順序。2026-11-04 全部判定已被採納，所以它是那次修訂的理由記錄。不部署、不同步 | 評估結論改變時；它不是需求權威 |
