@@ -3626,7 +3626,7 @@ def step_architecture_summary(dest):
             if not pointers or any('import' not in line or '文字指標' not in line for line in pointers):
                 bad.append(name + ' 未區分 Claude import 與 Gemini 文字指標')
             if name == 'repo':
-                prompts = [line for line in rows if '3.4' in line]
+                prompts = [line for line in rows if line.startswith('| 3.4 |')]
                 if not prompts or any('收工交棒／開工接棒' not in line for line in prompts):
                     bad.append('README prompt 摘要與現行命名分岔')
         return bad
@@ -3641,8 +3641,15 @@ def step_architecture_summary(dest):
     mutant['repo'] = docs['repo'].replace('收工交棒／開工接棒', 'A／B')
     if not problems(mutant):
         bad.append('負向測試未抓到 prompt 字母退化')
+    # 反向保險：表格裡的版本號（v3.4）不是範本 3.4，不得被當成 prompt 那一列。
+    mutant = dict(docs)
+    mutant['repo'] = docs['repo'].replace('| 3.4 | `README.md`', '| 3.4x | `README.md`')
+    if '| 3.4x |' not in mutant['repo']:
+        bad.append('反向保險失效：ARCHITECT 沒有「| 3.4 | `README.md`」那一列')
+    elif [p for p in problems(mutant) if 'prompt' in p] != ['README prompt 摘要與現行命名分岔']:
+        bad.append('反向保險失效：缺了範本 3.4 那一列時沒有被判出來')
     record('FAIL' if bad else 'OK', '結構摘要一致性', '；'.join(bad) if bad else
-           '本 repo 與生成 ARCHITECT 區分 import／文字指標、prompt 用收工／開工；三個負向測試')
+           '本 repo 與生成 ARCHITECT 區分 import／文字指標、prompt 用收工／開工（認的是範本編號欄，不是全行出現 3.4）；三個負向測試＋一個反向保險')
 
 
 def run_checks(dest, tmp):
