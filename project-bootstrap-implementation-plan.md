@@ -1,7 +1,7 @@
 # project-bootstrap 需求實現與技術棧規劃
 
 > 最後更新：2026-11-06
-> 狀態：**建議方案，未部署、未取代現行程序**。依據 [需求決策書](project-bootstrap-requirements-decision.md) 決策版本 1；涵蓋全部 50 個需求 ID。
+> 狀態：**2026-11-06 使用者已授權在 `codex/project-bootstrap_v2` 按本方向實作；尚未部署、未取代現行程序**。依據 [需求決策書](project-bootstrap-requirements-decision.md) 決策版本 1；涵蓋全部 50 個需求 ID。
 > 本機查核基準：`01d60c6`（需求整理完成），骨架 `VERSION=2026-11-03`。本輪只修復誤觸的決策書檔名、研究與撰寫文件，沒有安裝候選工具或呼叫額外模型。
 > 外部資料：2026-11-06 讀取官方文件、官方 repo 與 LICENSE；屬文件查證，**不是整合實測**。選型理由是本規劃的判斷；不把供應者功能描述當成需求驗收。
 
@@ -292,3 +292,7 @@ Git commit author、mtime、檔案 watcher、工作中標記都不足以證明�
 外部工具的每列連結是官方入口；再以 `https://api.github.com/repos/{owner}/{repo}` 讀 `archived`／`pushed_at`／`license`，特殊授權另外讀原始 LICENSE。本次列出的 20 個 repo 均未標 archived；活躍提交不代表可靠。Beads 上游已轉至 gastownhall，資料層為 Dolt；Gitleaks 維護方向與 sandbox-runtime Windows alpha 都以當日官方說明為準。Python 本機 urllib 曾因 CA 設定無法連 API，改用保留 TLS 驗證的系統 curl 取得；不將失敗當成工具不存在。
 
 本輪沒有鎖定安裝版本、跑效能比較、重驗工具 hooks、部署 sandbox、做外部模型遵循探針，故**所有整合效果仍待 P0 驗證**。下一步是 P0 的三份可失敗原型規格與版本清單，不是先安裝所有候選套件。若後續開始實作，從使用者選定的 P0 範圍建立安全點與授權；本輪交付到規劃文件為止。
+
+## 10. v2 啟動補充（2026-11-06）
+
+使用者已授權開新版分支實作。新增必要要求：保留 session 自動改名與交棒計數；優先改善交接等待及必讀量；部署端延續既有文件分工，重點是共用制度集中、單一資訊權威及按需讀取，不要求大搬目錄。這些補充優先於上文尚稱「僅提案」的授權敘述；後續工作與需求 ID 補登見 [HANDOFF](HANDOFF.md)。本次授權不等於所有候選已驗收或允許外部部署、付費探針、合併 main。
