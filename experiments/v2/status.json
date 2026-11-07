@@ -112,10 +112,14 @@
         {
           "path": "experiments/v2/feasibility.py",
           "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
+        },
+        {
+          "path": "experiments/v2/broker_fixture.py",
+          "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
-      "next": "缺失／失效／別人各測；覆寫三要素與同事件關聯全驗，部分還原整項失敗",
+      "next": "完成代理內容庫到正式工作樹的 materializer／crash recovery，驗全部變更入口與可信身分",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -134,6 +138,10 @@
             {
               "path": "experiments/v2/isolation.py",
               "scope": "Mac 單一受包覆子程序 OS 邊界；不是全部工具隔離"
+            },
+            {
+              "path": "experiments/v2/test_broker.py",
+              "scope": "依 parent 管道身分關聯兩次完整內容事件；正式可信 launcher 與 materializer 尚未完成"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -466,10 +474,14 @@
         {
           "path": "experiments/v2/test_contracts.py",
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
+        },
+        {
+          "path": "experiments/v2/broker_fixture.py",
+          "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         }
       ],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
-      "next": "未授權的刪除／force／schema／憑證各測；間接命令也不能繞過"
+      "unknown": "合成 parent 授權與 agent 端分權可驗；人類授權簽發／有效期、正式執行與全 surface 隔離尚未完成",
+      "next": "補可信人類授權及有效期、耐久 request 去重；現階段 effect 只記合成事件，不執行真實操作"
     },
     {
       "id": "F43",
@@ -484,9 +496,13 @@
         {
           "path": "experiments/v2/feasibility.py",
           "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
+        },
+        {
+          "path": "experiments/v2/broker_fixture.py",
+          "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         }
       ],
-      "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
+      "unknown": "合成子程序直接庫／視圖讀寫被拒絕；正式工作樹、Gitleaks、全表面提交前阻擋仍未交付",
       "next": "未有 ignore、暫存／提交／tag 訊息及輸出邊界都測；已外流不能稱阻擋成功",
       "parts": {
         "a": {
@@ -544,8 +560,13 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
-      "evidence": [],
-      "unknown": "Mac 子程序隔離探針可驗；Codex 開場真實注入及其他工具／surface 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/broker_fixture.py",
+          "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
+        }
+      ],
+      "unknown": "Mac 固定合成子程序的管道隔離可驗；非桌面／模型接線；Windows/Linux 未驗證，Mac Codex 真實注入未驗收",
       "next": "分工具／surface／版本報支援與缺口，缺攔截就不能顯示 strict ready"
     },
     {
@@ -557,10 +578,14 @@
         {
           "path": "experiments/v2/test_contracts.py",
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
+        },
+        {
+          "path": "experiments/v2/broker_fixture.py",
+          "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         }
       ],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
-      "next": "額外模型、付費 API、資源建立未授權不發生；訂閱探針也需授權"
+      "unknown": "合成 parent 授權與 agent 端分權可驗；人類授權簽發／有效期、正式執行與全 surface 隔離尚未完成",
+      "next": "補可信人類授權及有效期、耐久 request 去重；現階段 effect 只記合成事件，不執行真實操作"
     },
     {
       "id": "F49",

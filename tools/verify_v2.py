@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from experiments.v2.baseline import measure
+from experiments.v2.broker_fixture import probe_broker
 from experiments.v2.feasibility import run_probes
 from experiments.v2.isolation import probe_isolation
 from experiments.v2.registry import validate
@@ -39,18 +40,21 @@ def main():
     findings = run_probes()
     isolation = probe_isolation()
     supervisor = run_supervisor_probe()
+    broker = probe_broker()
     baseline = measure(ROOT, args.baseline)
     counterexamples = all(row['counterexample_observed'] for row in findings)
     baseline_valid = ('verifier' not in baseline or
                       (baseline['verifier']['exit_code'] == 0 and baseline['inputs_unchanged']))
     passed = (not errors and result.wasSuccessful() and counterexamples and baseline_valid
-              and supervisor['result'] == '通過' and isolation['result'] != '不通過')
+              and supervisor['result'] == '通過' and isolation['result'] != '不通過'
+              and broker['result'] != '不通過')
     report = {'schema': 1, 'acquired_at': datetime.now(timezone.utc).isoformat(),
         'scope': 'P0 合成原型；不是現行程序切換或真實 surface 驗收',
         'harness_passed': passed, 'strict_ready': False,
         'registry_errors': errors, 'tests': {'run': result.testsRun,
             'failed': len(result.failures), 'errors': len(result.errors), 'skipped': len(result.skipped)},
-        'findings': findings, 'isolation_probe': isolation, 'supervisor_probe': supervisor, 'baseline': baseline,
+        'findings': findings, 'isolation_probe': isolation, 'supervisor_probe': supervisor,
+        'broker_probe': broker, 'baseline': baseline,
         'unverified': ['Windows/Linux', '真實工具與可信 session 隔離', '即時推送與模型上下文重建',
                        'Gitleaks/簽章/正式發布', '候選套件鎖定及授權清單', '20 專案容量']}
     if args.json:
@@ -65,6 +69,7 @@ def main():
         print(f'F22 必讀量：{baseline["unicode_characters"]} / 12000 字元；{baseline["reading_result"]}')
         print('OS 隔離探針：' + isolation['result'] + '（僅所列範圍，不代表 strict ready）')
         print('執行中上下文替換：' + supervisor['result'] + '（固定合成子程序，非真實模型）')
+        print('管道身分／管理分權：' + broker['result'] + '（受隔離合成 agent，非正式工具接線）')
         if 'verifier' in baseline:
             print('既有驗證器：', json.dumps(baseline['verifier'], ensure_ascii=False))
         print('P0 實驗回歸：' + ('通過' if passed else '不通過'))

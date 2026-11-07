@@ -46,9 +46,10 @@ class RegistryTests(unittest.TestCase):
                   'findings': [{'id': name, 'counterexample_observed': True, 'requirement_result': '不通過'}
                                for name in ('same-uid-journal-bypass', 'direct-git-object-bypass',
                                             'running-context-still-uses-old-premise')],
-                  'isolation_probe': {'result': '未驗證'}, 'supervisor_probe': {'result': '通過'}}
+                  'isolation_probe': {'result': '未驗證'}, 'supervisor_probe': {'result': '通過'},
+                  'broker_probe': {'result': '通過'}}
         self.assertEqual(legacy.v2_report_problem(report), '')
-        for change in ('empty', 'skip', 'ready', 'missing', 'false-pass', 'no-reproduction', 'supervisor'):
+        for change in ('empty', 'skip', 'ready', 'missing', 'false-pass', 'no-reproduction', 'supervisor', 'broker'):
             mutant = copy.deepcopy(report)
             if change == 'empty':
                 mutant['tests']['run'] = 0
@@ -62,6 +63,8 @@ class RegistryTests(unittest.TestCase):
                 mutant['findings'][0]['requirement_result'] = '通過'
             elif change == 'supervisor':
                 mutant.pop('supervisor_probe')
+            elif change == 'broker':
+                mutant.pop('broker_probe')
             else:
                 mutant['findings'][0]['counterexample_observed'] = False
             with self.subTest(change=change):

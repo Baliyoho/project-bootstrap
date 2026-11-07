@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-07 08:19（+08；模式 C 中途安全點，未釋出 writer）
-- **交棒者**：Codex CLI ／ `baliyohodeMini`（v2 P0 第一批原型；本聊天仍工作中）
+- **交接時間**：2026-11-07 08:39（+08；模式 C 中途安全點，未釋出 writer）
+- **交棒者**：Codex CLI ／ `baliyohodeMini`（v2 P0 管道身分與管理分權；本聊天仍工作中）
 
 ## 任務目標
 
@@ -22,13 +22,14 @@
 - 補登必要需求 F50、51 ID 映射與狀態移交；F50 狀態機和改名 adapter 契約已有正常／負向案例，未接真實事件自動化。
 - [P0 原型](experiments/v2/README.md)：內容／事件交易、授權範圍、掃描後不可變候選、epoch／通知與 ACK、執行中子程序停止及上下文替換。
 - 三個繞過反例可重現；Mac OS 子程序隔離機制可驗，但沒有把目前桌面 App／MCP 包入隔離。完整需求判定見索引。
+- 新增 parent-only broker 與受隔離合成 agent：管道綁身分、資源範圍、無管理 RPC、請求去重、關閉管道失效；42 個 v2 測試含取消讀取限制及啟動失敗反例。
 - `tools/verify_v2.py` 產生可重跑 JSON，含來源 digest、取得時間、環境、字元與驗證器耗時；已接回原一鍵入口，沒有啟用驗證快取或跳過 A4。
 
 ## 未完成／下一步
 
-1. P0 尚未退出：將可信 launcher／管理端與 agent 分權，確立正式內容只能經代理變更的執行介面；原型管理方法不能直接暴露給 agent。
+1. P0 尚未退出：管道與管理分權已有合成證據，接續做內容庫到真實工作樹的 materializer／crash recovery，以及耐久 request 收據／重連；不能跨管道盲目重送可能已執行的動作。
 2. 接續合成 supervisor，補可控執行介面的恢復與跨機通知；模型／桌面工具實際停止、上下文重建仍需另驗，不拿 ACK 冒充理解。
-3. 鎖定真正採用的外部元件版本／LICENSE／digest；驗 Windows／Mac 門檻，之後才開始 P1 來源／測試模組化與短入口。
+3. 補人類授權簽發／有效期、正式 launcher 與逃逸審查；鎖定實際元件版本／LICENSE／digest、驗 Windows／Mac 門檻，之後才開始 P1 來源／測試模組化與短入口。
 4. F22 仍超過 12,000 字元；完整接棒時間與 token 未量。短入口、按需理由、驗證分層須配合證據依賴／失效，不能直接省 A4。
 5. 舊部署限制保留：Windows hook 同步、Mac Codex 真實注入、R01–R09 邊界獨立複審仍待做；F41 七缺口維持想要。逐項達成不在此複製。
 
@@ -42,7 +43,7 @@
 
 ## 服務查證與期望快照
 
-- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項通過、無 skip；含 30 個 v2 測試。最終暫存內容經同入口驗證；本機 JSON 證據在 gitignored `dist/v2-p0-evidence.json`，跨機請重跑取得。
+- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項通過、無 skip；含 42 個 v2 測試。最終暫存內容經同入口驗證；本機 JSON 證據在 gitignored `dist/v2-p0-evidence.json`，跨機請重跑取得。
 - `python3 -X utf8 tools/verify_v2.py --require-ready`：P0 回歸正常、強保障未就緒（exit 2）；本機 Mac 隔離與合成上下文替換可重跑。
 - 無 verify_state.py／check_docs.py，依 AGENTS 用替代入口；接線未改，信任重審不適用。尚未呼叫額外模型、安裝候選或部署專案。
 

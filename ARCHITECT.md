@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 2026-11-07 P0 管道分權：新增 `experiments/v2/broker.py`（parent-only 管理能力、管道身分、資源與請求序號）、`broker_fixture.py`（受隔離合成 agent）及兩份測試；write／effect 的 epoch 在資料交易內檢查。一鍵入口彙整 broker 探針，報告缺項亦有負向測試。內容仍只存實驗庫，沒有正式工作樹 materializer、模型或工具接線；現行部署包及副本不變。
+
 > 最後更新：2026-11-07。v2 P0 補 `supervisor.py` 與其負向測試，驗固定子程序的中止、上下文重建與 epoch 啟用；尚未接入模型／桌面工具。下列歷史日期與數字只對各自基準。
 
 > 2026-11-06 v2 P0 結構：新增 [experiments/v2](experiments/v2/README.md) 的隔離契約、反例、Mac OS 邊界探針、F50 狀態機、成本量測及 [51 ID 現況索引](experiments/v2/status.json)；[tools/verify_v2.py](tools/verify_v2.py) 統一執行，既有驗證器加一項 P0 回歸並有報告負向測試。需求決策版本 2 補 F50；狀態權威由 HANDOFF 逐項移交到索引。這些只測合成資料，不部署；部署包仍是現行 22 檔權威，VERSION／skill／hook／接線不變。下方長結構登記是歷史，不取代本段。

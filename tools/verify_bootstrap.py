@@ -3732,6 +3732,8 @@ def v2_report_problem(report):
             return 'OS 探針未揭露結果'
         if report['supervisor_probe']['result'] != '通過':
             return '合成上下文替換探針未通過'
+        if report['broker_probe']['result'] not in ('通過', '未驗證'):
+            return '管道身分／管理分權探針失敗'
     except (KeyError, TypeError):
         return 'v2 報告缺失或無效'
     return ''
@@ -3745,8 +3747,9 @@ def step_v2():
         problem = v2_report_problem(report)
         valid = result.returncode == 0 and not problem
         detail = problem or ('%s 個契約／索引測試；三個預期反例重現；strict_ready=%s；'
-                  'OS 子程序探針=%s（非桌面工具驗收）' % (
-                      report['tests']['run'], report['strict_ready'], report['isolation_probe']['result']))
+                  'OS 子程序探針=%s、管道分權=%s（非桌面工具驗收）' % (
+                      report['tests']['run'], report['strict_ready'], report['isolation_probe']['result'],
+                      report['broker_probe']['result']))
     except (ValueError, KeyError, TypeError):
         valid, detail = False, 'v2 報告缺失或無效'
     record('OK' if valid else 'FAIL', 'v2 P0 原型回歸（非需求達標）', detail)

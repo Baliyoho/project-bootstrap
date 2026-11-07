@@ -70,7 +70,13 @@ class Lab:
             raise Denied('unknown-session')
         return row['actor']
 
-    def write(self, capability, path, expected, content):
+    def require_epoch(self, epoch):
+        """Call inside the mutation transaction, never before BEGIN IMMEDIATE."""
+        state = self.db.execute('SELECT epoch, pending FROM state').fetchone()
+        if type(epoch) is not int or epoch != state['epoch'] or state['pending'] is not None:
+            raise Denied('premise-not-current')
+
+    def write(self, capability, path, expected, content, epoch=None):
         """Journal and content commit together; concurrent stale bases are rejected.
 
         This models a broker-owned content store, not arbitrary filesystem edits.
@@ -82,6 +88,8 @@ class Lab:
         event = secrets.token_hex(16)
         with self.db:
             self.db.execute('BEGIN IMMEDIATE')
+            if epoch is not None:
+                self.require_epoch(epoch)
             row = self.db.execute('SELECT content FROM files WHERE path=?', (path,)).fetchone()
             before = None if row is None else row['content']
             if expected != (None if before is None else digest(before)):
@@ -180,11 +188,13 @@ class Lab:
         with self.db:
             self.db.execute('UPDATE grants SET revoked=1 WHERE id=?', (grant_id,))
 
-    def effect(self, capability, kind, resource):
+    def effect(self, capability, kind, resource, epoch=None):
         """Record a synthetic effect only; no paid or destructive action executes."""
         actor = self.actor(capability)
         with self.db:
             self.db.execute('BEGIN IMMEDIATE')
+            if epoch is not None:
+                self.require_epoch(epoch)
             grant = self.db.execute('SELECT * FROM grants WHERE actor=? AND kind=? '
                 'AND resource=? AND revoked=0 AND remaining>0 ORDER BY id LIMIT 1',
                 (actor, kind, resource)).fetchone()
