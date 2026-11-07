@@ -23,6 +23,7 @@ class Channel:
     capability: str
     resources: frozenset
     closed: bool = False
+    authorize: object = None
 
 
 class Broker:
@@ -74,6 +75,8 @@ class Broker:
             try:
                 with self.lab.transaction():
                     actor = self.lab.actor(channel.capability)
+                    if channel.authorize is not None:
+                        channel.authorize(channel)
                     previous = self.lab.db.execute('SELECT digest, response FROM receipts '
                         'WHERE actor=? AND request_id=?', (actor, request_id)).fetchone()
                     if previous is not None:
@@ -111,6 +114,9 @@ class Broker:
                 if request.get('resource') not in channel.resources:
                     return self.response(request_id, 'resource-not-authorized')
                 try:
+                    if channel.authorize is not None:
+                        with self.lab.transaction():
+                            channel.authorize(channel)
                     self.materializer.apply(message['event'])
                 except Denied as error:
                     return self.response(request_id, 'materialization-pending', event=message['event'], reason=str(error))

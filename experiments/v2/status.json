@@ -120,10 +120,14 @@
         {
           "path": "experiments/v2/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
+        },
+        {
+          "path": "experiments/v2/test_launcher.py",
+          "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
-      "next": "恢復覆核已補重連縮權、root／映射綁定與目錄同步反例；續補可信 launcher、實際工具與其他 OS 證據，不把合成事件外推成完整歸因",
+      "next": "已補 parent 產生 principal、限期票據重連及既有管道資格重查；續補正式 launcher、實際工具與其他 OS，不把合成事件外推成完整歸因",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -150,6 +154,10 @@
             {
               "path": "experiments/v2/materializer.py",
               "scope": "prepared／applied 關聯內容事件；受隔離合成工作樹，非任意外部寫入歸因"
+            },
+            {
+              "path": "experiments/v2/test_launcher.py",
+              "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -174,6 +182,10 @@
         {
           "path": "experiments/v2/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
+        },
+        {
+          "path": "experiments/v2/test_launcher.py",
+          "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         }
       ],
       "unknown": "合成 POSIX 程序中斷與恢復可重跑；模型推理／需求理由保存、真實交棒與設備遺失未完整驗收",
@@ -192,6 +204,10 @@
             {
               "path": "experiments/v2/test_recovery.py",
               "scope": "四個程序終止點重連同一事件；不補造當時未記錄的推理，不等於斷電或裝置遺失保證"
+            },
+            {
+              "path": "experiments/v2/test_launcher.py",
+              "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -500,10 +516,14 @@
         {
           "path": "experiments/v2/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
+        },
+        {
+          "path": "experiments/v2/test_launcher.py",
+          "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         }
       ],
-      "unknown": "合成 parent 授權與 agent 端分權可驗；人類授權簽發／有效期、正式執行與全 surface 隔離尚未完成",
-      "next": "補可信人類授權簽發／有效期及正式 client 恢復；持久收據已在同 DB 合成效果驗證，外部動作冪等需另驗"
+      "unknown": "parent 限期授權、撤銷與持久請求可驗；source 仍是合成標籤，正式人類身分驗證、啟動／票據保管及全 surface 隔離未完成",
+      "next": "整合正式 launcher 的固定啟動設定、舊程序退場、票據保管及過期後續作；外部動作冪等需另驗"
     },
     {
       "id": "F43",
@@ -608,10 +628,14 @@
         {
           "path": "experiments/v2/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
+        },
+        {
+          "path": "experiments/v2/test_launcher.py",
+          "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         }
       ],
-      "unknown": "合成 parent 授權與 agent 端分權可驗；人類授權簽發／有效期、正式執行與全 surface 隔離尚未完成",
-      "next": "補可信人類授權簽發／有效期及正式 client 恢復；持久收據已在同 DB 合成效果驗證，外部動作冪等需另驗"
+      "unknown": "parent 限期授權、撤銷與持久請求可驗；source 仍是合成標籤，正式人類身分驗證、啟動／票據保管及全 surface 隔離未完成",
+      "next": "整合正式 launcher 的固定啟動設定、舊程序退場、票據保管及過期後續作；外部動作冪等需另驗"
     },
     {
       "id": "F49",

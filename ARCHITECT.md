@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 2026-11-07 重連資格：新增 `experiments/v2/launcher.py` 與 `test_launcher.py`。可信 parent 產生 principal、保存重連票據雜湊與限期資源資格；broker 每次請求及恢復寫盤前重查。原始請求在送出前寫入私有 outbox，重啟沿用相同 bytes；缺漏不猜測重建。Mac 合成管道探針改用此資格層，尚非正式人類授權服務或完整工具 launcher。現行部署結構與程序不變。
+
 > 2026-11-07 恢復覆核：materializer 的私有實驗庫新增 root 身分／資源映射綁定，拒絕以新設定接管舊事件；broker 重送寫入時重查當前資源權限，恢復 replace 後補目錄 fsync 才記 applied。反例與恢復測試同存 `test_recovery.py`。僅合成原型，舊無綁定實驗庫與搬機遷移尚不支援；現行部署結構不變。
 
 > 2026-11-07 最新 P0 批次：新增 `experiments/v2/materializer.py` 與 `test_recovery.py`，在合成 POSIX 工作樹做 prepared→replace→applied 恢復；Lab 交易支援 savepoint，request 收據與內容／合成效果同交易，parent 可輪替 capability 恢復已知 principal。broker 的受隔離 agent 探針已接套用層，實測程序終止及失敗反例；不代表真實專案、Windows、斷電、多 writer 或外部服務 exactly-once 已驗收。下方前批「沒有 materializer」描述當時範圍；現行限制見 [P0 說明](experiments/v2/README.md)。

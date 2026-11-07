@@ -14,10 +14,12 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 
 from experiments.v2.broker import Broker, MAX_REQUEST_BYTES
 from experiments.v2.contracts import Lab
 from experiments.v2.materializer import Materializer
+from experiments.v2.launcher import LaunchAuthority
 
 
 PROFILE = '''(version 1)
@@ -147,9 +149,13 @@ def probe_broker():
         try:
             materializer = Materializer(lab, repo, {'note-a': 'managed.txt', 'note-b': 'other.txt'})
             broker = Broker(lab, materializer)
-            channel = broker.attach('line-a', ('note-a', 'budget'))
-            broker.attach('line-b', ('note-b',))
-            lab.grant('line-a', 'paid-api', 'budget', 1, 'synthetic-human-authorization')
+            authority = LaunchAuthority(broker)
+            expires = time.time() + 60
+            ticket = authority.issue(('note-a', 'budget'), 'synthetic-parent-approval', expires)
+            channel = authority.connect(ticket)
+            actor = lab.actor(channel.capability)
+            authority.connect(authority.issue(('note-b',), 'synthetic-parent-approval', expires))
+            authority.grant(ticket, 'paid-api', 'budget', 1, 'synthetic-human-authorization', expires)
             # Python's launcher resolves its prefix via these directory entries.
             # Permit only each ancestor itself, never its entire subtree. Without
             # this, the runtime may abort before testing the intended boundary.
@@ -170,10 +176,10 @@ def probe_broker():
             checks = {
                 'confined_agent_completed': transport['completed'],
                 'requests_exercised': transport.get('requests') == 11,
-                'pipe_principal_recorded': len(events) == 2 and all(row['actor'] == 'line-a' for row in events),
+                'pipe_principal_recorded': len(events) == 2 and all(row['actor'] == actor for row in events),
                 'full_content_linked': len(events) == 2 and events[0]['before'] is None
                     and events[0]['after'] == events[1]['before'] == b'first' and events[1]['after'] == b'second',
-                'grant_and_replay_scoped': len(effects) == 1 and tuple(effects[0]) == ('line-a', 'paid-api', 'budget'),
+                'grant_and_replay_scoped': len(effects) == 1 and tuple(effects[0]) == (actor, 'paid-api', 'budget'),
                 'readonly_view_unchanged': (repo / 'note').read_text() == 'read-only-view',
                 'managed_file_applied': (repo / 'managed.txt').is_file() and (repo / 'managed.txt').read_bytes() == b'second',
                 'materializations_recorded': lab.db.execute(

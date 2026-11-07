@@ -7,6 +7,8 @@ Do not put real credentials/content here or expose this object to agents.
 import hashlib
 import secrets
 import sqlite3
+import time
+import math
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
@@ -20,8 +22,9 @@ def digest(content):
 
 
 class Lab:
-    def __init__(self, path, clock=None):
+    def __init__(self, path, clock=None, authority_clock=None):
         self.clock = clock or (lambda: datetime.now(timezone.utc).isoformat())
+        self.authority_clock = authority_clock or time.time
         self.db = sqlite3.connect(str(path))
         self.db.row_factory = sqlite3.Row
         self.db.execute('PRAGMA synchronous=FULL')
@@ -53,6 +56,10 @@ class Lab:
                 actor TEXT, request_id INTEGER, digest TEXT NOT NULL, response BLOB NOT NULL,
                 PRIMARY KEY(actor, request_id));
             CREATE TABLE IF NOT EXISTS write_epochs (event TEXT PRIMARY KEY, epoch INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS grant_deadlines (
+                grant_id TEXT PRIMARY KEY, issued REAL NOT NULL, expires REAL NOT NULL);
+            CREATE TABLE IF NOT EXISTS authority_time (
+                singleton INTEGER PRIMARY KEY CHECK(singleton=1), latest REAL NOT NULL);
         ''')
 
     @contextmanager
@@ -86,6 +93,20 @@ class Lab:
 
     def close(self):
         self.db.close()
+
+    def authority_now(self):
+        """Trusted wall clock; reject rollback below a committed watermark.
+
+        Call within a transaction. This is not a trusted hardware clock: an
+        unobserved/rolled-back clock check or restored DB needs external recovery.
+        """
+        now = self.authority_clock()
+        latest = self.db.execute('SELECT latest FROM authority_time').fetchone()
+        if (type(now) not in (int, float) or not math.isfinite(now)
+                or (latest is not None and now < latest[0])):
+            raise Denied('invalid-authority-clock')
+        self.db.execute('INSERT OR REPLACE INTO authority_time VALUES (1, ?)', (now,))
+        return now
 
     def register(self, actor):
         """Trusted launcher stand-in; never an agent-supplied actor parameter."""
@@ -215,14 +236,21 @@ class Lab:
                 raise Denied('invalid-operation')
             self.db.execute("UPDATE operations SET status='completed' WHERE ticket=?", (ticket,))
 
-    def grant(self, actor, kind, resource, uses, source):
+    def grant(self, actor, kind, resource, uses, source, expires_at=None):
         """Human authorization stand-in; outside the agent API in a real broker."""
         if type(uses) is not int or uses < 1 or not source:
             raise Denied('invalid-grant')
         grant_id = secrets.token_hex(16)
         with self.transaction():
+            now = self.authority_now()
+            if expires_at is not None and (type(expires_at) not in (int, float)
+                    or not math.isfinite(expires_at) or not math.isfinite(now) or expires_at <= now):
+                raise Denied('invalid-grant-deadline')
             self.db.execute('INSERT INTO grants VALUES (?, ?, ?, ?, ?, ?, 0)',
                             (grant_id, actor, kind, resource, uses, source))
+            if expires_at is not None:
+                self.db.execute('INSERT INTO grant_deadlines VALUES (?, ?, ?)',
+                                (grant_id, now, expires_at))
         return grant_id
 
     def revoke(self, grant_id):
@@ -235,9 +263,12 @@ class Lab:
         with self.transaction():
             if epoch is not None:
                 self.require_epoch(epoch)
-            grant = self.db.execute('SELECT * FROM grants WHERE actor=? AND kind=? '
-                'AND resource=? AND revoked=0 AND remaining>0 ORDER BY id LIMIT 1',
-                (actor, kind, resource)).fetchone()
+            now = self.authority_now()
+            grant = self.db.execute('SELECT g.* FROM grants g LEFT JOIN grant_deadlines d '
+                'ON d.grant_id=g.id WHERE actor=? AND kind=? '
+                'AND resource=? AND revoked=0 AND remaining>0 '
+                'AND (d.grant_id IS NULL OR (d.issued<=? AND ?<d.expires)) ORDER BY id LIMIT 1',
+                (actor, kind, resource, now, now)).fetchone()
             if grant is None:
                 raise Denied('not-authorized')
             self.db.execute('UPDATE grants SET remaining=remaining-1 WHERE id=?', (grant['id'],))
