@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-07 14:04（+08）
-- **交棒者**：Codex CLI ／ `baliyohodeMini`（P0 工作樹恢復與持久收據；依使用者允許因上下文長度交棒）
+- **交接時間**：2026-11-07（+08，中途安全點，尚未交棒）
+- **交棒者**：Codex CLI ／ `baliyohodeMini`（本 session 續作 P0 恢復邊界覆核；工作中標記保留）
 
 ## 任務目標
 
@@ -23,11 +23,12 @@
 - parent-only broker：管道綁身分、無管理 RPC、資源與請求序號限制；受隔離 Mac 合成 agent 正常動作成功，冒名／自行授權／直接寫入被拒。
 - 新增 POSIX materializer：prepared→暫存／fsync→replace→applied；保留 mode，拒絕路徑／連結／別名風險及外部內容衝突。同資源前一事件未完成時阻止新寫入。
 - 收據與內容／合成效果同交易；可信 parent 可輪替 capability 恢復 principal，重連不重做原動作。真子程序四個中斷點、收據／commit 失敗及回應遺失已有反例。
+- 恢復覆核修正三處：重送寫盤須符合重連後權限；私有庫綁定 root 身分／完整映射；恢復已 replace 內容仍須目錄 fsync 才記 applied。新增五項測試，三個主反例已見修前失敗／修後通過。
 - 原一鍵入口包含 P0 回歸，JSON 可重跑且附輸入 digest／環境／時間。三個原始繞過反例照留，strict_ready 仍為 false。
 
 ## 未完成／下一步
 
-1. **P0 尚未退出**：下一棒先獨立覆核 `materializer.py`／`broker.py`／`contracts.py` 的恢復、路徑與權限邊界，尤其受理收據不等於磁碟已套用、舊收據不回寫新內容、外部 writer 不在保障內。
+1. **P0 尚未退出**：恢復覆核已補上述三處；續作可信 launcher 與重連資格。受理收據不等於磁碟已套用、舊收據不回寫新內容、外部 writer 不在保障內；此次覆核不代表完整安全審查。
 2. 補正式可信 launcher、人類授權簽發／有效期與 client 請求保存／重連資格；parent fixture 不是已驗收的人類服務。外部付費／破壞性動作不享有 SQLite 合成效果的 exactly-once 保證。
 3. 對真實可控執行介面接 supervisor，補跨機推送、失聯與恢復；模型／桌面工具實際停止和上下文重建需另驗，不拿 ACK 冒充理解。
 4. 鎖定實際採用元件版本／LICENSE／digest；驗 Windows／Mac 架構門檻，之後才做 P1 來源／測試模組化與短入口。
@@ -38,13 +39,14 @@
 
 - 僅合成暫存 fixture，未遷移真實專案。materializer 限 broker 獨占的 POSIX 普通檔案；不支援建目錄／刪除／整批原子更新，不是與任意外部 writer 競爭的 CAS。
 - 程序終止測試不是斷電測試。未知 phase、內容／mode 衝突、失效 epoch 保持 pending，不自動覆蓋或清掉；需明確處理，不能換 request ID 繞過。
+- 已有事件但缺 root／映射綁定的舊實驗庫拒絕自動收編；搬機／換 root／變更映射尚無遷移程序，不宣稱跨機恢復完成。
 - `sandbox-exec` 已 deprecated，只作 OS 機制探針；未做逃逸審查或正式工具接線。原文、capability 與合成 Git object 不進本 repo。
 - 不得擅自外部部署、付費／額外模型探針、改遠端保護或 merge main；額外模型先授權且只用訂閱額度。
 - 現行 A／B／C 照跑；原子 claim 另案、Antigravity IDE 不重開、來源三項例外不撤銷。
 
 ## 服務查證與期望快照
 
-- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項通過、無 skip；其中 P0 執行 52 個 v2 測試（不是需求 ID 的逐項驗收）。最終 stage 後再以同入口驗證。
+- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項通過、無 skip；其中 P0 執行 57 個 v2 測試（不是需求 ID 的逐項驗收）。最終 stage 後再以同入口驗證。
 - `python3 -X utf8 tools/verify_v2.py --require-ready` 預期 exit 2：契約回歸正常但強保障未就緒。JSON 可用 `--baseline --json` 重取，本機記在 gitignored `dist/v2-p0-evidence.json`，不依賴聊天附件。
 - 無 verify_state.py／check_docs.py，依 AGENTS 用替代入口；接線未改，信任重審不適用。未呼叫額外模型、未安裝候選、未部署其他專案。
 

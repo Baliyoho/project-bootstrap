@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from experiments.v2.broker import Broker
 from experiments.v2.contracts import Denied, Lab, digest
@@ -148,6 +149,100 @@ class RecoveryTests(unittest.TestCase):
         old = broker.attach('line-a', ('note',))
         broker.attach('line-a', ('note',), resume=True)
         self.assertEqual(json.loads(broker.dispatch(old, REQUEST))['code'], 'session-no-longer-valid')
+
+    def test_retry_cannot_materialize_resource_removed_on_resume(self):
+        if not supported():
+            return
+        def pause(stage, event):
+            if stage == 'after_prepare':
+                raise OSError('synthetic interruption')
+        broker, channel, _ = self.setup_broker(fault=pause)
+        pending = json.loads(broker.dispatch(channel, REQUEST))
+        self.assertEqual(pending['code'], 'materialization-pending')
+        self.lab.close()
+        self.lab = Lab(self.path)
+        resumed = Broker(self.lab, Materializer(self.lab, self.tree, {'note': 'nested/note.txt'}))
+        restricted = resumed.attach('line-a', (), resume=True)
+        result = json.loads(resumed.dispatch(restricted, REQUEST))
+        self.assertEqual(result['code'], 'resource-not-authorized')
+        self.assertEqual(self.file.read_bytes(), b'before')
+        self.assertEqual(self.lab.db.execute('SELECT phase FROM materializations').fetchone()[0], 'prepared')
+        self.assertEqual(self.lab.db.execute('SELECT count(*) FROM receipts').fetchone()[0], 1)
+        restored = resumed.attach('line-a', ('note',), resume=True)
+        self.assertEqual(json.loads(resumed.dispatch(restored, REQUEST))['code'], 'ok')
+        self.assertEqual(self.file.read_bytes(), b'after')
+        self.assertEqual(self.lab.db.execute('SELECT count(*) FROM writes').fetchone()[0], 1)
+
+    def test_recovery_rejects_changed_mapping_or_root(self):
+        if not supported():
+            return
+        def pause(stage, event):
+            if stage == 'after_prepare':
+                raise OSError('synthetic interruption')
+        broker, channel, _ = self.setup_broker(fault=pause)
+        self.assertEqual(json.loads(broker.dispatch(channel, REQUEST))['code'], 'materialization-pending')
+        alternate = self.tree / 'nested/other.txt'
+        alternate.write_bytes(b'before')
+        alternate.chmod(0o751)
+        other_root = self.root / 'other-tree'
+        (other_root / 'nested').mkdir(parents=True)
+        other_file = other_root / 'nested/note.txt'
+        other_file.write_bytes(b'before')
+        other_file.chmod(0o751)
+        self.lab.close()
+        self.lab = Lab(self.path)
+        for root, mapping in ((self.tree, {'note': 'nested/other.txt'}),
+                              (other_root, {'note': 'nested/note.txt'})):
+            with self.subTest(root=root, mapping=mapping):
+                with self.assertRaisesRegex(Denied, 'materializer-binding-conflict'):
+                    Materializer(self.lab, root, mapping)
+        self.assertEqual(self.file.read_bytes(), b'before')
+        self.assertEqual(alternate.read_bytes(), b'before')
+        self.assertEqual(other_file.read_bytes(), b'before')
+        resumed = Broker(self.lab, Materializer(self.lab, self.tree, {'note': 'nested/note.txt'}))
+        channel = resumed.attach('line-a', ('note',), resume=True)
+        self.assertEqual(json.loads(resumed.dispatch(channel, REQUEST))['code'], 'ok')
+        self.assertEqual(self.file.read_bytes(), b'after')
+
+    def test_unbound_existing_journal_is_not_adopted(self):
+        if not supported():
+            return
+        capability = self.lab.register('line-a')
+        self.lab.write(capability, 'note', None, b'after', epoch=0)
+        with self.assertRaisesRegex(Denied, 'missing-materializer-binding'):
+            Materializer(self.lab, self.tree, {'note': 'nested/note.txt'})
+        self.assertEqual(self.file.read_bytes(), b'before')
+        self.assertFalse(self.lab.db.in_transaction)
+
+    def test_root_replacement_after_attachment_is_rejected(self):
+        if not supported():
+            return
+        broker, channel, _ = self.setup_broker()
+        original = self.root / 'original-tree'
+        self.tree.rename(original)
+        (self.tree / 'nested').mkdir(parents=True)
+        self.file.write_bytes(b'before')
+        self.file.chmod(0o751)
+        result = json.loads(broker.dispatch(channel, REQUEST))
+        self.assertEqual(result['code'], 'materialization-pending')
+        self.assertEqual(result['reason'], 'materializer-binding-conflict')
+        self.assertEqual(self.file.read_bytes(), b'before')
+        self.assertEqual((original / 'nested/note.txt').read_bytes(), b'before')
+
+    def test_recovered_replace_requires_directory_sync_before_applied(self):
+        if not supported():
+            return
+        def pause(stage, event):
+            if stage == 'after_replace':
+                raise OSError('synthetic interruption')
+        broker, channel, materializer = self.setup_broker(fault=pause)
+        self.assertEqual(json.loads(broker.dispatch(channel, REQUEST))['code'], 'materialization-pending')
+        self.assertEqual(self.file.read_bytes(), b'after')
+        materializer.fault = lambda stage, event: None
+        with patch('experiments.v2.materializer.os.fsync', side_effect=OSError('synthetic fsync failure')):
+            self.assertEqual(json.loads(broker.dispatch(channel, REQUEST))['code'], 'materialization-pending')
+        self.assertEqual(self.lab.db.execute('SELECT phase FROM materializations').fetchone()[0], 'prepared')
+        self.assertEqual(json.loads(broker.dispatch(channel, REQUEST))['code'], 'ok')
 
     def test_process_death_before_receipt_commit_rolls_back_effect(self):
         self.lab.register('line-a')

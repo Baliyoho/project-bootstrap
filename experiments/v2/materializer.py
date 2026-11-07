@@ -5,11 +5,13 @@ exclude other writers; digest comparisons are not a filesystem CAS against
 arbitrary concurrent humans. No real repository is modified by the probes.
 """
 import os
+import json
 from pathlib import Path
 import re
 import stat
 import unicodedata
 from contextlib import contextmanager
+from types import MappingProxyType
 
 from experiments.v2.contracts import Denied
 
@@ -25,7 +27,8 @@ class Materializer:
     def __init__(self, lab, root, resources, fault=None):
         if not supported():
             raise Denied('materializer-platform-unverified')
-        self.lab, self.root, self.resources = lab, Path(root).absolute(), dict(resources)
+        self.lab, self.root = lab, Path(root).absolute()
+        self.resources = MappingProxyType(dict(resources))
         self.fault = fault or (lambda stage, event: None)
         for path in self.resources.values():
             parts = path.split('/') if isinstance(path, str) else []
@@ -35,9 +38,30 @@ class Materializer:
         normalized = {unicodedata.normalize('NFC', path).casefold() for path in self.resources.values()}
         if len(normalized) != len(self.resources):
             raise Denied('aliased-resources')
-        self.lab.db.execute('''CREATE TABLE IF NOT EXISTS materializations (
-            event TEXT PRIMARY KEY, resource TEXT NOT NULL, phase TEXT NOT NULL,
-            mode INTEGER NOT NULL)''')
+        if any(not isinstance(resource, str) or not resource for resource in self.resources):
+            raise Denied('invalid-resource-id')
+        descriptor = os.open(str(self.root), os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            metadata = os.fstat(descriptor)
+            self.root_identity = (metadata.st_dev, metadata.st_ino)
+        finally:
+            os.close(descriptor)
+        binding = json.dumps([self.root_identity, dict(self.resources)], sort_keys=True)
+        with self.lab.transaction():
+            self.lab.db.execute('''CREATE TABLE IF NOT EXISTS materializer_binding (
+                singleton INTEGER PRIMARY KEY CHECK(singleton=1), binding TEXT NOT NULL)''')
+            previous = self.lab.db.execute('SELECT binding FROM materializer_binding').fetchone()
+            if previous is None:
+                # A pre-binding journal cannot prove where earlier events belonged.
+                # Do not silently adopt its pending writes under today's mapping.
+                if self.lab.db.execute('SELECT 1 FROM writes LIMIT 1').fetchone():
+                    raise Denied('missing-materializer-binding')
+                self.lab.db.execute('INSERT INTO materializer_binding VALUES (1, ?)', (binding,))
+            elif previous[0] != binding:
+                raise Denied('materializer-binding-conflict')
+            self.lab.db.execute('''CREATE TABLE IF NOT EXISTS materializations (
+                event TEXT PRIMARY KEY, resource TEXT NOT NULL, phase TEXT NOT NULL,
+                mode INTEGER NOT NULL)''')
 
     @contextmanager
     def parent(self, resource):
@@ -46,6 +70,9 @@ class Materializer:
         flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
         descriptor = os.open(str(self.root), flags)
         try:
+            metadata = os.fstat(descriptor)
+            if (metadata.st_dev, metadata.st_ino) != self.root_identity:
+                raise Denied('materializer-binding-conflict')
             parts = self.resources[resource].split('/')
             for part in parts[:-1]:
                 next_descriptor = os.open(part, flags, dir_fd=descriptor)
@@ -160,8 +187,10 @@ class Materializer:
                     if self.read(descriptor, name) != (event['before'], state['mode']):
                         raise Denied('disk-base-conflict')
                     os.replace(stage, name, src_dir_fd=descriptor, dst_dir_fd=descriptor)
-                    os.fsync(descriptor)
                     self.fault('after_replace', event_id)
+                # Recovery may observe the renamed file after a crash that
+                # happened before directory sync. Seeing bytes is not durability.
+                os.fsync(descriptor)
                 self.lab.db.execute('UPDATE materializations SET phase=? WHERE event=?', ('applied', event_id))
         self.fault('after_commit', event_id)
         return 'applied'

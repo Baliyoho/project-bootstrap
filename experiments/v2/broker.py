@@ -105,6 +105,11 @@ class Broker:
             # confirms application. Replays reuse the SAME content event.
             message = json.loads(response)
             if self.materializer is not None and message['code'] == 'ok' and 'event' in message:
+                # A durable acceptance receipt is not current disk-write authority.
+                # Resume may narrow this principal's channel scope. Keep the
+                # original receipt intact so an authorized recovery can retry it.
+                if request.get('resource') not in channel.resources:
+                    return self.response(request_id, 'resource-not-authorized')
                 try:
                     self.materializer.apply(message['event'])
                 except Denied as error:

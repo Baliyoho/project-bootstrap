@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 2026-11-07 恢復覆核：materializer 的私有實驗庫新增 root 身分／資源映射綁定，拒絕以新設定接管舊事件；broker 重送寫入時重查當前資源權限，恢復 replace 後補目錄 fsync 才記 applied。反例與恢復測試同存 `test_recovery.py`。僅合成原型，舊無綁定實驗庫與搬機遷移尚不支援；現行部署結構不變。
+
 > 2026-11-07 最新 P0 批次：新增 `experiments/v2/materializer.py` 與 `test_recovery.py`，在合成 POSIX 工作樹做 prepared→replace→applied 恢復；Lab 交易支援 savepoint，request 收據與內容／合成效果同交易，parent 可輪替 capability 恢復已知 principal。broker 的受隔離 agent 探針已接套用層，實測程序終止及失敗反例；不代表真實專案、Windows、斷電、多 writer 或外部服務 exactly-once 已驗收。下方前批「沒有 materializer」描述當時範圍；現行限制見 [P0 說明](experiments/v2/README.md)。
 
 > 2026-11-07 P0 管道分權：新增 `experiments/v2/broker.py`（parent-only 管理能力、管道身分、資源與請求序號）、`broker_fixture.py`（受隔離合成 agent）及兩份測試；write／effect 的 epoch 在資料交易內檢查。一鍵入口彙整 broker 探針，報告缺項亦有負向測試。內容仍只存實驗庫，沒有正式工作樹 materializer、模型或工具接線；現行部署包及副本不變。
