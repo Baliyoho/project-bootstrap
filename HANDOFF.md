@@ -1,53 +1,52 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-06 21:09（+08）
-- **交棒者**：Codex CLI ／ `baliyohodeMini`（建立 v2 分支，交給下一個聊天實作）
+- **交接時間**：2026-11-07 08:19（+08；模式 C 中途安全點，未釋出 writer）
+- **交棒者**：Codex CLI ／ `baliyohodeMini`（v2 P0 第一批原型；本聊天仍工作中）
 
 ## 任務目標
 
-**使用者 2026-11-06 已授權：開新版分支，按照定案重做 project-bootstrap v2。** 本聊天較長，依使用者允許先交棒；下一棒直接開始實作，不再停在重新徵詢是否要做。
-依據：[需求決策書](project-bootstrap-requirements-decision.md)＋[實現規劃](project-bootstrap-implementation-plan.md)。規劃方向已獲本次實作授權；不代表新制度已部署或候選工具已驗收。
+依使用者已授權方向重做 project-bootstrap v2，先證明強保障架構及接棒成本，再逐批遷移。
+需求以 [決策書](project-bootstrap-requirements-decision.md) 決策版本 2 為準，分期以 [實現規劃](project-bootstrap-implementation-plan.md) 為準。
+**51 ID 與 F11／F13／F43 子項狀態已全部移交 [v2 現況索引](experiments/v2/status.json)**；原狀態來源 `fdc0bbd:HANDOFF.md`，每列有範圍、來源、證據入口與未知。索引不可讀時停止判定，不從舊快照恢復權威。
 
 ## Git 狀態
 
-- Repo：public `Baliyoho/project-bootstrap`；穩定分支：`main`。
-- **待續分支**：`codex/project-bootstrap_v2`，從 `main @ 40a2d02` 建立；後續新版工作只在此分支，勿從 main 重新開始。
+- Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
+- **待續分支**：`codex/project-bootstrap_v2`；從 `main @ 40a2d02` 建立，繼續在此分支，不重新從 main 開始。
 - **工作中**：`baliyohodeMini` ／ `Codex CLI` ／ `㊣　26110621｜重建骨架v2｜工作中｜交棒0次`，2026-11-06 21:17 (+08) 開工
 - **骨架版本**：`2026-11-03`
-- 遠端同名分支與 upstream 已建立；目前 checkout 就是 v2。本輪未修改 main、部署包、skill、hook 或 VERSION。
-- 本機能力：macOS、Python 3.15（用 python3）、bash 3.2；Windows／Linux 需另驗。
+- 本機能力：macOS、Python 3.15、bash 3.2；未驗 Windows／Linux。本輪未改 main、部署包、skill、hook、接線或 VERSION。
 
 ## 已完成
 
-- 決策書保留 50 個既有需求 ID，歷史原件完整封存；規劃已比較現有功能與官方開源工具，列出五模組、50 項映射及 P0–P5。
-- 新版分支已建立並推送。**尚未開始新版程式重寫、安裝候選元件或遷移任何部署專案。**
-- 使用者後續澄清與必要要求已保存於下節，不能只沿用先前規劃而漏掉。
+- 補登必要需求 F50、51 ID 映射與狀態移交；F50 狀態機和改名 adapter 契約已有正常／負向案例，未接真實事件自動化。
+- [P0 原型](experiments/v2/README.md)：內容／事件交易、授權範圍、掃描後不可變候選、epoch／通知與 ACK、執行中子程序停止及上下文替換。
+- 三個繞過反例可重現；Mac OS 子程序隔離機制可驗，但沒有把目前桌面 App／MCP 包入隔離。完整需求判定見索引。
+- `tools/verify_v2.py` 產生可重跑 JSON，含來源 digest、取得時間、環境、字元與驗證器耗時；已接回原一鍵入口，沒有啟用驗證快取或跳過 A4。
 
 ## 未完成／下一步
 
-1. 完成 A 模式後，先補齊需求／規劃中的 **session 自動改名必要功能**：接棒與續聊＝㊣ 工作中；等使用者＝※ 待你決定；成功交棒＝↗ 已交棒且次數加一；保留同聊天起始時間與累計次數；不可用／失敗明示。現有 handoff 已有這功能，但 50 項清單漏了明列。新增穩定 ID（建議 F50）、更新總數與對照，不重新詢問是否必要。
-2. **優先改善接棒時間與 token 負擔**：短入口、理由按需讀、單一檢查入口、只讀與寫入分流、驗證分層。先量測再改，不能未做依賴與證據失效就直接省略 A4。已量常態入口 44,377 字元，非 token；尚未證明整體接棒變快。
-3. **部署端結構**：使用者問的是未來裝到其他專案的檔案，不是本來源 repo。沿用 AGENTS／HANDOFF／ARCHITECT 及原有知識文件路徑；不為整齊大搬家。共用制度移到工具包，專案留指標、設定與薄接線；同一事實只維護一處，接棒按需讀。先前示意 .bootstrap 與 docs/ai 是建議布局，不是必須一口氣新建的空目錄。
-4. 原型先證明三個架構門檻：F11(b) 完整覆寫歸因、F28 正在執行線的使用前通知、F42／F43(a)／F48 不可繞過的授權與提交阻擋。可先做不呼叫模型的隔離 fixture；不以 hook 提醒、傳輸 ACK 或 Git author 當強保障。
-5. 依規劃逐批實作。先保留既有反例與一鍵入口，再拆正常來源／測試、整包 manifest 與指標、受控代理、協調服務。新架構不是整套照抄外部框架；未驗收工具能力明示未知。
-6. 建立按 ID 的持續現況對照，依決策書第 5 節明確移交權威；計畫的基準快照不是進度表。必要功能可以分期，但不能降強度或用部分歸因報通過。
-7. 保留舊待辦：Windows 部署專案尚未同步 bash 3.2 hook 修正；Mac Codex 開場實際注入未驗收；R01–R09 邊界未全面獨立複審；F21 阻擋、F42–F49、F46 偵測未實作，F41 七缺口屬想要。
+1. P0 尚未退出：將可信 launcher／管理端與 agent 分權，確立正式內容只能經代理變更的執行介面；原型管理方法不能直接暴露給 agent。
+2. 接續合成 supervisor，補可控執行介面的恢復與跨機通知；模型／桌面工具實際停止、上下文重建仍需另驗，不拿 ACK 冒充理解。
+3. 鎖定真正採用的外部元件版本／LICENSE／digest；驗 Windows／Mac 門檻，之後才開始 P1 來源／測試模組化與短入口。
+4. F22 仍超過 12,000 字元；完整接棒時間與 token 未量。短入口、按需理由、驗證分層須配合證據依賴／失效，不能直接省 A4。
+5. 舊部署限制保留：Windows hook 同步、Mac Codex 真實注入、R01–R09 邊界獨立複審仍待做；F41 七缺口維持想要。逐項達成不在此複製。
 
 ## 地雷與注意事項
 
-- 本次實作授權不等於可直接部署其他專案、付費呼叫、修改遠端保護或 merge 到 main；功能分支合併依既有驗收程序。
-- 額外模型探針先取得明確授權且只用訂閱額度。不要為了測接線自行開其他模型。
-- 原子 claim 另案、Antigravity IDE 不重開；來源三項例外維持，F46 先印出例外與缺項。
-- 實作中仍遵守 AGENTS 與全域 handoff；新版程序經驗收與正式切換前不因規劃已授權就自行省步。
-- VERSION 現在只追 skill；v2 要做整包版本＋元件 digest，需連同偵測與遷移一次切換，不能只把 VERSION 改成 2.0。
-- 候選工具資訊查證日期為 2026-11-06；版本鎖定、授權與跨平台整合仍需實驗。完整工期 28–50 人日是規劃估算，不是承諾。
+- 原型與回歸成功不等於必要強保障通過；`--require-ready` 預期 exit 2，不能改成綠燈湊完成。
+- 所有原文、capability、假禁入值與 Git object 只在合成暫存 fixture；不得換成真實敏感資料。0600 不是同 UID 身分隔離。
+- `sandbox-exec` 已 deprecated，只作 OS 機制實驗；沒有採作正式 launcher 或驗過逃逸。
+- 實作授權不包含外部部署、付費／額外模型探針、改遠端保護或 merge main。額外模型先授權且只用訂閱額度。
+- 現行 A／B／C 照跑，原子 claim 另案、Antigravity IDE 不重開、來源三項例外不撤銷。
 
 ## 服務查證與期望快照
 
-本輪基準 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0、51 項全過、無 skip；交棒最終文件再跑同一入口。
-本 repo 無 verify_state.py／check_docs.py，依 AGENTS 使用替代入口；本輪接線未改，信任重審不適用。
+- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項通過、無 skip；含 30 個 v2 測試。最終暫存內容經同入口驗證；本機 JSON 證據在 gitignored `dist/v2-p0-evidence.json`，跨機請重跑取得。
+- `python3 -X utf8 tools/verify_v2.py --require-ready`：P0 回歸正常、強保障未就緒（exit 2）；本機 Mac 隔離與合成上下文替換可重跑。
+- 無 verify_state.py／check_docs.py，依 AGENTS 用替代入口；接線未改，信任重審不適用。尚未呼叫額外模型、安裝候選或部署專案。
 
 ## 懸置事項（AI 勿自行處理）
 
-- 無需再確認是否開始 v2：使用者已授權。本輪選擇交棒是上下文管理，不是任務撤回。
-- 沒有新建聊天；使用者在下一個聊天指定此 repo、此分支並說「接棒，實作 v2」即可。
+- 不需重新詢問是否開始 v2；當下停點是 P0 架構與整合缺口，不是任務撤回。
+- 本次為模式 C 安全點，owner 保留本聊天；要換聊天／機器仍須完成 B 模式釋出。

@@ -3713,6 +3713,45 @@ def step_architecture_summary(dest):
            '本 repo 與生成 ARCHITECT 區分 import／文字指標、prompt 用收工／開工（認的是範本編號欄，不是全行出現 3.4）；三個負向測試＋一個反向保險')
 
 
+def v2_report_problem(report):
+    """Reject an empty/partial/optimistic report, including a false ready claim."""
+    try:
+        tests, findings = report['tests'], report['findings']
+        if report['harness_passed'] is not True or report['strict_ready'] is not False:
+            return 'P0 回歸失敗或不當宣稱 strict ready'
+        if tests['run'] < 1 or any(tests[key] != 0 for key in ('failed', 'errors', 'skipped')):
+            return '測試為空、失敗或有未驗證項'
+        expected = {'same-uid-journal-bypass', 'direct-git-object-bypass',
+                    'running-context-still-uses-old-premise'}
+        if len(findings) != len(expected) or {row['id'] for row in findings} != expected:
+            return '缺少架構反例'
+        if any(row['counterexample_observed'] is not True or row['requirement_result'] != '不通過'
+               for row in findings):
+            return '反例未重現或把需求誤報通過'
+        if report['isolation_probe']['result'] not in ('通過', '不通過', '未驗證'):
+            return 'OS 探針未揭露結果'
+        if report['supervisor_probe']['result'] != '通過':
+            return '合成上下文替換探針未通過'
+    except (KeyError, TypeError):
+        return 'v2 報告缺失或無效'
+    return ''
+
+
+def step_v2():
+    """P0 regression success is NOT strict-mode or requirement acceptance."""
+    result = run([sys.executable, '-X', 'utf8', str(ROOT / 'tools/verify_v2.py'), '--json'], cwd=ROOT)
+    try:
+        report = json.loads(result.stdout)
+        problem = v2_report_problem(report)
+        valid = result.returncode == 0 and not problem
+        detail = problem or ('%s 個契約／索引測試；三個預期反例重現；strict_ready=%s；'
+                  'OS 子程序探針=%s（非桌面工具驗收）' % (
+                      report['tests']['run'], report['strict_ready'], report['isolation_probe']['result']))
+    except (ValueError, KeyError, TypeError):
+        valid, detail = False, 'v2 報告缺失或無效'
+    record('OK' if valid else 'FAIL', 'v2 P0 原型回歸（非需求達標）', detail)
+
+
 def run_checks(dest, tmp):
     work = None
     seen = step_regenerate(dest) and step_fill(dest)
@@ -3749,6 +3788,7 @@ def run_checks(dest, tmp):
     step_sync_mode(dest, tmp)
     step_architecture_summary(dest)
     step_deployment_lifecycle(tmp)
+    step_v2()
 
 
 def main():

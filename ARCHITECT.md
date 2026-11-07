@@ -1,5 +1,9 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 最後更新：2026-11-07。v2 P0 補 `supervisor.py` 與其負向測試，驗固定子程序的中止、上下文重建與 epoch 啟用；尚未接入模型／桌面工具。下列歷史日期與數字只對各自基準。
+
+> 2026-11-06 v2 P0 結構：新增 [experiments/v2](experiments/v2/README.md) 的隔離契約、反例、Mac OS 邊界探針、F50 狀態機、成本量測及 [51 ID 現況索引](experiments/v2/status.json)；[tools/verify_v2.py](tools/verify_v2.py) 統一執行，既有驗證器加一項 P0 回歸並有報告負向測試。需求決策版本 2 補 F50；狀態權威由 HANDOFF 逐項移交到索引。這些只測合成資料，不部署；部署包仍是現行 22 檔權威，VERSION／skill／hook／接線不變。下方長結構登記是歷史，不取代本段。
+
 > 2026-11-06 最新結構登記：新增 [需求實現規劃](project-bootstrap-implementation-plan.md)，根目錄 Markdown 總數 26；內容為技術棧選型與 50 項需求映射，不是已部署架構。部署包、skill、hook、接線與 VERSION 未變。
 > 2026-11-06 需求文件分家：原 requirements 改名 history，新增 decision 為現行唯一權威；本 repo 共 25 份 Markdown。下方舊結構登記只描述當時狀態。
 > 2026-11-06 最新結構登記：功能完整性複查（v3.9）與八項缺口全部納入（v3.10），**根目錄新增 [project-bootstrap-requirements-completeness-audit-2026-11-06.md](project-bootstrap-requirements-completeness-audit-2026-11-06.md)**，本 repo **24 份 Markdown**（前次 23）。[需求權威版](project-bootstrap-requirements-history.md)第 4 節**新增第九類「不該流出去的東西」與八條 F42–F49**，條目數 42→50；第 6 節留「已更正」指標並記 C01–C08→F42–F49 的對應；第 9 節新增兩個小節。本檔「這個 repo 刻意沒有的東西」那節**新增一條正式例外宣告**（F46 的落地方式，使用者 2026-11-06 決定）。驗證 52 項與骨架 22 檔不變，skill／hook／接線／`VERSION` 皆未動，**未改檢查器**，不部署、不同步。⚠️ **本檔漏了一輪**：新增那份報告的 commit（`3d7b991`）按「改本檔的時機」就該同時改本檔，當時沒改——`verify_bootstrap.py` 只查本檔的日期標頭，查不到「根目錄多一個檔案而本檔沒登記」，所以這一類漏掉目前沒有守門人（它正是新納入的 F45 要擋的形狀，而 F45 還沒實作）。
@@ -72,6 +76,8 @@
 本 repo 的 `.claude/hooks/codex-hook.cmd` 是 **3.17 啟動器的副本**，跟 `repo-git-check.sh` 的角色不同；更新時從部署包抽取這一檔覆蓋，不把本 repo 當成 `sync_project.py` 的目標。它只尋找 Git Bash、加上避免 JSON 誤判的純文字標頭，並保留 stdin／輸出內容／結束碼，沒有交接規則。既有專案的 Codex 接線升級時會補齊這個新依賴；沒有 Codex 接線的專案仍不自動補裝。`--codex-only` 只同步這兩檔，專案 SKILL 與其他設定不變。
 
 ## 部署包的內部結構
+
+v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。來源驗證器的新增檢查「v2 P0 原型回歸（非需求達標）」執行合成契約、索引負向案例、三個預期架構反例、Mac 隔離與子程序上下文替換探針。它明列 `strict_ready=false`，不把實驗成功當成必要需求達標；空／缺項／SKIP／偽稱 ready 的報告有負向測試。
 
 | 節 | 內容 | 誰會讀它 |
 |---|---|---|
@@ -243,7 +249,7 @@ check_docs.py
 - **`pre-push-handoff.sh`：2026-10-30 決定不裝，2026-11-01 恢復交接快照後重新評估仍不裝。** 原理由是標記之外沒有狀態要寫，推進度時只會逼人編變更或關掉防呆；如今這個前提已取消，不能沿用舊理由。重新評估的限制是：骨架那支 hook 只檢查這批 commit 是否碰過 `HANDOFF.md`，而 A5 的開工標記本來就會碰它；本次三輪 stale 事故正是「檔案都有改、待辦沒改」。因此原樣裝上也攔不住已知故障，還會讓人誤信狀態已被驗證。現階段由 B6 核對整份快照，`verify_bootstrap.py` 檢查版本與已知回歸；不以時間戳或碰過檔案冒充內容正確。若將來有能檢查實質交接的機制再評估。
 - **但有一支自己的 SessionStart hook**（`.claude/hooks/repo-git-check.sh`，2026-10-30 加）：做 git 新鮮度比對、「工作中」判讀（2026-10-30 加）與開工改名提示（2026-11-01 加）。**2026-11-01 起 Codex 這一面也接上了**（`.codex/hooks.json`，掛同一支腳本、不複製第二份）——在此之前只有 Claude Code 會跑它，而這個 repo 本來就在多工具維護；代價是它跟那六個專案一樣進了「Codex 要各審一次」的清單（信任綁 `hooks.json` 的絕對路徑），2026-11-01 已完成現行 hook 的注入與阻擋驗收，本次桌面 session 亦收到開場輸出；檔頭明寫**不是 3.10 的副本、不要同步**。在此之前這個 repo 開場完全沒有提醒，A1 的 fetch 全靠使用者記得打「接棒」把全域 skill 載進來。為什麼不直接抄 3.10——`sync_project.py` 的 `discover()` 靠 handoff skill 發現專案，這個 repo 沒有 skill，`--all` 永遠掃不到它，抄過來就會變成「所有專案都同步了、只有來源自己落後」而且毫無跡象的那一份副本。
 - **沒有 CI。** 驗證是一個指令（`python -X utf8 tools/verify_bootstrap.py`），跑它是鐵律第 4 條的義務。
-- `tools/` 底下只有部署包自己的工具——`verify_bootstrap.py` 測試它、`sync_project.py` 發佈它，兩支都不是骨架的一部分，也都不會被部署出去。
+- `tools/` 保存來源維護入口：`verify_bootstrap.py` 測試部署包及 v2 原型、`sync_project.py` 同步它；2026-11-06 新增 `verify_v2.py` 執行隔離原型。三支都不部署。`experiments/v2/` 的程式是未部署的候選實作，沒有從部署包移轉任何現行規則權威。
 
 ## 全域約束（誰強制什麼）
 

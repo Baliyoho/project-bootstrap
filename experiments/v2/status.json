@@ -1,0 +1,589 @@
+{
+  "schema": 1,
+  "updated": "2026-11-07",
+  "authority": "全部 51 ID 與 F11／F13／F43 子項的持續實作狀態；需求仍以決策書為準",
+  "transfer": {
+    "from": "fdc0bbd:HANDOFF.md",
+    "date": "2026-11-06",
+    "boundary": "只移交需求達成狀態；HANDOFF 保留 writer、行動、風險與續作停點；不可讀時停止狀態判定，不恢復舊摘要權威"
+  },
+  "evidence_policy": "程式路徑是重跑入口，不是執行成功證據；本輪結果由 verify_v2 輸出，綁輸入 digest／環境／取得時間。P0 不接受完整通過宣稱。",
+  "requirements": [
+    {
+      "id": "F1",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "缺目標、過期目標引用要報未驗證；非空不等於正確"
+    },
+    {
+      "id": "F2",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "已完成仍列下一步、狀態與證據不符被指出"
+    },
+    {
+      "id": "F3",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "混入無證據成功聲稱不能整份顯示通過"
+    },
+    {
+      "id": "F4",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "同機換工具、缺 session、無法查遠端可區分"
+    },
+    {
+      "id": "F5",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "缺證據只能未知，不把未測判為已知正常"
+    },
+    {
+      "id": "F6",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "從一條規則定位採納理由與當時基準"
+    },
+    {
+      "id": "F7",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "能找到否決理由，不覆寫成從未考慮"
+    },
+    {
+      "id": "F8",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "交接摘要清理後仍能定位路線"
+    },
+    {
+      "id": "F9",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "ahead-only、分岔、離線、未知 dirty 都不能取得寫入資格"
+    },
+    {
+      "id": "F10",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "push 失敗或遠端前進不得釋出／宣稱已交棒"
+    },
+    {
+      "id": "F11",
+      "result": "不通過",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
+      "evidence": [
+        {
+          "path": "experiments/v2/test_contracts.py",
+          "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
+        },
+        {
+          "path": "experiments/v2/feasibility.py",
+          "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
+        }
+      ],
+      "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
+      "next": "缺失／失效／別人各測；覆寫三要素與同事件關聯全驗，部分還原整項失敗",
+      "parts": {
+        "a": {
+          "result": "未驗證",
+          "scope": "決策書第 4 節對應子項完整門檻",
+          "evidence": [],
+          "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
+        },
+        "b": {
+          "result": "不通過",
+          "scope": "決策書第 4 節對應子項完整門檻",
+          "evidence": [
+            {
+              "path": "experiments/v2/feasibility.py",
+              "scope": "同 UID／直接 Git 的合成繞過反例"
+            },
+            {
+              "path": "experiments/v2/isolation.py",
+              "scope": "Mac 單一受包覆子程序 OS 邊界；不是全部工具隔離"
+            }
+          ],
+          "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
+        }
+      }
+    },
+    {
+      "id": "F12",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "兩線並行不共用 index／未提交檔；不因不同分支而容許共用同工作樹"
+    },
+    {
+      "id": "F13",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "正常交棒／程序被殺／裝置遺失三條分測，缺口不補造",
+      "parts": {
+        "normal": {
+          "result": "未驗證",
+          "scope": "決策書第 4 節對應子項完整門檻",
+          "evidence": [],
+          "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
+        },
+        "interrupted": {
+          "result": "未驗證",
+          "scope": "決策書第 4 節對應子項完整門檻",
+          "evidence": [],
+          "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
+        },
+        "device-lost": {
+          "result": "未驗證",
+          "scope": "決策書第 4 節對應子項完整門檻",
+          "evidence": [],
+          "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
+        }
+      }
+    },
+    {
+      "id": "F14",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "相同案例在每個受支援 surface 有等價結果，不支援明示"
+    },
+    {
+      "id": "F15",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "中文／空白路徑、LF、執行位元、shell 差異都測"
+    },
+    {
+      "id": "F16a",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "乾淨第二機接續；不能從第一機私有附件取得才成功"
+    },
+    {
+      "id": "F16b",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "缺工具／配置與連線失敗分開報"
+    },
+    {
+      "id": "F17",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "空專案與既有專案預演；保留原內容、可列改動"
+    },
+    {
+      "id": "F18",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "Windows 部署專案尚未同步 bash 3.2 hook 修正；v2 整包版本／遷移尚未實作",
+      "next": "單改 hook／schema 也使受影響舊客戶停止，不能只比 skill"
+    },
+    {
+      "id": "F19",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "跳驗、SKIP、缺收據都不顯示通過"
+    },
+    {
+      "id": "F20",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "指出具體文件與命題；無權查證標未知"
+    },
+    {
+      "id": "F21",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "直接寫 policy、未驗 release 被拒；跳步留可查事件"
+    },
+    {
+      "id": "F22",
+      "result": "不通過",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "evidence": [
+        {
+          "path": "experiments/v2/baseline.py",
+          "scope": "當輪檔案字元、digest 與可選的既有驗證器耗時"
+        }
+      ],
+      "unknown": "常態入口超過 12000 字元；整體接棒時間與 token 尚未量測",
+      "next": "正常接棒 ≤12,000 字元／5 分鐘，超標報因；不刪必要門檻"
+    },
+    {
+      "id": "F23",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "純問答不新增 owner、commit 或 push；改檔才升級"
+    },
+    {
+      "id": "F24",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "20 專案正常／例外／失效混合，人工確認 ≤3；逐項不漏報"
+    },
+    {
+      "id": "F25",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "同專案兩線可分辨；同線第二 writer 停止，不當作租約到期"
+    },
+    {
+      "id": "F26",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "範圍不同保留條件，未驗結論不升共同依據"
+    },
+    {
+      "id": "F27",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "不引入另一套手動看板或 owner 欄"
+    },
+    {
+      "id": "F28",
+      "result": "不通過",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "evidence": [
+        {
+          "path": "experiments/v2/test_contracts.py",
+          "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
+        },
+        {
+          "path": "experiments/v2/feasibility.py",
+          "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
+        },
+        {
+          "path": "experiments/v2/supervisor.py",
+          "scope": "固定合成子程序已可中止、重建上下文、確認新 context digest 後啟用；尚非真實工具／模型"
+        }
+      ],
+      "unknown": "原始同 UID／不受控執行介面仍不通過；合成 supervisor 可驗，真實工具、可信執行與跨機即時推送未驗收",
+      "next": "將 supervisor 協定接到受控執行介面，補跨機故障／恢復；真實模型探針需先取得授權"
+    },
+    {
+      "id": "F29",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "移除判斷後測試真的失敗；不只比規則字串"
+    },
+    {
+      "id": "F30",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "20 目標完整列出，一壞不能宣稱全部成功"
+    },
+    {
+      "id": "F31",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "未分類變更回全驗；變一接線能列受影響專案與重驗點"
+    },
+    {
+      "id": "F32",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "內容變而版本不變仍由 digest 發現"
+    },
+    {
+      "id": "F33",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "有舊快取但拿不到新鮮確認仍拒絕寫入"
+    },
+    {
+      "id": "F34",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "未宣告 pin／缺授權不可冒充合法例外"
+    },
+    {
+      "id": "F35",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "FAIL／未驗調試包、偽造結果、非 CI 發布都拒絕"
+    },
+    {
+      "id": "F36",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "保留專案自訂內容；未知所有權停止"
+    },
+    {
+      "id": "F37",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "本地 override 不能關閉 mandatory；未知欄位拒絕、語意未確認不放行"
+    },
+    {
+      "id": "F38",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "新增合法欄位成功；不可改部分無合法覆寫入口"
+    },
+    {
+      "id": "F39",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "未知客製列差異不覆蓋；不排程無限期全盤掃描"
+    },
+    {
+      "id": "F40",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "影響版本／設定／環境變更自動失效；無關改名不誤失效；使用者可撤銷"
+    },
+    {
+      "id": "F41",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "歷史七缺口逐項重驗；不將單一容器當跨雲通過"
+    },
+    {
+      "id": "F42",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "evidence": [
+        {
+          "path": "experiments/v2/test_contracts.py",
+          "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
+        }
+      ],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "未授權的刪除／force／schema／憑證各測；間接命令也不能繞過"
+    },
+    {
+      "id": "F43",
+      "result": "不通過",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "evidence": [
+        {
+          "path": "experiments/v2/test_contracts.py",
+          "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
+        },
+        {
+          "path": "experiments/v2/feasibility.py",
+          "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
+        }
+      ],
+      "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
+      "next": "未有 ignore、暫存／提交／tag 訊息及輸出邊界都測；已外流不能稱阻擋成功",
+      "parts": {
+        "a": {
+          "result": "不通過",
+          "scope": "決策書第 4 節對應子項完整門檻",
+          "evidence": [
+            {
+              "path": "experiments/v2/feasibility.py",
+              "scope": "同 UID／直接 Git 的合成繞過反例"
+            },
+            {
+              "path": "experiments/v2/isolation.py",
+              "scope": "Mac 單一受包覆子程序 OS 邊界；不是全部工具隔離"
+            }
+          ],
+          "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
+        },
+        "b": {
+          "result": "未驗證",
+          "scope": "決策書第 4 節對應子項完整門檻",
+          "evidence": [],
+          "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
+        }
+      }
+    },
+    {
+      "id": "F44",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "待決漏登、無授權自行關閉失敗；有效委任可定案且留理由"
+    },
+    {
+      "id": "F45",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "README／AGENTS／操作卡反向規則與節間矛盾；自由散文未知仍需人工審閱"
+    },
+    {
+      "id": "F46",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "三項來源例外仍保留；尚未執行來源／產物同組情境並顯式列減項",
+      "next": "三項既定減項列例外而非 skip 消失；不撤銷既定例外"
+    },
+    {
+      "id": "F47",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
+      "evidence": [],
+      "unknown": "Mac 子程序隔離探針可驗；Codex 開場真實注入及其他工具／surface 尚未驗收",
+      "next": "分工具／surface／版本報支援與缺口，缺攔截就不能顯示 strict ready"
+    },
+    {
+      "id": "F48",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "evidence": [
+        {
+          "path": "experiments/v2/test_contracts.py",
+          "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
+        }
+      ],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "額外模型、付費 API、資源建立未授權不發生；訂閱探針也需授權"
+    },
+    {
+      "id": "F49",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "evidence": [],
+      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "next": "換機能重建或重新取得；聊天暫存檔不可當唯一證據"
+    },
+    {
+      "id": "F50",
+      "result": "未驗證",
+      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "origin": "fdc0bbd:HANDOFF.md 第一步，使用者補列必要功能；決策版本 2",
+      "evidence": [
+        {
+          "path": "experiments/v2/test_contracts.py",
+          "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
+        }
+      ],
+      "unknown": "狀態機與假 adapter 可驗；尚未接入各工具事件／耐久 session store，不能宣稱自動整合完成",
+      "next": "續聊、等待、成功交棒、失敗 push、重試改名、舊次數下限、能力不可用及讀回不符；核心測試不代替真正改名"
+    }
+  ]
+}
