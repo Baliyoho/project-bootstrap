@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-07（+08；工作中安全點，未交棒）
-- **交棒者**：Codex CLI ／ `baliyohodeMini`（本 session 續作限期資格、請求保存及直接子程序生命週期；尚未釋出 writer）
+- **交接時間**：2026-11-07 21:20（+08）
+- **交棒者**：Codex CLI ／ `baliyohodeMini`（限期資格、請求保存及直接子程序生命週期；使用者授權評估上下文後交棒）
 
 ## 任務目標
 
@@ -11,8 +11,8 @@
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
-- **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立；前批已推安全點 `496e489`）；勿重新從 main 開始。
-- **工作中**：`baliyohodeMini` ／ `Codex CLI` ／ `㊣ 26110714｜補重連資格｜工作中｜交棒0次`，2026-11-07 14:23 (+08) 開工
+- **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立；已驗證實作安全點 `f0e11cc`）；main 尚未合入 v2，勿重新從 main 開始。
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
 - 本機能力：macOS、Python 3.15.2、bash 3.2；未驗 Windows／Linux。未改 main、部署包、skill、hook、接線或 VERSION。
 
@@ -20,18 +20,15 @@
 
 - F50 必要需求、51 ID 對照與狀態移交；session 狀態機及假 adapter 契約，尚未接真實事件自動化。
 - [P0 原型](experiments/v2/README.md)：內容／事件交易、授權範圍、epoch／通知／ACK、執行中合成子程序中止與上下文替換。
-- parent-only broker：管道綁身分、無管理 RPC、資源與請求序號限制；受隔離 Mac 合成 agent 正常動作成功，冒名／自行授權／直接寫入被拒。
-- 新增 POSIX materializer：prepared→暫存／fsync→replace→applied；保留 mode，拒絕路徑／連結／別名風險及外部內容衝突。同資源前一事件未完成時阻止新寫入。
-- 收據與內容／合成效果同交易；可信 parent 可輪替 capability 恢復 principal，重連不重做原動作。真子程序四個中斷點、收據／commit 失敗及回應遺失已有反例。
-- 恢復覆核修正三處：重送寫盤須符合重連後權限；私有庫綁定 root 身分／完整映射；恢復已 replace 內容仍須目錄 fsync 才記 applied。新增五項測試，三個主反例已見修前失敗／修後通過。
-- 新增 launcher 資格層：parent 產生 principal、私有票據重連、資源／有效期／撤銷，broker 受理及恢復寫盤前重查；Mac 合成 agent 探針已採用，source 仍非人類驗證。
-- 新增 parent 請求 outbox：送出前保存原始 bytes、單一 pending、缺漏／不一致停止；兩個真子程序終止點與回應遺失恢復只執行一筆效果。共 14 個新增測試，含移除守門的負向對照。
-- 新增固定啟動與持久程序狀態：舊直接 child wait 退場後才發新管道；未解 parent 重啟拒絕替換。POSIX 票據庫拒絕權限／連結／FIFO 異常；Mac 管道已接入，閒置資格失效會結束 transport。另新增 14 個測試。
+- parent-only broker：管道身分、資源／序號限制、無管理 RPC；收據與內容／合成效果同交易。Mac 合成 agent 正常操作成功，冒名／自行授權／直接寫入被拒。
+- POSIX materializer：prepared→暫存／fsync→replace→applied，保留 mode、拒絕路徑／連結／別名／外部衝突；root／映射持久綁定，恢復重查資源資格及目錄 fsync。四個真子程序中斷點與交易失敗可重跑。
+- `496e489`：launcher 資格層由 parent 產生 principal、私有票據重連、限期資源資格／撤銷；parent outbox 送出前保存原始 bytes，缺漏／不一致停止。兩個真子程序終止點與遺失回應恢復不重做合成效果，新增 14 個測試。
+- `f0e11cc`：固定啟動計畫與持久程序狀態；舊直接 child wait 退場後才發新管道，未解 parent 重啟拒絕替換。POSIX 票據庫拒絕權限／連結／FIFO 異常；Mac 管道已接入，閒置資格失效會結束 transport。新增 14 個測試，含移除停止檢查後兩 child 同時存活的負向對照。
 - 原一鍵入口包含 P0 回歸，JSON 可重跑且附輸入 digest／環境／時間。三個原始繞過反例照留，strict_ready 仍為 false。
 
 ## 未完成／下一步
 
-1. **P0 尚未退出；直接續作後代程序與 parent 中斷的控制邊界**：先讀 `lifecycle.py`、`broker_fixture.py`、`supervisor.py`。目前只停止可追蹤的直接 child；parent 重啟遇未解狀態只阻擋，沒有孤兒回收／人工解鎖程序。不得憑 PID 或時間推定退場。
+1. **P0 尚未退出；下一棒直接續作後代程序與 parent 中斷的控制邊界**：先讀 `lifecycle.py` 的 start／stop／check、`broker_fixture.py` 的 transport 與 `supervisor.py`。先定義 child 再生後代、parent 被終止、PID 重用的反例，再實作；目前只停止可追蹤的直接 child，未解狀態只阻擋，沒有孤兒回收／人工解鎖程序，不得憑 PID 或時間推定退場。
 2. 補人類授權來源、票據更新／遺失及過期後續作；將 outbox、生命週期及 supervisor 接成同一執行面。parent fixture 非人類服務；未完成 runtime/import manifest、資料裁剪或跨機恢復。外部動作不享有 SQLite 合成效果的 exactly-once 保證。
 3. 對真實可控執行介面接 supervisor，補跨機推送、失聯與恢復；模型／桌面工具實際停止和上下文重建需另驗，不拿 ACK 冒充理解。
 4. 鎖定實際採用元件版本／LICENSE／digest；驗 Windows／Mac 架構門檻，之後才做 P1 來源／測試模組化與短入口。
@@ -51,8 +48,8 @@
 
 ## 服務查證與期望快照
 
-- 本批 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項全過、無 skip；內含 85 個 v2 測試。安全點提交前再以最終 stage 同入口確認；本機 HTTP／隔離探針經允許於沙箱外執行。
-- 本批 `python3 -X utf8 tools/verify_v2.py --require-ready --json`：exit 2（2026-11-07）；harness_passed=true、strict_ready=false、85 測試無失敗／skip；Mac 管道 11 次請求成功。沙箱內無法啟動隔離 child，經允許於沙箱外重跑；不把環境錯誤當預期 exit 2。
+- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項全過、無 skip；內含 85 個 v2 測試。交棒最終 stage 後以同入口驗證；本機 HTTP／隔離探針經允許於沙箱外執行。
+- 本輪 `python3 -X utf8 tools/verify_v2.py --require-ready --json`：實測 exit 2（2026-11-07）；harness_passed=true、strict_ready=false、85 測試無失敗／skip，Mac 管道 11 次請求成功。一般 sandbox 可能拒絕 loopback／隔離 child，須經允許重跑，不把環境錯誤當預期 exit 2。
 - JSON 為暫存證據，不假設下一棒可取得；以相同命令重跑，需量完整舊驗證器再加 `--baseline`。F50 本次真正改名成功，但工具回傳將全形空格正規化為半形，格式差異已揭露。
 - 無 verify_state.py／check_docs.py，依 AGENTS 用替代入口；接線未改，信任重審不適用。未呼叫額外模型、未安裝候選、未部署其他專案。
 
