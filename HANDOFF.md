@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-07（+08，中途安全點，尚未交棒）
-- **交棒者**：Codex CLI ／ `baliyohodeMini`（本 session 續作 P0 恢復邊界覆核；工作中標記保留）
+- **交接時間**：2026-11-07 14:20（+08）
+- **交棒者**：Codex CLI ／ `baliyohodeMini`（P0 恢復邊界覆核；使用者授權依上下文餘量選擇交棒）
 
 ## 任務目標
 
@@ -11,8 +11,8 @@
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
-- **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；後續繼續此分支，勿重新從 main 開始。
-- **工作中**：`baliyohodeMini` ／ `Codex CLI` ／ `㊣ 26110714｜覆核恢復邊界｜工作中｜交棒0次`，2026-11-07 14:08 (+08) 開工
+- **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立；已驗證實作安全點 `119fcd6`）；勿重新從 main 開始。
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
 - 本機能力：macOS、Python 3.15.2、bash 3.2；未驗 Windows／Linux。未改 main、部署包、skill、hook、接線或 VERSION。
 
@@ -28,8 +28,8 @@
 
 ## 未完成／下一步
 
-1. **P0 尚未退出**：恢復覆核已補上述三處；續作可信 launcher 與重連資格。受理收據不等於磁碟已套用、舊收據不回寫新內容、外部 writer 不在保障內；此次覆核不代表完整安全審查。
-2. 補正式可信 launcher、人類授權簽發／有效期與 client 請求保存／重連資格；parent fixture 不是已驗收的人類服務。外部付費／破壞性動作不享有 SQLite 合成效果的 exactly-once 保證。
+1. **P0 尚未退出；下一棒直接續作可信 launcher 與重連資格**：先讀 `broker.py` 的 attach／dispatch、`contracts.py` 的 resume／grant 與 `broker_fixture.py` 的啟動邊界；定義假造 principal、過期授權、重連丟失原請求的反例，再實作。
+2. 補正式可信 launcher、人類授權簽發／有效期與 client 請求保存；parent fixture 不是已驗收的人類服務。受理收據不等於寫盤完成；外部付費／破壞性動作不享有 SQLite 合成效果的 exactly-once 保證。本輪覆核不代表完整安全審查。
 3. 對真實可控執行介面接 supervisor，補跨機推送、失聯與恢復；模型／桌面工具實際停止和上下文重建需另驗，不拿 ACK 冒充理解。
 4. 鎖定實際採用元件版本／LICENSE／digest；驗 Windows／Mac 架構門檻，之後才做 P1 來源／測試模組化與短入口。
 5. F22 常態必讀仍約 4.4 萬字元、超過 12,000；完整接棒時間及 token 未量。要做證據依賴／失效與分層後才能省 A4，不能靠原型綠燈略過。
@@ -46,8 +46,9 @@
 
 ## 服務查證與期望快照
 
-- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項通過、無 skip；其中 P0 執行 57 個 v2 測試（不是需求 ID 的逐項驗收）。最終 stage 後再以同入口驗證。
-- `python3 -X utf8 tools/verify_v2.py --require-ready` 預期 exit 2：契約回歸正常但強保障未就緒。JSON 可用 `--baseline --json` 重取，本機記在 gitignored `dist/v2-p0-evidence.json`，不依賴聊天附件。
+- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項通過、無 skip；其中 P0 執行 57 個 v2 測試（不是需求 ID 的逐項驗收）。交棒最終 stage 後以同入口驗證。
+- 本輪 `python3 -X utf8 tools/verify_v2.py --require-ready --json` 實測 exit 2（2026-11-07 14:18 +08）：harness_passed=true、strict_ready=false、57 測試無失敗／skip。沙箱內 loopback bind 被拒，經允許於沙箱外重跑取得結果；不把權限錯誤當預期 exit 2。
+- JSON 為暫存證據，不假設下一棒可取得；以相同命令重跑，需量完整舊驗證器再加 `--baseline`。F50 本次真正改名成功，但工具回傳將全形空格正規化為半形，格式差異已揭露。
 - 無 verify_state.py／check_docs.py，依 AGENTS 用替代入口；接線未改，信任重審不適用。未呼叫額外模型、未安裝候選、未部署其他專案。
 
 ## 懸置事項（AI 勿自行處理）
