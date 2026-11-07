@@ -124,10 +124,14 @@
         {
           "path": "experiments/v2/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
+        },
+        {
+          "path": "experiments/v2/test_lifecycle.py",
+          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
-      "next": "已補 parent 產生 principal、限期票據重連及既有管道資格重查；續補正式 launcher、實際工具與其他 OS，不把合成事件外推成完整歸因",
+      "next": "已補限期票據、固定計畫與直接 child 退場；續補後代／孤兒控制、實際工具與其他 OS，不把合成事件外推成完整歸因",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -158,6 +162,10 @@
             {
               "path": "experiments/v2/test_launcher.py",
               "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
+            },
+            {
+              "path": "experiments/v2/test_lifecycle.py",
+              "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -186,9 +194,13 @@
         {
           "path": "experiments/v2/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
+        },
+        {
+          "path": "experiments/v2/test_lifecycle.py",
+          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
         }
       ],
-      "unknown": "合成 POSIX 程序中斷與恢復可重跑；模型推理／需求理由保存、真實交棒與設備遺失未完整驗收",
+      "unknown": "outbox 恢復與直接 child 替換可重跑；parent 中斷後未解程序只阻擋不回收，真實交棒、模型理由及設備遺失未完整驗收",
       "next": "正常交棒／程序被殺／裝置遺失三條分測，缺口不補造",
       "parts": {
         "normal": {
@@ -208,6 +220,10 @@
             {
               "path": "experiments/v2/test_launcher.py",
               "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
+            },
+            {
+              "path": "experiments/v2/test_lifecycle.py",
+              "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -520,10 +536,14 @@
         {
           "path": "experiments/v2/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
+        },
+        {
+          "path": "experiments/v2/test_lifecycle.py",
+          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
         }
       ],
-      "unknown": "parent 限期授權、撤銷與持久請求可驗；source 仍是合成標籤，正式人類身分驗證、啟動／票據保管及全 surface 隔離未完成",
-      "next": "整合正式 launcher 的固定啟動設定、舊程序退場、票據保管及過期後續作；外部動作冪等需另驗"
+      "unknown": "parent 限期授權與直接 child 生命週期可驗；source 仍是合成標籤，人類授權、票據更新、後代／孤兒控制及全 surface 隔離未完成",
+      "next": "處理後代／parent 中斷控制、人類授權、票據更新與過期後續作；接合 outbox／生命週期／supervisor，外部動作冪等另驗"
     },
     {
       "id": "F43",
@@ -606,9 +626,13 @@
         {
           "path": "experiments/v2/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
+        },
+        {
+          "path": "experiments/v2/test_lifecycle.py",
+          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
         }
       ],
-      "unknown": "Mac 固定合成子程序的管道隔離可驗；非桌面／模型接線；Windows/Linux 未驗證，Mac Codex 真實注入未驗收",
+      "unknown": "Mac 合成管道已接固定啟動與票據庫；非真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收",
       "next": "分工具／surface／版本報支援與缺口，缺攔截就不能顯示 strict ready"
     },
     {
@@ -632,10 +656,14 @@
         {
           "path": "experiments/v2/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
+        },
+        {
+          "path": "experiments/v2/test_lifecycle.py",
+          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
         }
       ],
-      "unknown": "parent 限期授權、撤銷與持久請求可驗；source 仍是合成標籤，正式人類身分驗證、啟動／票據保管及全 surface 隔離未完成",
-      "next": "整合正式 launcher 的固定啟動設定、舊程序退場、票據保管及過期後續作；外部動作冪等需另驗"
+      "unknown": "parent 限期授權與直接 child 生命週期可驗；source 仍是合成標籤，人類授權、票據更新、後代／孤兒控制及全 surface 隔離未完成",
+      "next": "處理後代／parent 中斷控制、人類授權、票據更新與過期後續作；接合 outbox／生命週期／supervisor，外部動作冪等另驗"
     },
     {
       "id": "F49",

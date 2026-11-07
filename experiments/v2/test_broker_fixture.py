@@ -4,11 +4,22 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from experiments.v2 import broker_fixture
+from experiments.v2.contracts import Denied
 
 SUPPORTED = platform.system() == 'Darwin' and Path('/usr/bin/sandbox-exec').is_file()
 
 
 class BrokerFixtureTests(TestCase):
+    def test_launcher_failure_is_reported_as_failure_not_blocking_success(self):
+        if not SUPPORTED:
+            self.assertEqual(broker_fixture.probe_broker()['result'], '未驗證')
+            return
+        with patch.object(broker_fixture.ProcessLauncher, 'start', side_effect=Denied('child-not-ready')):
+            result = broker_fixture.probe_broker()
+        self.assertEqual(result['result'], '不通過')
+        self.assertEqual(result['reason'], 'launcher-start-failed')
+        self.assertFalse(result['checks']['confined_agent_completed'])
+
     def test_real_confined_agent_has_no_admin_identity_or_direct_write_access(self):
         result = broker_fixture.probe_broker()
         if not SUPPORTED:

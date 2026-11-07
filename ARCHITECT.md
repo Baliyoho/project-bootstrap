@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 2026-11-07 啟動生命週期：新增 `experiments/v2/lifecycle.py` 與 `test_lifecycle.py`，固定啟動計畫、直接子程序退場、持久未解狀態拒絕重啟，以及 POSIX 私有票據保管。Mac broker fixture 已走此啟動路徑並於閒置時重查資格；未驗任意後代程序、parent 崩潰後孤兒回收或真實人類授權。仍是合成 P0，現行程序及部署包不變。
+
 > 2026-11-07 重連資格：新增 `experiments/v2/launcher.py` 與 `test_launcher.py`。可信 parent 產生 principal、保存重連票據雜湊與限期資源資格；broker 每次請求及恢復寫盤前重查。原始請求在送出前寫入私有 outbox，重啟沿用相同 bytes；缺漏不猜測重建。Mac 合成管道探針改用此資格層，尚非正式人類授權服務或完整工具 launcher。現行部署結構與程序不變。
 
 > 2026-11-07 恢復覆核：materializer 的私有實驗庫新增 root 身分／資源映射綁定，拒絕以新設定接管舊事件；broker 重送寫入時重查當前資源權限，恢復 replace 後補目錄 fsync 才記 applied。反例與恢復測試同存 `test_recovery.py`。僅合成原型，舊無綁定實驗庫與搬機遷移尚不支援；現行部署結構不變。

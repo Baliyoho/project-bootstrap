@@ -60,7 +60,19 @@ RequestJournal 在可信 parent 的私有庫保存完整原始 bytes 與連續�
 
 `test_launcher.py` 驗假造票據／principal、舊管道、期限邊界、撤銷、越權範圍、時鐘倒退、原始請求缺失／變更、日誌寫入失敗、回應遺失及過期後恢復寫盤。真正子程序分別在 outbox 提交後與 broker 效果提交後 `os._exit`，恢復後僅一筆效果。負向對照移除管道資格檢查或有效期記錄，重現舊邊界的錯誤放行；不是額外模型或外部服務測試。
 
-此層的 `source` 是合成授權的來源標籤，非人類身分驗證或簽章。低層 Broker.attach／Lab 管理方法仍是 parent 內部 API，agent 隔離不能靠 Python 方法可見性成立。正式 launcher 必須綁定受控啟動設定、先停妥舊程序，再把新管道接給替代程序；過期資格不會自動終止已在運算的 child，F28 仍需 supervisor。這些限制未解決前不得部署真實資料。
+此層的 `source` 是合成授權的來源標籤，非人類身分驗證或簽章。低層 Broker.attach／Lab 管理方法仍是 parent 內部 API，agent 隔離不能靠 Python 方法可見性成立。資格層本身不會終止已在運算的 child；下節的 parent 事件迴圈補直接子程序退場，F28 的前提切換與上下文重建仍需 supervisor 整合。這些限制未解決前不得部署真實資料。
+
+## 固定啟動與直接子程序退場（2026-11-07）
+
+`lifecycle.py` 的 ProcessLauncher 只接受可信 parent 提供的 LaunchPlan，不提供 agent 的任意命令 RPC。第一次啟動綁定 argv、入口 executable 的內容 digest 與 cwd 的實際位置／device／inode；替代啟動若改計畫會拒絕，不把原票據外推成另一個命令的授權。被入口讀入的其他腳本、import、設定與整個 runtime 尚未做完整 manifest 鎖定，仍須由可信 parent 保護。
+
+啟動先持久記 `starting`，新 child 回固定 READY 後再重查資格、輪替 channel、記 `running` 並送 GO；合成 agent 在 GO 前不送請求。替換時先關舊 channel，TERM／必要時 KILL 並 wait 到直接 child 確實退出，記 `stopped` 後才能啟動替代者。握手錯誤、逾時、資格失效及日誌失敗都不交出可用的新管道；停止時即使日誌寫失敗仍嘗試終止 child，但保留未解狀態。parent 重啟只讀到 starting／running／stopping／unresolved 而沒有原程序物件時，拒絕替換；不憑 PID、經過時間或票據推定舊程序已退場，也不自行殺可能被重用的 PID。這是保守阻擋，尚無自動孤兒回收或人工解鎖程序。
+
+TicketVault 使用已存在且屬於本 UID 的 0700 目錄；票據以隨機 handle 存成 0600 普通檔，O_EXCL／O_NOFOLLOW、單一 hardlink、內容長度與檔案／目錄 fsync 均檢查。讀取 FIFO 不等待，symlink、hardlink、錯誤權限與缺票據拒絕；不自動修權限、找歷史票據或重新發身分。資料只保存在合成暫存目錄，票據不進 agent 的 argv／環境／RPC；同 UID 的檔案權限不是隔離，仍由受驗的 OS profile 阻止 agent 讀私有目錄。
+
+Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請求，正常私有票據讀回、管道效果、寫盤及程序退場都要成功。parent 的有界管道迴圈在閒置時每次等待最多 0.1 秒再重查資格，失效後結束 transport 並終止直接 child；這不是所有 OS／阻塞操作的即時停止承諾。`ProcessLauncher.check()` 本身需由事件迴圈呼叫，不是常駐背景 watchdog。
+
+`test_lifecycle.py` 驗替換順序、舊 channel 失效、固定計畫拒絕變更、parent 重啟未解、啟動途中撤銷、握手失敗、忽略 TERM、停止／日誌故障、閒置過期及票據檔案反例；移除停止檢查的負向對照重現兩個 child 同時存活。沿用單一 parent writer 前提，不宣稱跨 parent 的原子 claim。只驗受追蹤的直接子程序，沒有驗任意後代／逃離程序樹、parent 崩潰後孤兒回收、票據遺失／更新、過期後延續授權、Windows 或真正人類授權入口。舊 supervisor 仍是獨立合成上下文實驗，尚未與此生命週期合成一個正式執行面。
 
 ## POSIX 工作樹套用與中斷恢復（2026-11-07）
 
@@ -84,7 +96,7 @@ HANDOFF 保留 writer、目前行動與此索引的指標；若索引不可讀�
 
 ## 接下來的架構工作
 
-1. 管道分權、POSIX 套用、限期資格與 parent 請求保存已有合成證據；下一批整合正式可信 launcher 的固定啟動設定、舊程序退場與票據保管，補人類授權入口及過期後續作流程。逐 surface 列仍可繞過入口；不得把 fixture 當真實工具部署。
+1. 管道分權、POSIX 套用、限期資格、請求保存及直接 child 生命週期已有合成證據；下一批處理後代程序／parent 中斷的控制邊界、人類授權與票據更新／過期後續作。將請求 outbox、管道生命週期與 supervisor 接成同一執行面；逐 surface 列繞過入口，不把 fixture 當真實部署。
 2. 將合成 supervisor 的停止／排空／重建上下文協定接到實際可控執行介面；不能把程式裡 application=True 當作模型已理解，也不能把 outbox 當即時通知。真實模型探針仍需另行明確授權。
 3. 再鎖定需實際採用的外部元件、驗 Windows／Mac 門檻。未通過前不開始全面搬來源、改現行 A4 或部署專案。
 4. 接棒成本已能逐次量測；短入口及證據失效機制需配套驗收後才切換。常態必讀超額照實報不通過，不藉此省略檢查。

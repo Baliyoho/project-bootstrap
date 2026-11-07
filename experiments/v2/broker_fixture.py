@@ -17,9 +17,10 @@ import threading
 import time
 
 from experiments.v2.broker import Broker, MAX_REQUEST_BYTES
-from experiments.v2.contracts import Lab
+from experiments.v2.contracts import Denied, Lab
 from experiments.v2.materializer import Materializer
 from experiments.v2.launcher import LaunchAuthority
+from experiments.v2.lifecycle import LaunchPlan, ProcessLauncher, TicketVault
 
 
 PROFILE = '''(version 1)
@@ -52,6 +53,7 @@ def blocked(operation):
 blocked(lambda: (vault / 'private.sqlite').read_bytes())
 blocked(lambda: (vault / 'private.sqlite').write_bytes(b'overwrite'))
 blocked(lambda: (vault / 'private.sqlite').unlink())
+blocked(lambda: list((vault / 'tickets').iterdir()))
 blocked(lambda: (sibling / 'private').read_bytes())
 blocked(lambda: (repo / 'note').write_bytes(b'direct-write'))
 blocked(lambda: (repo / 'managed.txt').write_bytes(b'direct-write'))
@@ -83,11 +85,12 @@ assert second['code'] == 'ok'
 '''
 
 
-def launch_agent(broker, channel, command, scratch):
+def launch_agent(broker, channel, command, scratch, process=None, check=None):
     """Bounded fixed-fixture transport; the parent chooses the channel object."""
-    process = subprocess.Popen(command, cwd=scratch, stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-        env={'PATH': os.defpath, 'PYTHONDONTWRITEBYTECODE': '1'}, close_fds=True)
+    if process is None:
+        process = subprocess.Popen(command, cwd=scratch, stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            env={'PATH': os.defpath, 'PYTHONDONTWRITEBYTECODE': '1'}, close_fds=True)
     received = queue.Queue(maxsize=2)
     stopping = threading.Event()
 
@@ -109,11 +112,22 @@ def launch_agent(broker, channel, command, scratch):
     thread = threading.Thread(target=reader, daemon=True)
     thread.start()
     requests = 0
+    last_message = time.monotonic()
     try:
         while True:
-            line = received.get(timeout=10)
+            # Keep lease checks on the parent/SQLite thread, including while a
+            # child is idle. No background thread gets administrative access.
+            if check is not None:
+                check()
+            try:
+                line = received.get(timeout=0.1)
+            except queue.Empty:
+                if time.monotonic() - last_message >= 10:
+                    raise
+                continue
             if not line:
                 break
+            last_message = time.monotonic()
             if len(line) > MAX_REQUEST_BYTES or requests >= 32:
                 return {'completed': False, 'reason': 'transport-limit'}
             response = broker.dispatch(channel, line)
@@ -124,6 +138,8 @@ def launch_agent(broker, channel, command, scratch):
         return {'completed': code == 0, 'requests': requests, 'exit_code': code}
     except (queue.Empty, OSError, subprocess.TimeoutExpired):
         return {'completed': False, 'reason': 'agent-timeout-or-pipe-failure'}
+    except Denied:
+        return {'completed': False, 'reason': 'agent-authority-or-lifecycle-ended'}
     finally:
         broker.detach(channel)
         stopping.set()
@@ -146,14 +162,17 @@ def probe_broker():
         (repo / 'note').write_text('read-only-view')
         (sibling / 'private').write_text('SYNTHETIC_OTHER_SESSION')
         lab = Lab(vault / 'private.sqlite')
+        (vault / 'tickets').mkdir(mode=0o700)
+        ticket_vault = TicketVault(vault / 'tickets')
+        launcher = None
         try:
             materializer = Materializer(lab, repo, {'note-a': 'managed.txt', 'note-b': 'other.txt'})
             broker = Broker(lab, materializer)
             authority = LaunchAuthority(broker)
             expires = time.time() + 60
             ticket = authority.issue(('note-a', 'budget'), 'synthetic-parent-approval', expires)
-            channel = authority.connect(ticket)
-            actor = lab.actor(channel.capability)
+            handle = ticket_vault.save(ticket)
+            launcher = ProcessLauncher(authority, ticket_vault)
             authority.connect(authority.issue(('note-b',), 'synthetic-parent-approval', expires))
             authority.grant(ticket, 'paid-api', 'budget', 1, 'synthetic-human-authorization', expires)
             # Python's launcher resolves its prefix via these directory entries.
@@ -166,11 +185,29 @@ def probe_broker():
                 ancestor_params.extend(['-D', key + '=' + str(path)])
                 ancestor_rules.append('(literal (param "' + key + '"))')
             profile = PROFILE + '\n(allow file-read* ' + ' '.join(ancestor_rules) + ')\n'
+            # The confined program waits for the parent's GO until the durable
+            # lifecycle and current channel authority have both been checked.
+            program = "import sys; print('bootstrap-v2-ready', flush=True); assert sys.stdin.readline() == 'bootstrap-v2-go\\n'\n" + AGENT
             command = ['/usr/bin/sandbox-exec', '-D', 'REPO=' + str(repo),
                 '-D', 'SCRATCH=' + str(scratch), '-D', 'PYTHON_RUNTIME=' + str(runtime),
                 '-D', 'PYTHON_EXECUTABLE=' + str(Path(sys.executable).resolve())] + ancestor_params + ['-p', profile,
-                sys.executable, '-B', '-u', '-c', AGENT, str(vault), str(repo), str(scratch), str(sibling)]
-            transport = launch_agent(broker, channel, command, scratch)
+                sys.executable, '-B', '-u', '-c', program, str(vault), str(repo), str(scratch), str(sibling)]
+            try:
+                child = launcher.start(handle, LaunchPlan(tuple(command), str(scratch)))
+            except (Denied, OSError):
+                return {'result': '不通過', 'reason': 'launcher-start-failed',
+                        'checks': {'confined_agent_completed': False},
+                        'transport': {'completed': False, 'reason': 'launcher-start-failed'}}
+            channel = child.channel
+            actor = lab.actor(channel.capability)
+            # A normal process exit is handled by transport EOF, not a failed
+            # authority check. Permit checks still run while waiting for bytes.
+            def check_authority():
+                with lab.transaction():
+                    channel.authorize(channel)
+            transport = launch_agent(broker, channel, command, scratch,
+                                     process=child.process, check=check_authority)
+            launcher.close()
             events = list(lab.db.execute('SELECT actor, before, after FROM writes ORDER BY seq'))
             effects = list(lab.db.execute('SELECT actor, kind, resource FROM effects'))
             checks = {
@@ -186,10 +223,17 @@ def probe_broker():
                     "SELECT count(*) FROM materializations WHERE phase='applied'").fetchone()[0] == 2,
                 'scratch_writable': (scratch / 'local').is_file(),
                 'closed_pipe_revoked': channel.closed,
+                'managed_lifecycle_stopped': child.process.poll() is not None and lab.db.execute(
+                    'SELECT state FROM managed_launches WHERE actor=?', (actor,)).fetchone()[0] == 'stopped',
+                'private_ticket_roundtrip': ticket_vault.load(handle) == ticket,
+                'ticket_not_in_child_command': all(ticket not in argument for argument in command),
             }
             return {'result': '通過' if all(checks.values()) else '不通過', 'checks': checks,
                 'transport': transport,
-                'scope': 'parent-only 管理 API＋管道身分＋受隔離合成 agent；代理將已受理事件套用到 POSIX 合成工作樹',
-                'unknown': '非正式 launcher／真實專案；未驗 Windows、逃逸、斷電、多 writer、跨機或模型／桌面工具整合'}
+                'scope': 'parent 限期資格＋固定啟動／退場＋私有票據＋受隔離合成 agent；代理套用 POSIX 合成工作樹',
+                'unknown': '非正式人類服務／真實工具；未驗後代或孤兒回收、Windows、逃逸、斷電、多 writer、跨機'}
         finally:
+            if launcher is not None:
+                launcher.close()
+            ticket_vault.close()
             lab.close()
