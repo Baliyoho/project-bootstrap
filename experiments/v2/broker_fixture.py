@@ -17,6 +17,7 @@ import threading
 
 from experiments.v2.broker import Broker, MAX_REQUEST_BYTES
 from experiments.v2.contracts import Lab
+from experiments.v2.materializer import Materializer
 
 
 PROFILE = '''(version 1)
@@ -51,6 +52,7 @@ blocked(lambda: (vault / 'private.sqlite').write_bytes(b'overwrite'))
 blocked(lambda: (vault / 'private.sqlite').unlink())
 blocked(lambda: (sibling / 'private').read_bytes())
 blocked(lambda: (repo / 'note').write_bytes(b'direct-write'))
+blocked(lambda: (repo / 'managed.txt').write_bytes(b'direct-write'))
 assert (repo / 'note').read_text() == 'read-only-view'
 (scratch / 'local').write_text('allowed')
 (scratch / 'alias').symlink_to(vault / 'private.sqlite')
@@ -61,6 +63,8 @@ def call(request):
 request = dict(id=1, method='write', resource='note-a', base=None, text='first', epoch=0)
 first = call(request)
 assert first['code'] == 'ok'
+assert (repo / 'managed.txt').read_text() == 'first'
+blocked(lambda: (repo / 'managed.txt').write_bytes(b'outside-broker'))
 assert call(request) == first
 assert call(dict(request, text='changed-replay'))['code'] == 'changed-retry'
 assert call(dict(request, id=2, actor='line-b'))['code'] == 'unexpected-fields'
@@ -141,7 +145,8 @@ def probe_broker():
         (sibling / 'private').write_text('SYNTHETIC_OTHER_SESSION')
         lab = Lab(vault / 'private.sqlite')
         try:
-            broker = Broker(lab)
+            materializer = Materializer(lab, repo, {'note-a': 'managed.txt', 'note-b': 'other.txt'})
+            broker = Broker(lab, materializer)
             channel = broker.attach('line-a', ('note-a', 'budget'))
             broker.attach('line-b', ('note-b',))
             lab.grant('line-a', 'paid-api', 'budget', 1, 'synthetic-human-authorization')
@@ -170,12 +175,15 @@ def probe_broker():
                     and events[0]['after'] == events[1]['before'] == b'first' and events[1]['after'] == b'second',
                 'grant_and_replay_scoped': len(effects) == 1 and tuple(effects[0]) == ('line-a', 'paid-api', 'budget'),
                 'readonly_view_unchanged': (repo / 'note').read_text() == 'read-only-view',
+                'managed_file_applied': (repo / 'managed.txt').is_file() and (repo / 'managed.txt').read_bytes() == b'second',
+                'materializations_recorded': lab.db.execute(
+                    "SELECT count(*) FROM materializations WHERE phase='applied'").fetchone()[0] == 2,
                 'scratch_writable': (scratch / 'local').is_file(),
                 'closed_pipe_revoked': channel.closed,
             }
             return {'result': '通過' if all(checks.values()) else '不通過', 'checks': checks,
                 'transport': transport,
-                'scope': 'parent-only 管理 API＋繼承管道身分＋受 sandbox 包覆的固定合成 agent；只改代理內容庫',
-                'unknown': '非正式 launcher；尚未做逃逸審查、檔案 materializer、跨機或模型／桌面工具整合'}
+                'scope': 'parent-only 管理 API＋管道身分＋受隔離合成 agent；代理將已受理事件套用到 POSIX 合成工作樹',
+                'unknown': '非正式 launcher／真實專案；未驗 Windows、逃逸、斷電、多 writer、跨機或模型／桌面工具整合'}
         finally:
             lab.close()

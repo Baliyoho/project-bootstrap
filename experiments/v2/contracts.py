@@ -7,6 +7,7 @@ Do not put real credentials/content here or expose this object to agents.
 import hashlib
 import secrets
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 
@@ -23,6 +24,7 @@ class Lab:
         self.clock = clock or (lambda: datetime.now(timezone.utc).isoformat())
         self.db = sqlite3.connect(str(path))
         self.db.row_factory = sqlite3.Row
+        self.db.execute('PRAGMA synchronous=FULL')
         self.db.executescript('''
             CREATE TABLE IF NOT EXISTS sessions (
                 capability TEXT PRIMARY KEY, actor TEXT NOT NULL UNIQUE);
@@ -47,7 +49,40 @@ class Lab:
                 source TEXT NOT NULL, revoked INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS effects (
                 seq INTEGER PRIMARY KEY, actor TEXT, kind TEXT, resource TEXT, grant_id TEXT);
+            CREATE TABLE IF NOT EXISTS receipts (
+                actor TEXT, request_id INTEGER, digest TEXT NOT NULL, response BLOB NOT NULL,
+                PRIMARY KEY(actor, request_id));
+            CREATE TABLE IF NOT EXISTS write_epochs (event TEXT PRIMARY KEY, epoch INTEGER NOT NULL);
         ''')
+
+    @contextmanager
+    def transaction(self):
+        """Nest mutations without committing an enclosing request receipt early."""
+        nested = self.db.in_transaction
+        savepoint = 'sp_' + secrets.token_hex(8)
+        self.db.execute('SAVEPOINT ' + savepoint if nested else 'BEGIN IMMEDIATE')
+        try:
+            yield
+        except BaseException:
+            if nested:
+                self.db.execute('ROLLBACK TO ' + savepoint)
+                self.db.execute('RELEASE ' + savepoint)
+            else:
+                self.db.rollback()
+            raise
+        else:
+            try:
+                if nested:
+                    self.db.execute('RELEASE ' + savepoint)
+                else:
+                    self.db.commit()
+            except BaseException:
+                if nested:
+                    self.db.execute('ROLLBACK TO ' + savepoint)
+                    self.db.execute('RELEASE ' + savepoint)
+                else:
+                    self.db.rollback()
+                raise
 
     def close(self):
         self.db.close()
@@ -55,12 +90,21 @@ class Lab:
     def register(self, actor):
         """Trusted launcher stand-in; never an agent-supplied actor parameter."""
         capability = secrets.token_hex(32)
-        with self.db:
+        with self.transaction():
             self.db.execute('INSERT INTO sessions VALUES (?, ?)', (capability, actor))
             state = self.db.execute('SELECT * FROM state').fetchone()
             if state['pending'] is not None:
                 self.db.execute('INSERT INTO notices VALUES (?, ?, ?, 0)',
                                 (actor, state['pending'], state['change']))
+        return capability
+
+    def resume(self, actor):
+        """Trusted launcher only: rotate capability; retain actor-scoped receipts."""
+        capability = secrets.token_hex(32)
+        with self.transaction():
+            changed = self.db.execute('UPDATE sessions SET capability=? WHERE actor=?', (capability, actor))
+            if changed.rowcount != 1:
+                raise Denied('unknown-resume-principal')
         return capability
 
     def actor(self, capability):
@@ -79,15 +123,14 @@ class Lab:
     def write(self, capability, path, expected, content, epoch=None):
         """Journal and content commit together; concurrent stale bases are rejected.
 
-        This models a broker-owned content store, not arbitrary filesystem edits.
-        A filesystem materializer/recovery protocol is deliberately not claimed.
+        This is the broker-owned content store. The optional materializer tracks
+        disk application separately; accepting this event is not a disk receipt.
         """
         actor = self.actor(capability)
         if not isinstance(content, bytes):
             raise Denied('bytes-required')
         event = secrets.token_hex(16)
-        with self.db:
-            self.db.execute('BEGIN IMMEDIATE')
+        with self.transaction():
             if epoch is not None:
                 self.require_epoch(epoch)
             row = self.db.execute('SELECT content FROM files WHERE path=?', (path,)).fetchone()
@@ -98,6 +141,8 @@ class Lab:
                             'VALUES (?, ?, ?, ?, ?, ?)',
                             (event, actor, self.clock(), path, before, content))
             self.db.execute('INSERT OR REPLACE INTO files VALUES (?, ?)', (path, content))
+            current = self.db.execute('SELECT epoch FROM state').fetchone()[0]
+            self.db.execute('INSERT INTO write_epochs VALUES (?, ?)', (event, current))
         return event
 
     def event(self, event_id):
@@ -107,8 +152,7 @@ class Lab:
     def begin(self, capability, epoch):
         actor = self.actor(capability)
         ticket = secrets.token_hex(16)
-        with self.db:
-            self.db.execute('BEGIN IMMEDIATE')
+        with self.transaction():
             state = self.db.execute('SELECT * FROM state').fetchone()
             if state['pending'] is not None or epoch != state['epoch']:
                 raise Denied('premise-not-current')
@@ -122,8 +166,7 @@ class Lab:
         All registered sessions are recipients, including unknown dependencies.
         The durable inbox is not a push transport or a model context reset.
         """
-        with self.db:
-            self.db.execute('BEGIN IMMEDIATE')
+        with self.transaction():
             state = self.db.execute('SELECT * FROM state').fetchone()
             if state['pending'] is not None:
                 raise Denied('change-already-pending')
@@ -144,7 +187,7 @@ class Lab:
         actor = self.actor(capability)
         if application is not True:
             raise Denied('transport-ack-is-not-application-ack')
-        with self.db:
+        with self.transaction():
             row = self.db.execute('SELECT change FROM notices WHERE actor=? AND epoch=?',
                                   (actor, epoch)).fetchone()
             if row is None or row['change'] != change:
@@ -153,8 +196,7 @@ class Lab:
                             (actor, epoch))
 
     def activate(self):
-        with self.db:
-            self.db.execute('BEGIN IMMEDIATE')
+        with self.transaction():
             state = self.db.execute('SELECT * FROM state').fetchone()
             if state['pending'] is None:
                 raise Denied('no-pending-change')
@@ -165,8 +207,7 @@ class Lab:
 
     def complete(self, capability, ticket):
         actor = self.actor(capability)
-        with self.db:
-            self.db.execute('BEGIN IMMEDIATE')
+        with self.transaction():
             op = self.db.execute('SELECT * FROM operations WHERE ticket=?', (ticket,)).fetchone()
             state = self.db.execute('SELECT * FROM state').fetchone()
             if (op is None or op['actor'] != actor or op['status'] != 'running'
@@ -179,20 +220,19 @@ class Lab:
         if type(uses) is not int or uses < 1 or not source:
             raise Denied('invalid-grant')
         grant_id = secrets.token_hex(16)
-        with self.db:
+        with self.transaction():
             self.db.execute('INSERT INTO grants VALUES (?, ?, ?, ?, ?, ?, 0)',
                             (grant_id, actor, kind, resource, uses, source))
         return grant_id
 
     def revoke(self, grant_id):
-        with self.db:
+        with self.transaction():
             self.db.execute('UPDATE grants SET revoked=1 WHERE id=?', (grant_id,))
 
     def effect(self, capability, kind, resource, epoch=None):
         """Record a synthetic effect only; no paid or destructive action executes."""
         actor = self.actor(capability)
-        with self.db:
-            self.db.execute('BEGIN IMMEDIATE')
+        with self.transaction():
             if epoch is not None:
                 self.require_epoch(epoch)
             grant = self.db.execute('SELECT * FROM grants WHERE actor=? AND kind=? '

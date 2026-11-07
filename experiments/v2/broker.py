@@ -2,9 +2,9 @@
 
 Only the launcher registers sessions and grants authority. Agent requests have
 no admin method, actor/capability field, arbitrary command or filesystem path.
-The backing store remains Lab's transactional content store, not a deployed
-filesystem materializer. OS containment and process isolation must be tested
-separately; this class alone is not an unbypassable security boundary.
+The backing store is Lab's transactional content store; an optional P0 POSIX
+materializer applies accepted events before reporting success. OS containment
+must be tested separately; this class alone is not a security boundary.
 """
 from dataclasses import dataclass
 import hashlib
@@ -22,22 +22,20 @@ class Channel:
     # Parent-only object: never serialized or passed to the worker.
     capability: str
     resources: frozenset
-    sequence: int = 0
-    last_digest: str = ''
-    last_response: bytes = b''
     closed: bool = False
 
 
 class Broker:
-    def __init__(self, lab):
+    def __init__(self, lab, materializer=None):
         self.lab = lab
+        self.materializer = materializer
         self.channels = set()
         self.lock = threading.RLock()
 
-    def attach(self, actor, resources):
+    def attach(self, actor, resources, resume=False):
         """Trusted launcher operation, intentionally absent from dispatch."""
         with self.lock:
-            capability = self.lab.register(actor)
+            capability = self.lab.resume(actor) if resume else self.lab.register(actor)
             channel = Channel(capability, frozenset(resources))
             self.channels.add(channel)
             return channel
@@ -55,9 +53,10 @@ class Broker:
     def dispatch(self, channel, raw):
         """Synchronous, bounded, fail-closed requests; retries never repeat effects.
 
-        Each channel accepts the next integer sequence or an exact retry of its
-        last request. Content-changing reuse, old requests and gaps are denied.
-        A dead channel cannot be reattached by sending an identifier in JSON.
+        Receipts are persisted with the content/effect in one transaction. A
+        trusted resume rotates capability and preserves the principal's receipt
+        history. Exact retries return receipts, including after lost responses.
+        Sending a principal name in JSON never restores access.
         """
         with self.lock:
             if channel not in self.channels or channel.closed:
@@ -72,24 +71,46 @@ class Broker:
                 return self.response(None, 'invalid-sequence')
             request_id = request['id']
             fingerprint = hashlib.sha256(raw).hexdigest()
-            if request_id == channel.sequence:
-                if fingerprint == channel.last_digest:
-                    return channel.last_response
-                return self.response(request_id, 'changed-retry')
-            if request_id != channel.sequence + 1:
-                return self.response(request_id, 'out-of-sequence')
             try:
-                fields = self.execute(channel, request)
-                response = self.response(request_id, 'ok', **fields)
-            except Denied as error:
-                # Only fixed codes raised in this module/Lab are exposed.
-                response = self.response(request_id, str(error))
-            except (TypeError, ValueError, UnicodeError):
-                response = self.response(request_id, 'invalid-request')
+                with self.lab.transaction():
+                    actor = self.lab.actor(channel.capability)
+                    previous = self.lab.db.execute('SELECT digest, response FROM receipts '
+                        'WHERE actor=? AND request_id=?', (actor, request_id)).fetchone()
+                    if previous is not None:
+                        if previous['digest'] != fingerprint:
+                            return self.response(request_id, 'changed-retry')
+                        response = previous['response']
+                    else:
+                        last = self.lab.db.execute('SELECT COALESCE(MAX(request_id), 0) '
+                            'FROM receipts WHERE actor=?', (actor,)).fetchone()[0]
+                        if request_id != last + 1:
+                            return self.response(request_id, 'out-of-sequence')
+                        try:
+                            fields = self.execute(channel, request)
+                            response = self.response(request_id, 'ok', **fields)
+                        except Denied as error:
+                            response = self.response(request_id, str(error))
+                        except (TypeError, ValueError, UnicodeError):
+                            response = self.response(request_id, 'invalid-request')
+                        self.lab.db.execute('INSERT INTO receipts VALUES (?, ?, ?, ?)',
+                                            (actor, request_id, fingerprint, response))
+            except Denied:
+                channel.closed = True
+                return self.response(request_id, 'session-no-longer-valid')
             except Exception:
                 channel.closed = True
                 return self.response(request_id, 'broker-error-channel-closed')
-            channel.sequence, channel.last_digest, channel.last_response = request_id, fingerprint, response
+            # The receipt means the store accepted the operation. With a disk
+            # target attached, do not report success until its recovery protocol
+            # confirms application. Replays reuse the SAME content event.
+            message = json.loads(response)
+            if self.materializer is not None and message['code'] == 'ok' and 'event' in message:
+                try:
+                    self.materializer.apply(message['event'])
+                except Denied as error:
+                    return self.response(request_id, 'materialization-pending', event=message['event'], reason=str(error))
+                except Exception:
+                    return self.response(request_id, 'materialization-pending', event=message['event'], reason='filesystem-or-journal-error')
             return response
 
     @staticmethod
@@ -117,6 +138,8 @@ class Broker:
         if type(request['epoch']) is not int or request['epoch'] < 0:
             raise Denied('invalid-epoch')
         if method == 'write':
+            if self.materializer is not None:
+                self.materializer.ensure_ready(resource)
             base = request['base']
             if base is not None and (not isinstance(base, str) or len(base) != 64
                                      or any(ch not in '0123456789abcdef' for ch in base)):
