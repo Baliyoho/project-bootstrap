@@ -12,7 +12,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：無（已交棒）
+- **工作中**：`baliyohodeMini` ／ `Codex CLI` ／ `㊣　26110815｜續作v2隔離｜工作中｜交棒0次`，2026-11-08 15:49 (+08) 開工
 - **骨架版本**：`2026-11-03`
 - 本機能力：macOS 27.2、Python 3.15.2、bash 3.2、OpenSSH 套件回報 10.5p1。Windows／Linux 本輪未驗。現行部署包及程序未切換。
 
