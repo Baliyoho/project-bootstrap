@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-08 16:02（+08）
-- **交棒者**：Codex CLI ／ `baliyohodeMini`（F46 來源與產物同組情境）
+- **交接時間**：2026-11-08 16:09（+08）
+- **交棒者**：Codex CLI ／ `baliyohodeMini`（F46 來源與產物 Git 接力）
 
 ## 任務目標
 
@@ -12,7 +12,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：`baliyohodeMini` ／ `Codex CLI` ／ `㊣　26110816｜驗證退場保障｜工作中｜交棒0次`，2026-11-08 16:05（+08）開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
 - 本機能力：macOS 27.2、Python 3.15.2、bash 3.2、OpenSSH 套件回報 10.5p1。Windows／Linux 本輪未驗。現行部署包及程序未切換。
 
@@ -21,12 +21,13 @@
 - P0 合成原型保留管道分權、POSIX 工作樹套用、限期票據與簽核、受管單 worker 生命週期、前提切換及 outbox。三個原始繞過反例仍重現；嚴格模式未就緒。細節見 [v2 原型說明](experiments/v2/README.md) 與索引。
 - Mac 程序群組探針證明 `setsid` 後代能在 leader 退出後持鎖；Endpoint Security 後代 API 本機缺 entitlement。Virtualization framework 回 `isSupported=true`，尚未建立 guest 或驗 VM stop。
 - F46 部分：保留三項已宣告來源例外並逐項印出；來源與產物交接快照各跑同一組 11 種、文件各跑同一組 11 種正反例。來源驗證器新增 `--staged`：完整／部分 stage 與產物成對驗，來源另拒空候選及未追蹤檔；修正來源對圍欄、角括號加 title、日期位置及工作中機器／工具欄的判定。整項仍未驗收，逐 ID 證據見索引。
-- 僅改來源驗證器、入口、結構摘要與 v2 索引；現行 22 檔部署包、skill／hook 副本及 `VERSION` 均未改，無同步債；未呼叫額外模型或真實服務。
+- F46 再補本機 bare origin 的雙 checkout 接力：來源／產物各走遠端占用、陳舊接手、釋出、A2.5 到 A5 的 SHA 變更、開工、任務 push 與交棒；將 hook 改讀本機快照的負向變異重現錯誤放行。這只驗 Git 與 hook 訊號，不證明模型遵循。逐 ID 證據見索引。
+- 僅改來源驗證器與 v2 索引；現行 22 檔部署包、skill／hook 副本及 `VERSION` 均未改，無同步債；未呼叫額外模型或真實服務。
 
 ## 未完成／下一步
 
 1. **P0 未退出。** Mac 單 worker 禁 fork／spawn 已有合成證據，多程序任意後代仍無退場保障。VM 候選須先做合成 guest，驗 `setsid` 持鎖後代在強制 stop、host 被殺及重啟恢復後的退場證據、共享資料與網路隔離、entitlement 與成本；做不到就維持阻擋。Windows Job Object 尚無 Windows 實測。禁止用舊 PID 或時間推定退場。
-2. F46 尚須來源與產物共跑實際接手流程與剩餘文件項；三項來源例外照列。`--staged` 只驗候選形狀，不證明人或模型已遵循 A／B 流程。
+2. F46 本機 Git 接力已成對驗；尚須剩餘文件項、跨工具／OS 接手與模型實際遵循。三項來源例外照列；`--staged` 只驗候選形狀。額外模型探針須先得授權。
 3. 接可信真人核准、簽署金鑰發行／撤銷與額度來源；票據遺失沒有重新驗身分路徑。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。額外模型探針須另得授權且只用訂閱額度。
 4. 鎖定完整 runtime／import 與候選版本、LICENSE、digest，驗 Windows／Mac 架構門檻後再做 P1。F22 常態必讀超過 12,000 字元；完整接棒時間與 token 未量，現行 A4 不省。
 5. Windows hook 同步、Mac Codex 真實注入及 R01–R09 邊界獨立複審仍待做；逐 ID 狀態看索引。
@@ -40,7 +41,7 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-08 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，56 項全過，含 123 個 v2 測試與 F46 成對情境；B7 須對最終 staged 快照再驗。
+- 2026-11-08 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，57 項全過，含 123 個 v2 測試與 F46 本機 Git 接力；B7 須對最終 staged 快照再驗。
 - 同日 `python3 -X utf8 tools/verify_v2.py --require-ready --json` 實測 exit 2，harness_passed=true、strict_ready=false，123 測試零失敗／skip；tree_probe=反例重現，descendant_api_probe=無權限。
 - 本 repo 無 verify_state.py／check_docs.py，依 AGENTS 使用替代入口；接線未改，信任重審不適用。無額外模型呼叫、候選安裝或真實部署。
 

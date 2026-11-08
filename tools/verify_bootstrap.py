@@ -1531,6 +1531,134 @@ def step_source_staged_parity(dest, tmp):
            '完整 stage 通過、部分 stage 兩端拒絕、來源另拒未追蹤檔；未驗實際接手流程')
 
 
+def handoff_flow_case(kind, dest, tmp, bash):
+    """以本機 bare origin 真正推送開工／交棒，再由另一個 checkout 接棒。"""
+    home = tmp / ('flow-' + kind)
+    origin, writer, reader = home / 'origin.git', home / 'writer', home / 'reader'
+    home.mkdir()
+    initial = dest if kind == 'product' else ROOT
+    if kind == 'product':
+        shutil.copytree(initial, writer, ignore=shutil.ignore_patterns('.git'))
+        hook_rel = '.claude/hooks/git-freshness.sh'
+    else:
+        writer.mkdir()
+        for rel in ('AGENTS.md', 'ARCHITECT.md', 'HANDOFF.md', 'README.md',
+                    '.claude/hooks/repo-git-check.sh'):
+            target = writer / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(initial / rel, target)
+        hook_rel = '.claude/hooks/repo-git-check.sh'
+
+    handoff = writer / 'HANDOFF.md'
+    busy_line = next(line for line in read_lf(handoff).splitlines()
+                     if line.startswith('- **工作中**：'))
+    write_lf(handoff, read_lf(handoff).replace(busy_line,
+             '- **工作中**：無（已交棒）'))
+    def must(result, action):
+        if result.returncode:
+            raise AssertionError('%s exit %s：%s' % (
+                action, result.returncode, result.stderr.strip()[:160]))
+        return result
+    must(run(['git', 'init', '-q', '--bare', str(origin)]), 'init bare')
+    must(git(['init', '-q', '-b', 'main'], writer), 'init writer')
+    must(git(['add', '-A'], writer), 'stage baseline')
+    must(git(['commit', '-qm', 'baseline'], writer), 'commit baseline')
+    must(git(['remote', 'add', 'origin', str(origin)], writer), 'remote')
+    must(git(['push', '-q', '-u', 'origin', 'main'], writer), 'push baseline')
+    must(run(['git', 'clone', '-q', '-b', 'main', str(origin), str(reader)]), 'clone reader')
+    env = tool_env(CLAUDECODE='1', BOOTSTRAP_VERSION_CHECK='off')
+    hook = reader / hook_rel
+    def check_hook(expected):
+        result = must(run([bash, str(hook)], cwd=reader, env=env), 'SessionStart hook')
+        if expected not in result.stdout:
+            raise AssertionError('hook 未印 %s：%s' % (expected, result.stdout.strip()[:200]))
+    def set_busy(value, action):
+        path = writer / 'HANDOFF.md'
+        old = next(line for line in read_lf(path).splitlines()
+                   if line.startswith('- **工作中**：'))
+        write_lf(path, read_lf(path).replace(old, '- **工作中**：' + value))
+        must(git(['add', '--', 'HANDOFF.md'], writer), 'stage ' + action)
+        must(git(['commit', '-qm', action], writer), 'commit ' + action)
+        must(git(['push', '-q', 'origin', 'main'], writer), 'push ' + action)
+
+    check_hook('✅ 「工作中」是')
+    set_busy('`other-box` ／ `Claude Code` ／ `㊣　26110816｜測試｜工作中｜交棒0次`',
+             'foreign claim')
+    # reader 的本機快照仍空閒；hook 必須 fetch 並讀 origin 那份。
+    if '無（已交棒）' not in read_lf(reader / 'HANDOFF.md'):
+        raise AssertionError('陳舊 checkout 起點不是空閒快照')
+    check_hook('🔴 另一台機器正在')
+    counts = must(git(['rev-list', '--left-right', '--count', 'HEAD...@{upstream}'], reader),
+                  'A1 counts').stdout.strip()
+    if counts != '0\t1':
+        raise AssertionError('A1 未辨認落後一筆：' + counts)
+
+    # 負向變異：改成讀 HEAD，陳舊 reader 會錯把遠端占用判成已交棒。
+    original = read_lf(hook)
+    needle = 'origin/$branch:HANDOFF.md'
+    if original.count(needle) != 1:
+        raise AssertionError('無法定位 hook 的遠端快照讀取')
+    try:
+        write_lf(hook, original.replace(needle, 'HEAD:HANDOFF.md'))
+        mutant = must(run([bash, str(hook)], cwd=reader, env=env), 'local-only mutant')
+        if '✅ 「工作中」是' not in mutant.stdout or '🔴 另一台機器正在' in mutant.stdout:
+            raise AssertionError('本機快照負向變異沒有重現錯誤放行')
+    finally:
+        write_lf(hook, original)
+
+    must(git(['pull', '-q', '--ff-only'], reader), 'A1 fast-forward')
+    check_hook('🔴 另一台機器正在')
+    set_busy('無（已交棒）', 'foreign release')
+    must(git(['pull', '-q', '--ff-only'], reader), 'pull release')
+    check_hook('✅ 「工作中」是')
+    # A2.5 看到空閒到 A5 開工之間若遠端前進，舊 SHA 不能再授予寫入資格。
+    observed = must(git(['rev-parse', 'origin/main'], reader), 'A2.5 SHA').stdout.strip()
+    (writer / 'README.md').open('a', encoding='utf-8', newline='').write('\n另一棒先行。\n')
+    must(git(['add', '--', 'README.md'], writer), 'stage intervening change')
+    must(git(['commit', '-qm', 'intervening change'], writer), 'commit intervening change')
+    must(git(['push', '-q', 'origin', 'main'], writer), 'push intervening change')
+    must(git(['fetch', '-q', 'origin'], reader), 'A5 refetch')
+    current = must(git(['rev-parse', 'origin/main'], reader), 'A5 SHA').stdout.strip()
+    if observed == current:
+        raise AssertionError('A5 未偵測遠端在觀測後前進')
+    must(git(['pull', '-q', '--ff-only'], reader), 'catch up after changed SHA')
+    me = must(run([bash, '-c', 'echo "${HOSTNAME:-$(hostname)}"'], cwd=reader),
+              'hostname').stdout.strip()
+    writer = reader
+    set_busy('`%s` ／ `Claude Code` ／ `㊣　26110816｜測試｜工作中｜交棒0次`' % me,
+             'own claim')
+    check_hook('🟡 這台機器')
+    (reader / 'README.md').open('a', encoding='utf-8', newline='').write('\n合成任務。\n')
+    must(git(['add', '--', 'README.md'], reader), 'stage task')
+    must(git(['commit', '-qm', 'synthetic task'], reader), 'commit task')
+    must(git(['push', '-q', 'origin', 'main'], reader), 'push task')
+    set_busy('無（已交棒）', 'own release')
+    check_hook('✅ 「工作中」是')
+    remote = must(git(['show', 'origin/main:HANDOFF.md'], reader), 'remote release').stdout
+    if '- **工作中**：無（已交棒）' not in remote:
+        raise AssertionError('交棒後 origin 標記未清')
+    if git(['status', '--porcelain'], reader).stdout.strip() or \
+            git(['rev-list', '--left-right', '--count', 'HEAD...@{upstream}'], reader).stdout.strip() != '0\t0':
+        raise AssertionError('交棒後 reader 未乾淨對齊 origin')
+
+
+def step_handoff_flow_parity(dest, tmp):
+    """F46 部分：來源與產物共跑實際 Git 接力，不把 hook 提醒算作程序執行。"""
+    bash = find_bash()
+    if not bash:
+        record('SKIP', '來源／產物接手流程同組情境（F46 部分）', '缺可用 bash')
+        return
+    problems = []
+    for kind in ('source', 'product'):
+        try:
+            handoff_flow_case(kind, dest, tmp, bash)
+        except (AssertionError, OSError, StopIteration) as exc:
+            problems.append('%s：%s' % (kind, exc))
+    record('FAIL' if problems else 'OK', '來源／產物接手流程同組情境（F46 部分）',
+           '；'.join(problems) if problems else
+           '兩端各走遠端占用→陳舊接手阻擋→釋出→A2.5/A5 SHA 變更→本機開工→任務推送→交棒；本機快照錯誤放行變異均重現。hook 只提醒，模型遵循未驗')
+
+
 def step_self():
     """本 repo 自己的 .md 與設定檔沒有任何自動檢查——`check_docs.py` 是骨架的檔，部署進來
     就成了副本，要跳版、要同步，而 sync_project.py 的 --all 又掃不到這個 repo（它靠
@@ -4070,6 +4198,7 @@ def run_checks(dest, tmp):
         step_handoff_parity(dest)
         step_document_parity(dest, tmp)
         step_source_staged_parity(dest, tmp)
+        step_handoff_flow_parity(dest, tmp)
     step_sync_coverage(dest)
     step_sync_self_guard()
     step_sync_safety(tmp)
