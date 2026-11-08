@@ -21,7 +21,7 @@ from experiments.v2.contracts import Denied
 
 
 class TicketVault:
-    """Existing parent-owned 0700 directory, exclusive 0600 ticket files.
+    """Existing parent-owned 0700 directory, exclusive 0600 private files.
 
     Same-UID access still requires OS isolation. No automatic permission repair,
     ticket replacement, deletion, renewal or recovery from missing files.
@@ -43,6 +43,7 @@ class TicketVault:
         info = os.fstat(self.fd)
         if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700:
             raise Denied('ticket-vault-permissions')
+        return info
 
     @staticmethod
     def valid(value):
@@ -86,6 +87,51 @@ class TicketVault:
             raise Denied('invalid-ticket-file')
         return ticket
 
+    @staticmethod
+    def file_identity(fd):
+        info = os.fstat(fd)
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+                or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1):
+            raise Denied('private-file-permissions-or-alias')
+        return f'{info.st_dev}:{info.st_ino}'
+
+    def new_reap_record(self):
+        directory = self.check()
+        name = 'reap-' + secrets.token_hex(32)
+        fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=self.fd)
+        try:
+            identity = self.file_identity(fd)
+            os.fsync(fd)
+            os.fsync(self.fd)
+        except BaseException:
+            os.close(fd)
+            raise
+        return fd, (name, f'{directory.st_dev}:{directory.st_ino}', identity)
+
+    def confirm_reap(self, record):
+        if record is None:
+            raise Denied('worker-reap-unconfirmed')
+        name = record['name']
+        directory = self.check()
+        if (not isinstance(name, str) or not name.startswith('reap-') or not self.valid(name[5:])
+                or record['vault'] != f'{directory.st_dev}:{directory.st_ino}'):
+            raise Denied('worker-reap-unconfirmed')
+        try:
+            fd = os.open(name, os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=self.fd)
+            try:
+                if self.file_identity(fd) != record['identity']:
+                    raise Denied('worker-reap-unconfirmed')
+                proof = os.read(fd, 128)
+                if proof != b'not-started\n':
+                    code = int(proof.removeprefix(b'reaped:').strip())
+                    if proof != ('reaped:%d\n' % code).encode('ascii'):
+                        raise Denied('worker-reap-unconfirmed')
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+        except (ValueError, OSError, Denied):
+            raise Denied('worker-reap-unconfirmed') from None
+
 
 @dataclass(frozen=True)
 class LaunchPlan:
@@ -115,7 +161,7 @@ class RunningChild:
     channel: object
     reader: object
     lifetime: int
-    report: int
+    record: str
     reaped: bool = False
 
 
@@ -127,8 +173,37 @@ class ProcessLauncher:
         self.broker, self.lab = authority.broker, authority.lab
         self.timeout = timeout
         self.children = {}
-        self.lab.db.execute('''CREATE TABLE IF NOT EXISTS managed_launches (
-            actor TEXT PRIMARY KEY, plan TEXT NOT NULL, state TEXT NOT NULL)''')
+        self.lab.db.executescript('''
+            CREATE TABLE IF NOT EXISTS managed_launches (
+                actor TEXT PRIMARY KEY, plan TEXT NOT NULL, state TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS managed_reap_records (
+                actor TEXT PRIMARY KEY, name TEXT NOT NULL, vault TEXT NOT NULL, identity TEXT NOT NULL);
+        ''')
+
+    def confirm_reap(self, actor, expected=None):
+        record = self.lab.db.execute(
+            'SELECT * FROM managed_reap_records WHERE actor=?', (actor,)).fetchone()
+        if expected is not None and (record is None or record['name'] != expected):
+            raise Denied('worker-reap-unconfirmed')
+        self.vault.confirm_reap(record)
+
+    def reconcile(self, handle, plan):
+        """Explicit restart path. No PID is read, signaled, or trusted."""
+        key = self.authority.ticket_hash(self.vault.load(handle))
+        with self.broker.lock, self.lab.transaction():
+            actor = self.authority.permit(key)['actor']
+            if actor in self.children:
+                raise Denied('process-still-owned')
+            row = self.lab.db.execute('SELECT * FROM managed_launches WHERE actor=?', (actor,)).fetchone()
+            if row is None or row['plan'] != plan.fingerprint():
+                raise Denied('launch-plan-changed')
+            if row['state'] == 'stopped':
+                return actor
+            if row['state'] not in ('starting', 'running', 'stopping', 'unresolved'):
+                raise Denied('invalid-managed-state')
+            self.confirm_reap(actor)
+            self.state(actor, 'stopped')
+            return actor
 
     def state(self, actor, value):
         with self.lab.transaction():
@@ -137,8 +212,8 @@ class ProcessLauncher:
     def stop(self, actor):
         """Revoke the local pipe first; persist stopped only after actual wait.
 
-        No PIDs are saved/adopted. Missing local process ownership is unresolved,
-        even if another launcher instance can read the same durable record.
+        No PIDs are saved/adopted. Restart callers use explicit reconciliation
+        before replacing a child whose local ownership was lost.
         """
         with self.broker.lock:
             child = self.children.get(actor)
@@ -161,13 +236,7 @@ class ProcessLauncher:
                 # Do not kill a slow guardian: that could orphan its worker.
                 child.process.wait(timeout=self.timeout + 2)
                 if not child.reaped:
-                    proof = os.read(child.report, 128)
-                    try:
-                        code = int(proof.removeprefix(b'reaped:').strip())
-                    except ValueError:
-                        raise Denied('worker-reap-unconfirmed') from None
-                    if proof != ('reaped:%d\n' % code).encode('ascii'):
-                        raise Denied('worker-reap-unconfirmed')
+                    self.confirm_reap(actor, child.record)
                     child.reaped = True
                 if child.reader is not None:
                     child.reader.join(timeout=self.timeout)
@@ -180,7 +249,6 @@ class ProcessLauncher:
                 if journal_error is not None:
                     raise journal_error
                 self.state(actor, 'stopped')
-                os.close(child.report)
                 del self.children[actor]
             except BaseException:
                 # Retain the local object and non-stopped durable state. Never
@@ -199,31 +267,36 @@ class ProcessLauncher:
             actor = row['actor']
             self.stop(actor)
             fingerprint = plan.fingerprint()
-            with self.lab.transaction():
-                self.authority.permit(key)
-                previous = self.lab.db.execute('SELECT * FROM managed_launches WHERE actor=?', (actor,)).fetchone()
-                if previous is not None and previous['plan'] != fingerprint:
-                    raise Denied('launch-plan-changed')
-                self.lab.db.execute('INSERT OR REPLACE INTO managed_launches VALUES (?, ?, ?)',
-                                    (actor, fingerprint, 'starting'))
+            descriptors = []
             try:
-                descriptors = []
+                with self.lab.transaction():
+                    self.authority.permit(key)
+                    previous = self.lab.db.execute('SELECT * FROM managed_launches WHERE actor=?', (actor,)).fetchone()
+                    if previous is not None and previous['plan'] != fingerprint:
+                        raise Denied('launch-plan-changed')
+                    report, record = self.vault.new_reap_record()
+                    descriptors.append(report)
+                    self.lab.db.execute('INSERT OR REPLACE INTO managed_launches VALUES (?, ?, ?)',
+                                        (actor, fingerprint, 'starting'))
+                    self.lab.db.execute('INSERT OR REPLACE INTO managed_reap_records VALUES (?, ?, ?, ?)',
+                                        (actor, *record))
+            except BaseException:
+                for fd in descriptors:
+                    os.close(fd)
+                raise
+            try:
                 try:
                     watch, lifetime = os.pipe()
                     descriptors.extend((watch, lifetime))
-                    report, output = os.pipe()
-                    descriptors.extend((report, output))
-                    os.set_blocking(report, False)
                     command = (sys.executable, '-B', '-I', str(Path(__file__).with_name('guardian.py').resolve()),
-                               str(watch), str(output), str(self.timeout), json.dumps(plan.argv))
+                               str(watch), str(report), str(self.timeout), json.dumps(plan.argv))
                     process = subprocess.Popen(command, cwd=plan.cwd, stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, close_fds=True,
-                        pass_fds=(watch, output),
+                        pass_fds=(watch, report),
                         env={'PATH': os.defpath, 'PYTHONDONTWRITEBYTECODE': '1'})
-                    child = RunningChild(process, None, None, lifetime, report)
+                    child = RunningChild(process, None, None, lifetime, record[0])
                     self.children[actor] = child
                     descriptors.remove(lifetime)
-                    descriptors.remove(report)
                 finally:
                     for fd in descriptors:
                         os.close(fd)

@@ -127,7 +127,11 @@
         },
         {
           "path": "experiments/v2/test_lifecycle.py",
-          "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
+          "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL 後以本次啟動紀錄續接，監護失效、無監護與錯誤紀錄負向對照；非任意後代或全 OS 保證"
+        },
+        {
+          "path": "experiments/v2/test_managed_fixture.py",
+          "scope": "macOS 單 worker：父程序 SIGKILL 後依持久前提與回收證據重建，作廢未完成計算並重送原始請求"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
@@ -200,7 +204,7 @@
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         }
       ],
-      "unknown": "outbox 恢復與 parent 被殺後監護回收可重跑；監護被殺後回收、parent 重啟未解狀態恢復、真實交棒／理由／設備遺失未完整驗收",
+      "unknown": "合成 parent 被殺且 guardian 寫成回收紀錄時已測續接；監護失效或缺證據仍停止，真實交棒／理由／裝置遺失未完整驗收",
       "next": "正常交棒／程序被殺／裝置遺失三條分測，缺口不補造",
       "parts": {
         "normal": {
@@ -223,7 +227,11 @@
             },
             {
               "path": "experiments/v2/test_lifecycle.py",
-              "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
+              "scope": "POSIX 固定啟動／監護回收；真 parent SIGKILL 後以本次啟動紀錄續接，監護失效或證據缺失保持阻擋"
+            },
+            {
+              "path": "experiments/v2/test_managed_fixture.py",
+              "scope": "Mac 合成執行面四個父程序 SIGKILL 階段：切換中恢復同一通知，已啟用時復原前提與原請求"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -396,11 +404,11 @@
         },
         {
           "path": "experiments/v2/test_managed_fixture.py",
-          "scope": "macOS 單 worker 實測：封住舊 epoch、guardian 回收、確認新前提再啟用；outbox 舊請求拒絕、回應遺失精確重送；錯誤摘要、退場未確認與未確認收件者不放行"
+          "scope": "macOS 單 worker 實測：封住舊 epoch、guardian 回收、確認新前提再啟用；父程序重啟恢復同一通知與 outbox；錯誤摘要、退場未確認與未確認收件者不放行"
         }
       ],
-      "unknown": "原始不受控介面仍不通過；整合限 macOS 單程序合成 worker，未完成切換的重啟恢復、任意後代、真實工具及跨機即時推送未驗收",
-      "next": "先補未完成切換與未知程序退場的恢復，再接真實可控執行介面及跨機故障；模型探針需先授權"
+      "unknown": "原始不受控介面仍不通過；已驗 macOS 單程序切換與回收證據齊備時的恢復，監護失效、任意後代、真實工具及跨機即時推送未驗收",
+      "next": "補監護失效與失聯的證據路徑，再接真實可控執行介面及跨機故障；模型探針需先授權"
     },
     {
       "id": "F29",

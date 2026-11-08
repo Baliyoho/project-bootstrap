@@ -14,6 +14,12 @@ import subprocess
 import sys
 
 
+def record_reap(report, proof):
+    if os.write(report, proof) != len(proof):
+        raise OSError('incomplete-reap-record')
+    os.fsync(report)
+
+
 def run(watch, report, grace, argv):
     stopping = False
 
@@ -25,6 +31,7 @@ def run(watch, report, grace, argv):
     signal.signal(signal.SIGINT, stop)
     # A dead parent before startup must not cause a fresh worker to be spawned.
     if select.select([watch], [], [], 0)[0]:
+        record_reap(report, b'not-started\n')
         return 1
     child = subprocess.Popen(argv, stdin=sys.stdin.buffer, stdout=sys.stdout.buffer,
                              stderr=subprocess.DEVNULL, close_fds=True)
@@ -43,11 +50,7 @@ def run(watch, report, grace, argv):
             except subprocess.TimeoutExpired:
                 child.kill()
         code = child.wait(timeout=grace)
-        try:
-            os.write(report, ('reaped:%d\n' % code).encode('ascii'))
-        except BrokenPipeError:
-            # Parent death is the very event this watchdog must handle.
-            pass
+        record_reap(report, ('reaped:%d\n' % code).encode('ascii'))
     return code if code >= 0 else 128 - code
 
 

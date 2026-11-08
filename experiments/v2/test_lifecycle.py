@@ -99,7 +99,7 @@ class LifecycleTests(unittest.TestCase):
             time.sleep(0.02)
         self.assertFalse(self.lock_held(), 'fixed worker has not exited')
 
-    def test_real_parent_kill_reaps_worker_but_restart_stays_unresolved(self):
+    def test_real_parent_kill_reaps_worker_and_allows_explicit_reconciliation(self):
         self.run_parent_kill('guarded')
 
     def test_without_guardian_parent_kill_leaves_live_worker(self):
@@ -133,11 +133,23 @@ class LifecycleTests(unittest.TestCase):
                 lab = Lab(self.root / 'crash.sqlite')
                 try:
                     restarted = ProcessLauncher(LaunchAuthority(Broker(lab)), self.vault)
-                    # Worker death is not enough for a new parent to infer a
-                    # durable stop. No saved/reused PID is inspected or killed.
+                    plan = LaunchPlan((sys.executable, '-B', '-u', '-c', worker, str(self.root)), str(self.root))
+                    # Startup still refuses unknown state. Explicit recovery
+                    # uses the bound guardian record rather than a PID or lock.
                     with patch('os.kill') as kill, patch('subprocess.Popen') as spawn:
                         with self.assertRaisesRegex(Denied, 'unresolved-previous-process'):
-                            restarted.start(handle, self.plan)
+                            restarted.start(handle, plan)
+                        until = time.monotonic() + 5
+                        while True:
+                            try:
+                                restarted.reconcile(handle, plan)
+                                break
+                            except Denied as error:
+                                if str(error) != 'worker-reap-unconfirmed' or time.monotonic() >= until:
+                                    raise
+                                time.sleep(0.01)
+                        self.assertEqual(lab.db.execute('SELECT state FROM managed_launches').fetchone()[0],
+                                         'stopped')
                         kill.assert_not_called()
                         spawn.assert_not_called()
                 finally:
@@ -166,12 +178,14 @@ class LifecycleTests(unittest.TestCase):
                 with self.assertRaises(Denied):
                     self.launcher.start(self.handle, plan)
                 spawn.assert_not_called()
+            restarted = ProcessLauncher(self.authority, self.vault)
+            with self.assertRaisesRegex(Denied, 'worker-reap-unconfirmed'):
+                restarted.reconcile(self.handle, plan)
         finally:
             (self.root / 'finish').touch()
             self.await_unlock()
             # Explicit test fixture disposal, never an application recovery API.
             self.launcher.children.clear()
-            os.close(child.report)
             child.process.stdin.close()
             child.process.stdout.close()
 
@@ -191,18 +205,17 @@ sys.stdin.read()
         self.launcher.stop(self.actor())
         self.assertEqual(self.state(), 'stopped')
 
-    def test_partial_pipe_setup_failure_closes_descriptors_and_blocks_retry(self):
+    def test_spawn_failure_closes_control_descriptors_and_blocks_retry(self):
         pipe = os.pipe
         opened = []
 
-        def fail_second_pipe():
-            if opened:
-                raise OSError('synthetic pipe exhaustion')
+        def track_pipe():
             pair = pipe()
             opened.extend(pair)
             return pair
 
-        with patch('os.pipe', side_effect=fail_second_pipe), self.assertRaises(OSError):
+        with patch('os.pipe', side_effect=track_pipe), patch(
+                'subprocess.Popen', side_effect=OSError('synthetic spawn failure')), self.assertRaises(OSError):
             self.launcher.start(self.handle, self.plan)
         for fd in opened:
             with self.assertRaises(OSError):
@@ -211,6 +224,8 @@ sys.stdin.read()
         with patch('subprocess.Popen') as spawn, self.assertRaises(Denied):
             self.launcher.start(self.handle, self.plan)
         spawn.assert_not_called()
+        with self.assertRaisesRegex(Denied, 'worker-reap-unconfirmed'):
+            self.launcher.reconcile(self.handle, self.plan)
 
     def test_unconfined_descendant_outlives_guarded_direct_worker(self):
         # Scope counterexample: a guardian is NOT a process-tree container.
@@ -276,11 +291,31 @@ sys.stdin.read()
             with self.assertRaisesRegex(Denied, 'unresolved-previous-process'):
                 restarted.start(self.handle, self.plan)
             spawn.assert_not_called()
+        with self.assertRaisesRegex(Denied, 'worker-reap-unconfirmed'):
+            restarted.reconcile(self.handle, self.plan)
         self.assertIsNone(first.process.poll())
         self.launcher.close()
         self.launcher = restarted
         second = self.launcher.start(self.handle, self.plan)
         self.assertIsNone(second.process.poll())
+
+    def test_previous_attempt_proof_cannot_clear_a_live_replacement(self):
+        first = self.launcher.start(self.handle, self.plan)
+        second = self.launcher.start(self.handle, self.plan)
+        previous = self.private / first.record
+        current = self.private / second.record
+        held = self.private / 'test-held-record'
+        current.rename(held)
+        try:
+            previous.rename(current)
+            restarted = ProcessLauncher(self.authority, self.vault)
+            with self.assertRaisesRegex(Denied, 'worker-reap-unconfirmed'):
+                restarted.reconcile(self.handle, self.plan)
+            self.assertIsNone(second.process.poll())
+            self.assertEqual(self.state(), 'running')
+        finally:
+            current.rename(previous)
+            held.rename(current)
 
     def test_plan_change_stops_old_child_and_does_not_launch_new_command(self):
         old = self.launcher.start(self.handle, self.plan)
@@ -412,7 +447,6 @@ sys.stdin.read()
         finally:
             os.close(first.lifetime)
             first.process.wait(timeout=2)
-            os.close(first.report)
             first.process.stdin.close()
             first.process.stdout.close()
 

@@ -32,6 +32,8 @@ class ManagedFixture:
         self.child = self.pending = None
         self.epoch = 0
         self.ready = False
+        self.lab.db.execute('''CREATE TABLE IF NOT EXISTS managed_initial_context (
+            actor TEXT PRIMARY KEY, context TEXT NOT NULL)''')
 
     def receive(self):
         result = queue.Queue(maxsize=1)
@@ -83,12 +85,18 @@ class ManagedFixture:
             raise Denied('worker-context-not-confirmed')
 
     def start(self, factor):
+        context = self.context(factor)
+        ticket = self.launcher.vault.load(self.handle)
+        authority = self.launcher.authority
         with self.lab.transaction():
             self.lab.require_epoch(0)
-        if self.child is not None:
-            raise Denied('already-started')
+            actor = authority.permit(authority.ticket_hash(ticket))['actor']
+            if self.lab.db.execute('SELECT 1 FROM managed_initial_context UNION ALL '
+                                   'SELECT 1 FROM managed_launches LIMIT 1').fetchone():
+                raise Denied('already-started')
+            self.lab.db.execute('INSERT INTO managed_initial_context VALUES (?, ?)', (actor, context))
         try:
-            self.load(0, self.context(factor))
+            self.load(0, context)
         except BaseException:
             self.close()
             raise
@@ -112,14 +120,59 @@ class ManagedFixture:
             actor = self.lab.actor(self.child.channel.capability)
             self.launcher.stop(actor)
             self.pending = None
-            self.load(epoch, context)
-            self.launcher.check()
-            with self.lab.transaction():
-                self.lab.acknowledge(self.child.channel.capability, epoch, context, application=True)
-                self.lab.activate()
+            self.activate(epoch, context)
         except BaseException:
             self.close()
             raise
+
+    def resume(self):
+        """Rebuild only from a verified stop and the original durable context."""
+        if self.child is not None:
+            raise Denied('already-started')
+        try:
+            actor = self.launcher.reconcile(self.handle, self.plan)
+            with self.lab.transaction():
+                epoch, context, pending = self.recovery_context(actor)
+                # A replacement cannot complete an interrupted computation
+                # even when the premise itself did not change.
+                self.lab.db.execute("UPDATE operations SET status='invalid' WHERE actor=? AND status='running'",
+                                    (actor,))
+            if pending:
+                self.activate(epoch, context)
+            else:
+                self.load(epoch, context)
+                self.epoch, self.ready = epoch, True
+        except BaseException:
+            self.close()
+            raise
+
+    def recovery_context(self, actor):
+        state = self.lab.db.execute('SELECT epoch, pending, change FROM state').fetchone()
+        pending = state['pending'] is not None
+        epoch = state['pending'] if pending else state['epoch']
+        if pending and (type(epoch) is not int or epoch != state['epoch'] + 1):
+            raise Denied('invalid-pending-epoch')
+        row = self.lab.db.execute('SELECT context FROM managed_initial_context WHERE actor=?', (actor,)).fetchone()
+        if row is not None and epoch != 0:
+            row = self.lab.db.execute('SELECT change FROM notices WHERE actor=? AND epoch=? AND acknowledged=?',
+                                      (actor, epoch, int(not pending))).fetchone()
+        if row is None or (pending and row[0] != state['change']):
+            raise Denied('missing-or-inconsistent-context')
+        context = row[0]
+        try:
+            fields = json.loads(context)
+            if self.context(fields['factor']) != context:
+                raise ValueError
+        except (Denied, KeyError, TypeError, ValueError, RecursionError):
+            raise Denied('invalid-durable-context') from None
+        return epoch, context, pending
+
+    def activate(self, epoch, context):
+        self.load(epoch, context)
+        self.launcher.check()
+        with self.lab.transaction():
+            self.lab.acknowledge(self.child.channel.capability, epoch, context, application=True)
+            self.lab.activate()
         self.epoch, self.ready = epoch, True
 
     def begin(self, value):
@@ -179,19 +232,20 @@ def supported():
 
 
 @contextmanager
-def managed_environment():
-    with tempfile.TemporaryDirectory(prefix='bootstrap-v2-managed-') as directory:
-        root = Path(directory).resolve()
-        repo, scratch, tickets = (root / name for name in ('repo', 'scratch', 'tickets'))
+def open_managed(root, handle=None):
+    repo, scratch, tickets = (root / name for name in ('repo', 'scratch', 'tickets'))
+    if handle is None:
         for path in (repo, scratch, tickets):
             path.mkdir(mode=0o700)
+    vault = TicketVault(tickets)
+    try:
         lab = Lab(root / 'private.sqlite')
-        vault = TicketVault(tickets)
         try:
             materializer = Materializer(lab, repo, {'note': 'managed.txt'})
             broker = Broker(lab, materializer)
             authority = LaunchAuthority(broker)
-            handle = vault.save(authority.issue(('note',), 'synthetic-parent-approval', time.time() + 60))
+            if handle is None:
+                handle = vault.save(authority.issue(('note',), 'synthetic-parent-approval', time.time() + 60))
             launcher = ProcessLauncher(authority, vault)
             fixture = ManagedFixture(launcher, handle, sandbox_plan(repo, scratch, PROGRAM))
             try:
@@ -199,8 +253,16 @@ def managed_environment():
             finally:
                 fixture.close()
         finally:
-            vault.close()
             lab.close()
+    finally:
+        vault.close()
+
+
+@contextmanager
+def managed_environment():
+    with tempfile.TemporaryDirectory(prefix='bootstrap-v2-managed-') as directory:
+        with open_managed(Path(directory).resolve()) as fixture:
+            yield fixture
 
 
 def probe_managed():
@@ -245,4 +307,4 @@ def probe_managed():
         return {'result': '不通過', 'reason': str(error) if isinstance(error, Denied) else type(error).__name__}
     return {'result': '通過' if all(checks.values()) else '不通過', 'checks': checks,
             'scope': 'macOS 單 worker；舊工作失效、監護回收、載入新前提、outbox 拒絕舊寫入並套用新結果',
-            'unknown': '不涵蓋重啟續接未完成前提切換、多程序樹、一般工具或跨機通知'}
+            'unknown': '回收證據缺失、多程序樹、一般工具或跨機通知未驗收；重啟另見合成 SIGKILL 測試'}

@@ -2,7 +2,7 @@
 
 > 最後更新：2026-11-08。新增 `experiments/v2/managed_fixture.py`，由可信父程序經固定啟動計畫與 guardian 連接單一 macOS 合成 worker。前提切換先封住舊 epoch，再回收並替換 worker，核對新前提摘要才啟用。合成結果由父程序 outbox 送往 broker／materializer。一鍵入口獨立呈現此探針，範圍與失敗案例見 [P0 說明](experiments/v2/README.md)。
 
-> 最後更新：2026-11-08。啟動生命週期由 `experiments/v2/lifecycle.py` 經新增的 `guardian.py` 啟動受管 worker：parent 獨占生命管道寫端，監護程序在 EOF 後以持有的 Popen 終止並 wait；私有回報管道確認回收後才記 stopped。Mac fixture 禁止 fork／spawn／signal；新增 parent 被殺、監護失效與移除防護的負向測試。監護被殺仍未解，重啟不憑 PID 認領或清狀態；任意後代、Windows、真實人類入口未驗收。仍是合成 P0，現行程序及部署包不變。
+> `experiments/v2/lifecycle.py` 經 `guardian.py` 啟動受管 worker。父程序獨占生命管道寫端，監護在 EOF 後以持有的 Popen 終止並 wait；它把回收證據寫到本次啟動專用的私有檔案。新父程序經 `reconcile` 核對原票據、計畫與檔案身分後可續作，`managed_fixture.py` 從初始前提或持久通知重建上下文。缺證據仍停止。Mac fixture 禁止 fork／spawn／signal；任意後代、Windows、真實人類入口未驗收。
 
 > 2026-11-07 重連資格：新增 `experiments/v2/launcher.py` 與 `test_launcher.py`。可信 parent 產生 principal、保存重連票據雜湊與限期資源資格；broker 每次請求及恢復寫盤前重查。原始請求在送出前寫入私有 outbox，重啟沿用相同 bytes；缺漏不猜測重建。Mac 合成管道探針改用此資格層，尚非正式人類授權服務或完整工具 launcher。現行部署結構與程序不變。
 
