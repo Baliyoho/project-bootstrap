@@ -1,52 +1,49 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-08 15:02（+08）
-- **交棒者**：Codex CLI ／ `baliyohodeMini`（檢驗 Mac 後代事件候選）
+- **交接時間**：2026-11-08 15:38（+08）
+- **交棒者**：Codex CLI ／ `baliyohodeMini`（Mac 後代隔離候選與 F46 來源例外）
 
 ## 任務目標
 
-使用者已授權按 [需求決策書](project-bootstrap-requirements-decision.md) 決策版本 2 與 [實現規劃](project-bootstrap-implementation-plan.md) 實作 v2。下一棒直接續作。
-**51 ID 與 F11／F13／F43 子項的持續狀態唯一權威：[v2 現況索引](experiments/v2/status.json)**。索引不可讀就停止判定；本檔只留停點、限制與行動。
+依 [需求決策書](project-bootstrap-requirements-decision.md) 決策版本 2 與 [實現規劃](project-bootstrap-implementation-plan.md) 續作 v2；使用者已授權分支實作，未授權部署或切換現行程序。
+**51 ID 與 F11／F13／F43 子項的持續狀態唯一權威：[v2 現況索引](experiments/v2/status.json)**。索引不可讀就停止判定；本檔只留停點與行動。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：`baliyohodeMini` ／ `Codex CLI` ／ `㊣ 26110815｜驗後代隔離｜工作中｜交棒0次`，2026-11-08 15:25 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
-- 本機能力：macOS、Python 3.15.2、bash 3.2、OpenSSH 套件回報 10.5p1。Windows／Linux 本輪未驗。現行部署包及程序未切換。
+- 本機能力：macOS 27.2、Python 3.15.2、bash 3.2、OpenSSH 套件回報 10.5p1。Windows／Linux 本輪未驗。現行部署包及程序未切換。
 
 ## 已完成
 
-- [P0 原型](experiments/v2/README.md) 既有內容／效果交易、管道分權、合成工作樹套用、受管生命週期及 outbox 均保留。三個原始繞過反例仍重現。
-- `a1d228b`：macOS 單 worker 接合 guardian、supervisor 與 outbox。舊工作作廢、舊請求原 bytes 重送被拒；確認回收及新前提摘要才啟用，只有新結果寫盤。未確認退場、錯摘要、離線收件者、遺失回應均有測試。
-- `a3915d6`：guardian wait 後寫本次啟動專屬的私有回收紀錄。重啟明確核對原票據、計畫與檔案身分；四處真 SIGKILL 可恢復 pending 或已生效前提，作廢未完成計算並續送原請求。舊次紀錄不能解鎖新 worker。
-- `912af66`：限期票據可由可信合成父程序續期；原定位符保留，舊票據失效，資源、principal 及 outbox 保留。撤銷、遺失、更新交易失敗有負向測試。父程序 SIGSTOP 後，存活 guardian 仍會在本機租期截止回收。
-- `a6fc7a8`：合成動作以固定 Ed25519 公鑰驗簽，綁 audience、principal、前提、動作、資源、額度來源、次數與期限；Mac 隔離 worker 經 broker 消耗一次合成額度。錯簽、竄改、重播、收據遺失、舊前提及回滾有測試。
-- `c660684`：啟動指紋涵蓋 guardian 腳本與 Python executable；變更後拒絕替換及恢復。v2 JSON 附四項本機執行檔／腳本 SHA-256。
-- 合成程序群組探針：一般後代在群組 TERM 後釋放檔案鎖；呼叫 `setsid` 的後代在 leader 退場後仍持鎖。程序群組不足以證明任意後代退場。
-- 本輪在 `tree_probe.py` 加 Mac Endpoint Security 後代事件 API 准入探針。macOS 27.2 未簽署合成 helper 編譯成功，`es_new_descendants_client` 回傳 3（缺 entitlement）；失敗分支與「可建立仍未驗收」均不能標為嚴格邊界通過。`verify_v2` JSON 單列 `descendant_api_probe`，README 留官方 API 與本機證據。未訂閱事件、未接 launcher，也未取得額外權限。
-- F50 需求與假 adapter 契約保留；App 本輪實際改名時將全形空格正規化為半形，尚無真實事件自動化。
+- P0 合成原型保留管道分權、POSIX 工作樹套用、限期票據與簽核、受管單 worker 生命週期、前提切換及 outbox。三個原始繞過反例仍重現；嚴格模式未就緒。細節與限制見 [v2 原型說明](experiments/v2/README.md) 及索引。
+- Mac 程序群組探針已證明 `setsid` 後代能在 leader 退出後持鎖。Endpoint Security 後代事件 API 本機缺 entitlement（回傳 3）；事件監看也不等於退場保障。
+- 2026-11-08 本機 `xcrun swift -e 'import Virtualization; print(VZVirtualMachine.isSupported)'` 回 `true`。Apple 的 VM `stop` 是強制停止候選；未建立 guest、未測後代與 host 中斷。官方依據和可失敗驗收寫在 v2 原型說明。
+- F46 部分：`verify_bootstrap.py` 每輪逐項印出來源刻意缺的 handoff skill、pre-push hook、check_docs；漏宣告、來源增項、產物缺項有負向變異。來源／產物共跑六個交接快照、五個文件情境，並保留既有兩支 hook 共用的占用情境與 Git 異常情境。整項仍未驗收。
+- 原型狀態已更新 [v2 現況索引](experiments/v2/status.json)。現行 22 檔部署包、skill／hook 副本及 `VERSION` 均未改，無同步債；本輪未呼叫額外模型或真實服務。
 
 ## 未完成／下一步
 
-1. **P0 未退出。** Mac 程序群組已由 `setsid` 反例否決；macOS 27 的後代事件 API 本機缺 entitlement，事件觀察本身也不能在 guardian 被殺後保證已存活後代退場。尋找可限制或追蹤任意後代、且可重啟核對退場的 Mac 機制；若要走 Endpoint Security，先取得合法 entitlement 與可用測試環境，再驗事件遺失、退場及恢復。Windows Job Object 尚無 Windows 實測。證據不足維持阻擋；禁止用舊 PID 或時間推定退場。
-2. 接可信真人核准、簽署金鑰發行／撤銷與額度來源。票據續期仍由合成父程序授權；遺失票據沒有重新驗身分路徑。接真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。模型探針須另得授權且只用訂閱額度。
-3. 整理完整 runtime／import 與候選版本、LICENSE、digest，驗 Windows／Mac 架構門檻後再做 P1。F22 常態必讀超過 12,000 字元；完整接棒時間與 token 未量，現行 A4 不省。
-4. Windows hook 同步、Mac Codex 真實注入與 R01–R09 邊界獨立複審維持待做；逐 ID 狀態看索引。
+1. **P0 未退出。** Mac 單 worker 的禁 fork／spawn 已有合成證據，多程序任意後代仍無退場保障。若採 VM 候選，先準備合成 guest，測 `setsid` 持鎖後代在強制 stop、host 被殺及重啟恢復後的退場證據、共享資料與網路效果隔離、所需 entitlement 和成本；做不到就維持阻擋。Windows Job Object 尚無 Windows 實測。禁止用舊 PID 或時間推定退場。
+2. F46 尚須讓實際接手流程及其餘文件項在來源與產物成對驗證；已宣告的三項例外照列，不因本次部分測試宣稱整項通過。
+3. 接可信真人核准、簽署金鑰發行／撤銷與額度來源；票據遺失沒有重新驗身分路徑。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。模型探針須另得授權且只用訂閱額度。
+4. 鎖定完整 runtime／import 與候選版本、LICENSE、digest，驗 Windows／Mac 架構門檻後再做 P1。F22 常態必讀超過 12,000 字元；完整接棒時間與 token 未量，現行 A4 不省。
+5. Windows hook 同步、Mac Codex 真實注入及 R01–R09 邊界獨立複審仍待做；逐 ID 狀態看索引。
 
 ## 地雷與注意事項
 
-- 僅合成暫存 fixture。Mac profile 禁 fork／spawn／signal；程序群組可被 `setsid` 脫離，不能據 leader 退場解除多程序阻擋。監護被殺、父程序凍結且租期尚未到、整機暫停及任意後代都不在回收保證內。
+- 僅合成暫存 fixture。Mac profile 禁 fork／spawn／signal；程序群組可被 `setsid` 脫離，VM 的 `isSupported=true` 也不是退場證據。監護被殺、父程序凍結且租期尚未到、整機暫停與任意後代不在回收保證內。
 - materializer 只支援 broker 獨占的 POSIX 普通檔案。未知 phase、外部衝突或失效 epoch 保持 pending；不自動覆蓋、清掉或換 request ID。搬機、還原 DB、斷電及多 writer 尚未驗收。
 - 票據庫權限須配合 OS 隔離；簽章測試使用一次性金鑰。原檔、票據與合成 Git object 不進本 repo。舊實驗庫若缺新指紋／前提／回收證據，不能自動收編。
 - 現行 A／B／C 照跑；原子 claim 另案、Antigravity IDE 不重開、來源三項例外不撤銷。額外模型、真實部署、遠端保護與合入 main 仍依原授權邊界。
 
 ## 服務查證與期望快照
 
-- 2026-11-08 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，52 項全過，含 123 個 v2 測試；B7 須對最終 staged 快照再驗。
-- 同日 `python3 -X utf8 tools/verify_v2.py --require-ready --json` 實測 exit 2，harness_passed=true、strict_ready=false，123 測試零失敗／skip；tree_probe=反例重現，descendant_api_probe=無權限（回傳 3）。四份本機指紋可讀。
-- 本 repo 無 verify_state.py／check_docs.py，依 AGENTS 使用替代入口。接線未改，信任重審不適用。無額外模型呼叫、候選安裝或真實部署。
+- 2026-11-08 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，55 項全過，含 123 個 v2 測試及 F46 三項新增檢查；B7 須對最終 staged 快照再驗。
+- 同日 `python3 -X utf8 tools/verify_v2.py --require-ready --json` 實測 exit 2，harness_passed=true、strict_ready=false，123 測試零失敗／skip；tree_probe=反例重現，descendant_api_probe=無權限。
+- 本 repo 無 verify_state.py／check_docs.py，依 AGENTS 使用替代入口；接線未改，信任重審不適用。無額外模型呼叫、候選安裝或真實部署。
 
 ## 懸置事項（AI 勿自行處理）
 

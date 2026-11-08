@@ -71,6 +71,12 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
   本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
+  來源例外可見性——逐項印出三項已宣告減項，核對來源缺而產物有；漏宣告、來源增項及
+                  產物缺項均有負向變異。不代表 F46 全部同組情境已驗收（2026-11-08）
+  交接快照同組情境——有效、整份缺失、占用欄缺失／重複、章節缺失、超行數，用同一份
+                  合成輸入跑來源檢查與部署後 check_docs；仍非 F46 整項驗收
+  文件同組情境——有效連結、整份缺失、死連結、缺日期與行內程式碼，同一份合成文件跑來源檢查與
+                  部署後 check_docs；仍須驗實際接手流程與其他文件項
   verify_state ——失敗不得吞成 exit 0：命令非零退出、HTTP 500、連不上、200 但回應內容
                   不對都要讓結束碼非零；缺憑證是 SKIP（`--strict` 才非零），未填仍回 0，
                   祕密要遮罩。九個情境全部實跑（2026-11-02 加／F04）
@@ -1150,6 +1156,8 @@ def repo_handoff_rule_problems(text):
 
 def repo_handoff_problems(text, version):
     """2026-11-01：舊快照凍結三輪但全數驗證通過；這裡只查已知回歸，不聲稱理解所有待辦。"""
+    if text is None:
+        return ['HANDOFF.md 不存在']
     problems = repo_handoff_rule_problems(text)
     if len(text.splitlines()) > 80:
         problems.append('HANDOFF 超過 80 行')
@@ -1169,7 +1177,8 @@ def repo_handoff_problems(text, version):
 
 
 def step_repo_handoff():
-    text = (ROOT / 'HANDOFF.md').read_text(encoding='utf-8')
+    handoff = ROOT / 'HANDOFF.md'
+    text = handoff.read_text(encoding='utf-8') if handoff.is_file() else None
     version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
     problems = repo_handoff_problems(text, version)
     for name in ('AGENTS.md', 'ARCHITECT.md', 'README.md', '.claude/hooks/repo-git-check.sh'):
@@ -1181,6 +1190,7 @@ def step_repo_handoff():
         ('待續分支', '無。'), ('工作中', '無（已交棒）'), ('骨架版本', '`' + version + '`')))
     control += '\n' + '\n'.join('## ' + h + '\n無。\n' for h in REPO_HANDOFF_HEADINGS)
     cases = (
+        ('整份缺失', None),
         ('版本落後', control.replace('`' + version + '`', '`2000-01-01`')),
         ('只剩標記', '- **工作中**：無（已交棒）\n'),
         ('缺待辦章節', control.replace('## 未完成／下一步\n無。\n', '')),
@@ -1216,6 +1226,150 @@ def step_repo_handoff():
     return True
 
 
+SOURCE_EXCEPTIONS = (
+    ('handoff skill', '.claude/skills/handoff/SKILL.md'),
+    ('pre-push-handoff.sh', '.claude/hooks/pre-push-handoff.sh'),
+    ('check_docs.py', 'tools/check_docs.py'),
+)
+
+
+def source_exception_problems(architecture, source, generated):
+    """F46 partial: report declared source reductions, without calling them parity."""
+    marker = '> **宣告的內容**：'
+    if architecture.count(marker) != 1:
+        return ['正式例外宣告缺失或重複']
+    declaration = architecture.split(marker, 1)[1].split('\n>\n', 1)[0]
+    problems = []
+    for label, relative in SOURCE_EXCEPTIONS:
+        hits = declaration.count('**`' + label + '`**') + declaration.count('**' + label + '**')
+        if hits != 1:
+            problems.append('宣告未逐項列出：' + label)
+        if (source / relative).exists():
+            problems.append('來源已出現既定減項，須重新審查宣告：' + relative)
+        if not (generated / relative).is_file():
+            problems.append('產物缺少對照項：' + relative)
+    return problems
+
+
+def step_source_exceptions(dest, tmp):
+    architecture = (ROOT / 'ARCHITECT.md').read_text(encoding='utf-8')
+    problems = source_exception_problems(architecture, ROOT, dest)
+    with tempfile.TemporaryDirectory(prefix='source-exception-', dir=str(tmp)) as name:
+        source, generated = pathlib.Path(name) / 'source', pathlib.Path(name) / 'generated'
+        source.mkdir()
+        for label, relative in SOURCE_EXCEPTIONS:
+            target = generated / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text('fixture', encoding='utf-8')
+        if source_exception_problems(architecture, source, generated):
+            problems.append('有效例外 fixture 被誤擋')
+        for label, relative in SOURCE_EXCEPTIONS:
+            head, rest = architecture.split('> **宣告的內容**：', 1)
+            declared, tail = rest.split('\n>\n', 1)
+            altered_declaration = declared.replace('**`' + label + '`**', '已省略', 1)
+            if altered_declaration == declared:
+                altered_declaration = declared.replace('**' + label + '**', '已省略', 1)
+            altered = head + '> **宣告的內容**：' + altered_declaration + '\n>\n' + tail
+            if altered == architecture or not source_exception_problems(altered, source, generated):
+                problems.append('宣告負向測試未擋住：' + label)
+            (source / relative).parent.mkdir(parents=True, exist_ok=True)
+            (source / relative).write_text('fixture', encoding='utf-8')
+            if not source_exception_problems(architecture, source, generated):
+                problems.append('來源增項負向測試未擋住：' + label)
+            (source / relative).unlink()
+            (generated / relative).unlink()
+            if not source_exception_problems(architecture, source, generated):
+                problems.append('產物缺項負向測試未擋住：' + label)
+            (generated / relative).write_text('fixture', encoding='utf-8')
+    if problems:
+        record('FAIL', '來源例外可見性（F46 部分）', '；'.join(problems))
+        return
+    record('OK', '來源例外可見性（F46 部分）',
+           '已宣告例外：' + '；'.join(label + '（來源缺、產物有）' for label, _ in SOURCE_EXCEPTIONS)
+           + '；三類負向變異通過；未驗收來源／產物全部同組情境')
+
+
+def step_handoff_parity(dest):
+    """Run identical synthetic snapshot shapes through source and generated checks."""
+    version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
+    control = '\n'.join('- **%s**：%s' % (label, value) for label, value in (
+        ('交接時間', '2026-11-08 12:00（+08）'), ('交棒者', 'synthetic'),
+        ('待續分支', '無'), ('工作中', '無（已交棒）'), ('骨架版本', '`' + version + '`')))
+    control += '\n' + '\n'.join('## ' + h + '\n無。\n' for h in REPO_HANDOFF_HEADINGS)
+    cases = (
+        ('有效快照', control, True),
+        ('整份缺失', None, False),
+        ('缺占用欄', control.replace('- **工作中**：無（已交棒）\n', ''), False),
+        ('重複占用欄', control + '\n- **工作中**：無（已交棒）\n', False),
+        ('缺下一步章節', control.replace('## 未完成／下一步\n無。\n', ''), False),
+        ('超過 80 行', control + ('\n內容' * 81), False),
+    )
+    target = dest / 'HANDOFF.md'
+    original = target.read_text(encoding='utf-8')
+    problems = []
+    try:
+        for name, body, expected in cases:
+            source_ok = not repo_handoff_problems(body, version)
+            if body is None:
+                target.unlink()
+                git(['rm', '-q', '--', 'HANDOFF.md'], dest)
+            else:
+                write_lf(target, body)
+                git(['add', '--', 'HANDOFF.md'], dest)
+            result = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
+            product_ok = result.returncode == 0
+            if source_ok != expected or product_ok != expected or \
+                    result.returncode != (0 if expected else 2):
+                problems.append('%s：來源=%s、產物=exit %s（預期 %s）' % (
+                    name, source_ok, result.returncode, expected))
+    finally:
+        write_lf(target, original)
+        git(['add', '--', 'HANDOFF.md'], dest)
+    record('FAIL' if problems else 'OK', '來源／產物交接快照同組情境（F46 部分）',
+           '；'.join(problems) if problems else '有效、整份缺失、占用欄缺失／重複、章節缺失、超行數；兩端判定一致')
+
+
+def step_document_parity(dest, tmp):
+    """Apply identical link/date fixtures to source check and generated checker."""
+    source = tmp / 'source-doc-fixture'
+    source.mkdir()
+    write_lf(source / 'README.md', '# fixture\n')
+    control = '# ARCHITECT\n\n> 最後更新：2026-11-08\n\n[x](README.md)\n'
+    cases = (
+        ('有效連結與日期', control, True),
+        ('整份文件缺失', None, False),
+        ('死連結', control.replace('README.md', 'missing.md'), False),
+        ('缺日期標頭', control.replace('> 最後更新：2026-11-08\n', ''), False),
+        ('行內程式碼不算連結', control + '\n`[example](missing.md)`\n', True),
+    )
+    target = dest / 'ARCHITECT.md'
+    original = target.read_text(encoding='utf-8')
+    problems = []
+    try:
+        for name, body, expected in cases:
+            if body is None:
+                (source / 'ARCHITECT.md').unlink()
+                target.unlink()
+                git(['rm', '-q', '--', 'ARCHITECT.md'], dest)
+            else:
+                write_lf(source / 'ARCHITECT.md', body)
+                write_lf(target, body)
+                git(['add', '--', 'ARCHITECT.md'], dest)
+            dead, undated, missing = source_document_problems(source, ['ARCHITECT.md'])
+            source_ok = not dead and not undated and not missing
+            result = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
+            product_ok = result.returncode == 0
+            if source_ok != expected or product_ok != expected or \
+                    result.returncode != (0 if expected else 2):
+                problems.append('%s：來源=%s、產物=exit %s（預期 %s）' % (
+                    name, source_ok, result.returncode, expected))
+    finally:
+        write_lf(target, original)
+        git(['add', '--', 'ARCHITECT.md'], dest)
+    record('FAIL' if problems else 'OK', '來源／產物文件同組情境（F46 部分）',
+           '；'.join(problems) if problems else '有效連結、整份缺失、死連結、缺日期、行內程式碼；兩端判定一致')
+
+
 def template_link(target):
     """部署包裡指向「部署後才存在的檔」的連結不是死連結——那是範本內容，真正該檢查它的
     地方是重生出來的骨架（step_check_docs 就在那裡跑 check_docs.py）。判準用 EXPECTED
@@ -1226,6 +1380,36 @@ def template_link(target):
     while target.startswith('../'):
         target = target[3:]
     return target in EXPECTED
+
+
+def source_document_problems(root, mds):
+    """Same source document check used by the live repo and F46 fixtures."""
+    missing = [rel for rel in mds if not (root / rel).is_file()]
+    dead = []
+    for rel in mds:
+        if rel in missing:
+            continue
+        base = (root / rel).parent
+        # 行內 code span 先拿掉：寫在反引號裡的 `[x](path)` 是**程式碼範例**，不是連結，
+        # 那個路徑本來就不該存在。2026-11-02 踩到——3.14 的新 docstring 要解釋
+        # 「帶 title 的連結會被誤報」，而寫下那個例子本身就觸發了同一個誤報。
+        # 只拿掉行內 code，不拿掉圍欄：部署包的檔案範本整個在圍欄裡，跳過圍欄會讓
+        # template_link() 那層覆蓋（範本指向本 repo 檔案時要抓得到）整個消失。
+        body = re.sub(r'`[^`\n]*`', '',
+                      (root / rel).read_text(encoding='utf-8'))
+        for link in re.findall(r'\]\(([^)]+)\)', body):
+            if link.startswith(('http://', 'https://', 'mailto:', '#')):
+                continue
+            target = link.split('#')[0]
+            if not target:
+                continue
+            if rel == 'PROJECT-BOOTSTRAP.md' and template_link(target):
+                continue
+            if not (base / target).exists():
+                dead.append('%s → %s' % (rel, link))
+    undated = [rel for rel in ('AGENTS.md', 'ARCHITECT.md')
+               if (root / rel).is_file() and '最後更新' not in (root / rel).read_text(encoding='utf-8')]
+    return dead, undated, missing
 
 
 def step_self():
@@ -1241,30 +1425,11 @@ def step_self():
     """
     ok = True
     mds = [m for m in run(['git', 'ls-files', '*.md'], cwd=ROOT).stdout.splitlines() if m]
-    dead = []
-    for rel in mds:
-        base = (ROOT / rel).parent
-        # 行內 code span 先拿掉：寫在反引號裡的 `[x](path)` 是**程式碼範例**，不是連結，
-        # 那個路徑本來就不該存在。2026-11-02 踩到——3.14 的新 docstring 要解釋
-        # 「帶 title 的連結會被誤報」，而寫下那個例子本身就觸發了同一個誤報。
-        # 只拿掉行內 code，不拿掉圍欄：部署包的檔案範本整個在圍欄裡，跳過圍欄會讓
-        # template_link() 那層覆蓋（範本指向本 repo 檔案時要抓得到）整個消失。
-        body = re.sub(r'`[^`\n]*`', '',
-                      (ROOT / rel).read_text(encoding='utf-8'))
-        for link in re.findall(r'\]\(([^)]+)\)', body):
-            if link.startswith(('http://', 'https://', 'mailto:', '#')):
-                continue
-            target = link.split('#')[0]
-            if not target:
-                continue
-            if rel == 'PROJECT-BOOTSTRAP.md' and template_link(target):
-                continue
-            if not (base / target).exists():
-                dead.append('%s → %s' % (rel, link))
-    undated = [rel for rel in ('AGENTS.md', 'ARCHITECT.md')
-               if '最後更新' not in (ROOT / rel).read_text(encoding='utf-8')]
-    if dead or undated:
+    dead, undated, missing = source_document_problems(ROOT, mds)
+    if dead or undated or missing:
         detail = []
+        if missing:
+            detail.append('缺檔：%s' % '、'.join(missing[:5]))
         if dead:
             detail.append('死連結 %d 處：%s' % (len(dead), '、'.join(dead[:5])))
         if undated:
@@ -3781,6 +3946,10 @@ def run_checks(dest, tmp):
     step_eol(dest)
     step_self()
     step_repo_handoff()
+    if seen:
+        step_source_exceptions(dest, tmp)
+        step_handoff_parity(dest)
+        step_document_parity(dest, tmp)
     step_sync_coverage(dest)
     step_sync_self_guard()
     step_sync_safety(tmp)
