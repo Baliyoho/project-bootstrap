@@ -76,8 +76,8 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   產物缺項均有負向變異。不代表 F46 全部同組情境已驗收（2026-11-08）
   交接快照同組情境——有效、整份缺失、占用欄缺失／重複、章節缺失、超行數，用同一份
                   合成輸入跑來源檢查與部署後 check_docs；仍非 F46 整項驗收
-  文件同組情境——同一份合成文件跑來源檢查與部署後 check_docs；20 種正反例涵蓋缺檔、
-                  巢狀文件日期、佔位符、死連結、圍欄、角括號與 title、片段；其他文件項仍待驗
+  文件同組情境——同一份合成文件跑來源檢查與部署後 check_docs；20 種連結／日期等正反例，
+                  另有 9 種非 Markdown 佔位符、自訂過期字串與豁免情境；仍非 F46 整項驗收
   來源提交候選一致性——來源 --staged 拒絕部分 stage 與未追蹤檔；完整／部分 stage 同組
                   情境對照產物 check_docs.py --staged，仍非 F46 整項驗收
   verify_state ——失敗不得吞成 exit 0：命令非零退出、HTTP 500、連不上、200 但回應內容
@@ -547,7 +547,7 @@ def step_placeholder_guard(dest):
     original = target.read_text(encoding='utf-8')
     try:
         with open(target, 'a', encoding='utf-8', newline='') as fh:
-            fh.write('\n- 這行是驗證用的：{{PROJECT_NAME}}\n')
+            fh.write('\n- 這行是驗證用的：' + '{{' + 'PROJECT_NAME' + '}}' + '\n')
         git(['add', '-A'], dest)
         r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
         if r.returncode != 2 or 'PROJECT_NAME' not in r.stdout:
@@ -1389,7 +1389,7 @@ def step_document_parity(dest, tmp):
          nested_control + '\n~~~markdown\n[x](missing.md)\n~~~\n', True),
         ('巢狀文件圍欄後死連結',
          nested_control + '\n~~~markdown\n[x](missing.md)\n~~~\n[x](missing.md)\n', False),
-        ('已知佔位符殘留', nested_control + '\n{{GH_OWNER}}\n', False),
+        ('已知佔位符殘留', nested_control + '\n' + '{{' + 'GH_OWNER' + '}}' + '\n', False),
         ('非部署佔位符保留', nested_control + '\n{{PROJECT_LOCAL_VALUE}}\n', True),
     )
     target = dest / 'ARCHITECT.md'
@@ -1447,6 +1447,92 @@ def step_document_parity(dest, tmp):
            % (len(cases) + len(nested_cases)))
 
 
+def step_document_policy_parity(dest, tmp):
+    """Compare configured stale strings and non-Markdown placeholders on both sides."""
+    source = tmp / 'source-policy-fixture'
+    source.mkdir()
+    checker = dest / 'tools/check_docs.py'
+    original_checker = checker.read_text(encoding='utf-8')
+    readme = dest / 'README.md'
+    original_readme = readme.read_text(encoding='utf-8')
+    fixture_rel = 'tools/fixture.py'
+    fixture = dest / fixture_rel
+    source_fixture = source / fixture_rel
+    source_fixture.parent.mkdir(parents=True)
+    source_readme = source / 'README.md'
+    token = '{{' + 'GH_OWNER' + '}}'
+    patterns = (('retired.example', '合成舊網域'),)
+    cases = (
+        ('設定後的有效文件', 'value = "ok"\n', '# fixture\n', False, False, False, True, ''),
+        ('非 Markdown 已知佔位符', 'value = "' + token + '"\n',
+         '# fixture\n', False, False, False, False, '[holes]'),
+        ('非 Markdown 未知樣板保留', 'value = "{{PROJECT_LOCAL_VALUE}}"\n',
+         '# fixture\n', False, False, False, True, ''),
+        ('佔位符豁免路徑', 'value = "' + token + '"\n',
+         '# fixture\n', False, True, False, True, ''),
+        ('自訂過期字串', 'value = "ok"\n',
+         '# fixture\nretired.example\n', False, False, False, False, '[stale]'),
+        ('同列歷史敘述豁免', 'value = "ok"\n',
+         '# fixture\nretired.example 已退役\n', False, False, False, True, ''),
+        ('過期字串路徑豁免', 'value = "ok"\n',
+         '# fixture\nretired.example\n', True, False, False, True, ''),
+        ('無豁免的死連結', 'value = "ok"\n',
+         '# fixture\n[x](missing.md)\n', False, False, False, False, '[links]'),
+        ('連結路徑豁免', 'value = "ok"\n',
+         '# fixture\n[x](missing.md)\n', False, False, True, True, ''),
+    )
+    problems = []
+    try:
+        for name, py_body, md_body, stale_exempt, hole_exempt, link_exempt, expected, channel in cases:
+            write_lf(fixture, py_body)
+            write_lf(readme, md_body)
+            write_lf(source_fixture, py_body)
+            write_lf(source_readme, md_body)
+            git(['add', '--', fixture_rel, 'README.md'], dest)
+            configured = original_checker.replace(
+                "STALE_PATTERNS = [\n    # ('localhost:8080', '已遷到正式網域，文件不該再出現本機位址'),\n]",
+                "STALE_PATTERNS = [('retired.example', '合成舊網域')]")
+            if configured == original_checker:
+                problems.append('找不到產物過期字串設定區塊')
+                break
+            if stale_exempt:
+                configured = configured.replace('STALE_OK_PATHS = ()',
+                                                "STALE_OK_PATHS = ('README.md',)")
+            if hole_exempt:
+                configured = configured.replace(
+                    "PLACEHOLDER_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)",
+                    "PLACEHOLDER_OK_PATHS = ('PROJECT-BOOTSTRAP.md', 'tools/fixture.py')")
+            if link_exempt:
+                configured = configured.replace(
+                    "LINK_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)",
+                    "LINK_OK_PATHS = ('PROJECT-BOOTSTRAP.md', 'README.md')")
+            write_lf(checker, configured)
+            source_findings = source_repo_document_problems(
+                source, ['README.md', fixture_rel], stale_patterns=patterns,
+                stale_ok_paths=('README.md',) if stale_exempt else (),
+                placeholder_ok_paths=(('PROJECT-BOOTSTRAP.md', fixture_rel)
+                                      if hole_exempt else ('PROJECT-BOOTSTRAP.md',)),
+                link_ok_paths=('README.md',) if link_exempt else ())
+            source_ok = not any(source_findings)
+            result = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
+            product_ok = result.returncode == 0
+            if (source_ok != expected or product_ok != expected or
+                    result.returncode != (0 if expected else 2) or
+                    (channel and channel not in result.stdout)):
+                problems.append('%s：來源=%s、產物=exit %s（預期 %s／%s）' % (
+                    name, source_ok, result.returncode, expected, channel))
+    finally:
+        write_lf(checker, original_checker)
+        write_lf(readme, original_readme)
+        git(['add', '--', 'README.md'], dest)
+        if fixture.exists():
+            git(['rm', '-qf', '--', fixture_rel], dest)
+    record('FAIL' if problems else 'OK', '來源／產物文件設定同組情境（F46 部分）',
+           '；'.join(problems) if problems else
+           '%d 種同組情境，含非 Markdown 佔位符、自訂過期字串、死連結與豁免；兩端判定一致'
+           % len(cases))
+
+
 def template_link(target):
     """部署包裡指向「部署後才存在的檔」的連結不是死連結——那是範本內容，真正該檢查它的
     地方是重生出來的骨架（step_check_docs 就在那裡跑 check_docs.py）。判準用 EXPECTED
@@ -1459,7 +1545,7 @@ def template_link(target):
     return target in EXPECTED
 
 
-def source_document_problems(root, mds):
+def source_document_problems(root, mds, link_ok_paths=()):
     """Same source document check used by the live repo and F46 fixtures.
 
     The deployment package intentionally retains interview placeholders. Other
@@ -1492,6 +1578,8 @@ def source_document_problems(root, mds):
                     continue
             lines.append(re.sub(r'`[^`]*`', '', line))
         body = '\n'.join(lines)
+        if any(rel == p or rel.startswith(p) for p in link_ok_paths):
+            continue
         for raw in re.findall(r'\]\(([^)]+)\)', body):
             # title 先於角括號移除；反過來會把合法的 (<path> "title")
             # 當成不存在的字面檔名。這也是產物 R09 的修正邊界。
@@ -1512,6 +1600,54 @@ def source_document_problems(root, mds):
                and (root / rel).is_file() and '最後更新' not in
                '\n'.join((root / rel).read_text(encoding='utf-8').split('\n')[:8])]
     return dead, undated, missing, holes
+
+
+SOURCE_PLACEHOLDER_SUFFIXES = ('.md', '.py', '.sh', '.json')
+SOURCE_PLACEHOLDER_FILES = ('.gitignore', '.gitattributes')
+SOURCE_STALE_OK = ('已停用', '已退役', '歷史', '勿再啟動', '~~')
+
+
+def source_policy_problems(root, files, stale_patterns=(), stale_ok_paths=(),
+                           placeholder_ok_paths=('PROJECT-BOOTSTRAP.md',)):
+    """Check the source's publishable files with the product's document policy shape.
+
+    The source has no project-specific stale patterns. Synthetic parity cases pass
+    a configured pattern explicitly, just as a deployed project's checker does.
+    """
+    stale, holes = [], []
+    for rel in files:
+        path = root / rel
+        if not path.is_file():
+            continue
+        body = path.read_text(encoding='utf-8')
+        if rel.endswith('.md') and not any(
+                rel == p or rel.startswith(p) for p in stale_ok_paths):
+            for n, line in enumerate(body.split('\n'), 1):
+                for pattern, why in stale_patterns:
+                    if pattern in line and not any(ok in line for ok in SOURCE_STALE_OK):
+                        stale.append('%s:%d → %s（%s）' % (rel, n, pattern, why))
+        if (rel.endswith(SOURCE_PLACEHOLDER_SUFFIXES) or
+                rel in SOURCE_PLACEHOLDER_FILES) and not any(
+                rel == p or rel.startswith(p) for p in placeholder_ok_paths):
+            for n, line in enumerate(body.split('\n'), 1):
+                for match in PLACEHOLDER_RE.finditer(line):
+                    if match.group(1) in ANSWERS:
+                        holes.append('%s:%d → %s' % (rel, n, match.group(0)))
+    return stale, holes
+
+
+def source_repo_document_problems(root, tracked_files, stale_patterns=(),
+                                  stale_ok_paths=(),
+                                  placeholder_ok_paths=('PROJECT-BOOTSTRAP.md',),
+                                  link_ok_paths=()):
+    """One source entry point for the live repo and synthetic policy cases."""
+    mds = [p for p in tracked_files if p.endswith('.md')]
+    nonmds = [p for p in tracked_files if not p.endswith('.md')]
+    dead, undated, missing, holes = source_document_problems(root, mds, link_ok_paths)
+    stale, _ = source_policy_problems(root, mds, stale_patterns, stale_ok_paths,
+                                      placeholder_ok_paths)
+    _, extra_holes = source_policy_problems(root, nonmds, (), (), placeholder_ok_paths)
+    return dead, undated, missing, stale, holes + extra_holes
 
 
 def source_staged_problems(root):
@@ -1723,9 +1859,10 @@ def step_self():
     「看起來有防護、實際上沒有」的那一類失效，而且沒有任何徵兆。
     """
     ok = True
-    mds = [m for m in run(['git', 'ls-files', '*.md'], cwd=ROOT).stdout.splitlines() if m]
-    dead, undated, missing, holes = source_document_problems(ROOT, mds)
-    if dead or undated or missing or holes:
+    tracked_files = [p for p in run(['git', 'ls-files', '-z'], cwd=ROOT).stdout.split('\0') if p]
+    mds = [p for p in tracked_files if p.endswith('.md')]
+    dead, undated, missing, stale, holes = source_repo_document_problems(ROOT, tracked_files)
+    if dead or undated or missing or stale or holes:
         detail = []
         if missing:
             detail.append('缺檔：%s' % '、'.join(missing[:5]))
@@ -1733,13 +1870,16 @@ def step_self():
             detail.append('死連結 %d 處：%s' % (len(dead), '、'.join(dead[:5])))
         if undated:
             detail.append('缺「最後更新」：%s' % '、'.join(undated))
+        if stale:
+            detail.append('過期字串：%s' % '、'.join(stale[:5]))
         if holes:
             detail.append('殘留部署佔位符：%s' % '、'.join(holes[:5]))
         record('FAIL', '本 repo 自己的文件', '；'.join(detail))
         ok = False
     else:
         record('OK', '本 repo 自己的文件',
-               '%d 個 .md 無死連結與殘留部署佔位符，日期標頭齊備' % len(mds))
+               '%d 個 .md 無死連結、受管非 Markdown 無殘留部署佔位符，日期標頭齊備'
+               % len(mds))
 
     # 兩份接線一起查（2026-11-01 加上 `.codex/hooks.json`）。這個 repo 的接線指的是它
     # 自己那支 `repo-git-check.sh`，所以它們跟部署包 3.9／3.17 只是長得像、不是副本；
@@ -4252,6 +4392,7 @@ def run_checks(dest, tmp):
         step_source_exceptions(dest, tmp)
         step_handoff_parity(dest)
         step_document_parity(dest, tmp)
+        step_document_policy_parity(dest, tmp)
         step_source_staged_parity(dest, tmp)
         step_handoff_flow_parity(dest, tmp)
     step_sync_coverage(dest)
