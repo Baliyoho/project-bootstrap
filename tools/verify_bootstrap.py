@@ -76,8 +76,8 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   產物缺項均有負向變異。不代表 F46 全部同組情境已驗收（2026-11-08）
   交接快照同組情境——有效、整份缺失、占用欄缺失／重複、章節缺失、超行數，用同一份
                   合成輸入跑來源檢查與部署後 check_docs；仍非 F46 整項驗收
-  文件同組情境——同一份合成文件跑來源檢查與部署後 check_docs；11 種正反例涵蓋缺檔、
-                  死連結、程式碼圍欄、角括號與 title、片段及日期位置；其他文件項仍待驗
+  文件同組情境——同一份合成文件跑來源檢查與部署後 check_docs；20 種正反例涵蓋缺檔、
+                  巢狀文件日期、佔位符、死連結、圍欄、角括號與 title、片段；其他文件項仍待驗
   來源提交候選一致性——來源 --staged 拒絕部分 stage 與未追蹤檔；完整／部分 stage 同組
                   情境對照產物 check_docs.py --staged，仍非 F46 整項驗收
   verify_state ——失敗不得吞成 exit 0：命令非零退出、HTTP 500、連不上、200 但回應內容
@@ -1375,8 +1375,29 @@ def step_document_parity(dest, tmp):
          control.replace('> 最後更新：2026-11-08\n', '\n'.join(['前言'] * 9)
                          + '\n> 最後更新：2026-11-08\n'), False),
     )
+    nested_rel = 'docs/ai-notes/roadmap.md'
+    nested_control = '# fixture\n\n> 最後更新：2026-11-08\n\n[x](../../README.md)\n'
+    nested_cases = (
+        ('巢狀文件有效日期與連結', nested_control, True),
+        ('巢狀文件缺失', None, False),
+        ('巢狀文件缺日期', nested_control.replace('> 最後更新：2026-11-08\n', ''), False),
+        ('巢狀文件日期超出前八行',
+         nested_control.replace('> 最後更新：2026-11-08\n',
+                                '\n'.join(['前言'] * 9) + '\n> 最後更新：2026-11-08\n'), False),
+        ('巢狀文件死連結', nested_control.replace('../../README.md', 'missing.md'), False),
+        ('巢狀文件程式碼圍欄豁免',
+         nested_control + '\n~~~markdown\n[x](missing.md)\n~~~\n', True),
+        ('巢狀文件圍欄後死連結',
+         nested_control + '\n~~~markdown\n[x](missing.md)\n~~~\n[x](missing.md)\n', False),
+        ('已知佔位符殘留', nested_control + '\n{{GH_OWNER}}\n', False),
+        ('非部署佔位符保留', nested_control + '\n{{PROJECT_LOCAL_VALUE}}\n', True),
+    )
     target = dest / 'ARCHITECT.md'
     original = target.read_text(encoding='utf-8')
+    nested_target = dest / nested_rel
+    nested_original = nested_target.read_text(encoding='utf-8')
+    source_nested = source / nested_rel
+    source_nested.parent.mkdir(parents=True, exist_ok=True)
     problems = []
     try:
         for name, body, expected in cases:
@@ -1388,8 +1409,27 @@ def step_document_parity(dest, tmp):
                 write_lf(source / 'ARCHITECT.md', body)
                 write_lf(target, body)
                 git(['add', '--', 'ARCHITECT.md'], dest)
-            dead, undated, missing = source_document_problems(source, ['ARCHITECT.md'])
-            source_ok = not dead and not undated and not missing
+            dead, undated, missing, holes = source_document_problems(source, ['ARCHITECT.md'])
+            source_ok = not dead and not undated and not missing and not holes
+            result = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
+            product_ok = result.returncode == 0
+            if source_ok != expected or product_ok != expected or \
+                    result.returncode != (0 if expected else 2):
+                problems.append('%s：來源=%s、產物=exit %s（預期 %s）' % (
+                    name, source_ok, result.returncode, expected))
+        write_lf(target, original)
+        git(['add', '--', 'ARCHITECT.md'], dest)
+        for name, body, expected in nested_cases:
+            if body is None:
+                source_nested.unlink()
+                nested_target.unlink()
+                git(['rm', '-q', '--', nested_rel], dest)
+            else:
+                write_lf(source_nested, body)
+                write_lf(nested_target, body)
+                git(['add', '--', nested_rel], dest)
+            dead, undated, missing, holes = source_document_problems(source, [nested_rel])
+            source_ok = not dead and not undated and not missing and not holes
             result = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
             product_ok = result.returncode == 0
             if source_ok != expected or product_ok != expected or \
@@ -1399,9 +1439,12 @@ def step_document_parity(dest, tmp):
     finally:
         write_lf(target, original)
         git(['add', '--', 'ARCHITECT.md'], dest)
+        write_lf(nested_target, nested_original)
+        git(['add', '--', nested_rel], dest)
     record('FAIL' if problems else 'OK', '來源／產物文件同組情境（F46 部分）',
            '；'.join(problems) if problems else
-           '%d 種同組情境，含圍欄、角括號與 title、片段及日期位置；兩端判定一致' % len(cases))
+           '%d 種同組情境，含巢狀文件日期、佔位符、圍欄、角括號與 title、片段；兩端判定一致'
+           % (len(cases) + len(nested_cases)))
 
 
 def template_link(target):
@@ -1417,13 +1460,21 @@ def template_link(target):
 
 
 def source_document_problems(root, mds):
-    """Same source document check used by the live repo and F46 fixtures."""
+    """Same source document check used by the live repo and F46 fixtures.
+
+    The deployment package intentionally retains interview placeholders. Other
+    source documents must not accidentally carry one into a published commit.
+    """
     missing = [rel for rel in mds if not (root / rel).is_file()]
-    dead = []
+    dead, holes = [], []
     for rel in mds:
         if rel in missing:
             continue
         base = (root / rel).parent
+        if rel != 'PROJECT-BOOTSTRAP.md':
+            for match in PLACEHOLDER_RE.finditer((root / rel).read_text(encoding='utf-8')):
+                if match.group(1) in ANSWERS:
+                    holes.append('%s → %s' % (rel, match.group(0)))
         # 來源部署包的範本位於圍欄內，仍須檢查；其他文件的圍欄是範例，
         # 與產物 check_docs 一樣略過。F46 同組反例同時驗圍欄後的真死連結。
         lines, fence = [], None
@@ -1456,10 +1507,11 @@ def source_document_problems(root, mds):
                 continue
             if not (base / target).exists():
                 dead.append('%s → %s' % (rel, raw))
-    undated = [rel for rel in ('AGENTS.md', 'ARCHITECT.md')
-               if (root / rel).is_file() and '最後更新' not in
+    undated = [rel for rel in mds
+               if (rel in ('AGENTS.md', 'ARCHITECT.md') or rel.startswith('docs/ai-notes/'))
+               and (root / rel).is_file() and '最後更新' not in
                '\n'.join((root / rel).read_text(encoding='utf-8').split('\n')[:8])]
-    return dead, undated, missing
+    return dead, undated, missing, holes
 
 
 def source_staged_problems(root):
@@ -1672,8 +1724,8 @@ def step_self():
     """
     ok = True
     mds = [m for m in run(['git', 'ls-files', '*.md'], cwd=ROOT).stdout.splitlines() if m]
-    dead, undated, missing = source_document_problems(ROOT, mds)
-    if dead or undated or missing:
+    dead, undated, missing, holes = source_document_problems(ROOT, mds)
+    if dead or undated or missing or holes:
         detail = []
         if missing:
             detail.append('缺檔：%s' % '、'.join(missing[:5]))
@@ -1681,10 +1733,13 @@ def step_self():
             detail.append('死連結 %d 處：%s' % (len(dead), '、'.join(dead[:5])))
         if undated:
             detail.append('缺「最後更新」：%s' % '、'.join(undated))
+        if holes:
+            detail.append('殘留部署佔位符：%s' % '、'.join(holes[:5]))
         record('FAIL', '本 repo 自己的文件', '；'.join(detail))
         ok = False
     else:
-        record('OK', '本 repo 自己的文件', '%d 個 .md 無死連結，日期標頭齊備' % len(mds))
+        record('OK', '本 repo 自己的文件',
+               '%d 個 .md 無死連結與殘留部署佔位符，日期標頭齊備' % len(mds))
 
     # 兩份接線一起查（2026-11-01 加上 `.codex/hooks.json`）。這個 repo 的接線指的是它
     # 自己那支 `repo-git-check.sh`，所以它們跟部署包 3.9／3.17 只是長得像、不是副本；
