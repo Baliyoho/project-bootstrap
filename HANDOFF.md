@@ -1,59 +1,51 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-08 09:59（+08）
-- **交棒者**：Codex CLI ／ `baliyohodeMini`（監護回收與單程序隔離邊界；使用者授權依上下文餘量評估後交棒）
+- **交接時間**：2026-11-08 10:34（+08）
+- **交棒者**：Codex CLI ／ `baliyohodeMac-mini`（接合受管執行、重啟續接與簽核）
 
 ## 任務目標
 
-使用者已授權按 [需求決策書](project-bootstrap-requirements-decision.md) 決策版本 2 與 [實現規劃](project-bootstrap-implementation-plan.md) 重做 v2；下一棒直接續作，不重新徵詢是否開始。
-**51 ID 與 F11／F13／F43 子項的持續狀態唯一權威：[v2 現況索引](experiments/v2/status.json)**。移交來源 `fdc0bbd:HANDOFF.md`；本檔只留停點與行動，索引不可讀就停止判定，不恢復舊摘要權威。
+使用者已授權按 [需求決策書](project-bootstrap-requirements-decision.md) 決策版本 2 與 [實現規劃](project-bootstrap-implementation-plan.md) 實作 v2。下一棒直接續作。
+**51 ID 與 F11／F13／F43 子項的持續狀態唯一權威：[v2 現況索引](experiments/v2/status.json)**。索引不可讀就停止判定；本檔只留停點、限制與行動。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
-- **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立；已驗證實作安全點 `8649477`）；main 尚未合入 v2，勿重新從 main 開始。
-- **工作中**：`baliyohodeMac-mini` ／ `Codex CLI` ／ `㊣ 26110810｜接合受管執行｜工作中｜交棒0次`，2026-11-08 10:03 (+08) 開工
+- **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立；已驗證實作安全點 `c660684`）；main 尚未合入 v2。
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
-- 本機能力：macOS、Python 3.15.2、bash 3.2；未驗 Windows／Linux。未改 main、部署包、skill、hook、接線或 VERSION。
+- 本機能力：macOS、Python 3.15.2、bash 3.2、OpenSSH 套件回報 10.5p1。Windows／Linux 本輪未驗。現行部署包及程序未切換。
 
 ## 已完成
 
-- F50 必要需求、51 ID 對照與狀態移交；session 狀態機及假 adapter 契約，尚未接真實事件自動化。
-- [P0 原型](experiments/v2/README.md)：內容／事件交易、授權範圍、epoch／通知／ACK、執行中合成子程序中止與上下文替換。
-- parent-only broker：管道身分、資源／序號限制、無管理 RPC；收據與內容／合成效果同交易。Mac 合成 agent 正常操作成功，冒名／自行授權／直接寫入被拒。
-- POSIX materializer：prepared→暫存／fsync→replace→applied，保留 mode、拒絕路徑／連結／別名／外部衝突；root／映射持久綁定，恢復重查資源資格及目錄 fsync。四個真子程序中斷點與交易失敗可重跑。
-- `496e489`：launcher 資格層由 parent 產生 principal、私有票據重連、限期資源資格／撤銷；parent outbox 送出前保存原始 bytes，缺漏／不一致停止。兩個真子程序終止點與遺失回應恢復不重做合成效果，新增 14 個測試。
-- `f0e11cc`：固定啟動計畫與持久程序狀態；舊直接 child wait 退場後才發新管道，未解 parent 重啟拒絕替換。POSIX 票據庫拒絕權限／連結／FIFO 異常；Mac 管道已接入，閒置資格失效會結束 transport。新增 14 個測試，含移除停止檢查後兩 child 同時存活的負向對照。
-- `8649477`：新增可信 guardian，parent 生命管道 EOF 後回收直接 worker，私有回收證據到達才記 stopped；Mac fixture 禁 fork／spawn／signal。新增 9 個測試，含真 parent SIGKILL、移除監護／OS 防護、監護被殺、未隔離後代存活、FD 與無關程序保護。
-- 原一鍵入口包含 P0 回歸，JSON 可重跑且附輸入 digest／環境／時間。三個原始繞過反例照留，strict_ready 仍為 false。
+- [P0 原型](experiments/v2/README.md) 既有內容／效果交易、管道分權、合成工作樹套用、受管生命週期及 outbox 均保留。三個原始繞過反例仍重現。
+- `a1d228b`：macOS 單 worker 接合 guardian、supervisor 與 outbox。舊工作作廢、舊請求原 bytes 重送被拒；確認回收及新前提摘要才啟用，只有新結果寫盤。未確認退場、錯摘要、離線收件者、遺失回應均有測試。
+- `a3915d6`：guardian wait 後寫本次啟動專屬的私有回收紀錄。重啟明確核對原票據、計畫與檔案身分；四處真 SIGKILL 可恢復 pending 或已生效前提，作廢未完成計算並續送原請求。舊次紀錄不能解鎖新 worker。
+- `912af66`：限期票據可由可信合成父程序續期；原定位符保留，舊票據失效，資源、principal 及 outbox 保留。撤銷、遺失、更新交易失敗有負向測試。父程序 SIGSTOP 後，存活 guardian 仍會在本機租期截止回收。
+- `a6fc7a8`：合成動作以固定 Ed25519 公鑰驗簽，綁 audience、principal、前提、動作、資源、額度來源、次數與期限；Mac 隔離 worker 經 broker 消耗一次合成額度。錯簽、竄改、重播、收據遺失、舊前提及回滾有測試。
+- `c660684`：啟動指紋涵蓋 guardian 腳本與 Python executable；變更後拒絕替換及恢復。v2 JSON 附四項本機執行檔／腳本 SHA-256。
+- F50 需求與假 adapter 契約保留；App 本輪實際改名時將全形空格正規化為半形，尚無真實事件自動化。
 
 ## 未完成／下一步
 
-1. **P0 尚未退出；直接續作同一執行面的接合**：先讀 `guardian.py`、`lifecycle.py`、`broker_fixture.py` 與 `supervisor.py`，將 outbox、受管生命週期及前提切換接在同一單程序 fixture。不得把禁 fork 的合成介面外推成可執行一般 shell 的多程序工具；程序樹容器需另驗。
-2. 補人類授權來源、票據更新／遺失、過期後續作及未解狀態的明確恢復。parent 被殺的直接 worker 可由存活 guardian 回收，但重啟仍不憑 PID／時間清狀態；guardian 被殺、parent 凍結、一般後代回收未解。parent fixture 非人類服務；runtime/import manifest、資料裁剪、跨機恢復與外部效果冪等仍缺。
-3. 對真實可控執行介面接 supervisor，補跨機推送、失聯與恢復；模型／桌面工具實際停止和上下文重建需另驗，不拿 ACK 冒充理解。
-4. 鎖定實際採用元件版本／LICENSE／digest；驗 Windows／Mac 架構門檻，之後才做 P1 來源／測試模組化與短入口。
-5. F22 常態必讀仍約 4.4 萬字元、超過 12,000；完整接棒時間及 token 未量。要做證據依賴／失效與分層後才能省 A4，不能靠原型綠燈略過。
-6. 保留舊限制：Windows hook 同步、Mac Codex 真實注入、R01–R09 邊界獨立複審待做；F41 七缺口屬想要。逐 ID 達成狀態看索引。
+1. **P0 未退出。** 先驗可信執行的下一個邊界：選可供 Windows／Mac 實測的程序樹隔離與退場證據，重現 guardian 被殺、一般後代及失聯，再決定可接的真實 surface。先做合成 fixture，證據不足維持阻擋；禁止用舊 PID 或時間推定退場。
+2. 接可信真人核准、簽署金鑰發行／撤銷與額度來源。票據續期仍由合成父程序授權；遺失票據沒有重新驗身分路徑。接真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。模型探針須另得授權且只用訂閱額度。
+3. 整理完整 runtime／import 與候選版本、LICENSE、digest，驗 Windows／Mac 架構門檻後再做 P1。F22 常態必讀超過 12,000 字元；完整接棒時間與 token 未量，現行 A4 不省。
+4. Windows hook 同步、Mac Codex 真實注入與 R01–R09 邊界獨立複審維持待做；逐 ID 狀態看索引。
 
 ## 地雷與注意事項
 
-- 僅合成暫存 fixture，未遷移真實專案。materializer 限 broker 獨占的 POSIX 普通檔案；不支援建目錄／刪除／整批原子更新，不是與任意外部 writer 競爭的 CAS。
-- 程序終止測試不是斷電測試。未知 phase、內容／mode 衝突、失效 epoch 保持 pending，不自動覆蓋或清掉；需明確處理，不能換 request ID 繞過。
-- 已有事件但缺 root／映射綁定的舊實驗庫拒絕自動收編；搬機／換 root／變更映射尚無遷移程序，不宣稱跨機恢復完成。
-- 授權時間依 parent 時鐘；只拒絕低於已提交 watermark 的倒退，非抗調時／DB 還原保證。低層 Lab 無期限授權及 Broker.attach 保留給內部 fixture，不是正式人類入口。
-- 票據庫 0700／0600 不是同 UID 隔離；需 OS profile 保護。固定 argv／入口 executable／cwd 綁定不涵蓋所有 import 與 runtime；guardian 原碼與 runtime 仍由可信 parent 保護。未隔離後代在直接 worker stopped 後仍可存活，已有反例；Windows、guardian 失效後回收未驗收。
-- `sandbox-exec` 已 deprecated，只作 OS 機制探針；未做逃逸審查或正式工具接線。原文、capability 與合成 Git object 不進本 repo。
-- 不得擅自外部部署、付費／額外模型探針、改遠端保護或 merge main；額外模型先授權且只用訂閱額度。
-- 現行 A／B／C 照跑；原子 claim 另案、Antigravity IDE 不重開、來源三項例外不撤銷。
+- 僅合成暫存 fixture。Mac profile 禁 fork／spawn／signal；一般多程序工具、監護被殺、父程序凍結且租期尚未到、整機暫停及任意後代都不在回收保證內。無證據就維持阻擋。
+- materializer 只支援 broker 獨占的 POSIX 普通檔案。未知 phase、外部衝突或失效 epoch 保持 pending；不自動覆蓋、清掉或換 request ID。搬機、還原 DB、斷電及多 writer 尚未驗收。
+- 票據庫權限須配合 OS 隔離；簽章測試使用一次性金鑰。原檔、票據與合成 Git object 不進本 repo。舊實驗庫若缺新指紋／前提／回收證據，不能自動收編。
+- 現行 A／B／C 照跑；原子 claim 另案、Antigravity IDE 不重開、來源三項例外不撤銷。額外模型、真實部署、遠端保護與合入 main 仍依原授權邊界。
 
 ## 服務查證與期望快照
 
-- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項全過、無 skip；內含 94 個 v2 測試（2026-11-08）。交棒最終 stage 後仍用此入口驗證；本機 HTTP／隔離探針經允許於沙箱外執行。
-- 本輪 `python3 -X utf8 tools/verify_v2.py --require-ready --json`：實測 exit 2（2026-11-08）；harness_passed=true、strict_ready=false、94 測試無失敗／skip，Mac 管道 11 次請求成功。一般 sandbox 拒絕 loopback 時經允許重跑，不把環境錯誤當預期 exit 2。
-- JSON 為暫存證據，不假設下一棒可取得；以相同命令重跑，需量完整舊驗證器再加 `--baseline`。F50 本次真正改名成功，但工具回傳將全形空格正規化為半形，格式差異已揭露。
-- 無 verify_state.py／check_docs.py，依 AGENTS 用替代入口；接線未改，信任重審不適用。未呼叫額外模型、未安裝候選、未部署其他專案。
+- 2026-11-08 實作安全點 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，52 項全過，含 115 個 v2 測試。B7 以同入口驗最終暫存快照。
+- 同日 `python3 -X utf8 tools/verify_v2.py --require-ready --json` 實測 exit 2，harness_passed=true、strict_ready=false，115 測試零失敗／skip，受管切換／outbox 探針通過，四份本機指紋可讀。JSON 可重跑；不用聊天附件。
+- 本 repo 無 verify_state.py／check_docs.py，依 AGENTS 使用替代入口。接線未改，信任重審不適用。無額外模型呼叫、候選安裝或真實部署。
 
 ## 懸置事項（AI 勿自行處理）
 
-- 無需再確認是否做 v2；本次交棒為上下文管理，不取消既有實作授權、不宣稱 P0／v2 已完成。下一棒按第一項直接續作。
+- 無新增待決。交棒為上下文管理；既有 v2 實作授權仍有效，P0 未驗收退出。
