@@ -9,6 +9,7 @@
 
 用法（在本 repo 根目錄執行）：
   python -X utf8 tools/verify_bootstrap.py
+  python -X utf8 tools/verify_bootstrap.py --staged  # B7：驗提交候選與工作樹一致
   python -X utf8 tools/verify_bootstrap.py --keep   # 保留產生的骨架供人工檢查
   python -X utf8 tools/verify_bootstrap.py --zip    # 全過才額外輸出解壓即用的 zip
 
@@ -75,8 +76,10 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   產物缺項均有負向變異。不代表 F46 全部同組情境已驗收（2026-11-08）
   交接快照同組情境——有效、整份缺失、占用欄缺失／重複、章節缺失、超行數，用同一份
                   合成輸入跑來源檢查與部署後 check_docs；仍非 F46 整項驗收
-  文件同組情境——有效連結、整份缺失、死連結、缺日期與行內程式碼，同一份合成文件跑來源檢查與
-                  部署後 check_docs；仍須驗實際接手流程與其他文件項
+  文件同組情境——同一份合成文件跑來源檢查與部署後 check_docs；11 種正反例涵蓋缺檔、
+                  死連結、程式碼圍欄、角括號與 title、片段及日期位置；其他文件項仍待驗
+  來源提交候選一致性——來源 --staged 拒絕部分 stage 與未追蹤檔；完整／部分 stage 同組
+                  情境對照產物 check_docs.py --staged，仍非 F46 整項驗收
   verify_state ——失敗不得吞成 exit 0：命令非零退出、HTTP 500、連不上、200 但回應內容
                   不對都要讓結束碼非零；缺憑證是 SKIP（`--strict` 才非零），未填仍回 0，
                   祕密要遮罩。九個情境全部實跑（2026-11-02 加／F04）
@@ -1167,6 +1170,16 @@ def repo_handoff_problems(text, version):
             problems.append(label + ' 必須有且只有一個非空欄位')
         elif label == '骨架版本' and matches[0].strip() != '`' + version + '`':
             problems.append('HANDOFF 骨架版本與 VERSION 不一致')
+        elif label == '工作中':
+            # 來源也須拒絕產物 check_docs 會拒絕的壞標記；僅有非空字串
+            # 不能證明機器／工具身分可供 A2.5 判讀（F46、R08）。
+            value = matches[0].split('，', 1)[0].strip(' \t\u3000`').strip()
+            if value != '無（已交棒）':
+                fields = [field.strip(' \t\u3000`').strip() for field in value.split('／')]
+                if not fields[0]:
+                    problems.append('工作中標記缺機器欄')
+                elif len(fields) < 2 or not fields[1] or '｜' in fields[1]:
+                    problems.append('工作中標記缺工具欄')
     for heading in REPO_HANDOFF_HEADINGS:
         matches = re.findall(r'^## ' + re.escape(heading) + r'\n(.*?)(?=^## |\Z)', text, re.M | re.S)
         if len(matches) != 1 or not matches[0].strip():
@@ -1296,6 +1309,9 @@ def step_handoff_parity(dest):
         ('交接時間', '2026-11-08 12:00（+08）'), ('交棒者', 'synthetic'),
         ('待續分支', '無'), ('工作中', '無（已交棒）'), ('骨架版本', '`' + version + '`')))
     control += '\n' + '\n'.join('## ' + h + '\n無。\n' for h in REPO_HANDOFF_HEADINGS)
+    occupied = control.replace('- **工作中**：無（已交棒）',
+                               '- **工作中**：`fixture` ／ `Codex CLI` ／ '
+                               '`㊣　26110815｜測試｜工作中`')
     cases = (
         ('有效快照', control, True),
         ('整份缺失', None, False),
@@ -1303,6 +1319,12 @@ def step_handoff_parity(dest):
         ('重複占用欄', control + '\n- **工作中**：無（已交棒）\n', False),
         ('缺下一步章節', control.replace('## 未完成／下一步\n無。\n', ''), False),
         ('超過 80 行', control + ('\n內容' * 81), False),
+        ('有效占用標記', occupied, True),
+        ('機器欄空白', occupied.replace('`fixture`', '``'), False),
+        ('工具欄空白', occupied.replace('`Codex CLI`', '``'), False),
+        ('工具欄缺失', occupied.replace(' ／ `Codex CLI`', ''), False),
+        ('舊格式把 session 誤作工具',
+         occupied.replace('`Codex CLI` ／ ', ''), False),
     )
     target = dest / 'HANDOFF.md'
     original = target.read_text(encoding='utf-8')
@@ -1326,7 +1348,8 @@ def step_handoff_parity(dest):
         write_lf(target, original)
         git(['add', '--', 'HANDOFF.md'], dest)
     record('FAIL' if problems else 'OK', '來源／產物交接快照同組情境（F46 部分）',
-           '；'.join(problems) if problems else '有效、整份缺失、占用欄缺失／重複、章節缺失、超行數；兩端判定一致')
+           '；'.join(problems) if problems else
+           '%d 種同組情境，含缺檔、結構與機器／工具欄正反例；兩端判定一致' % len(cases))
 
 
 def step_document_parity(dest, tmp):
@@ -1341,6 +1364,16 @@ def step_document_parity(dest, tmp):
         ('死連結', control.replace('README.md', 'missing.md'), False),
         ('缺日期標頭', control.replace('> 最後更新：2026-11-08\n', ''), False),
         ('行內程式碼不算連結', control + '\n`[example](missing.md)`\n', True),
+        ('程式碼圍欄不算連結', control + '\n```markdown\n[x](missing.md)\n```\n', True),
+        ('圍欄後死連結仍攔截', control + '\n```markdown\n[x](missing.md)\n```\n[x](missing.md)\n', False),
+        ('角括號路徑與 title', control.replace('[x](README.md)',
+                                          '[x](<README.md> "title")'), True),
+        ('角括號路徑與 title 的死連結', control.replace('[x](README.md)',
+                                                 '[x](<missing.md> "title")'), False),
+        ('片段連結', control.replace('[x](README.md)', '[x](README.md#section)'), True),
+        ('日期標頭超出前八行',
+         control.replace('> 最後更新：2026-11-08\n', '\n'.join(['前言'] * 9)
+                         + '\n> 最後更新：2026-11-08\n'), False),
     )
     target = dest / 'ARCHITECT.md'
     original = target.read_text(encoding='utf-8')
@@ -1367,7 +1400,8 @@ def step_document_parity(dest, tmp):
         write_lf(target, original)
         git(['add', '--', 'ARCHITECT.md'], dest)
     record('FAIL' if problems else 'OK', '來源／產物文件同組情境（F46 部分）',
-           '；'.join(problems) if problems else '有效連結、整份缺失、死連結、缺日期、行內程式碼；兩端判定一致')
+           '；'.join(problems) if problems else
+           '%d 種同組情境，含圍欄、角括號與 title、片段及日期位置；兩端判定一致' % len(cases))
 
 
 def template_link(target):
@@ -1390,14 +1424,29 @@ def source_document_problems(root, mds):
         if rel in missing:
             continue
         base = (root / rel).parent
-        # 行內 code span 先拿掉：寫在反引號裡的 `[x](path)` 是**程式碼範例**，不是連結，
-        # 那個路徑本來就不該存在。2026-11-02 踩到——3.14 的新 docstring 要解釋
-        # 「帶 title 的連結會被誤報」，而寫下那個例子本身就觸發了同一個誤報。
-        # 只拿掉行內 code，不拿掉圍欄：部署包的檔案範本整個在圍欄裡，跳過圍欄會讓
-        # template_link() 那層覆蓋（範本指向本 repo 檔案時要抓得到）整個消失。
-        body = re.sub(r'`[^`\n]*`', '',
-                      (root / rel).read_text(encoding='utf-8'))
-        for link in re.findall(r'\]\(([^)]+)\)', body):
+        # 來源部署包的範本位於圍欄內，仍須檢查；其他文件的圍欄是範例，
+        # 與產物 check_docs 一樣略過。F46 同組反例同時驗圍欄後的真死連結。
+        lines, fence = [], None
+        for line in (root / rel).read_text(encoding='utf-8').split('\n'):
+            marker = re.match(r'^\s*(```+|~~~+)', line)
+            if rel != 'PROJECT-BOOTSTRAP.md':
+                if fence is not None:
+                    lines.append('')
+                    if marker and line.strip().startswith(fence):
+                        fence = None
+                    continue
+                if marker:
+                    fence = marker.group(1)
+                    lines.append('')
+                    continue
+            lines.append(re.sub(r'`[^`]*`', '', line))
+        body = '\n'.join(lines)
+        for raw in re.findall(r'\]\(([^)]+)\)', body):
+            # title 先於角括號移除；反過來會把合法的 (<path> "title")
+            # 當成不存在的字面檔名。這也是產物 R09 的修正邊界。
+            link = re.sub(r'\s+["\'][^"\']*["\']\s*$', '', raw.strip()).strip()
+            if link.startswith('<') and link.endswith('>'):
+                link = link[1:-1].strip()
             if link.startswith(('http://', 'https://', 'mailto:', '#')):
                 continue
             target = link.split('#')[0]
@@ -1406,10 +1455,80 @@ def source_document_problems(root, mds):
             if rel == 'PROJECT-BOOTSTRAP.md' and template_link(target):
                 continue
             if not (base / target).exists():
-                dead.append('%s → %s' % (rel, link))
+                dead.append('%s → %s' % (rel, raw))
     undated = [rel for rel in ('AGENTS.md', 'ARCHITECT.md')
-               if (root / rel).is_file() and '最後更新' not in (root / rel).read_text(encoding='utf-8')]
+               if (root / rel).is_file() and '最後更新' not in
+               '\n'.join((root / rel).read_text(encoding='utf-8').split('\n')[:8])]
     return dead, undated, missing
+
+
+def source_staged_problems(root):
+    """B7：來源驗證器檢查工作樹，不能拿它證明另一份 staged 內容。
+
+    來源沒有部署後的 check_docs.py；選用 --staged 時，整個提交候選須已 stage，
+    且不能留下未暫存或未追蹤檔。未追蹤的連結目標若只在本機存在，
+    也可能讓待提交 Markdown 的死連結檢查錯誤通過。
+    """
+    commands = (
+        ('staged', ['diff', '--cached', '--name-only', '-z']),
+        ('unstaged', ['diff', '--name-only', '-z']),
+        ('untracked', ['ls-files', '--others', '--exclude-standard', '-z']),
+    )
+    names = {}
+    for label, args in commands:
+        result = git(args, root)
+        if result.returncode:
+            return ['讀取 %s 檔案集合失敗：%s' % (label, result.stderr.strip()[:160])]
+        names[label] = [name for name in result.stdout.split('\0') if name]
+    problems = []
+    if not names['staged']:
+        problems.append('沒有 staged 提交候選')
+    for label in ('unstaged', 'untracked'):
+        if names[label]:
+            problems.append('%s 檔案尚未納入候選：%s' %
+                            (label, '、'.join(names[label][:5])))
+    return problems
+
+
+def step_source_staged_parity(dest, tmp):
+    """同一份 staged/unstaged 形狀對照來源檢查與產物 --staged。"""
+    source = tmp / 'source-staged-fixture'
+    shutil.copytree(dest, source, ignore=shutil.ignore_patterns('.git'))
+    git(['init', '-q', '-b', 'main'], source)
+    git(['add', '-A'], source)
+    git(['commit', '-qm', 'fixture'], source)
+    no_stage_rejected = bool(source_staged_problems(source))
+    readme = source / 'README.md'
+    with readme.open('a', encoding='utf-8', newline='') as handle:
+        handle.write('\n驗證提交候選。\n')
+    git(['add', '--', 'README.md'], source)
+    cases = []
+    source_ok = not source_staged_problems(source)
+    product = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py', '--staged'], cwd=source)
+    cases.append(('完整 stage', source_ok, product.returncode, True))
+    with readme.open('a', encoding='utf-8', newline='') as handle:
+        handle.write('未暫存內容。\n')
+    source_ok = not source_staged_problems(source)
+    product = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py', '--staged'], cwd=source)
+    cases.append(('部分 stage', source_ok, product.returncode, False))
+    restored = git(['checkout', '--', 'README.md'], source)
+    untracked_baseline_clean = restored.returncode == 0 and not source_staged_problems(source)
+    (source / 'untracked-target.md').write_text('未追蹤\n', encoding='utf-8')
+    untracked_rejected = bool(source_staged_problems(source))
+    problems = []
+    for name, source_ok, product_exit, expected in cases:
+        if source_ok != expected or product_exit != (0 if expected else 2):
+            problems.append('%s：來源=%s、產物=exit %s（預期 %s）' %
+                            (name, source_ok, product_exit, expected))
+    if not no_stage_rejected:
+        problems.append('空提交候選未被來源檢查攔截')
+    if not untracked_baseline_clean:
+        problems.append('未追蹤負向測試的起點不乾淨')
+    if not untracked_rejected:
+        problems.append('未追蹤檔未被來源檢查攔截')
+    record('FAIL' if problems else 'OK', '來源提交候選一致性（F46 部分）',
+           '；'.join(problems) if problems else
+           '完整 stage 通過、部分 stage 兩端拒絕、來源另拒未追蹤檔；未驗實際接手流程')
 
 
 def step_self():
@@ -3950,6 +4069,7 @@ def run_checks(dest, tmp):
         step_source_exceptions(dest, tmp)
         step_handoff_parity(dest)
         step_document_parity(dest, tmp)
+        step_source_staged_parity(dest, tmp)
     step_sync_coverage(dest)
     step_sync_self_guard()
     step_sync_safety(tmp)
@@ -3967,6 +4087,8 @@ def run_checks(dest, tmp):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument('--staged', action='store_true',
+                    help='B7 提交前拒絕未暫存或未追蹤檔，驗證實際 staged 候選')
     ap.add_argument('--keep', action='store_true', help='保留產生的骨架，印出路徑')
     ap.add_argument('--zip', nargs='?', const='', metavar='PATH',
                     help='驗證全過時，額外輸出解壓即用的 zip（預設 dist/project-skeleton-<日期>.zip）')
@@ -3980,6 +4102,13 @@ def main():
     if not KIT.exists():
         print(f'找不到 {KIT}——請在本 repo 根目錄執行')
         return 2
+
+    if args.staged:
+        problems = source_staged_problems(ROOT)
+        if problems:
+            print('[index] 🔴 ' + '；'.join(problems))
+            return 2
+        print('[index] staged 提交候選與工作樹一致，無未追蹤檔')
 
     tmp = pathlib.Path(tempfile.mkdtemp(prefix='verify-bootstrap-'))
     dest = tmp / 'gen'

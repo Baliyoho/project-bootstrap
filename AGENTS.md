@@ -24,6 +24,7 @@
 
 - **A4 的一鍵驗證不是 `verify_state.py`**（那是骨架的檔，不部署到自己身上），改跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**（鐵律 4）。
 - **沒有 `check_docs.py`、沒有 pre-push 防呆**，所以 B4 與那層擋 push 的關卡都不存在；`.md` 的死連結與日期標頭由 `verify_bootstrap.py` 的「本 repo 自己的文件」那一項顧。
+- **B7 提交前先明確 stage，再跑 `python -X utf8 tools/verify_bootstrap.py --staged`**；它拒絕未暫存與未追蹤檔，避免用工作樹檢查結果證明另一份提交候選。一般 A4 仍用不帶旗標的指令。
 - **`HANDOFF.md` 是當下交接快照，也承載「工作中」標記**；A5 更新標記，B6 核對整份現況並覆寫，≤80 行、不累積歷史（見下方「本 repo 的交接快照」）。
 
 **為什麼要在這裡再寫一次**：開場 hook 已經會講同樣的話，但它**只在 Claude Code、以及已經審核過 hook 的 Codex 上會跑**——Antigravity、Gemini CLI、還沒被信任的 Codex 都不會，而 `AGENTS.md` 是那些工具唯一保證會讀到的入口。把開工義務只放在 hook 裡，等於讓它在一半的平面上無聲消失。（2026-11-01 補。部署包範本 3.1 一直有這一節，缺的反而是骨架自己這個 repo——制度的來源比它的產物少一層保護，而且沒有任何徵兆。）
