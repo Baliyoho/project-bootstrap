@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-08。`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的獨立合成探針及離線負向控制；它下載並驗固定映像 digest，編譯帶 entitlement 的 runner，在無網路、只共享暫存目錄的 guest 中觀察 `setsid` 後代。它未接入 `managed_fixture.py` 或現行部署包，不提供真實工具退場保證。詳見 [P0 說明](experiments/v2/README.md)。
+> 最後更新：2026-11-08。`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的合成探針及離線負向控制：固定映像 digest、無網路 guest、獨立暫存共享目錄及 `setsid` 後代。runner 的專用控制管道可在收到停止命令或父端關閉時要求 VM stop。`managed_fixture.py` 在私有實驗庫先記 VM 未確認狀態，再於封住舊 epoch、回收 worker、確認 VM 停止後保存退場證據，才啟用新前提並處理 outbox；未確認時重啟保持阻擋。這條資料流仍只有合成 guest，未接真實工具或現行部署包，也不提供 host 故障後的自動復原保證。詳見 [P0 說明](experiments/v2/README.md)。
 
 > 2026-11-08 新增 `experiments/v2/tree_probe.py` 與 `test_tree_probe.py`，只在合成 POSIX 程序群組比較一般後代與脫離 session 的後代，透過檔案鎖觀察退場。一鍵入口列出這個候選反例；它不接入 `lifecycle.py`，也不提供任意程序樹保證。詳見 [P0 說明](experiments/v2/README.md)。
 

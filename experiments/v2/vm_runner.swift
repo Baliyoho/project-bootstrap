@@ -1,8 +1,9 @@
 import Foundation
 import Virtualization
+import Darwin
 
-if CommandLine.arguments.count != 6 {
-    fputs("usage: vm_runner KERNEL INITRAMFS SHARE_DIR STOP_AFTER_SECONDS PROBE_ID\n", stderr)
+if CommandLine.arguments.count != 7 {
+    fputs("usage: vm_runner KERNEL INITRAMFS SHARE_DIR STOP_AFTER_SECONDS PROBE_ID CONTROL_FD\n", stderr)
     exit(2)
 }
 let kernel = URL(fileURLWithPath: CommandLine.arguments[1])
@@ -34,6 +35,40 @@ do {
     exit(3)
 }
 let vm = VZVirtualMachine(configuration: config)
+var stopping = false
+func requestStop() {
+    if stopping { return }
+    stopping = true
+    guard vm.canStop else {
+        fputs("HOST_CANNOT_STOP state=\(vm.state.rawValue)\n", stderr)
+        exit(5)
+    }
+    vm.stop { error in
+        if let error = error {
+            fputs("HOST_STOP_ERROR \(error)\n", stderr)
+            exit(6)
+        }
+        fputs("HOST_STOPPED state=\(vm.state.rawValue)\n", stderr)
+        exit(0)
+    }
+}
+guard let controlFD = Int32(CommandLine.arguments[6]) else {
+    fputs("HOST_INVALID_CONTROL_FD\n", stderr)
+    exit(2)
+}
+let control = DispatchSource.makeReadSource(fileDescriptor: controlFD, queue: .main)
+control.setEventHandler {
+    var byte: UInt8 = 0
+    let count = read(controlFD, &byte, 1)
+    if count == 0 || (count == 1 && byte == 0x53) {
+        control.cancel()
+        requestStop()
+    } else {
+        fputs("HOST_INVALID_CONTROL_MESSAGE\n", stderr)
+        exit(7)
+    }
+}
+control.resume()
 vm.start { result in
     if case .failure(let error) = result {
         fputs("HOST_START_ERROR \(error)\n", stderr)
@@ -42,18 +77,7 @@ vm.start { result in
     fputs("HOST_STARTED\n", stderr)
     if stopAfter > 0 {
         DispatchQueue.main.asyncAfter(deadline: .now() + stopAfter) {
-            guard vm.canStop else {
-                fputs("HOST_CANNOT_STOP state=\(vm.state.rawValue)\n", stderr)
-                exit(5)
-            }
-            vm.stop { error in
-                if let error = error {
-                    fputs("HOST_STOP_ERROR \(error)\n", stderr)
-                    exit(6)
-                }
-                fputs("HOST_STOPPED state=\(vm.state.rawValue)\n", stderr)
-                exit(0)
-            }
+            requestStop()
         }
     }
 }

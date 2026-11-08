@@ -111,6 +111,81 @@ class ManagedFixtureTests(TestCase):
             with self.assertRaisesRegex(Denied, 'managed-fixture-not-ready'):
                 fixture.begin(8)
 
+    def test_vm_retirement_failure_blocks_activation_and_restart(self):
+        if not managed.supported():
+            self.skipTest('macOS confined worker required')
+
+        class FailedGate:
+            probe_id = 'synthetic-failed-stop'
+            closed = False
+
+            def start(self):
+                pass
+
+            def retire(self):
+                raise RuntimeError('synthetic-vm-stop-unconfirmed')
+
+            def close(self):
+                self.closed = True
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            with managed.open_managed(root) as (fixture, repo):
+                fixture.start(2)
+                handle = fixture.handle
+                gate = FailedGate()
+                fixture.attach_vm_gate(gate)
+                fixture.begin(7)
+                fixture.stage_result()
+                with self.assertRaisesRegex(RuntimeError, 'synthetic-vm-stop-unconfirmed'):
+                    fixture.change(3)
+                self.assertTrue(gate.closed)
+                self.assertEqual(tuple(fixture.lab.db.execute(
+                    'SELECT epoch, pending FROM state').fetchone()), (0, 1))
+                self.assertEqual(fixture.lab.db.execute(
+                    'SELECT state FROM managed_vm_runs').fetchone()[0], 'running')
+                self.assertFalse((repo / 'managed.txt').exists())
+            with managed.open_managed(root, handle) as (fixture, _):
+                until = time.monotonic() + 5
+                while True:
+                    try:
+                        fixture.resume()
+                    except Denied as error:
+                        if str(error) == 'worker-reap-unconfirmed' and time.monotonic() < until:
+                            time.sleep(0.01)
+                            continue
+                        self.assertEqual(str(error), 'vm-retirement-unconfirmed')
+                        break
+                    self.fail('resume accepted an unconfirmed VM retirement')
+
+    def test_vm_launch_failure_is_recorded_before_a_guest_can_start(self):
+        if not managed.supported():
+            self.skipTest('macOS confined worker required')
+
+        class FailedStart:
+            probe_id = 'synthetic-start-failure'
+
+            def start(self):
+                row = fixture.lab.db.execute(
+                    'SELECT state FROM managed_vm_runs').fetchone()
+                self.test.assertEqual(row[0], 'unconfirmed')
+                raise RuntimeError('synthetic-vm-start-failure')
+
+            def close(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            with managed.open_managed(root) as (fixture, _):
+                fixture.start(2)
+                gate = FailedStart()
+                gate.test = self
+                with self.assertRaisesRegex(RuntimeError, 'synthetic-vm-start-failure'):
+                    fixture.attach_vm_gate(gate)
+                self.assertFalse(fixture.ready)
+                self.assertEqual(fixture.lab.db.execute(
+                    'SELECT state FROM managed_vm_runs').fetchone()[0], 'unconfirmed')
+
     def test_real_replacement_with_wrong_context_digest_cannot_acknowledge(self):
         if not managed.supported():
             self.assertEqual(managed.probe_managed()['result'], '未驗證')

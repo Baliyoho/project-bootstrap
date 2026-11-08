@@ -10,9 +10,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import gzip
 import hashlib
+import json
+import os
 from pathlib import Path
 import platform
 import re
+import select
 import shutil
 import subprocess
 import sys
@@ -149,13 +152,69 @@ def stable_after_exit(share: Path, probe_id: str) -> int:
 
 
 def launch(runner: Path, kernel: Path, ramdisk: Path, share: Path, seconds: int,
-           log: Path, probe_id: str) -> tuple[subprocess.Popen[bytes], object]:
+           log: Path, probe_id: str) -> tuple[subprocess.Popen[bytes], object, object]:
     output = log.open("wb")
-    process = subprocess.Popen(
-        [str(runner), str(kernel), str(ramdisk), str(share), str(seconds), probe_id],
-        stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
-    )
-    return process, output
+    control_read, control_write = os.pipe()
+    try:
+        process = subprocess.Popen(
+            [str(runner), str(kernel), str(ramdisk), str(share), str(seconds),
+             probe_id, str(control_read)],
+            stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
+            pass_fds=(control_read,),
+        )
+    except BaseException:
+        os.close(control_write)
+        output.close()
+        raise
+    finally:
+        os.close(control_read)
+    return process, output, os.fdopen(control_write, "wb", buffering=0)
+
+
+class VMRetirementGate:
+    """One live guest whose verified stop gates a synthetic epoch change.
+
+    The host parent owns this object. If it dies before persisting retirement,
+    managed_fixture deliberately cannot reconstruct proof from a stale PID.
+    """
+
+    def __init__(self, runner: Path, kernel: Path, ramdisk: Path,
+                 share: Path, log: Path, probe_id: str, stop_after: int = 0):
+        self.runner, self.kernel, self.ramdisk = runner, kernel, ramdisk
+        self.share, self.log, self.probe_id = share, log, probe_id
+        self.stop_after = stop_after
+        self.process = self.output = self.control = None
+
+    def start(self) -> None:
+        self.share.mkdir()
+        self.process, self.output, self.control = launch(
+            self.runner, self.kernel, self.ramdisk, self.share, self.stop_after,
+            self.log, self.probe_id,
+        )
+        check_guest(self.log, self.share, self.process, self.probe_id)
+
+    def retire(self) -> dict:
+        if self.process is None or self.process.poll() is not None:
+            raise RuntimeError("VM was not live at retirement")
+        self.control.write(b"S")
+        self.control.close()
+        result = self.process.wait(timeout=15)
+        self.output.close()
+        output = self.log.read_text(errors="replace")
+        if result != 0 or "HOST_STOPPED state=0" not in output:
+            raise RuntimeError(f"VM stop was not confirmed: {output[-2000:]}")
+        final = stable_after_exit(self.share, self.probe_id)
+        return {"probe_id": self.probe_id, "final_heartbeat": final,
+                "stop_marker": "HOST_STOPPED state=0"}
+
+    def close(self) -> None:
+        if self.process is not None and self.process.poll() is None:
+            self.process.kill()
+            self.process.wait(timeout=15)
+        if self.control is not None:
+            self.control.close()
+        if self.output is not None:
+            self.output.close()
 
 
 def probe(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
@@ -163,8 +222,8 @@ def probe(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
         share = work / (mode + "-share")
         share.mkdir()
         log = work / (mode + ".log")
-        process, output = launch(runner, kernel, ramdisk, share,
-                                 5 if mode == "stop" else 0, log, mode)
+        process, output, control = launch(runner, kernel, ramdisk, share,
+                                          5 if mode == "stop" else 0, log, mode)
         try:
             during = check_guest(log, share, process, mode)
             if mode == "host_kill":
@@ -179,7 +238,8 @@ def probe(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
             print(f"{mode}: guest own session and guest lock verified; heartbeat {during}->{after}, stable after exit; host exit {result}")
             if mode == "host_kill":
                 restart_log = work / "restart.log"
-                restart, restart_output = launch(runner, kernel, ramdisk, share, 4, restart_log, "restart")
+                restart, restart_output, restart_control = launch(
+                    runner, kernel, ramdisk, share, 4, restart_log, "restart")
                 try:
                     resumed = check_guest(restart_log, share, restart, "restart")
                     if resumed <= 0 or heartbeat_count(share, mode) != after:
@@ -195,11 +255,13 @@ def probe(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
                     if restart.poll() is None:
                         restart.kill()
                         restart.wait()
+                    restart_control.close()
                     restart_output.close()
         finally:
             if process.poll() is None:
                 process.kill()
                 process.wait()
+            control.close()
             output.close()
 
 
@@ -207,12 +269,14 @@ def probe_cross_vm(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> Non
     """Observe whether a guest flock coordinates two independent VM instances."""
     share = work / "two-vms-share"
     share.mkdir()
-    first, first_output = launch(runner, kernel, ramdisk, share, 0, work / "first.log", "first")
+    first, first_output, first_control = launch(
+        runner, kernel, ramdisk, share, 0, work / "first.log", "first")
     second = None
-    second_output = None
+    second_output = second_control = None
     try:
         check_guest(work / "first.log", share, first, "first")
-        second, second_output = launch(runner, kernel, ramdisk, share, 0, work / "second.log", "second")
+        second, second_output, second_control = launch(
+            runner, kernel, ramdisk, share, 0, work / "second.log", "second")
         try:
             check_guest(work / "second.log", share, second, "second")
             if heartbeat_count(share, "first") < 3:
@@ -224,12 +288,146 @@ def probe_cross_vm(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> Non
                 raise
             print("cross_vm_flock: second guest blocked in this run; no general coordination guarantee")
     finally:
-        for process, output in ((second, second_output), (first, first_output)):
+        for process, output, control in ((second, second_output, second_control),
+                                         (first, first_output, first_control)):
             if process is not None:
                 if process.poll() is None:
                     process.kill()
                 process.wait(timeout=5)
+                control.close()
                 output.close()
+
+
+def probe_owner_eof(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
+    """Closing the parent's control pipe must retire the VM without a PID signal."""
+    share = work / "owner-eof-share"
+    share.mkdir()
+    log = work / "owner-eof.log"
+    process, output, control = launch(runner, kernel, ramdisk, share, 0, log, "owner-eof")
+    try:
+        check_guest(log, share, process, "owner-eof")
+        control.close()
+        if process.wait(timeout=15) != 0 or "HOST_STOPPED state=0" not in log.read_text(errors="replace"):
+            raise RuntimeError("VM did not stop after control owner disappeared")
+        stable_after_exit(share, "owner-eof")
+        print("owner_eof: VM stopped after control pipe closed; heartbeat stable")
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+        control.close()
+        output.close()
+
+
+CRASH_PARENT = '''from pathlib import Path
+import sys
+from experiments.v2.managed_fixture import open_managed
+from experiments.v2.vm_probe import VMRetirementGate
+root, runner, kernel, ramdisk, share, log = map(Path, sys.argv[1:])
+with open_managed(root) as (fixture, _):
+    fixture.start(2)
+    gate = VMRetirementGate(runner, kernel, ramdisk, share, log, 'crash-epoch', stop_after=12)
+    fixture.attach_vm_gate(gate)
+    print(fixture.handle, flush=True)
+    sys.stdin.read()
+'''
+
+
+def probe_parent_crash_fail_closed(work: Path, runner: Path, kernel: Path,
+                                   ramdisk: Path) -> None:
+    """Kill the trusted parent and reject resume without a durable VM stop."""
+    if str(HERE.parents[1]) not in sys.path:
+        sys.path.insert(0, str(HERE.parents[1]))
+    from experiments.v2.contracts import Denied
+    from experiments.v2.managed_fixture import open_managed
+
+    root = work / "crash-managed"
+    root.mkdir()
+    share = work / "crash-vm-share"
+    log = work / "crash-vm.log"
+    parent = subprocess.Popen(
+        [sys.executable, "-B", "-u", "-c", CRASH_PARENT, str(root), str(runner),
+         str(kernel), str(ramdisk), str(share), str(log)],
+        cwd=HERE.parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        if not select.select([parent.stdout], [], [], 20)[0]:
+            raise RuntimeError("crash fixture did not start")
+        handle = parent.stdout.readline().decode().strip()
+        if not re.fullmatch(r"[0-9a-f]{64}", handle):
+            raise RuntimeError("crash fixture gave no ticket handle")
+        parent.kill()
+        parent.wait(timeout=5)
+        deadline = time.monotonic() + 8
+        while "HOST_STOPPED state=0" not in log.read_text(errors="replace"):
+            if time.monotonic() >= deadline:
+                raise RuntimeError("VM did not retire after parent SIGKILL")
+            time.sleep(0.05)
+        stable_after_exit(share, "crash-epoch")
+        with open_managed(root, handle) as (fixture, _):
+            deadline = time.monotonic() + 5
+            while True:
+                try:
+                    fixture.resume()
+                except Denied as error:
+                    if str(error) == "worker-reap-unconfirmed" and time.monotonic() < deadline:
+                        time.sleep(0.02)
+                        continue
+                    if str(error) != "vm-retirement-unconfirmed":
+                        raise RuntimeError(f"unexpected resume result: {error}") from error
+                    break
+                raise RuntimeError("resume accepted a VM with no persisted retirement")
+        print("parent_sigkill: guest stopped on control EOF; resume blocked by missing durable VM proof")
+    finally:
+        if parent.poll() is None:
+            parent.kill()
+            parent.wait(timeout=5)
+        for stream in (parent.stdin, parent.stdout, parent.stderr):
+            stream.close()
+
+
+def probe_managed_switch(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
+    """Gate a real managed epoch switch on a live synthetic VM retirement."""
+    if str(HERE.parents[1]) not in sys.path:
+        sys.path.insert(0, str(HERE.parents[1]))
+    from experiments.v2.managed_fixture import open_managed
+
+    root = work / "managed"
+    root.mkdir()
+    gate = VMRetirementGate(runner, kernel, ramdisk, work / "managed-vm-share",
+                            work / "managed-vm.log", "old-epoch")
+    with open_managed(root) as (fixture, repo):
+        fixture.start(2)
+        fixture.attach_vm_gate(gate)
+        old_worker = fixture.child
+        fixture.begin(7)
+        stale_id = fixture.stage_result()
+        interrupted = fixture.begin(8)
+        fixture.change(3)
+        row = fixture.lab.db.execute(
+            'SELECT epoch, state, evidence FROM managed_vm_runs').fetchone()
+        evidence = json.loads(row['evidence']) if row['evidence'] else {}
+        if (tuple(row[:2]) != (0, 'retired') or evidence.get('stop_marker') != 'HOST_STOPPED state=0'
+                or evidence.get('final_heartbeat', 0) < 3
+                or not old_worker.reaped or old_worker.process.poll() is None):
+            raise RuntimeError("managed VM retirement evidence was not persisted")
+        stale = fixture.send()
+        old_status = fixture.lab.db.execute(
+            'SELECT status FROM operations WHERE ticket=?', (interrupted,)).fetchone()[0]
+        if (stale != {'id': stale_id, 'code': 'premise-not-current'}
+                or old_status != 'invalid' or (repo / 'managed.txt').exists()):
+            raise RuntimeError("old epoch effect crossed the managed barrier")
+        fixture.begin(7)
+        fresh_id = fixture.stage_result()
+        fresh = fixture.send()
+        if (fresh.get('id') != fresh_id or fresh.get('code') != 'ok'
+                or (repo / 'managed.txt').read_bytes() != b'21'):
+            raise RuntimeError("fresh epoch effect was not materialized")
+        if heartbeat_count(gate.share, gate.probe_id) != evidence['final_heartbeat']:
+            raise RuntimeError("old guest wrote after the new epoch was activated")
+        print("managed_vm_switch: old guest stop persisted before epoch 1; "
+              "old outbox denied; only epoch 1 content materialized")
 
 
 def main() -> int:
@@ -253,6 +451,9 @@ def main() -> int:
             runner = build_runner(work)
             probe(work, runner, raw_kernel, guest_ramdisk)
             probe_cross_vm(work, runner, raw_kernel, guest_ramdisk)
+            probe_owner_eof(work, runner, raw_kernel, guest_ramdisk)
+            probe_managed_switch(work, runner, raw_kernel, guest_ramdisk)
+            probe_parent_crash_fail_closed(work, runner, raw_kernel, guest_ramdisk)
         print("VM_PROBE_OK: synthetic guest only; P0 remains unverified")
         return 0
     except (OSError, RuntimeError, subprocess.SubprocessError, zlib.error) as error:

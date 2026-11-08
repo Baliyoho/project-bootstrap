@@ -30,10 +30,14 @@ class ManagedFixture:
         self.launcher, self.lab = launcher, launcher.lab
         self.handle, self.plan = handle, plan
         self.child = self.pending = None
+        self.vm_gate = None
         self.epoch = 0
         self.ready = False
         self.lab.db.execute('''CREATE TABLE IF NOT EXISTS managed_initial_context (
             actor TEXT PRIMARY KEY, context TEXT NOT NULL)''')
+        self.lab.db.execute('''CREATE TABLE IF NOT EXISTS managed_vm_runs (
+            actor TEXT PRIMARY KEY, epoch INTEGER NOT NULL, state TEXT NOT NULL,
+            probe_id TEXT NOT NULL, evidence TEXT)''')
 
     def receive(self):
         result = queue.Queue(maxsize=1)
@@ -108,6 +112,29 @@ class ManagedFixture:
             raise Denied('invalid-fixture-factor')
         return json.dumps({'factor': factor}, separators=(',', ':'))
 
+    def attach_vm_gate(self, gate):
+        """Add one synthetic guest to the active epoch, recording uncertainty first."""
+        if not self.ready or self.vm_gate is not None or self.pending is not None:
+            raise Denied('managed-fixture-not-ready')
+        self.launcher.check()
+        actor = self.lab.actor(self.child.channel.capability)
+        with self.lab.transaction():
+            previous = self.lab.db.execute(
+                'SELECT state FROM managed_vm_runs WHERE actor=?', (actor,)).fetchone()
+            if previous is not None and previous['state'] != 'retired':
+                raise Denied('vm-retirement-unconfirmed')
+            self.lab.db.execute('INSERT OR REPLACE INTO managed_vm_runs VALUES (?, ?, ?, ?, NULL)',
+                                (actor, self.epoch, 'unconfirmed', gate.probe_id))
+        self.vm_gate = gate
+        try:
+            gate.start()
+            with self.lab.transaction():
+                self.lab.db.execute("UPDATE managed_vm_runs SET state='running' WHERE actor=?",
+                                    (actor,))
+        except BaseException:
+            self.close()
+            raise
+
     def change(self, factor):
         if not self.ready:
             raise Denied('managed-fixture-not-ready')
@@ -119,6 +146,17 @@ class ManagedFixture:
             epoch = self.lab.propose(context)
             actor = self.lab.actor(self.child.channel.capability)
             self.launcher.stop(actor)
+            if self.vm_gate is not None:
+                evidence = self.vm_gate.retire()
+                with self.lab.transaction():
+                    updated = self.lab.db.execute(
+                        "UPDATE managed_vm_runs SET state='retired', evidence=? "
+                        "WHERE actor=? AND epoch=? AND state='running'",
+                        (json.dumps(evidence, sort_keys=True), actor, self.epoch),
+                    )
+                    if updated.rowcount != 1:
+                        raise Denied('vm-retirement-unconfirmed')
+                self.vm_gate = None
             self.pending = None
             self.activate(epoch, context)
         except BaseException:
@@ -132,6 +170,10 @@ class ManagedFixture:
         try:
             actor = self.launcher.reconcile(self.handle, self.plan)
             with self.lab.transaction():
+                vm = self.lab.db.execute(
+                    'SELECT state FROM managed_vm_runs WHERE actor=?', (actor,)).fetchone()
+                if vm is not None and vm['state'] != 'retired':
+                    raise Denied('vm-retirement-unconfirmed')
                 epoch, context, pending = self.recovery_context(actor)
                 # A replacement cannot complete an interrupted computation
                 # even when the premise itself did not change.
@@ -224,7 +266,11 @@ class ManagedFixture:
 
     def close(self):
         self.ready = False
-        self.launcher.close()
+        try:
+            if self.vm_gate is not None:
+                self.vm_gate.close()
+        finally:
+            self.launcher.close()
 
 
 def supported():
