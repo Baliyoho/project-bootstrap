@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-08 09:30（+08；中途安全點，未交棒）
-- **交棒者**：Codex CLI ／ `baliyohodeMini`（監護回收與單程序隔離邊界；本 session 持續工作中）
+- **交接時間**：2026-11-08 09:59（+08）
+- **交棒者**：Codex CLI ／ `baliyohodeMini`（監護回收與單程序隔離邊界；使用者授權依上下文餘量評估後交棒）
 
 ## 任務目標
 
@@ -11,8 +11,8 @@
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
-- **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立；前次實作安全點 `f0e11cc`，本次安全點見 Git HEAD）；main 尚未合入 v2，勿重新從 main 開始。
-- **工作中**：`baliyohodeMini` ／ `Codex CLI` ／ `㊣　26110721｜續作程序控制｜工作中｜交棒0次`，2026-11-07 21:44 (+08) 開工
+- **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立；已驗證實作安全點 `8649477`）；main 尚未合入 v2，勿重新從 main 開始。
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
 - 本機能力：macOS、Python 3.15.2、bash 3.2；未驗 Windows／Linux。未改 main、部署包、skill、hook、接線或 VERSION。
 
@@ -24,7 +24,7 @@
 - POSIX materializer：prepared→暫存／fsync→replace→applied，保留 mode、拒絕路徑／連結／別名／外部衝突；root／映射持久綁定，恢復重查資源資格及目錄 fsync。四個真子程序中斷點與交易失敗可重跑。
 - `496e489`：launcher 資格層由 parent 產生 principal、私有票據重連、限期資源資格／撤銷；parent outbox 送出前保存原始 bytes，缺漏／不一致停止。兩個真子程序終止點與遺失回應恢復不重做合成效果，新增 14 個測試。
 - `f0e11cc`：固定啟動計畫與持久程序狀態；舊直接 child wait 退場後才發新管道，未解 parent 重啟拒絕替換。POSIX 票據庫拒絕權限／連結／FIFO 異常；Mac 管道已接入，閒置資格失效會結束 transport。新增 14 個測試，含移除停止檢查後兩 child 同時存活的負向對照。
-- 本次：新增可信 guardian，parent 生命管道 EOF 後回收直接 worker，私有回收證據到達才記 stopped；Mac fixture 禁 fork／spawn／signal。新增 9 個測試，含真 parent SIGKILL、移除監護／OS 防護、監護被殺、未隔離後代存活、FD 與無關程序保護。
+- `8649477`：新增可信 guardian，parent 生命管道 EOF 後回收直接 worker，私有回收證據到達才記 stopped；Mac fixture 禁 fork／spawn／signal。新增 9 個測試，含真 parent SIGKILL、移除監護／OS 防護、監護被殺、未隔離後代存活、FD 與無關程序保護。
 - 原一鍵入口包含 P0 回歸，JSON 可重跑且附輸入 digest／環境／時間。三個原始繞過反例照留，strict_ready 仍為 false。
 
 ## 未完成／下一步
@@ -49,11 +49,11 @@
 
 ## 服務查證與期望快照
 
-- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項全過、無 skip；內含 94 個 v2 測試（2026-11-08）。中途安全點最終 stage 後仍用此入口驗證；本機 HTTP／隔離探針經允許於沙箱外執行。
+- 本輪 `python3 -X utf8 tools/verify_bootstrap.py`：exit 0，52 項全過、無 skip；內含 94 個 v2 測試（2026-11-08）。交棒最終 stage 後仍用此入口驗證；本機 HTTP／隔離探針經允許於沙箱外執行。
 - 本輪 `python3 -X utf8 tools/verify_v2.py --require-ready --json`：實測 exit 2（2026-11-08）；harness_passed=true、strict_ready=false、94 測試無失敗／skip，Mac 管道 11 次請求成功。一般 sandbox 拒絕 loopback 時經允許重跑，不把環境錯誤當預期 exit 2。
 - JSON 為暫存證據，不假設下一棒可取得；以相同命令重跑，需量完整舊驗證器再加 `--baseline`。F50 本次真正改名成功，但工具回傳將全形空格正規化為半形，格式差異已揭露。
 - 無 verify_state.py／check_docs.py，依 AGENTS 用替代入口；接線未改，信任重審不適用。未呼叫額外模型、未安裝候選、未部署其他專案。
 
 ## 懸置事項（AI 勿自行處理）
 
-- 無需再確認是否做 v2；本次是 C 模式安全點，保留本 session owner，未交棒、未宣稱 P0／v2 已完成。
+- 無需再確認是否做 v2；本次交棒為上下文管理，不取消既有實作授權、不宣稱 P0／v2 已完成。下一棒按第一項直接續作。
