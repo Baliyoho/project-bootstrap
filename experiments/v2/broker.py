@@ -15,6 +15,8 @@ from experiments.v2.contracts import Denied
 
 
 MAX_REQUEST_BYTES = 8192
+EFFECT_KINDS = frozenset(('delete', 'rewrite-history', 'force-push', 'batch-data',
+                         'schema', 'move-credential', 'extra-model', 'paid-api', 'cloud-resource'))
 
 
 @dataclass(eq=False)
@@ -160,8 +162,7 @@ class Broker:
             content = request['text'].encode('utf-8')
             event = self.lab.write(channel.capability, resource, base, content, epoch=request['epoch'])
             return {'event': event, 'digest': hashlib.sha256(content).hexdigest()}
-        if request['kind'] not in ('delete', 'rewrite-history', 'force-push', 'batch-data',
-                'schema', 'move-credential', 'extra-model', 'paid-api', 'cloud-resource'):
+        if not isinstance(request['kind'], str) or request['kind'] not in EFFECT_KINDS:
             raise Denied('unknown-action')
         self.lab.effect(channel.capability, request['kind'], resource, epoch=request['epoch'])
         return {'effect': 'synthetic-record-only'}

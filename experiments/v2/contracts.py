@@ -58,6 +58,12 @@ class Lab:
             CREATE TABLE IF NOT EXISTS write_epochs (event TEXT PRIMARY KEY, epoch INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS grant_deadlines (
                 grant_id TEXT PRIMARY KEY, issued REAL NOT NULL, expires REAL NOT NULL);
+            CREATE TABLE IF NOT EXISTS signed_effect_policy (
+                singleton INTEGER PRIMARY KEY CHECK(singleton=1), audience TEXT NOT NULL,
+                signer_digest TEXT NOT NULL, verifier_digest TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS signed_effect_approvals (
+                id TEXT PRIMARY KEY, document BLOB NOT NULL, signature BLOB NOT NULL,
+                grant_id TEXT NOT NULL UNIQUE, epoch INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS authority_time (
                 singleton INTEGER PRIMARY KEY CHECK(singleton=1), latest REAL NOT NULL);
         ''')
@@ -265,9 +271,13 @@ class Lab:
                 self.require_epoch(epoch)
             now = self.authority_now()
             grant = self.db.execute('SELECT g.* FROM grants g LEFT JOIN grant_deadlines d '
-                'ON d.grant_id=g.id WHERE actor=? AND kind=? '
+                'ON d.grant_id=g.id LEFT JOIN signed_effect_approvals a ON a.grant_id=g.id '
+                'LEFT JOIN signed_effect_policy p ON p.singleton=1 CROSS JOIN state s '
+                'WHERE actor=? AND kind=? '
                 'AND resource=? AND revoked=0 AND remaining>0 '
-                'AND (d.grant_id IS NULL OR (d.issued<=? AND ?<d.expires)) ORDER BY id LIMIT 1',
+                'AND ((p.singleton IS NULL AND a.grant_id IS NULL) '
+                'OR (p.singleton=1 AND s.pending IS NULL AND a.epoch=s.epoch)) '
+                'AND (d.grant_id IS NULL OR (d.issued<=? AND ?<d.expires)) ORDER BY g.id LIMIT 1',
                 (actor, kind, resource, now, now)).fetchone()
             if grant is None:
                 raise Denied('not-authorized')

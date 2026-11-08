@@ -122,13 +122,18 @@ class LaunchAuthority:
 
     def grant(self, ticket, kind, resource, uses, source, expires_at):
         with self.broker.lock, self.lab.transaction():
+            if self.lab.db.execute('SELECT 1 FROM signed_effect_policy').fetchone():
+                raise Denied('signed-effect-approval-required')
             permit = self.permit(self.ticket_hash(ticket))
-            if resource not in json.loads(permit['resources']):
-                raise Denied('resource-not-authorized')
-            if (type(expires_at) not in (int, float) or not math.isfinite(expires_at)
-                    or expires_at > permit['expires']):
-                raise Denied('invalid-grant-deadline')
-            return self.lab.grant(permit['actor'], kind, resource, uses, source, expires_at)
+            return self._grant(permit, kind, resource, uses, source, expires_at)
+
+    def _grant(self, permit, kind, resource, uses, source, expires_at):
+        if resource not in json.loads(permit['resources']):
+            raise Denied('resource-not-authorized')
+        if (type(expires_at) not in (int, float) or not math.isfinite(expires_at)
+                or expires_at > permit['expires']):
+            raise Denied('invalid-grant-deadline')
+        return self.lab.grant(permit['actor'], kind, resource, uses, source, expires_at)
 
 
 class RequestJournal:

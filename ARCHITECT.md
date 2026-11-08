@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 最後更新：2026-11-08。新增 `experiments/v2/approvals.py`，以固定公開金鑰與驗證器驗收合成動作簽核。私有資料庫同一交易保存簽核文件、簽章與限期授權；broker 在當前前提下才可消耗。簽署測試用一次性金鑰；真人身分、金鑰治理及真實動作未接入。範圍見 [P0 說明](experiments/v2/README.md)。
+
 > 最後更新：2026-11-08。新增 `experiments/v2/managed_fixture.py`，由可信父程序經固定啟動計畫與 guardian 連接單一 macOS 合成 worker。前提切換先封住舊 epoch，再回收並替換 worker，核對新前提摘要才啟用。合成結果由父程序 outbox 送往 broker／materializer。一鍵入口獨立呈現此探針，範圍與失敗案例見 [P0 說明](experiments/v2/README.md)。
 
 > `experiments/v2/lifecycle.py` 經 `guardian.py` 啟動受管 worker。父程序獨占生命管道寫端，監護在 EOF 後以持有的 Popen 終止並 wait；它把回收證據寫到本次啟動專用的私有檔案。新父程序經 `reconcile` 核對原票據、計畫與檔案身分後可續作，`managed_fixture.py` 從初始前提或持久通知重建上下文。缺證據仍停止。Mac fixture 禁止 fork／spawn／signal；任意後代、Windows、真實人類入口未驗收。

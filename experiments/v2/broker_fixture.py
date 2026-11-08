@@ -189,7 +189,7 @@ def launch_agent(broker, channel, command, scratch, process=None, check=None, st
         process.stdout.close()
 
 
-def probe_broker():
+def probe_broker(grant_effect=None):
     if platform.system() != 'Darwin' or not Path('/usr/bin/sandbox-exec').is_file():
         return {'result': '未驗證', 'reason': '本管道／OS 整合探針限 macOS；其他 OS 尚無 adapter'}
     with tempfile.TemporaryDirectory(prefix='bootstrap-v2-broker-') as directory:
@@ -212,7 +212,10 @@ def probe_broker():
             handle = ticket_vault.save(ticket)
             launcher = ProcessLauncher(authority, ticket_vault)
             authority.connect(authority.issue(('note-b',), 'synthetic-parent-approval', expires))
-            authority.grant(ticket, 'paid-api', 'budget', 1, 'synthetic-human-authorization', expires)
+            if grant_effect is None:
+                authority.grant(ticket, 'paid-api', 'budget', 1, 'synthetic-human-authorization', expires)
+            else:
+                grant_effect(authority, ticket)
             plan = sandbox_plan(repo, scratch, AGENT, vault, repo, scratch, sibling)
             command = plan.argv
             try:

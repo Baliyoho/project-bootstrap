@@ -552,10 +552,14 @@
         {
           "path": "experiments/v2/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
+        },
+        {
+          "path": "experiments/v2/test_approvals.py",
+          "scope": "合成刪除以固定公開金鑰驗分離簽章；竄改、異簽署者、錯範圍、舊 epoch、重播與缺收據不授權"
         }
       ],
-      "unknown": "parent 限期授權、監護回收及 Mac 禁 fork／signal 可驗；source 仍是合成標籤，人類授權、票據更新、任意後代與全 surface 隔離未完成",
-      "next": "處理人類授權、票據更新／過期後續作及未解執行恢復；接合 outbox／生命週期／supervisor，外部動作冪等另驗"
+      "unknown": "已驗合成動作簽核、票據續期與有證據時的重啟；票據續期仍由合成父程序授權，真人核准、任意後代及真實動作未驗收",
+      "next": "接可信人類核准及簽署金鑰治理，再驗各真實破壞性入口與外部冪等"
     },
     {
       "id": "F43",
@@ -672,10 +676,14 @@
         {
           "path": "experiments/v2/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
+        },
+        {
+          "path": "experiments/v2/test_approvals.py",
+          "scope": "合成額度簽核綁種類、資源、期限、epoch、次數與額度來源；Mac 隔離 agent 消耗一次合成 paid-api，無付費或模型呼叫"
         }
       ],
-      "unknown": "parent 限期授權、監護回收及 Mac 禁 fork／signal 可驗；source 仍是合成標籤，人類授權、票據更新、任意後代與全 surface 隔離未完成",
-      "next": "處理人類授權、票據更新／過期後續作及未解執行恢復；接合 outbox／生命週期／supervisor，外部動作冪等另驗"
+      "unknown": "簽章以一次性合成金鑰驗證；真實人類同意、額度來源查證、真實服務阻擋與外部效果去重未驗收",
+      "next": "先建立可信人類簽核與額度查證，再接真實限制入口；額外模型仍須使用者授權且只用訂閱"
     },
     {
       "id": "F49",
