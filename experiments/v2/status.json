@@ -690,8 +690,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "tools/verify_v2.py",
+          "scope": "一鍵重取時間、OS／Python、repo 輸入與所列執行檔 digest；不可用元件明示未驗證"
+        },
+        {
+          "path": "experiments/v2/test_lifecycle.py",
+          "scope": "真 guardian 啟動後修改腳本內容，原計畫不能用於替換或重啟續接"
+        }
+      ],
+      "unknown": "完整依賴／授權清單、環境搬遷及跨工具證據尚未驗收",
       "next": "換機能重建或重新取得；聊天暫存檔不可當唯一證據"
     },
     {

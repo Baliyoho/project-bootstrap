@@ -23,6 +23,9 @@ from experiments.v2.launcher import LaunchAuthority
 from experiments.v2.lifecycle import LaunchPlan, ProcessLauncher, TicketVault
 
 
+SANDBOX_EXEC = Path('/usr/bin/sandbox-exec')
+
+
 PROFILE = '''(version 1)
 (allow default)
 (deny file-read*)
@@ -113,7 +116,7 @@ def sandbox_plan(repo, scratch, program, *args):
         ancestor_rules.append('(literal (param "' + key + '"))')
     profile = PROFILE + '\n(allow file-read* ' + ' '.join(ancestor_rules) + ')\n'
     handshake = "import sys; print('bootstrap-v2-ready', flush=True); assert sys.stdin.readline() == 'bootstrap-v2-go\\n'\n"
-    command = ['/usr/bin/sandbox-exec', '-D', 'REPO=' + str(repo),
+    command = [str(SANDBOX_EXEC), '-D', 'REPO=' + str(repo),
         '-D', 'SCRATCH=' + str(scratch), '-D', 'PYTHON_RUNTIME=' + str(runtime),
         '-D', 'PYTHON_EXECUTABLE=' + str(Path(sys.executable).resolve())] + ancestor_params + [
         '-p', profile, sys.executable, '-B', '-u', '-c', handshake + program, *map(str, args)]
@@ -190,7 +193,7 @@ def launch_agent(broker, channel, command, scratch, process=None, check=None, st
 
 
 def probe_broker(grant_effect=None):
-    if platform.system() != 'Darwin' or not Path('/usr/bin/sandbox-exec').is_file():
+    if platform.system() != 'Darwin' or not SANDBOX_EXEC.is_file():
         return {'result': '未驗證', 'reason': '本管道／OS 整合探針限 macOS；其他 OS 尚無 adapter'}
     with tempfile.TemporaryDirectory(prefix='bootstrap-v2-broker-') as directory:
         root = Path(directory).resolve()

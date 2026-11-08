@@ -11,7 +11,7 @@ import threading
 import time
 
 from experiments.v2.broker import Broker
-from experiments.v2.broker_fixture import sandbox_plan
+from experiments.v2.broker_fixture import SANDBOX_EXEC, sandbox_plan
 from experiments.v2.contracts import Denied, Lab
 from experiments.v2.launcher import LaunchAuthority, RequestJournal
 from experiments.v2.lifecycle import ProcessLauncher, TicketVault
@@ -228,7 +228,7 @@ class ManagedFixture:
 
 
 def supported():
-    return platform.system() == 'Darwin' and Path('/usr/bin/sandbox-exec').is_file()
+    return platform.system() == 'Darwin' and SANDBOX_EXEC.is_file()
 
 
 @contextmanager

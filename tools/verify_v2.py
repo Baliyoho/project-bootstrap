@@ -7,6 +7,7 @@ No model, paid service, installation, live project or remote mutation is used.
 """
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -17,13 +18,27 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from experiments.v2.approvals import VERIFIER as SIGNATURE_VERIFIER
 from experiments.v2.baseline import measure
-from experiments.v2.broker_fixture import probe_broker
+from experiments.v2.broker_fixture import SANDBOX_EXEC, probe_broker
 from experiments.v2.feasibility import run_probes
 from experiments.v2.isolation import probe_isolation
+from experiments.v2.lifecycle import guardian_inputs
 from experiments.v2.managed_fixture import probe_managed
 from experiments.v2.registry import validate
 from experiments.v2.supervisor import run_supervisor_probe
+
+
+def runtime_artifacts():
+    interpreter, guardian = guardian_inputs()
+    result = {}
+    for name, path in (('python-executable', interpreter), ('guardian-script', guardian),
+                       ('sandbox-exec', SANDBOX_EXEC), ('ssh-keygen', SIGNATURE_VERIFIER)):
+        try:
+            result[name] = {'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+        except OSError:
+            result[name] = {'result': '未驗證', 'reason': '無法讀取本機檔案'}
+    return result
 
 
 def main():
@@ -32,6 +47,7 @@ def main():
     parser.add_argument('--require-ready', action='store_true', help='reject incomplete strict-mode gates')
     parser.add_argument('--json', action='store_true', help='print reproducible structured evidence')
     args = parser.parse_args()
+    artifacts = runtime_artifacts()
     data = json.loads((ROOT / 'experiments/v2/status.json').read_text(encoding='utf-8'))
     errors = validate(data, (ROOT / 'project-bootstrap-requirements-decision.md').read_text(encoding='utf-8'), ROOT)
     stream = io.StringIO()
@@ -57,6 +73,7 @@ def main():
             'failed': len(result.failures), 'errors': len(result.errors), 'skipped': len(result.skipped)},
         'findings': findings, 'isolation_probe': isolation, 'supervisor_probe': supervisor,
         'broker_probe': broker, 'managed_probe': managed, 'baseline': baseline,
+        'runtime_artifacts': artifacts,
         'unverified': ['Windows/Linux', '真實工具與可信 session 隔離', '即時推送與模型上下文重建',
                        'Gitleaks/簽章/正式發布', '候選套件鎖定及授權清單', '20 專案容量']}
     if args.json:

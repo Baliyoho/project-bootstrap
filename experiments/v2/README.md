@@ -18,9 +18,9 @@ python3 -X utf8 tools/verify_bootstrap.py
 
 一般入口 exit 0 只表示契約測試與預期反例成功重現。`--require-ready` 在這個 P0 階段必須 exit 2：完整歸因、正在執行線的使用前通知、不可繞過入口仍未達標。測試／索引本身失敗則 exit 1，不能用它冒充「預期尚未就緒」。既有一鍵入口會執行 P0 回歸，但其綠燈也不表示全部需求通過。
 
-`--baseline` 額外量一次完整舊驗證器的等待；JSON 包含 UTC 取得時間、OS／Python、候選內容 digest、各常態入口的字元與 hash。完整接棒含 Git、閱讀、判斷等時間，這裡沒有量到，不以驗證器時間代替。字元也不等於 token。報告可輸出到 gitignored `dist/`；下一棒可用相同命令重新取得，不能依賴聊天附件。
+`--baseline` 額外量一次完整舊驗證器的等待；JSON 包含 UTC 取得時間、OS／Python、候選內容 digest、各常態入口的字元與 hash，及本次 Python executable、guardian、sandbox-exec、ssh-keygen 的檔案 SHA-256。讀不到的元件明示未驗證。完整接棒含 Git、閱讀、判斷等時間，這裡沒有量到；字元也不等於 token。報告可輸出到 gitignored `dist/`；下一棒可用相同命令重新取得。
 
-只使用 Python 標準庫與本機 Git，沒有安裝候選套件；外部套件版本／LICENSE／digest 鎖定仍在 P0 待辦。這是先驗架構契約的選擇，不代表放棄規劃的 pytest、JSON Schema、Gitleaks 或 sandbox-runtime。原型不宣稱 Python 下限或三 OS 驗收；現有部署工具的 Python 3.8 宣告沒有改動。
+使用 Python 標準庫、本機 Git、macOS sandbox-exec 與 OpenSSH 簽章驗證器，沒有安裝候選套件。外部候選與完整 runtime 的版本／LICENSE／digest 清單仍在 P0 待辦。原型尚未驗 Python 下限或三 OS，現有部署工具的 Python 3.8 宣告沒有改動。
 
 ## 三個門檻與可失敗輸入
 
@@ -70,7 +70,7 @@ RequestJournal 在可信 parent 的私有庫保存完整原始 bytes 與連續�
 
 ## 固定啟動與監護退場（2026-11-08）
 
-`lifecycle.py` 的 ProcessLauncher 只接受可信 parent 提供的 LaunchPlan，不提供 agent 的任意命令 RPC。第一次啟動綁定 argv、入口 executable 的內容 digest 與 cwd 的實際位置／device／inode；替代啟動若改計畫會拒絕，不把原票據外推成另一個命令的授權。被入口讀入的其他腳本、import、設定與整個 runtime 尚未做完整 manifest 鎖定，仍須由可信 parent 保護。
+`lifecycle.py` 的 ProcessLauncher 只接受可信 parent 提供的 LaunchPlan，不提供 agent 的任意命令 RPC。第一次啟動綁定 argv、入口 executable、guardian 所用 Python executable 和 guardian 腳本的 digest，以及 cwd 的實際位置／device／inode；任何一項變動都拒絕替換或重啟續接。其他腳本、import、動態函式庫與設定仍須由可信 parent 保護。舊 fixture 若缺新計畫指紋會拒絕重啟，沒有自動遷移。
 
 啟動先持久記 `starting`，新 worker 回固定 READY 後再重查資格、輪替 channel、記 `running` 並送 GO；合成 agent 在 GO 前不送請求。`guardian.py` 是可信 parent 啟動的獨立監護程序，持有 worker 的 Popen。parent 獨占生命管道寫端，關閉或被終止造成 EOF；監護程序收到後 TERM／必要時 KILL 並 wait worker，再把回收紀錄寫入這次啟動專用的私有檔案並 fsync。生命管道與紀錄 FD 均不傳給 worker，監護不拿票據或資料庫管理能力。替換先關舊 channel，再關生命管道，確認監護結束及回收紀錄後才記 `stopped`。只看監護程序結束會把監護被殺、worker 仍存活誤判為成功。
 

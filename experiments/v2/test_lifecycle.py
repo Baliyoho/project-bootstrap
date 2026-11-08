@@ -15,6 +15,7 @@ from experiments.v2.broker import Broker
 from experiments.v2.broker_fixture import launch_agent
 from experiments.v2.contracts import Denied, Lab
 from experiments.v2.launcher import LaunchAuthority, RequestJournal
+from experiments.v2 import lifecycle
 from experiments.v2.lifecycle import LaunchPlan, ProcessLauncher, TicketVault
 
 
@@ -335,6 +336,20 @@ sys.stdin.read()
         finally:
             current.rename(previous)
             held.rename(current)
+
+    def test_guardian_bytes_change_blocks_replacement_and_reconciliation(self):
+        entry = self.root / 'test-guardian.py'
+        entry.write_bytes(lifecycle.GUARDIAN_ENTRY.read_bytes())
+        with patch.object(lifecycle, 'GUARDIAN_ENTRY', entry):
+            old = self.launcher.start(self.handle, self.plan)
+            entry.write_bytes(entry.read_bytes() + b'\n# synthetic drift\n')
+            with patch('subprocess.Popen') as spawn:
+                with self.assertRaisesRegex(Denied, 'launch-plan-changed'):
+                    self.launcher.start(self.handle, self.plan)
+                with self.assertRaisesRegex(Denied, 'launch-plan-changed'):
+                    self.launcher.reconcile(self.handle, self.plan)
+                spawn.assert_not_called()
+            self.assertTrue(old.reaped)
 
     def test_renewal_keeps_principal_and_scope_and_revokes_old_ticket(self):
         old = self.launcher.start(self.handle, self.plan)

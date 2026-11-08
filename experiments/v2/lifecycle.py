@@ -21,6 +21,13 @@ import time
 from experiments.v2.contracts import Denied
 
 
+GUARDIAN_ENTRY = Path(__file__).with_name('guardian.py').resolve()
+
+
+def guardian_inputs():
+    return Path(sys.executable), GUARDIAN_ENTRY
+
+
 class TicketVault:
     """Existing parent-owned 0700 directory, exclusive 0600 private files.
 
@@ -146,15 +153,19 @@ class LaunchPlan:
                 or any(not isinstance(arg, str) or '\x00' in arg for arg in self.argv)
                 or not Path(self.argv[0]).is_absolute() or not Path(self.cwd).is_absolute()):
             raise Denied('invalid-launch-plan')
-        executable = Path(self.argv[0]).resolve(strict=True)
         cwd = Path(self.cwd).resolve(strict=True)
         info = cwd.stat()
-        if not cwd.is_dir() or not executable.is_file():
+        if not cwd.is_dir():
             raise Denied('invalid-launch-plan')
-        # Bind fixed argv, executable bytes, and cwd identity. The parent must
-        # separately protect scripts/imports/config read by that executable.
-        payload = [self.argv, str(executable), hashlib.sha256(executable.read_bytes()).hexdigest(),
-                   str(cwd), info.st_dev, info.st_ino]
+        # The wrapper is not the entire launch path: guardian Python and the
+        # guardian script can also change what is actually run.
+        inputs = []
+        for entry in (Path(self.argv[0]), *guardian_inputs()):
+            resolved = entry.resolve(strict=True)
+            if not resolved.is_file():
+                raise Denied('invalid-launch-plan')
+            inputs.append((str(resolved), hashlib.sha256(resolved.read_bytes()).hexdigest()))
+        payload = [self.argv, inputs, str(cwd), info.st_dev, info.st_ino]
         return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
@@ -334,7 +345,7 @@ class ProcessLauncher:
                 try:
                     watch, lifetime = os.pipe()
                     descriptors.extend((watch, lifetime))
-                    command = (sys.executable, '-B', '-I', str(Path(__file__).with_name('guardian.py').resolve()),
+                    command = (sys.executable, '-B', '-I', str(GUARDIAN_ENTRY),
                                str(watch), str(report), str(self.timeout), str(deadline), json.dumps(plan.argv))
                     process = subprocess.Popen(command, cwd=plan.cwd, stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, close_fds=True,
