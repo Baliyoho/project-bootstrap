@@ -82,6 +82,8 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 `test_lifecycle.py` 除既有啟停、資格、日誌與票據反例，另用真正被 SIGKILL 的 parent 測握手中／執行中的回收；固定 worker 全生命週期持有檔案鎖，以鎖釋放證明退場，沒有用 PID 消失推定。移除監護後重現孤兒仍持鎖；殺監護後 worker 仍持鎖且替換拒絕；控制 FD 不繼承、啟動失敗釋放 FD、未解狀態不對無關活程序送訊號也有測試。票據更新另驗舊票據失效、撤銷後拒絕、交易失敗及現行檔案遺失。未隔離 worker 產生後代的反例會在直接 worker 已 stopped 後繼續持鎖。`test_broker_fixture.py` 移除 fork／signal 防護各會使探針失敗。沿用單一 parent writer 前提；任意後代、監護被殺、票據遺失後重新驗身分、Windows 與真正人類授權未完成。
 
+2026-11-08 程序樹候選探針：`tree_probe.py` 在本機合成程序群組中，對仍持有的群組送 TERM，一般後代的檔案鎖會釋放；後代若呼叫 `setsid` 建立新 session，群組 leader 已退場，後代仍持鎖。`test_tree_probe.py` 驗正反例，移除脫離行為時反例檢查會失敗。這說明程序群組不能作為任意後代的退場證明；探針沒有接入可信 launcher，也不能用群組 ID 做重啟認領。依 [Apple setpgid](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/setpgid.2.html)／[killpg](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/killpg.2.html) 文件，群組只能對仍屬於該群組的程序送訊號。[Windows Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects) 具備關閉最後 handle 時終止關聯程序的候選機制，但 breakaway 設定、建立時加入與實際退場證據須在 Windows 另驗。Mac 的多程序及 guardian 被殺仍維持阻擋；尚未選定真實 surface。
+
 2026-11-08：`managed_fixture.py` 將 supervisor 的固定 worker 協定、guardian 和父程序 outbox 接到同一個 macOS 合成執行面。一鍵入口的 `managed_probe` 先在 epoch 0 留下一筆未送出的結果與一件執行中的工作，再寫入通知並封住 epoch 0。舊 worker 確認退場後，替代 worker 沿用固定啟動計畫，從管道讀取新前提並回報摘要；確認與啟用在同一交易完成。重送舊請求保留原始 bytes 並被拒，只有 epoch 1 的新結果寫到合成工作樹。`test_managed_fixture.py` 另驗停止未確認、載入舊前提、離線收件者與回應遺失。
 
 同一 fixture 的 `resume` 在持久退場證據通過後，從持久初始前提或同一 principal 的通知重建上下文。若切換尚未提交，仍用原 pending epoch 與通知完成切換；若前提已生效，恢復該 epoch 並作廢中斷的計算，已保存的請求仍按原 bytes 送出。測試用真正的 SIGKILL 在初始／新 epoch 執行中、切換後舊 worker 尚未停、替代 worker 已載入但啟用交易尚未提交四處中止。只有既有資料庫、計畫、票據與原目錄的回收紀錄都可核對時才恢復；多程序工具、跨機推送、裝置遺失與真實 surface 另驗。
@@ -108,7 +110,7 @@ HANDOFF 保留 writer、目前行動與此索引的指標；若索引不可讀�
 
 ## 接下來的架構工作
 
-1. 管道分權、POSIX 套用、限期資格、請求保存、監護回收與 Mac 禁 fork 已有合成證據；下一批處理人類授權、票據更新／過期後續作及未解執行的明確恢復。將 outbox、生命週期與 supervisor 接成同一執行面；多程序工具需獨立 OS 容器／程序樹方案，不以單程序 fixture 外推。
+1. 管道分權、POSIX 套用、限期資格、請求保存、監護回收、Mac 禁 fork 及單 worker 的 outbox／前提切換已有合成證據。程序群組候選無法阻止 `setsid` 逃逸；多程序工具需另找 OS 隔離及可重啟核對的整樹退場證據。真人授權、票據遺失後重新驗身分及監護失效的恢復仍待做。
 2. 將合成 supervisor 的停止／排空／重建上下文協定接到實際可控執行介面；不能把程式裡 application=True 當作模型已理解，也不能把 outbox 當即時通知。真實模型探針仍需另行明確授權。
 3. 再鎖定需實際採用的外部元件、驗 Windows／Mac 門檻。未通過前不開始全面搬來源、改現行 A4 或部署專案。
 4. 接棒成本已能逐次量測；短入口及證據失效機制需配套驗收後才切換。常態必讀超額照實報不通過，不藉此省略檢查。

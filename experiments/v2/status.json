@@ -132,10 +132,14 @@
         {
           "path": "experiments/v2/test_managed_fixture.py",
           "scope": "macOS 單 worker：父程序 SIGKILL 後依持久前提與回收證據重建，作廢未完成計算並重送原始請求；過期要先明確續期"
+        },
+        {
+          "path": "experiments/v2/tree_probe.py",
+          "scope": "POSIX 程序群組候選：一般後代退場、setsid 脫離後仍持鎖；證明此候選不足以涵蓋任意後代"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
-      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；續補多程序工具隔離、未解執行恢復及其他 OS，不外推完整歸因",
+      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；程序群組候選被 setsid 反例否決，續找多程序 OS 隔離、未解執行恢復及其他 OS，不外推完整歸因",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -170,6 +174,10 @@
             {
               "path": "experiments/v2/test_lifecycle.py",
               "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
+            },
+            {
+              "path": "experiments/v2/test_tree_probe.py",
+              "scope": "程序群組對一般後代有效但 setsid 可脫離；移除逃逸後負向測試失敗，不能作任意後代完整歸因保證"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -405,10 +413,14 @@
         {
           "path": "experiments/v2/test_managed_fixture.py",
           "scope": "macOS 單 worker 實測：封住舊 epoch、guardian 回收、確認新前提再啟用；父程序重啟恢復同一通知與 outbox；錯誤摘要、退場未確認與未確認收件者不放行"
+        },
+        {
+          "path": "experiments/v2/tree_probe.py",
+          "scope": "程序群組停止一般後代但 setsid 脫離仍存活；多程序切換不能憑 leader 退場放行"
         }
       ],
       "unknown": "原始不受控介面仍不通過；已驗 macOS 單程序切換與回收證據齊備時的恢復，監護失效、任意後代、真實工具及跨機即時推送未驗收",
-      "next": "補監護失效與失聯的證據路徑，再接真實可控執行介面及跨機故障；模型探針需先授權"
+      "next": "補監護失效與失聯的證據路徑；程序群組不能證明任意後代退場，再接真實可控執行介面及跨機故障；模型探針需先授權"
     },
     {
       "id": "F29",
@@ -646,6 +658,10 @@
         {
           "path": "experiments/v2/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
+        },
+        {
+          "path": "experiments/v2/test_tree_probe.py",
+          "scope": "POSIX 程序群組候選的正反例與失效變異；不是 Windows Job Object 或真實工具驗收"
         }
       ],
       "unknown": "Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收",

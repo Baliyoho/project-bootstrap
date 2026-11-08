@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 最後更新：2026-11-08。新增 `experiments/v2/tree_probe.py` 與 `test_tree_probe.py`，只在合成 POSIX 程序群組比較一般後代與脫離 session 的後代，透過檔案鎖觀察退場。一鍵入口列出這個候選反例；它不接入 `lifecycle.py`，也不提供任意程序樹保證。詳見 [P0 說明](experiments/v2/README.md)。
+
 > 最後更新：2026-11-08。新增 `experiments/v2/approvals.py`，以固定公開金鑰與驗證器驗收合成動作簽核。私有資料庫同一交易保存簽核文件、簽章與限期授權；broker 在當前前提下才可消耗。簽署測試用一次性金鑰；真人身分、金鑰治理及真實動作未接入。範圍見 [P0 說明](experiments/v2/README.md)。
 
 > 最後更新：2026-11-08。新增 `experiments/v2/managed_fixture.py`，由可信父程序經固定啟動計畫與 guardian 連接單一 macOS 合成 worker。前提切換先封住舊 epoch，再回收並替換 worker，核對新前提摘要才啟用。合成結果由父程序 outbox 送往 broker／materializer。一鍵入口獨立呈現此探針，範圍與失敗案例見 [P0 說明](experiments/v2/README.md)。
