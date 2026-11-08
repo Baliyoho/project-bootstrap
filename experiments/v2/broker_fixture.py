@@ -28,6 +28,8 @@ PROFILE = '''(version 1)
 (deny file-read*)
 (deny file-write*)
 (deny network*)
+(deny process-fork)
+(deny signal)
 (allow file-read*
     (subpath "/System")
     (subpath "/usr")
@@ -42,7 +44,7 @@ PROFILE = '''(version 1)
 (allow file-write* (subpath (param "SCRATCH")))
 '''
 
-AGENT = '''import json, pathlib, sys
+AGENT = '''import json, os, pathlib, signal, subprocess, sys
 vault, repo, scratch, sibling = map(pathlib.Path, sys.argv[1:5])
 def blocked(operation):
     try:
@@ -50,6 +52,21 @@ def blocked(operation):
     except PermissionError:
         return
     raise AssertionError('direct access not blocked')
+# No forked worker can survive the guarded process. Cover both fork and the
+# subprocess fast path (which may use posix_spawn rather than fork).
+def attempt_fork():
+    pid = os.fork()
+    if pid == 0:
+        os._exit(0)
+    os.waitpid(pid, 0)
+blocked(attempt_fork)
+blocked(lambda: subprocess.run([sys.executable, '-c', 'pass'], check=True))
+def attempt_spawn():
+    pid = os.posix_spawn(sys.executable, [sys.executable, '-c', 'pass'], {})
+    os.waitpid(pid, 0)
+blocked(attempt_spawn)
+blocked(lambda: os.kill(os.getppid(), 0))
+blocked(lambda: os.kill(os.getppid(), signal.SIGTERM))
 blocked(lambda: (vault / 'private.sqlite').read_bytes())
 blocked(lambda: (vault / 'private.sqlite').write_bytes(b'overwrite'))
 blocked(lambda: (vault / 'private.sqlite').unlink())
@@ -85,7 +102,7 @@ assert second['code'] == 'ok'
 '''
 
 
-def launch_agent(broker, channel, command, scratch, process=None, check=None):
+def launch_agent(broker, channel, command, scratch, process=None, check=None, stop=None):
     """Bounded fixed-fixture transport; the parent chooses the channel object."""
     if process is None:
         process = subprocess.Popen(command, cwd=scratch, stdin=subprocess.PIPE,
@@ -143,9 +160,12 @@ def launch_agent(broker, channel, command, scratch, process=None, check=None):
     finally:
         broker.detach(channel)
         stopping.set()
-        if process.poll() is None:
-            process.kill()
-        process.wait(timeout=5)
+        if stop is not None:
+            stop()
+        else:
+            if process.poll() is None:
+                process.kill()
+            process.wait(timeout=5)
         thread.join(timeout=2)
         process.stdin.close()
         process.stdout.close()
@@ -206,7 +226,8 @@ def probe_broker():
                 with lab.transaction():
                     channel.authorize(channel)
             transport = launch_agent(broker, channel, command, scratch,
-                                     process=child.process, check=check_authority)
+                                     process=child.process, check=check_authority,
+                                     stop=lambda: launcher.stop(actor))
             launcher.close()
             events = list(lab.db.execute('SELECT actor, before, after FROM writes ORDER BY seq'))
             effects = list(lab.db.execute('SELECT actor, kind, resource FROM effects'))
@@ -230,8 +251,8 @@ def probe_broker():
             }
             return {'result': '通過' if all(checks.values()) else '不通過', 'checks': checks,
                 'transport': transport,
-                'scope': 'parent 限期資格＋固定啟動／退場＋私有票據＋受隔離合成 agent；代理套用 POSIX 合成工作樹',
-                'unknown': '非正式人類服務／真實工具；未驗後代或孤兒回收、Windows、逃逸、斷電、多 writer、跨機'}
+                'scope': 'parent 限期資格＋監護退場／回收證據＋私有票據＋Mac 禁 fork／spawn／signal 合成 agent；代理套用 POSIX 合成工作樹',
+                'unknown': '非正式人類服務／真實工具；guardian 被殺後回收、任意後代、Windows、逃逸、斷電、多 writer、跨機未驗收'}
         finally:
             if launcher is not None:
                 launcher.close()

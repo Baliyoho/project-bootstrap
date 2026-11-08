@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-11-07",
+  "updated": "2026-11-08",
   "authority": "全部 51 ID 與 F11／F13／F43 子項的持續實作狀態；需求仍以決策書為準",
   "transfer": {
     "from": "fdc0bbd:HANDOFF.md",
@@ -127,11 +127,11 @@
         },
         {
           "path": "experiments/v2/test_lifecycle.py",
-          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
+          "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
-      "next": "已補限期票據、固定計畫與直接 child 退場；續補後代／孤兒控制、實際工具與其他 OS，不把合成事件外推成完整歸因",
+      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；續補多程序工具隔離、未解執行恢復及其他 OS，不外推完整歸因",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -165,7 +165,7 @@
             },
             {
               "path": "experiments/v2/test_lifecycle.py",
-              "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
+              "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -197,10 +197,10 @@
         },
         {
           "path": "experiments/v2/test_lifecycle.py",
-          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
+          "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         }
       ],
-      "unknown": "outbox 恢復與直接 child 替換可重跑；parent 中斷後未解程序只阻擋不回收，真實交棒、模型理由及設備遺失未完整驗收",
+      "unknown": "outbox 恢復與 parent 被殺後監護回收可重跑；監護被殺後回收、parent 重啟未解狀態恢復、真實交棒／理由／設備遺失未完整驗收",
       "next": "正常交棒／程序被殺／裝置遺失三條分測，缺口不補造",
       "parts": {
         "normal": {
@@ -223,7 +223,7 @@
             },
             {
               "path": "experiments/v2/test_lifecycle.py",
-              "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
+              "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -539,11 +539,11 @@
         },
         {
           "path": "experiments/v2/test_lifecycle.py",
-          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
+          "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         }
       ],
-      "unknown": "parent 限期授權與直接 child 生命週期可驗；source 仍是合成標籤，人類授權、票據更新、後代／孤兒控制及全 surface 隔離未完成",
-      "next": "處理後代／parent 中斷控制、人類授權、票據更新與過期後續作；接合 outbox／生命週期／supervisor，外部動作冪等另驗"
+      "unknown": "parent 限期授權、監護回收及 Mac 禁 fork／signal 可驗；source 仍是合成標籤，人類授權、票據更新、任意後代與全 surface 隔離未完成",
+      "next": "處理人類授權、票據更新／過期後續作及未解執行恢復；接合 outbox／生命週期／supervisor，外部動作冪等另驗"
     },
     {
       "id": "F43",
@@ -629,10 +629,10 @@
         },
         {
           "path": "experiments/v2/test_lifecycle.py",
-          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
+          "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         }
       ],
-      "unknown": "Mac 合成管道已接固定啟動與票據庫；非真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收",
+      "unknown": "Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收",
       "next": "分工具／surface／版本報支援與缺口，缺攔截就不能顯示 strict ready"
     },
     {
@@ -659,11 +659,11 @@
         },
         {
           "path": "experiments/v2/test_lifecycle.py",
-          "scope": "固定啟動／直接 child 退場／未解重啟拒絕／POSIX 票據保管；含兩程序並存負向對照，非任意後代或孤兒回收保證"
+          "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         }
       ],
-      "unknown": "parent 限期授權與直接 child 生命週期可驗；source 仍是合成標籤，人類授權、票據更新、後代／孤兒控制及全 surface 隔離未完成",
-      "next": "處理後代／parent 中斷控制、人類授權、票據更新與過期後續作；接合 outbox／生命週期／supervisor，外部動作冪等另驗"
+      "unknown": "parent 限期授權、監護回收及 Mac 禁 fork／signal 可驗；source 仍是合成標籤，人類授權、票據更新、任意後代與全 surface 隔離未完成",
+      "next": "處理人類授權、票據更新／過期後續作及未解執行恢復；接合 outbox／生命週期／supervisor，外部動作冪等另驗"
     },
     {
       "id": "F49",

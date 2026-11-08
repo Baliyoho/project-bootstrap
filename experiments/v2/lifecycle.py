@@ -1,8 +1,9 @@
-"""P0 direct-child lifecycle and POSIX ticket custody, synthetic fixtures only.
+"""P0 guarded-worker lifecycle and POSIX ticket custody, synthetic fixtures only.
 
 Plans come from the trusted parent, never agent RPC. An unresolved persisted
 run blocks replacement; a PID is NOT authority to kill or adopt a process.
-This module does not contain arbitrary descendants or authenticate a human.
+The guardian handles parent EOF; arbitrary descendants require OS confinement.
+This module does not authenticate a human or recover a lost guardian.
 """
 from dataclasses import dataclass
 import hashlib
@@ -13,6 +14,7 @@ import queue
 import secrets
 import stat
 import subprocess
+import sys
 import threading
 
 from experiments.v2.contracts import Denied
@@ -112,6 +114,9 @@ class RunningChild:
     process: object
     channel: object
     reader: object
+    lifetime: int
+    report: int
+    reaped: bool = False
 
 
 class ProcessLauncher:
@@ -150,13 +155,20 @@ class ProcessLauncher:
                     self.state(actor, 'stopping')
                 except Exception as error:
                     journal_error = error
-                if child.process.poll() is None:
-                    child.process.terminate()
+                if child.lifetime is not None:
+                    os.close(child.lifetime)
+                    child.lifetime = None
+                # Do not kill a slow guardian: that could orphan its worker.
+                child.process.wait(timeout=self.timeout + 2)
+                if not child.reaped:
+                    proof = os.read(child.report, 128)
                     try:
-                        child.process.wait(timeout=self.timeout)
-                    except subprocess.TimeoutExpired:
-                        child.process.kill()
-                child.process.wait(timeout=self.timeout)
+                        code = int(proof.removeprefix(b'reaped:').strip())
+                    except ValueError:
+                        raise Denied('worker-reap-unconfirmed') from None
+                    if proof != ('reaped:%d\n' % code).encode('ascii'):
+                        raise Denied('worker-reap-unconfirmed')
+                    child.reaped = True
                 if child.reader is not None:
                     child.reader.join(timeout=self.timeout)
                     if child.reader.is_alive():
@@ -168,6 +180,7 @@ class ProcessLauncher:
                 if journal_error is not None:
                     raise journal_error
                 self.state(actor, 'stopped')
+                os.close(child.report)
                 del self.children[actor]
             except BaseException:
                 # Retain the local object and non-stopped durable state. Never
@@ -194,11 +207,26 @@ class ProcessLauncher:
                 self.lab.db.execute('INSERT OR REPLACE INTO managed_launches VALUES (?, ?, ?)',
                                     (actor, fingerprint, 'starting'))
             try:
-                process = subprocess.Popen(plan.argv, cwd=plan.cwd, stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, close_fds=True,
-                    env={'PATH': os.defpath, 'PYTHONDONTWRITEBYTECODE': '1'})
-                child = RunningChild(process, None, None)
-                self.children[actor] = child
+                descriptors = []
+                try:
+                    watch, lifetime = os.pipe()
+                    descriptors.extend((watch, lifetime))
+                    report, output = os.pipe()
+                    descriptors.extend((report, output))
+                    os.set_blocking(report, False)
+                    command = (sys.executable, '-B', '-I', str(Path(__file__).with_name('guardian.py').resolve()),
+                               str(watch), str(output), str(self.timeout), json.dumps(plan.argv))
+                    process = subprocess.Popen(command, cwd=plan.cwd, stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, close_fds=True,
+                        pass_fds=(watch, output),
+                        env={'PATH': os.defpath, 'PYTHONDONTWRITEBYTECODE': '1'})
+                    child = RunningChild(process, None, None, lifetime, report)
+                    self.children[actor] = child
+                    descriptors.remove(lifetime)
+                    descriptors.remove(report)
+                finally:
+                    for fd in descriptors:
+                        os.close(fd)
                 ready = queue.Queue(maxsize=1)
 
                 def handshake():

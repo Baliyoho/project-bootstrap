@@ -48,6 +48,18 @@ class BrokerFixtureTests(TestCase):
         self.assertEqual(result['transport']['exit_code'], 7)
         self.assertEqual(result['transport']['requests'], 0)
 
+    def test_relaxing_fork_or_signal_guard_breaks_probe(self):
+        if not SUPPORTED:
+            self.assertEqual(broker_fixture.probe_broker()['result'], '未驗證')
+            return
+        for rule in ('(deny process-fork)', '(deny signal)'):
+            with self.subTest(rule=rule):
+                with patch.object(broker_fixture, 'PROFILE', broker_fixture.PROFILE.replace(rule, '')):
+                    result = broker_fixture.probe_broker()
+                self.assertEqual(result['result'], '不通過')
+                self.assertFalse(result['checks']['confined_agent_completed'])
+                self.assertFalse(result['checks']['pipe_principal_recorded'])
+
     def test_oversized_pipe_message_closes_channel_without_mutation(self):
         if not SUPPORTED:
             self.assertEqual(broker_fixture.probe_broker()['result'], '未驗證')

@@ -1,6 +1,6 @@
 # v2 P0：可重跑的契約與架構門檻
 
-> 最後更新：2026-11-07
+> 最後更新：2026-11-08
 > 範圍：v2 分支的合成實驗，沒有部署、模型呼叫、付費服務或正式制度切換。
 
 需求以 [決策書](../../project-bootstrap-requirements-decision.md) 為準；[實現規劃](../../project-bootstrap-implementation-plan.md) 定義 P0–P5。現行部署包仍是 22 檔的唯一權威。本目錄不是第二份 handoff 制度，也不複製其他專案的檔案。
@@ -62,17 +62,19 @@ RequestJournal 在可信 parent 的私有庫保存完整原始 bytes 與連續�
 
 此層的 `source` 是合成授權的來源標籤，非人類身分驗證或簽章。低層 Broker.attach／Lab 管理方法仍是 parent 內部 API，agent 隔離不能靠 Python 方法可見性成立。資格層本身不會終止已在運算的 child；下節的 parent 事件迴圈補直接子程序退場，F28 的前提切換與上下文重建仍需 supervisor 整合。這些限制未解決前不得部署真實資料。
 
-## 固定啟動與直接子程序退場（2026-11-07）
+## 固定啟動與監護退場（2026-11-08）
 
 `lifecycle.py` 的 ProcessLauncher 只接受可信 parent 提供的 LaunchPlan，不提供 agent 的任意命令 RPC。第一次啟動綁定 argv、入口 executable 的內容 digest 與 cwd 的實際位置／device／inode；替代啟動若改計畫會拒絕，不把原票據外推成另一個命令的授權。被入口讀入的其他腳本、import、設定與整個 runtime 尚未做完整 manifest 鎖定，仍須由可信 parent 保護。
 
-啟動先持久記 `starting`，新 child 回固定 READY 後再重查資格、輪替 channel、記 `running` 並送 GO；合成 agent 在 GO 前不送請求。替換時先關舊 channel，TERM／必要時 KILL 並 wait 到直接 child 確實退出，記 `stopped` 後才能啟動替代者。握手錯誤、逾時、資格失效及日誌失敗都不交出可用的新管道；停止時即使日誌寫失敗仍嘗試終止 child，但保留未解狀態。parent 重啟只讀到 starting／running／stopping／unresolved 而沒有原程序物件時，拒絕替換；不憑 PID、經過時間或票據推定舊程序已退場，也不自行殺可能被重用的 PID。這是保守阻擋，尚無自動孤兒回收或人工解鎖程序。
+啟動先持久記 `starting`，新 worker 回固定 READY 後再重查資格、輪替 channel、記 `running` 並送 GO；合成 agent 在 GO 前不送請求。`guardian.py` 是可信 parent 啟動的獨立監護程序，持有 worker 的 Popen。parent 獨占生命管道寫端，關閉或被終止造成 EOF；監護程序收到後 TERM／必要時 KILL 並 wait worker，再由專用回報管道送出回收證據。worker 不繼承這兩支控制管道；監護與 worker 都不拿票據或資料庫管理能力。替換先關舊 channel，再關生命管道，確認監護結束及回收證據後才記 `stopped`、啟動替代者。理由：只 wait 直接 child，不能涵蓋 parent 自己突然消失；只看監護程序結束，又會把監護被殺、worker 仍存活誤判為成功。
+
+握手錯誤、逾時、資格失效及日誌失敗都不交出可用的新管道；停止時即使日誌寫失敗仍嘗試回收 worker，但保留未解狀態。慢監護不被 launcher 強殺，停止逾時保持阻擋；監護本身被殺、回收證據缺失都不記 stopped。parent 重啟只讀到 starting／running／stopping／unresolved 而沒有原程序物件時仍拒絕替換，即使該 worker 實際已退場；不憑 PID、經過時間或票據推定安全，也不自行殺可能被重用的 PID。監護僅在仍存活且得到排程時提供直接 worker 回收，不是 OS 級不可殺的服務；parent 凍結但管道仍開啟不屬 EOF 情境，尚無心跳逾時或人工解鎖程序。
 
 TicketVault 使用已存在且屬於本 UID 的 0700 目錄；票據以隨機 handle 存成 0600 普通檔，O_EXCL／O_NOFOLLOW、單一 hardlink、內容長度與檔案／目錄 fsync 均檢查。讀取 FIFO 不等待，symlink、hardlink、錯誤權限與缺票據拒絕；不自動修權限、找歷史票據或重新發身分。資料只保存在合成暫存目錄，票據不進 agent 的 argv／環境／RPC；同 UID 的檔案權限不是隔離，仍由受驗的 OS profile 阻止 agent 讀私有目錄。
 
-Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請求，正常私有票據讀回、管道效果、寫盤及程序退場都要成功。parent 的有界管道迴圈在閒置時每次等待最多 0.1 秒再重查資格，失效後結束 transport 並終止直接 child；這不是所有 OS／阻塞操作的即時停止承諾。`ProcessLauncher.check()` 本身需由事件迴圈呼叫，不是常駐背景 watchdog。
+Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請求，正常私有票據讀回、管道效果、寫盤及程序退場都要成功。OS profile 拒絕 process-fork／signal，實測 fork、subprocess、posix_spawn 與向監護送訊號遭拒，避免 agent 再生後代或自行終止監護；這是目前單程序合成 agent 的限制，不是通用 shell／任意程序樹控制。parent 的有界管道迴圈在閒置時每次等待最多 0.1 秒再重查資格，失效後經 launcher 停止監護下的 worker，不直接 kill 監護。`ProcessLauncher.check()` 仍需事件迴圈呼叫；生命管道只監看 EOF，不提供授權逾時的獨立背景檢查。
 
-`test_lifecycle.py` 驗替換順序、舊 channel 失效、固定計畫拒絕變更、parent 重啟未解、啟動途中撤銷、握手失敗、忽略 TERM、停止／日誌故障、閒置過期及票據檔案反例；移除停止檢查的負向對照重現兩個 child 同時存活。沿用單一 parent writer 前提，不宣稱跨 parent 的原子 claim。只驗受追蹤的直接子程序，沒有驗任意後代／逃離程序樹、parent 崩潰後孤兒回收、票據遺失／更新、過期後延續授權、Windows 或真正人類授權入口。舊 supervisor 仍是獨立合成上下文實驗，尚未與此生命週期合成一個正式執行面。
+`test_lifecycle.py` 除既有啟停、資格、日誌與票據反例，另用真正被 SIGKILL 的 parent 測握手中／執行中的回收；固定 worker 全生命週期持有檔案鎖，以鎖釋放證明退場，沒有用 PID 消失推定。移除監護後重現孤兒仍持鎖；殺監護後 worker 仍持鎖且替換拒絕；控制 FD 不繼承、管道建立失敗釋放 FD、未解狀態不對無關活程序送訊號也有測試。未隔離 worker 產生後代的反例會在直接 worker 已 stopped 後繼續持鎖，證明監護本身不能當程序樹容器。`test_broker_fixture.py` 移除 fork／signal 防護各會使探針失敗。沿用單一 parent writer 前提，不宣稱跨 parent 原子 claim；任意後代／逃離程序樹、監護被殺後回收、票據遺失／更新、過期後延續授權、Windows 與真正人類授權未完成。舊 supervisor 仍是獨立合成上下文實驗，尚未與此生命週期合成一個正式執行面。
 
 ## POSIX 工作樹套用與中斷恢復（2026-11-07）
 
@@ -96,7 +98,7 @@ HANDOFF 保留 writer、目前行動與此索引的指標；若索引不可讀�
 
 ## 接下來的架構工作
 
-1. 管道分權、POSIX 套用、限期資格、請求保存及直接 child 生命週期已有合成證據；下一批處理後代程序／parent 中斷的控制邊界、人類授權與票據更新／過期後續作。將請求 outbox、管道生命週期與 supervisor 接成同一執行面；逐 surface 列繞過入口，不把 fixture 當真實部署。
+1. 管道分權、POSIX 套用、限期資格、請求保存、監護回收與 Mac 禁 fork 已有合成證據；下一批處理人類授權、票據更新／過期後續作及未解執行的明確恢復。將 outbox、生命週期與 supervisor 接成同一執行面；多程序工具需獨立 OS 容器／程序樹方案，不以單程序 fixture 外推。
 2. 將合成 supervisor 的停止／排空／重建上下文協定接到實際可控執行介面；不能把程式裡 application=True 當作模型已理解，也不能把 outbox 當即時通知。真實模型探針仍需另行明確授權。
 3. 再鎖定需實際採用的外部元件、驗 Windows／Mac 門檻。未通過前不開始全面搬來源、改現行 A4 或部署專案。
 4. 接棒成本已能逐次量測；短入口及證據失效機制需配套驗收後才切換。常態必讀超額照實報不通過，不藉此省略檢查。
