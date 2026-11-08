@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-08。新增 `experiments/v2/tree_probe.py` 與 `test_tree_probe.py`，只在合成 POSIX 程序群組比較一般後代與脫離 session 的後代，透過檔案鎖觀察退場。一鍵入口列出這個候選反例；它不接入 `lifecycle.py`，也不提供任意程序樹保證。詳見 [P0 說明](experiments/v2/README.md)。
+> 最後更新：2026-11-08。`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的獨立合成探針及離線負向控制；它下載並驗固定映像 digest，編譯帶 entitlement 的 runner，在無網路、只共享暫存目錄的 guest 中觀察 `setsid` 後代。它未接入 `managed_fixture.py` 或現行部署包，不提供真實工具退場保證。詳見 [P0 說明](experiments/v2/README.md)。
+
+> 2026-11-08 新增 `experiments/v2/tree_probe.py` 與 `test_tree_probe.py`，只在合成 POSIX 程序群組比較一般後代與脫離 session 的後代，透過檔案鎖觀察退場。一鍵入口列出這個候選反例；它不接入 `lifecycle.py`，也不提供任意程序樹保證。詳見 [P0 說明](experiments/v2/README.md)。
 
 > 最後更新：2026-11-08。新增 `experiments/v2/approvals.py`，以固定公開金鑰與驗證器驗收合成動作簽核。私有資料庫同一交易保存簽核文件、簽章與限期授權；broker 在當前前提下才可消耗。簽署測試用一次性金鑰；真人身分、金鑰治理及真實動作未接入。範圍見 [P0 說明](experiments/v2/README.md)。
 

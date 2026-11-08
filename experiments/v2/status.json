@@ -420,11 +420,19 @@
         },
         {
           "path": "experiments/v2/README.md",
-          "scope": "Mac Virtualization framework 本機 isSupported=true 與 Apple stop API 候選；未建立 VM、未驗任意後代退場"
+          "scope": "Mac VM 候選的本機邊界、合成 guest 實測結果與未驗範圍"
+        },
+        {
+          "path": "experiments/v2/vm_probe.py",
+          "scope": "可重跑的 Mac Apple silicon 合成 VM：setsid 後代在 guest 持鎖與共享寫入，stop／host SIGKILL 後 heartbeat 停止並可重新啟動；兩 VM 共用 virtiofs 時 flock 不協調；不是真實工具驗收"
+        },
+        {
+          "path": "experiments/v2/test_vm_probe.py",
+          "scope": "退場後仍寫入與後代未脫離 session 的離線負向控制；不代替 VM 實跑"
         }
       ],
-      "unknown": "原始不受控介面仍不通過；已驗 macOS 單程序切換與回收證據齊備時的恢復，監護失效、任意後代、真實工具及跨機即時推送未驗收；VM 只測支援查詢",
-      "next": "以合成 guest 驗 VM 強制停止含 setsid 後代、host 中斷後重新核對及共享效果隔離；若不可行保持多程序阻擋。再接真實可控執行介面及跨機故障；模型探針需先授權"
+      "unknown": "原始不受控介面仍不通過；已驗 macOS 單程序切換與有回收證據的恢復。VM 僅驗固定合成 guest 的 stop／host SIGKILL 及重新啟動；host／兩 VM 的 flock 對 virtiofs 不互通，guest 已寫共享效果不回滾。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
+      "next": "先把 VM 退場證據接到受管 epoch／outbox，設計已寫共享效果的隔離與回滾或冪等；再驗 host／hypervisor 異常、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
     },
     {
       "id": "F29",
