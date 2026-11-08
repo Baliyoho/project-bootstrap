@@ -28,7 +28,7 @@ from experiments.v2.lifecycle import guardian_inputs
 from experiments.v2.managed_fixture import probe_managed
 from experiments.v2.registry import validate
 from experiments.v2.supervisor import run_supervisor_probe
-from experiments.v2.tree_probe import probe_tree
+from experiments.v2.tree_probe import probe_descendant_api, probe_tree
 
 
 def runtime_artifacts():
@@ -62,6 +62,7 @@ def main():
     broker = probe_broker()
     managed = probe_managed()
     tree = probe_tree()
+    descendant_api = probe_descendant_api()
     baseline = measure(ROOT, args.baseline)
     counterexamples = all(row['counterexample_observed'] for row in findings)
     baseline_valid = ('verifier' not in baseline or
@@ -77,6 +78,7 @@ def main():
             'failed': len(result.failures), 'errors': len(result.errors), 'skipped': len(result.skipped)},
         'findings': findings, 'isolation_probe': isolation, 'supervisor_probe': supervisor,
         'broker_probe': broker, 'managed_probe': managed, 'tree_probe': tree,
+        'descendant_api_probe': descendant_api,
         'baseline': baseline,
         'runtime_artifacts': artifacts,
         'unverified': ['Windows/Linux', '真實工具與可信 session 隔離', '即時推送與模型上下文重建',
@@ -96,6 +98,7 @@ def main():
         print('管道身分／管理分權：' + broker['result'] + '（受隔離合成 agent，非正式工具接線）')
         print('受管前提切換／outbox：' + managed['result'] + '（macOS 單一合成 worker）')
         print('程序群組候選：' + tree['result'] + '（普通後代可回收；脫離 session 反例）')
+        print('Mac 後代事件候選：' + descendant_api['result'] + '（僅測本機 API 准入，非退場證據）')
         if 'verifier' in baseline:
             print('既有驗證器：', json.dumps(baseline['verifier'], ensure_ascii=False))
         print('P0 實驗回歸：' + ('通過' if passed else '不通過'))

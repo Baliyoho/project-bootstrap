@@ -6,6 +6,7 @@ All spawned code and paths are fixed test fixtures under a temporary directory.
 """
 import os
 from pathlib import Path
+import platform
 import select
 import signal
 import subprocess
@@ -91,3 +92,60 @@ def probe_tree():
             not escaped['descendant_exited'] else '不通過',
             'ordinary_group': ordinary, 'escaped_session': escaped,
             'scope': '本機合成程序群組；脫離 session 的後代仍存活，不提供任意程序樹退場證明'}
+
+
+ES_CLIENT_SOURCE = r'''#include <EndpointSecurity/EndpointSecurity.h>
+#include <stdio.h>
+int main(void) {
+    es_client_t *client = NULL;
+    es_new_client_result_t result = es_new_descendants_client(&client,
+        ^(es_client_t *c, const es_message_t *m) { (void)c; (void)m; });
+    printf("%d\n", (int)result);
+    if (client != NULL) es_delete_client(client);
+    return 0;
+}
+'''
+
+
+def _es_assessment(code):
+    # ES_NEW_CLIENT_RESULT_ERR_NOT_ENTITLED is 3 in the macOS 27 SDK.
+    # Even a successful client has not proved delivery, teardown, or recovery.
+    if code == 3:
+        return {'result': '無權限', 'reason': '本機未獲 Endpoint Security client entitlement'}
+    if code == 0:
+        return {'result': '可建立但未驗收', 'reason': '尚未測 fork／exit 事件、監護失效與可重啟退場核對'}
+    return {'result': '未驗證', 'reason': f'Endpoint Security client 回傳 {code}'}
+
+
+def probe_descendant_api():
+    """Check an unsigned local helper's ES admission; no event subscription or deployment."""
+    if sys.platform != 'darwin':
+        return {'result': '未驗證', 'reason': '只在 macOS 27+ 探測', 'strict_boundary': '未通過'}
+    release = platform.mac_ver()[0]
+    try:
+        major = int(release.split('.', 1)[0])
+    except (ValueError, IndexError):
+        return {'result': '未驗證', 'reason': '無法判定 macOS 版本', 'strict_boundary': '未通過'}
+    if major < 27:
+        return {'result': '未驗證', 'reason': '此 API 從 macOS 27 起提供', 'strict_boundary': '未通過'}
+    try:
+        with tempfile.TemporaryDirectory(prefix='bootstrap-v2-es-') as directory:
+            binary = str(Path(directory) / 'probe')
+            compiled = subprocess.run(['xcrun', 'clang', '-fblocks', '-lEndpointSecurity',
+                                       '-x', 'c', '-', '-o', binary], input=ES_CLIENT_SOURCE,
+                                      capture_output=True, text=True, timeout=20)
+            if compiled.returncode != 0:
+                return {'result': '未驗證', 'reason': '本機 SDK 或編譯鏈無法建立探針',
+                        'strict_boundary': '未通過'}
+            executed = subprocess.run([binary], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return {'result': '未驗證', 'reason': '本機探針未能完成', 'strict_boundary': '未通過'}
+    if executed.returncode != 0:
+        return {'result': '未驗證', 'reason': '探針執行失敗', 'strict_boundary': '未通過'}
+    try:
+        code = int(executed.stdout.strip())
+    except ValueError:
+        return {'result': '未驗證', 'reason': '探針回應格式無效', 'strict_boundary': '未通過'}
+    return {'api': 'es_new_descendants_client', 'macos': release,
+            'client_result': code, **_es_assessment(code),
+            'strict_boundary': '未通過'}
