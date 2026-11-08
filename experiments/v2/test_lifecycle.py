@@ -1,9 +1,11 @@
 import json
 import os
 from pathlib import Path
+import sqlite3
 import sys
 import subprocess
 import select
+import signal
 import tempfile
 import time
 import unittest
@@ -12,7 +14,7 @@ from unittest.mock import patch
 from experiments.v2.broker import Broker
 from experiments.v2.broker_fixture import launch_agent
 from experiments.v2.contracts import Denied, Lab
-from experiments.v2.launcher import LaunchAuthority
+from experiments.v2.launcher import LaunchAuthority, RequestJournal
 from experiments.v2.lifecycle import LaunchPlan, ProcessLauncher, TicketVault
 
 
@@ -38,7 +40,8 @@ root = pathlib.Path(sys.argv[1])
 lab = Lab(root / 'crash.sqlite')
 authority = LaunchAuthority(Broker(lab))
 vault = TicketVault(root / 'tickets')
-handle = vault.save(authority.issue(('note',), 'synthetic-parent', time.time() + 60))
+ttl = 2 if sys.argv[3] == 'freeze' else 60
+handle = vault.save(authority.issue(('note',), 'synthetic-parent', time.time() + ttl))
 launcher = ProcessLauncher(authority, vault, timeout=0.2)
 plan = LaunchPlan((sys.executable, '-B', '-u', '-c', sys.argv[2], str(root)), str(root))
 if sys.argv[3] == 'unguarded':
@@ -107,6 +110,22 @@ class LifecycleTests(unittest.TestCase):
 
     def test_parent_kill_during_handshake_reaps_worker(self):
         self.run_parent_kill('starting')
+
+    def test_guardian_reaps_at_deadline_even_while_parent_is_frozen(self):
+        with subprocess.Popen((sys.executable, '-B', '-u', '-c', PARENT, str(self.root), LOCK_WORKER, 'freeze'),
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE) as parent:
+            try:
+                self.assertTrue(select.select([parent.stdout], [], [], 5)[0])
+                self.assertTrue(TicketVault.valid(parent.stdout.readline().decode().strip()))
+                self.assertTrue(self.lock_held())
+                parent.send_signal(signal.SIGSTOP)
+                self.await_unlock()
+                self.assertIsNone(parent.poll(), 'worker must exit before the parent dies or closes its pipe')
+            finally:
+                parent.kill()
+                parent.wait(timeout=5)
+                (self.root / 'finish').touch()
+                self.await_unlock()
 
     def run_parent_kill(self, mode):
         worker = LOCK_WORKER
@@ -316,6 +335,57 @@ sys.stdin.read()
         finally:
             current.rename(previous)
             held.rename(current)
+
+    def test_renewal_keeps_principal_and_scope_and_revokes_old_ticket(self):
+        old = self.launcher.start(self.handle, self.plan)
+        journal = RequestJournal(self.authority, old.channel)
+        journal.prepare(dict(method='renew', resource='note', epoch=0))
+        self.assertEqual(json.loads(journal.send())['code'], 'unknown-method')
+        with self.assertRaisesRegex(Denied, 'invalid-launch-renewal'):
+            self.launcher.renew(self.handle, self.plan, '', 1200)
+        self.assertIsNone(old.process.poll())
+        self.launcher.renew(self.handle, self.plan, 'synthetic-parent-renewal', 1200)
+        self.assertTrue(old.reaped and old.channel.closed)
+        with self.assertRaisesRegex(Denied, 'launch-not-authorized'):
+            self.authority.connect(self.ticket)
+        restarted = ProcessLauncher(self.authority, self.vault)
+        try:
+            fresh = restarted.start(self.handle, self.plan)
+            self.assertEqual(self.lab.actor(fresh.channel.capability), self.actor())
+            self.assertEqual(fresh.channel.resources, frozenset({'note'}))
+            self.assertEqual(RequestJournal(self.authority, fresh.channel).prepare(
+                dict(method='write', resource='note', base=None, text='after renewal', epoch=0)), 2)
+            self.assertEqual(tuple(self.lab.db.execute(
+                'SELECT old_expiry, new_expiry, source FROM launch_renewals').fetchone()),
+                (1100, 1200, 'synthetic-parent-renewal'))
+        finally:
+            restarted.close()
+
+    def test_failed_renewal_commit_retains_original_ticket_and_missing_current_ticket_fails_closed(self):
+        self.launcher.start(self.handle, self.plan)
+        self.lab.db.execute("""CREATE TRIGGER reject_ticket_locator BEFORE INSERT ON renewed_tickets
+            BEGIN SELECT RAISE(ABORT, 'synthetic-locator-failure'); END""")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.launcher.renew(self.handle, self.plan, 'synthetic-parent-renewal', 1200)
+        self.assertEqual(self.launcher.ticket(self.handle), self.ticket)
+        self.assertEqual(self.lab.db.execute('SELECT count(*) FROM launch_renewals').fetchone()[0], 0)
+        self.lab.db.execute('DROP TRIGGER reject_ticket_locator')
+        self.launcher.renew(self.handle, self.plan, 'synthetic-parent-renewal', 1200)
+        physical = self.lab.db.execute('SELECT physical FROM renewed_tickets').fetchone()[0]
+        (self.private / ('renew-' + physical)).unlink()
+        self.assertTrue((self.private / self.handle).exists())
+        with patch('subprocess.Popen') as spawn, self.assertRaises(FileNotFoundError):
+            self.launcher.start(self.handle, self.plan)
+        spawn.assert_not_called()
+        with self.assertRaises(FileNotFoundError):
+            self.launcher.renew(self.handle, self.plan, 'synthetic-parent-renewal', 1300)
+
+    def test_revoked_ticket_cannot_be_renewed(self):
+        self.launcher.start(self.handle, self.plan)
+        self.authority.revoke(self.ticket)
+        with self.assertRaisesRegex(Denied, 'launch-not-renewable'):
+            self.launcher.renew(self.handle, self.plan, 'synthetic-parent-renewal', 1200)
+        self.assertIsNone(self.lab.db.execute('SELECT 1 FROM renewed_tickets').fetchone())
 
     def test_plan_change_stops_old_child_and_does_not_launch_new_command(self):
         old = self.launcher.start(self.handle, self.plan)

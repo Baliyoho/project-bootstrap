@@ -131,7 +131,7 @@
         },
         {
           "path": "experiments/v2/test_managed_fixture.py",
-          "scope": "macOS 單 worker：父程序 SIGKILL 後依持久前提與回收證據重建，作廢未完成計算並重送原始請求"
+          "scope": "macOS 單 worker：父程序 SIGKILL 後依持久前提與回收證據重建，作廢未完成計算並重送原始請求；過期要先明確續期"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
@@ -227,7 +227,7 @@
             },
             {
               "path": "experiments/v2/test_lifecycle.py",
-              "scope": "POSIX 固定啟動／監護回收；真 parent SIGKILL 後以本次啟動紀錄續接，監護失效或證據缺失保持阻擋"
+              "scope": "POSIX 固定啟動／監護回收；真 parent SIGKILL 後以本次啟動紀錄續接，SIGSTOP 後監護到期回收；監護失效或證據缺失保持阻擋"
             },
             {
               "path": "experiments/v2/test_managed_fixture.py",

@@ -29,6 +29,9 @@ class LaunchAuthority:
                 actor TEXT NOT NULL, request_id INTEGER NOT NULL,
                 raw BLOB NOT NULL, digest TEXT NOT NULL, completed INTEGER NOT NULL,
                 PRIMARY KEY(actor, request_id));
+            CREATE TABLE IF NOT EXISTS launch_renewals (
+                previous_hash TEXT PRIMARY KEY, actor TEXT NOT NULL, at REAL NOT NULL,
+                old_expiry REAL NOT NULL, new_expiry REAL NOT NULL, source TEXT NOT NULL);
         ''')
 
     @staticmethod
@@ -38,12 +41,37 @@ class LaunchAuthority:
         return hashlib.sha256(ticket.encode('utf-8')).hexdigest()
 
     def permit(self, ticket_hash):
+        return self.timed_permit(ticket_hash)[0]
+
+    def timed_permit(self, ticket_hash):
         row = self.lab.db.execute('SELECT * FROM launch_permits WHERE ticket_hash=?',
                                   (ticket_hash,)).fetchone()
         now = self.lab.authority_now()
         if row is None or row['revoked'] or now >= row['expires']:
             raise Denied('launch-not-authorized')
-        return row
+        return row, now
+
+    def renewable(self, key, source, expires_at):
+        """Trusted parent only; expiry alone does not erase the principal."""
+        row = self.lab.db.execute('SELECT * FROM launch_permits WHERE ticket_hash=?', (key,)).fetchone()
+        now = self.lab.authority_now()
+        if row is None or row['revoked']:
+            raise Denied('launch-not-renewable')
+        if (not isinstance(source, str) or not source.strip()
+                or type(expires_at) not in (int, float) or not math.isfinite(expires_at)
+                or expires_at <= max(now, row['expires'])):
+            raise Denied('invalid-launch-renewal')
+        return row, now
+
+    def rotate(self, key, new_ticket, source, expires_at):
+        """Rotate inside the same transaction as the durable vault locator."""
+        if not self.lab.db.in_transaction:
+            raise Denied('renewal-transaction-required')
+        row, now = self.renewable(key, source, expires_at)
+        self.lab.db.execute('UPDATE launch_permits SET ticket_hash=?, expires=? WHERE ticket_hash=?',
+                            (self.ticket_hash(new_ticket), expires_at, key))
+        self.lab.db.execute('INSERT INTO launch_renewals VALUES (?, ?, ?, ?, ?, ?)',
+                            (key, row['actor'], now, row['expires'], expires_at, source))
 
     def issue(self, resources, source, expires_at):
         """Trusted administration only. Return a parent-private recovery ticket.

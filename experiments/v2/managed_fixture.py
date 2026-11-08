@@ -86,7 +86,7 @@ class ManagedFixture:
 
     def start(self, factor):
         context = self.context(factor)
-        ticket = self.launcher.vault.load(self.handle)
+        ticket = self.launcher.ticket(self.handle)
         authority = self.launcher.authority
         with self.lab.transaction():
             self.lab.require_epoch(0)

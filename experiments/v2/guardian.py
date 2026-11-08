@@ -12,6 +12,7 @@ import select
 import signal
 import subprocess
 import sys
+import time
 
 
 def record_reap(report, proof):
@@ -20,7 +21,7 @@ def record_reap(report, proof):
     os.fsync(report)
 
 
-def run(watch, report, grace, argv):
+def run(watch, report, grace, deadline, argv):
     stopping = False
 
     def stop(signum, frame):
@@ -30,14 +31,17 @@ def run(watch, report, grace, argv):
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     # A dead parent before startup must not cause a fresh worker to be spawned.
-    if select.select([watch], [], [], 0)[0]:
+    if time.monotonic() >= deadline or select.select([watch], [], [], 0)[0]:
         record_reap(report, b'not-started\n')
         return 1
     child = subprocess.Popen(argv, stdin=sys.stdin.buffer, stdout=sys.stdout.buffer,
                              stderr=subprocess.DEVNULL, close_fds=True)
     try:
         while child.poll() is None and not stopping:
-            if select.select([watch], [], [], 0.05)[0]:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            if select.select([watch], [], [], min(0.05, remaining))[0]:
                 # No messages are valid on this pipe; EOF and unexpected data
                 # both fail closed. The descriptor is never passed to worker.
                 os.read(watch, 1)
@@ -56,4 +60,4 @@ def run(watch, report, grace, argv):
 
 if __name__ == '__main__':
     raise SystemExit(run(int(sys.argv[1]), int(sys.argv[2]), float(sys.argv[3]),
-                         json.loads(sys.argv[4])))
+                         float(sys.argv[4]), json.loads(sys.argv[5])))

@@ -215,3 +215,31 @@ class ManagedFixtureTests(TestCase):
                     fixture.stage_result(base=first['digest'])
                     self.assertEqual(fixture.send()['code'], 'ok')
                     self.assertEqual((repo / 'managed.txt').read_text(), str(9 * factor))
+
+    def test_expired_ticket_requires_explicit_renewal_before_crash_recovery(self):
+        if not managed.supported():
+            self.assertEqual(managed.probe_managed()['result'], '未驗證')
+            return
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            handle, _ = self.crash_parent(root, 'active-changed')
+            with managed.open_managed(root, handle) as (fixture, _):
+                expiry = fixture.lab.db.execute('SELECT expires FROM launch_permits').fetchone()[0]
+                fixture.lab.authority_clock = lambda: expiry + 1
+                with self.assertRaisesRegex(Denied, 'launch-not-authorized'):
+                    fixture.resume()
+                until = time.monotonic() + 5
+                while True:
+                    try:
+                        fixture.launcher.renew(handle, fixture.plan, 'synthetic-parent-renewal', expiry + 60)
+                        break
+                    except Denied as error:
+                        if str(error) != 'worker-reap-unconfirmed' or time.monotonic() >= until:
+                            raise
+                        time.sleep(0.01)
+            with managed.open_managed(root, handle) as (fixture, repo):
+                fixture.lab.authority_clock = lambda: expiry + 1
+                fixture.resume()
+                self.assertEqual(fixture.epoch, 1)
+                self.assertEqual(fixture.send()['code'], 'ok')
+                self.assertEqual((repo / 'managed.txt').read_bytes(), b'21')
