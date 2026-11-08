@@ -74,7 +74,9 @@ TicketVault 使用已存在且屬於本 UID 的 0700 目錄；票據以隨機 ha
 
 Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請求，正常私有票據讀回、管道效果、寫盤及程序退場都要成功。OS profile 拒絕 process-fork／signal，實測 fork、subprocess、posix_spawn 與向監護送訊號遭拒，避免 agent 再生後代或自行終止監護；這是目前單程序合成 agent 的限制，不是通用 shell／任意程序樹控制。parent 的有界管道迴圈在閒置時每次等待最多 0.1 秒再重查資格，失效後經 launcher 停止監護下的 worker，不直接 kill 監護。`ProcessLauncher.check()` 仍需事件迴圈呼叫；生命管道只監看 EOF，不提供授權逾時的獨立背景檢查。
 
-`test_lifecycle.py` 除既有啟停、資格、日誌與票據反例，另用真正被 SIGKILL 的 parent 測握手中／執行中的回收；固定 worker 全生命週期持有檔案鎖，以鎖釋放證明退場，沒有用 PID 消失推定。移除監護後重現孤兒仍持鎖；殺監護後 worker 仍持鎖且替換拒絕；控制 FD 不繼承、管道建立失敗釋放 FD、未解狀態不對無關活程序送訊號也有測試。未隔離 worker 產生後代的反例會在直接 worker 已 stopped 後繼續持鎖，證明監護本身不能當程序樹容器。`test_broker_fixture.py` 移除 fork／signal 防護各會使探針失敗。沿用單一 parent writer 前提，不宣稱跨 parent 原子 claim；任意後代／逃離程序樹、監護被殺後回收、票據遺失／更新、過期後延續授權、Windows 與真正人類授權未完成。舊 supervisor 仍是獨立合成上下文實驗，尚未與此生命週期合成一個正式執行面。
+`test_lifecycle.py` 除既有啟停、資格、日誌與票據反例，另用真正被 SIGKILL 的 parent 測握手中／執行中的回收；固定 worker 全生命週期持有檔案鎖，以鎖釋放證明退場，沒有用 PID 消失推定。移除監護後重現孤兒仍持鎖；殺監護後 worker 仍持鎖且替換拒絕；控制 FD 不繼承、管道建立失敗釋放 FD、未解狀態不對無關活程序送訊號也有測試。未隔離 worker 產生後代的反例會在直接 worker 已 stopped 後繼續持鎖，證明監護本身不能當程序樹容器。`test_broker_fixture.py` 移除 fork／signal 防護各會使探針失敗。沿用單一 parent writer 前提，不宣稱跨 parent 原子 claim；任意後代／逃離程序樹、監護被殺後回收、票據遺失／更新、過期後延續授權、Windows 與真正人類授權未完成。
+
+2026-11-08：`managed_fixture.py` 將 supervisor 的固定 worker 協定、guardian 和父程序 outbox 接到同一個 macOS 合成執行面。一鍵入口的 `managed_probe` 先在 epoch 0 留下一筆未送出的結果與一件執行中的工作，再寫入通知並封住 epoch 0。舊 worker 確認退場後，替代 worker 沿用固定啟動計畫，從管道讀取新前提並回報摘要；確認與啟用在同一交易完成。重送舊請求保留原始 bytes 並被拒，只有 epoch 1 的新結果寫到合成工作樹。`test_managed_fixture.py` 另驗停止未確認、載入舊前提、離線收件者與回應遺失。未完成切換的重啟恢復仍拒絕；跨機推送、多程序工具及真實 surface 另驗。
 
 ## POSIX 工作樹套用與中斷恢復（2026-11-07）
 

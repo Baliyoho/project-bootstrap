@@ -17,10 +17,9 @@ import tempfile
 from experiments.v2.contracts import Denied, Lab
 
 
-WORKER = '''import hashlib, json, sys
-epoch = int(sys.argv[1])
-context = json.loads(sys.argv[2])
-fingerprint = hashlib.sha256(sys.argv[2].encode()).hexdigest()
+WORK_PROTOCOL = '''
+fingerprint = hashlib.sha256(context_bytes.encode()).hexdigest()
+context = json.loads(context_bytes)
 print(json.dumps({'type':'ready', 'epoch':epoch, 'context_digest':fingerprint}), flush=True)
 pending = None
 for line in sys.stdin:
@@ -34,6 +33,11 @@ for line in sys.stdin:
     else:
         raise RuntimeError('invalid worker message')
 '''
+
+WORKER = '''import hashlib, json, sys
+epoch = int(sys.argv[1])
+context_bytes = sys.argv[2]
+''' + WORK_PROTOCOL
 
 
 class Worker:

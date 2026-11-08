@@ -393,10 +393,14 @@
         {
           "path": "experiments/v2/supervisor.py",
           "scope": "固定合成子程序已可中止、重建上下文、確認新 context digest 後啟用；尚非真實工具／模型"
+        },
+        {
+          "path": "experiments/v2/test_managed_fixture.py",
+          "scope": "macOS 單 worker 實測：封住舊 epoch、guardian 回收、確認新前提再啟用；outbox 舊請求拒絕、回應遺失精確重送；錯誤摘要、退場未確認與未確認收件者不放行"
         }
       ],
-      "unknown": "原始同 UID／不受控執行介面仍不通過；合成 supervisor 可驗，真實工具、可信執行與跨機即時推送未驗收",
-      "next": "將 supervisor 協定接到受控執行介面，補跨機故障／恢復；真實模型探針需先取得授權"
+      "unknown": "原始不受控介面仍不通過；整合限 macOS 單程序合成 worker，未完成切換的重啟恢復、任意後代、真實工具及跨機即時推送未驗收",
+      "next": "先補未完成切換與未知程序退場的恢復，再接真實可控執行介面及跨機故障；模型探針需先授權"
     },
     {
       "id": "F29",

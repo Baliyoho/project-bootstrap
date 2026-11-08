@@ -102,6 +102,24 @@ assert second['code'] == 'ok'
 '''
 
 
+def sandbox_plan(repo, scratch, program, *args):
+    # Python resolves its prefix through these entries. Allow each ancestor
+    # itself without exposing its subtree.
+    runtime = Path(sys.base_prefix).resolve()
+    ancestor_params, ancestor_rules = [], []
+    for index, path in enumerate(runtime.parents):
+        key = 'RUNTIME_ANCESTOR_' + str(index)
+        ancestor_params.extend(['-D', key + '=' + str(path)])
+        ancestor_rules.append('(literal (param "' + key + '"))')
+    profile = PROFILE + '\n(allow file-read* ' + ' '.join(ancestor_rules) + ')\n'
+    handshake = "import sys; print('bootstrap-v2-ready', flush=True); assert sys.stdin.readline() == 'bootstrap-v2-go\\n'\n"
+    command = ['/usr/bin/sandbox-exec', '-D', 'REPO=' + str(repo),
+        '-D', 'SCRATCH=' + str(scratch), '-D', 'PYTHON_RUNTIME=' + str(runtime),
+        '-D', 'PYTHON_EXECUTABLE=' + str(Path(sys.executable).resolve())] + ancestor_params + [
+        '-p', profile, sys.executable, '-B', '-u', '-c', handshake + program, *map(str, args)]
+    return LaunchPlan(tuple(command), str(scratch))
+
+
 def launch_agent(broker, channel, command, scratch, process=None, check=None, stop=None):
     """Bounded fixed-fixture transport; the parent chooses the channel object."""
     if process is None:
@@ -195,25 +213,10 @@ def probe_broker():
             launcher = ProcessLauncher(authority, ticket_vault)
             authority.connect(authority.issue(('note-b',), 'synthetic-parent-approval', expires))
             authority.grant(ticket, 'paid-api', 'budget', 1, 'synthetic-human-authorization', expires)
-            # Python's launcher resolves its prefix via these directory entries.
-            # Permit only each ancestor itself, never its entire subtree. Without
-            # this, the runtime may abort before testing the intended boundary.
-            runtime = Path(sys.base_prefix).resolve()
-            ancestor_params, ancestor_rules = [], []
-            for index, path in enumerate(runtime.parents):
-                key = 'RUNTIME_ANCESTOR_' + str(index)
-                ancestor_params.extend(['-D', key + '=' + str(path)])
-                ancestor_rules.append('(literal (param "' + key + '"))')
-            profile = PROFILE + '\n(allow file-read* ' + ' '.join(ancestor_rules) + ')\n'
-            # The confined program waits for the parent's GO until the durable
-            # lifecycle and current channel authority have both been checked.
-            program = "import sys; print('bootstrap-v2-ready', flush=True); assert sys.stdin.readline() == 'bootstrap-v2-go\\n'\n" + AGENT
-            command = ['/usr/bin/sandbox-exec', '-D', 'REPO=' + str(repo),
-                '-D', 'SCRATCH=' + str(scratch), '-D', 'PYTHON_RUNTIME=' + str(runtime),
-                '-D', 'PYTHON_EXECUTABLE=' + str(Path(sys.executable).resolve())] + ancestor_params + ['-p', profile,
-                sys.executable, '-B', '-u', '-c', program, str(vault), str(repo), str(scratch), str(sibling)]
+            plan = sandbox_plan(repo, scratch, AGENT, vault, repo, scratch, sibling)
+            command = plan.argv
             try:
-                child = launcher.start(handle, LaunchPlan(tuple(command), str(scratch)))
+                child = launcher.start(handle, plan)
             except (Denied, OSError):
                 return {'result': '不通過', 'reason': 'launcher-start-failed',
                         'checks': {'confined_agent_completed': False},
