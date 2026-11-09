@@ -623,8 +623,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/impact.py",
+          "scope": "M1 影響圖原型：元件→需求對應直接從 status.json 的證據路徑讀出（含子項），不另維護第二份手寫圖；支持同一需求的 test_ 檔是重驗點；專案宣告安裝的元件決定受影響專案。任一變更路徑沒有需求或專案認領就回全驗（全部需求、測試、專案）並列出未分類路徑"
+        },
+        {
+          "path": "experiments/v2/test_impact.py",
+          "scope": "實測改一個接線檔列出對應需求、重驗測試與安裝它的專案；共用元件列出兩個需求與兩組測試；只被專案認領的元件列專案不列測試；檔名含 test_ 但不以它開頭的檔不算測試；空路徑證據不進圖；混入一個未分類路徑即回全驗；另以真實 status.json 確認 gitclaim 變更會指到 test_gitclaim；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "對應粒度是檔案，不是函式或規則；status.json 目前有 14 個 v2 檔（如 broker.py、session.py、lifecycle.py 與部分測試）沒被列為任何 ID 的證據，改它們只會回全驗；專案安裝清單由呼叫端提供，未接 sync_project；跨工具與跨 OS 尚未驗收",
       "next": "未分類變更回全驗；變一接線能列受影響專案與重驗點"
     },
     {
