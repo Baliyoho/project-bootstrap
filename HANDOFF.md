@@ -23,6 +23,7 @@
 - **`guest_runs.py` 持久 run 帳本**：開機前記 parent 選定 digest 與 run id，退場只收 host 停機標記＋runner 結束碼 0；未退場就拒新 guest、ACK、寫入與重啟。每台 run 綁一個 channel，退場同交易輪換 capability，舊 channel 由 broker 拒絕。runner stderr 改寫 `<log>.host`，guest console 不能再偽造 `HOST_*` 標記。真 VM `guest_broker` 經帳本並重開核對；`guest_parent_sigkill` 證明父程序被殺後重開仍阻擋。
 - **`gitclaim.py` M3 開工／收尾閘門（F4／F9／F10／F19／F25 原型證據）**：開工先 fetch，失敗不用舊 ref；dirty、ahead-only、分岔、落後、無／錯 upstream、detached、遠端標記缺／重複都拒絕；占用按機器／工具／session 分代碼。收尾只收綁定 HEAD tree 的檢查收據，遠端前進、push 被拒、離線、推送後被搶占都不給 `HandoffReceipt`。`batch.py` 對 20 個真 repo 彙總（F30），壞一個就 NOT OK。
 - **`release.py` M1 整包 manifest 與逐次寫入確認（F18／F32／F33）**：元件 SHA-256 manifest；每次寫入前取綁定新 nonce 的 ssh-keygen 簽章聲明，無快取路徑。
+- **`lines.py`（F12）與 `readonly.py`（F23）**：並行線以 Git 回報的工作樹／index／分支判定共用（子目錄、symlink、複製 `.git` 檔都抓得到）；只讀輪次前後快照比對 ref、index、變更檔與遠端，遠端查不到記未驗證。都只偵測。
 - **`preflight.py` 受管寫入前檢查**：寫入時遠端標記須正好是本 session、不得落後／分岔（未提交工作允許），再要發布確認；拒絕代碼標 `git:`／`release:`。`batch` 可選逐目標發布確認，漂移目標算失敗。
 - 本輪新增模組都在 scratch 副本做過 mutation：移除守門會讓測試失敗；唯一例外是 gitclaim 推送後的「標記已釋出」再查，它被推送前檢查蘊含，已註明。多餘的絕對路徑檢查已刪。
 - 索引只補證據，以上 ID 結果仍是「未驗證／不通過」：都是本機合成原型，未接進現行 A／B 程序、hook 或任何工具。現行 22 檔部署包、skill／hook 副本及 `VERSION` 未改，無同步債；未呼叫額外模型或真實服務。
@@ -32,7 +33,7 @@
 1. **P0 未退出。** 父程序在 guest 退場前崩潰時帳本正確阻擋，但**沒有可信的解除路徑**：需「真人核准＋host 端獨立證據」的人工退場，牽涉可信真人核准來源（第 3 項），動手前先和使用者確認方向。
 2. 已寫效果冪等／回滾與跨 epoch 原子歸因未驗。舊 `managed_vm_switch` 仍借 host worker 並掛可寫 scratch；兩 VM 的 virtiofs `flock` 不協調。無共享路徑只涵蓋固定 shell 工具與 `note` 寫入。
 3. 接可信真人核准、簽署金鑰發行／撤銷與額度來源；`release.py` 的可信端與金鑰仍是測試替身（無 CI 身分）。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。
-4. 不需使用者決定、可續做的：F12（同工作樹兩 writer）、F23（純問答不升級 owner）、F1／F2／F5（HANDOFF 內容與證據一致性）目前仍無原型證據。
+4. 不需使用者決定、可續做的：F1／F2／F5（HANDOFF 內容與證據一致性）目前仍無原型證據。
 5. F46 仍須核對來源三項例外的替代保障與模型實際遵循（額外模型探針須先授權）。鎖定 runtime／候選版本／LICENSE／digest 後才做 P1。F22 常態必讀超過 12,000 字元；完整接棒時間與 token 未量，現行 A4 不省。Windows hook 同步、Mac Codex 真實注入及 R01–R09 邊界獨立複審仍待做。
 
 ## 地雷與注意事項
@@ -43,9 +44,9 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-09 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，全部檢查通過，含 181 個 v2 契約／索引測試；提交候選另用 `--staged` 驗。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
+- 2026-11-09 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，全部檢查通過，含 191 個 v2 契約／索引測試；提交候選另用 `--staged` 驗。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
 - 2026-11-09 `python3 -X utf8 experiments/v2/vm_probe.py` exit 0（帳本與 channel 綁定版本）：舊反例保留，`guest_broker`、`guest_parent_sigkill` 通過。runner SHA-256 `2e7d8f1be9a08c2ee1608c743a02724461c47cc4d2355dc29b728d94beed7a54`、guest init `3beb1059f912c0dbdabac1791c09b78393c34fb72454937db987aa5cd6d508ec`、工具 `ff9c8ccc0dc791e72d8d071f10b299b07d3b244a7f9e7a809d2d5ccd3384df67`；之後的 gitclaim／release／batch 改動未碰 VM 程式。
-- 2026-11-09 `python3 -X utf8 tools/verify_v2.py` exit 0，181 測試、三個預期反例重現、`strict_ready=False`。接線未改，信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
+- 2026-11-09 `python3 -X utf8 tools/verify_v2.py` exit 0，191 測試、三個預期反例重現、`strict_ready=False`。接線未改，信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
 
 ## 懸置事項（AI 勿自行處理）
 

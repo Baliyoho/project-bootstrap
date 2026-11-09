@@ -244,8 +244,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/lines.py",
+          "scope": "M4 登記線原型 assess_lines：每條線（線 ID、checkout 路徑、宣告分支）以 Git 自己回報的 toplevel、index 路徑與目前分支判定；同工作樹、同 index、同分支、宣告分支與實際不符、非 checkout、重複／空線 ID 各有代碼，每條線恰列一次，任一有代碼或沒有線就不是 ok。只偵測，不鎖、不搬"
+        },
+        {
+          "path": "experiments/v2/test_lines.py",
+          "scope": "真 Git 實測：git worktree 與獨立 clone 互不影響（一邊 stage 另一邊 status 為空）；同一工作樹換分支仍判 shared-worktree／shared-index；子目錄與 symlink 解析成同一棵樹；複製 .git 檔指向別線 git dir 判 shared-index；detached、不存在、非 repo、重複 ID 都列出不丟棄；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "只在 macOS 本機 Git 2.54 驗證；登記表由呼叫端提供，原型未接進任何工具的開線或寫入流程，不能阻止不經登記的 agent 直接進同一資料夾；跨工具與跨 OS 尚未驗收",
       "next": "兩線並行不共用 index／未提交檔；不因不同分支而容許共用同工作樹"
     },
     {
@@ -425,8 +434,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/readonly.py",
+          "scope": "只讀輪次守門原型 read_only：回答前後比對本機 branch／tag ref 與 HEAD、index 檔、每個變更或未追蹤檔內容、遠端 ls-remote；允許 fetch（不比 remote-tracking ref）。遠端列不出來記 unverified 不算乾淨；遠端變了只說變了、不歸因是誰推的；回答拋例外時把報告掛在例外上。只偵測不還原"
+        },
+        {
+          "path": "experiments/v2/test_readonly.py",
+          "scope": "真 Git 實測：讀檔、log、fetch 為乾淨；stat 過期時不因 status 自刷 index 誤報；寫標記、對已改檔再改、stage、commit、push、新增檔、開分支、只建 ref、只 detach 各被指出；離線與無 upstream 記 unverified；非 repo 兩項皆 unverified；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "只偵測不阻擋；未接進任何工具的問答入口，現行程序仍靠 skill 文字；session 改名、設定檔與 Git config 變動不在比對範圍；遠端變動無法分辨是本輪推送或他人並行推送；只在 macOS 本機 Git 驗證；跨工具與跨 OS 尚未驗收",
       "next": "純問答不新增 owner、commit 或 push；改檔才升級"
     },
     {

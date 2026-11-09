@@ -142,6 +142,18 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 `test_preflight.py` 8 個測試用真 Git 與拋棄式 ed25519 金鑰：持有者帶未提交／未推送工作可寫；空閒、他人、同工具別 session、標記不可讀、無效 owner 都拒絕；開工後被他人搶占時本機 HANDOFF 仍寫著自己，寫入檢查以落後／分岔擋下；離線不用舊 tracking ref；每次寫入都要新確認；通道離線、元件就地改動在 Git 通過時以 `release:` 拒絕；批次的漂移目標與 confirm 例外。scratch 副本逐一移除 11 個守門，10 個讓測試失敗；剩下的是批次失敗列的 `pop('manifest')`，manifest 只在確認成功後才寫入，那兩行是死碼，已刪除。邊界：仍是協調檢查不是原子 claim，檢查到寫入之間有時間窗；簽章端與金鑰仍是測試替身；沒有接進任何工具的寫入入口。
 
+## F12 並行線不共用工作樹（2026-11-09）
+
+`lines.py` 的 `assess_lines` 檢查一份登記的並行線（線 ID、checkout 路徑、宣告分支）。判定靠 Git 自己回報的 toplevel、index 路徑與目前分支，不比路徑字串，所以子目錄、symlink、複製過去指向別線 git dir 的 `.git` 檔都會被認成同一棵樹或同一個 index。同工作樹（`shared-worktree`）、同 index（`shared-index`）、同分支（`shared-branch`）的每條線都標記；宣告分支與實際不符（含 detached）是 `branch-mismatch`；非 checkout、重複或空線 ID 也各有代碼；每條線恰列一次，有任何代碼或沒有線就不是 ok。不同分支不是豁免：在同一棵樹裡切分支，另一條線的未提交檔與 staged 內容會被一起帶走。
+
+`test_lines.py` 5 個測試用真 Git：`git worktree` 與獨立 clone 是合格的獨立線（一邊 stage 後另一邊 `status` 仍為空）；同樹換分支、子目錄、symlink、複製 `.git` 檔、detached、不存在、非 repo、重複 ID。scratch 副本逐一移除 9 個守門，7 個讓測試失敗；另兩個（路徑 realpath、先檢查目錄存在）由 Git 本身涵蓋，已刪除，並另以未解析的 `/var` 暫存路徑確認 symlink 仍判同樹。邊界：只偵測不鎖；登記表由呼叫端提供，沒經過登記直接進同一資料夾的 agent 擋不到；未接進任何工具。
+
+## F23 只讀輪次不留狀態（2026-11-09）
+
+`readonly.py` 的 `read_only(repo, action)` 在回答前後各取一次快照比對：本機 branch／tag ref 與 HEAD、index 檔的 SHA-256、每個變更或未追蹤檔的內容 hash、遠端 `ls-remote`。回答可以 fetch，所以 remote-tracking ref 不比。快照全程用 `git --no-optional-locks`，否則 stat 過期時光是 `status` 就會改寫 index，造成假的 `index-changed`。遠端列不出來（離線、無 upstream）記 `unverified`，不當成沒變；遠端變了只報 `remote-changed`，分不出是本輪推送還是別人並行推送。回答拋例外時報告掛在例外的 `read_report` 上。
+
+`test_readonly.py` 5 個測試用真 Git：讀檔／log／fetch 乾淨、stat 過期不誤報；寫標記、對已改檔再改、stage、commit、push、新增檔、開分支、只建 ref、只 detach 各被指出；離線、無 upstream、非 repo 都是未驗證。scratch 副本逐一移除 12 個守門都讓測試失敗。邊界：只偵測不阻擋，session 改名、Git config 與 repo 外的檔案不在比對範圍；未接進任何工具。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。
