@@ -784,6 +784,53 @@
      "new": "'tests': sorted(all_tests), 'projects': []}"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_doctor"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/doctor.py",
+     "old": "'state': 'ok' if which(name) else 'missing-tool'})",
+     "new": "'state': 'ok'})"
+    },
+    {
+     "file": "experiments/v2/doctor.py",
+     "old": "        present = bool(environ.get(name, '').strip())",
+     "new": "        present = name in environ"
+    },
+    {
+     "file": "experiments/v2/doctor.py",
+     "old": "        missing = ([t for t in needs_tools if not which(t)]\n                   + [c for c in needs_configs if not environ.get(c, '').strip()])",
+     "new": "        missing = [c for c in needs_configs if not environ.get(c, '').strip()]"
+    },
+    {
+     "file": "experiments/v2/doctor.py",
+     "old": "\n                   + [c for c in needs_configs if not environ.get(c, '').strip()])",
+     "new": ")"
+    },
+    {
+     "file": "experiments/v2/doctor.py",
+     "old": "                state = 'ok' if probe() is True else 'connection-failed'",
+     "new": "                state = 'ok' if probe() else 'connection-failed'"
+    },
+    {
+     "file": "experiments/v2/doctor.py",
+     "old": "            except Exception:\n                state = 'connection-failed'",
+     "new": "            except Exception as error:\n                state = 'connection-failed: ' + str(error)"
+    },
+    {
+     "file": "experiments/v2/doctor.py",
+     "old": "        if missing:\n            state = 'not-attempted'\n        else:",
+     "new": "        if False:\n            pass\n        else:"
+    },
+    {
+     "file": "experiments/v2/doctor.py",
+     "old": "    return {'ok': all(row['state'] == 'ok' for row in rows), 'rows': rows}",
+     "new": "    return {'ok': True, 'rows': rows}"
+    }
+   ]
   }
  ]
 }

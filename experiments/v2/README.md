@@ -194,7 +194,11 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 python3 -X utf8 experiments/v2/mutants.py
 ```
 
-2026-11-09 macOS 實跑：144 個全部 killed，約 90 秒；先前 `lines.py` 刪掉的兩段冗餘守門對應的刪改已從清單移除（執行器把它們報為 stale）。`test_mutants.py` 用合成套件測執行器本身。邊界：只涵蓋本輪新增模組，較早模組的 mutation 仍只在上文敘述；刪改由人挑選；太慢，不在 `verify_v2.py` 預設流程。
+2026-11-09 macOS 實跑：144 個全部 killed（之後加入 `doctor.py` 的 8 個，單獨跑也全部 killed，共 152 個），約 90 秒；先前 `lines.py` 刪掉的兩段冗餘守門對應的刪改已從清單移除（執行器把它們報為 stale）。`test_mutants.py` 用合成套件測執行器本身。邊界：只涵蓋本輪新增模組，較早模組的 mutation 仍只在上文敘述；刪改由人挑選；太慢，不在 `verify_v2.py` 預設流程。
+
+## 本機能力診斷（2026-11-09）
+
+`doctor.py` 是 F16b 的原型。`diagnose` 把三種缺口分開報：缺工具（PATH 上找不到）、缺設定（環境變數沒設或只有空白）、連線失敗（工具與設定都在，probe 卻沒回 `True` 或拋例外）。缺前提的連線不呼叫，記 `not-attempted` 並列出缺什麼，所以沒設金鑰不會被誤報成服務掛掉。設定只看名稱有沒有值，值本身與例外訊息都不進報告。`test_doctor.py` 2 個測試；`mutants.json` 8 個刪改全部 killed。邊界：清單由呼叫端提供，還沒列骨架實際需要的工具與設定；只看環境變數，不查設定檔。
 
 ## F50 與索引權威
 

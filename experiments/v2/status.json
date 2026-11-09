@@ -384,8 +384,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/doctor.py",
+          "scope": "M2 doctor 原型 diagnose：工具（PATH 上有沒有）、設定（環境變數有沒有設且非空，只看名稱不存值）、連線（前提都在才呼叫 probe，回 True 才算 ok）三類分開報；缺前提的連線記 not-attempted 並列原因，不當成連線失敗"
+        },
+        {
+          "path": "experiments/v2/test_doctor.py",
+          "scope": "實測缺工具、空白或未設定的設定、連線回 False／拋例外／回非 True 值、缺工具或設定而未呼叫的連線各分開；假的設定值與例外訊息不出現在報告 JSON；全部具備才 ok；mutants.json 8 個刪改全部 killed"
+        }
+      ],
+      "unknown": "工具、設定與連線清單由呼叫端提供，尚未列出骨架實際需要的項目；只看環境變數，不查設定檔或憑證檔；未接進任何工具；跨工具與跨 OS 尚未驗收",
       "next": "缺工具／配置與連線失敗分開報"
     },
     {
@@ -599,7 +608,7 @@
         },
         {
           "path": "experiments/v2/mutants.json",
-          "scope": "2026-11-09 本輪新增九個模組（preflight、batch、lines、readonly、state、evidence、facts、decisions、policy、impact）共 144 個守門刪改；同日在 macOS 實跑全部 killed，約 90 秒"
+          "scope": "2026-11-09 本輪新增九個模組（preflight、batch、lines、readonly、state、evidence、facts、decisions、policy、impact）與 doctor 共 152 個守門刪改；同日在 macOS 實跑全部 killed，約 90 秒"
         },
         {
           "path": "experiments/v2/test_mutants.py",
