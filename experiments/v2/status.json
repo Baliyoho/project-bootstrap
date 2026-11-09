@@ -494,9 +494,22 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
-      "next": "乾淨第二機接續；不能從第一機私有附件取得才成功"
+      "evidence": [
+        {
+          "path": "experiments/v2/resume.py",
+          "scope": "M4 換裝置接續偵測原型：clone 用單分支 git clone，只帶已提交的檔，未追蹤／ignore／repo 外的私有附件都不會到第二機；check 以指定家目錄（乾淨機＝空資料夾）照入口文件開工段落走：`~/` 路徑與 repo 內連結是候選，含程序標記行者算程序；程序必須在 repo 內找得到，家目錄副本不算；段落點名的 repo 連結在 checkout 缺席為缺漏，只在第一機工作樹存在為私有附件；可達副本的 source 標記不同列為漂移；入口或段落讀不到為未知"
+        },
+        {
+          "path": "experiments/v2/test_resume.py",
+          "scope": "合成 repo 實測：只指向家目錄的程序在空家目錄不通過、家目錄有副本仍要求 repo 內來源、段落內連到部署包通過、只在其他節連到不算、無標記不算、真 git clone 後缺漏與私有附件分開報（外站連結、錨點、目錄連結不誤報）、source 漂移、入口讀不到／缺段落為未知、段落止於同層標題；mutants.json 15 個刪改全部 killed"
+        },
+        {
+          "path": "experiments/v2/test_resume_repo.py",
+          "scope": "對本 repo 以空家目錄跑須通過且程序來自 PROJECT-BOOTSTRAP.md；2026-11-10 首跑（乾淨 clone＋空家目錄）不通過：AGENTS 開工段落只指向全域 skill 路徑，舊句要人「直接開那個檔讀」而新機上它不存在；已在 AGENTS 補部署包 3.8 節指標"
+        }
+      ],
+      "unknown": "只模擬同一台機器上的乾淨 clone 加空家目錄，沒有真的第二台機器或其他 OS；只看入口段落連結得到的檔含不含程序標記，不核對指定節號、不判斷讀者能否照做；hook、憑證與工具設定在新機的狀態未查；未接進現行 A 程序；跨工具與跨 OS 尚未驗收",
+      "next": "真實第二機（或乾淨帳號）照 A 模式接續一次並記錄；部署出去的專案入口同樣檢查（專案層有 skill，風險不同）"
     },
     {
       "id": "F16b",

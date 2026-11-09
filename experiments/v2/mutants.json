@@ -1706,6 +1706,88 @@
      "new": "        phase = re.match(r'(\\S+)\\s', row[0] + ' ')"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_resume"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "        return {'result': '未知', 'reasons': ['entry-unreadable']}\n",
+     "new": "        text = ''\n"
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "    if section is None:\n        return {'result': '未知', 'reasons': ['section-missing']}\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "                if other and len(other.group(1)) <= depth:\n                    break\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "        if re.match(r'[a-z]+:', target) or target.startswith('#'):\n            continue\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "        found.append(('repo', target.split('#')[0]))\n",
+     "new": "        found.append(('repo', target))\n"
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "    for path in HOME_PATH.findall(section):\n        found.append(('home', path))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "        if kind == 'repo' and content is None and not location.is_dir():\n",
+     "new": "        if kind == 'repo' and content is None:\n"
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "            if first is not None and (Path(first) / path).exists():\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "        found = marker.search(content) if content is not None else None\n",
+     "new": "        found = content\n"
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "            source = SOURCE.search(content, found.end())\n",
+     "new": "            source = SOURCE.search(content)\n"
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "    in_repo = [p for p in procedures if p['kind'] == 'repo']\n",
+     "new": "    in_repo = procedures\n"
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "    if missing:\n        reasons.append('required-missing')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "    if private:\n        reasons.append('private-attachment')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "            'drift': drift if len(drift) > 1 else []}\n",
+     "new": "            'drift': []}\n"
+    },
+    {
+     "file": "experiments/v2/resume.py",
+     "old": "    subprocess.run(['git', 'clone', '-q', '--no-hardlinks', '--single-branch', '--branch',\n                    branch, str(repo), str(dest)], check=True, capture_output=True)\n",
+     "new": "    import shutil\n    shutil.copytree(repo, dest)\n"
+    }
+   ]
   }
  ]
 }

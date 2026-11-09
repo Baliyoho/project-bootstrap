@@ -26,6 +26,7 @@
   - F6／F7／F8 `trail.py`＋`trail_sources.py`：直接讀決策書第 7 節、實現規劃 3.4 路線表與第 7 節分期表；抓到第 7 節第 7 條缺 `理由：` 標記，已補（未改字句）。
   - F26 `confluence.py`、F24 `campaign.py`、F35 `publish.py`（阻擋）、F21 `bypass.py`（index 擋就地改 core＋跳步雜湊鏈）、F17 `install.py`、F39 `inventory.py`、F3／F40 `ingest.py`（實跑輸出轉成 59 筆全 PASS）。
   - 較早 14 個 v2 檔對應到 ID；測試守住新增檔必須被某 ID 認領（只剩 `__init__.py`、`status.json` 刻意回全驗）。
+- 2026-11-10 第三批：F16a `resume.py`（乾淨 clone＋空家目錄照 AGENTS 開工段落找程序）。首跑不通過：AGENTS 只指向全域 skill，新機上不存在；已補部署包 3.8 節指標，`test_resume_repo.py` 守住。
 - 現行 22 檔部署包、skill／hook 副本及 `VERSION` 未改，無同步債；未呼叫額外模型或真實服務。
 
 ## 未完成／下一步
@@ -33,7 +34,7 @@
 1. **P0 未退出。** guest 父程序崩潰後帳本正確阻擋，但沒有可信解除路徑，等決策書 Q1（見懸置）。
 2. 已寫效果冪等／回滾與跨 epoch 原子歸因未驗。舊 `managed_vm_switch` 仍借 host worker 並掛可寫 scratch；兩 VM 的 virtiofs `flock` 不協調。無共享路徑只涵蓋固定 shell 工具與 `note` 寫入。
 3. 可信真人核准、簽署金鑰發行／撤銷與額度來源；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。
-4. 不需使用者決定、可續做：F14／F15／F16a（乾淨第二機接續：先查 AGENTS 指向的全域 skill 在新機不存在時，repo 內能否取得程序）、F41；較早模組（broker／launcher／lifecycle 等）的 mutation 轉進 `mutants.json`；F45 宣告表再擴充（序號規則、prompt 名稱；部分已由 verify_bootstrap「主張沒復活」守）；ARCHITECT 與各報告的決策轉成 `trail` 可讀格式；F26 衝突處置驗收。
+4. 不需使用者決定、可續做：F14／F15、F41；較早模組（broker／launcher／lifecycle 等）的 mutation 轉進 `mutants.json`；F45 宣告表再擴充（序號規則、prompt 名稱；部分已由 verify_bootstrap「主張沒復活」守）；ARCHITECT 與各報告的決策轉成 `trail` 可讀格式；F26 衝突處置驗收。
 5. 需要先有決定或授權才能做：把 `ingest`／`bypass`／`contradictions` 接進現行 A4／B7 或 hook（＝切換現行程序）；F46 模型實際遵循探針（額外模型呼叫）；鎖定 runtime／候選版本／LICENSE／digest 後做 P1。F22 常態必讀 46,239 字元（上限 12,000），不通過照報。Windows hook 同步、Mac Codex 真實注入、R01–R09 邊界獨立複審仍待做。
 
 ## 地雷與注意事項

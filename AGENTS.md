@@ -6,7 +6,7 @@
 
 **先走接棒程序的 A 模式，A 沒跑完之前不要改任何檔案**；收工走 B 模式，中途要拉最新或推一個安全點走 C 模式。
 
-程序檔在**全域**副本：`~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）——**這個 repo 刻意沒有專案層的那一份**（理由見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有的東西」）。沒有全域副本、或工具不會自動載入 skill 的時候就直接開那個檔讀，它是純 Markdown。
+程序檔在**全域**副本：`~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）——**這個 repo 刻意沒有專案層的那一份**（理由見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有的東西」）。工具不會自動載入 skill 的時候就直接開那個檔讀，它是純 Markdown。**這台機器沒有全域副本（例如乾淨的新機器）時，程序在 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的「3.8」節，那段就是同一份 `SKILL.md`**；照讀它，不要從別台機器搬檔或憑記憶重刻。（2026-11-10／F16a：舊句在沒有全域副本時叫人開一個不存在的檔，乾淨 clone 加空家目錄實測找不到程序。）
 
 **下一輪接棒完成 A 模式後，開始任務前先讀 [project-bootstrap-reaudit-2026-11-03.md](project-bootstrap-reaudit-2026-11-03.md)**（2026-11-03 使用者明確要求）。這是第二輪複審快照，列出 R01–R09、重現證據與驗收門檻。先讀它才能分清「舊反例已修」與「修正邊界仍有缺口」，不能只看到前輪結案就當作沒有待辦。報告不累積實作進度，當下狀態看 HANDOFF。
 

@@ -252,6 +252,14 @@ python3 -X utf8 experiments/v2/mutants.py
 
 `test_ingest.py` 7 個測試，行格式由本地函式產生；`test_ingest_format.py` 拿 `verify_bootstrap.py` 自己的 `record` 比對同一格式（它 import `tools/`，所以不放進 mutation 群組）；`mutants.json` 18 個刪改全部 killed。邊界：宣告輸入由呼叫端列，漏列的輸入改變不會失效；解析只證明紀錄與輸出一致，不證明輸出未被偽造；尚未把紀錄寫進任何持久位置或接進 A4／B7。
 
+## 乾淨第二機接續（2026-11-10）
+
+`resume.py` 是 F16a 的偵測原型。`clone` 用單分支 `git clone` 建第二機的 checkout，只帶已提交的檔；`check` 拿一個家目錄（乾淨機就是空資料夾）照入口文件的開工段落走：段落裡的 `~/` 路徑與 repo 內連結是候選，含程序標記行（預設 `name: handoff`）的才算程序。程序必須在 repo 內找得到——家目錄副本新機上還沒有；段落點名的 repo 連結在 checkout 裡缺席是缺漏，只在第一機工作樹存在是私有附件；可達副本的 `source:` 標記不同列為漂移。
+
+首跑本 repo 就不通過：AGENTS 開工段落只指向全域 skill，沒有全域副本時叫人「直接開那個檔讀」，而新機上那個檔不存在。已在 AGENTS 補「讀部署包 3.8 節」的指標，`test_resume_repo.py` 以空家目錄守住。
+
+`test_resume.py` 9 個測試（含真 `git clone`）；`mutants.json` 15 個刪改全部 killed。邊界：只在同一台機器模擬乾淨 clone 加空家目錄，不是真的第二台機器或其他 OS；只看連結得到的檔含不含程序標記，不核對節號、不判斷讀者照不照得做；hook、憑證、工具設定在新機的狀態沒查；未接進現行 A 程序。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。
