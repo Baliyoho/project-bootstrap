@@ -592,8 +592,21 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/mutants.py",
+          "scope": "mutation 執行器：在暫存複本逐一套用 mutants.json 的守門刪改，跑對應測試，分 killed／survived／stale（原文不是恰好一次）；只有全部 killed 才 exit 0；不改工作樹"
+        },
+        {
+          "path": "experiments/v2/mutants.json",
+          "scope": "2026-11-09 本輪新增九個模組（preflight、batch、lines、readonly、state、evidence、facts、decisions、policy、impact）共 144 個守門刪改；同日在 macOS 實跑全部 killed，約 90 秒"
+        },
+        {
+          "path": "experiments/v2/test_mutants.py",
+          "scope": "合成套件實測執行器分得出被測到的守門（killed）、沒被測到的守門（survived）、原文不存在與出現兩次（stale）、檔案不存在（stale）；空規格不算通過；只跑指定測試模組；原始檔不被改動"
+        }
+      ],
+      "unknown": "只涵蓋 2026-11-09 本輪新增模組；較早的 v2 模組（gitclaim、release、VM／broker 等）的 mutation 只記在 README 敘述，尚未轉成規格；刪改由人挑選，不是自動產生；未納入 verify_v2 預設流程（太慢）；跨工具與跨 OS 尚未驗收",
       "next": "移除判斷後測試真的失敗；不只比規則字串"
     },
     {
@@ -986,6 +999,10 @@
         {
           "path": "experiments/v2/test_lifecycle.py",
           "scope": "真 guardian 啟動後修改腳本內容，原計畫不能用於替換或重啟續接"
+        },
+        {
+          "path": "experiments/v2/mutants.json",
+          "scope": "本輪 mutation 證據改存 repo：每個刪改的檔案、原文、替換與要跑的測試模組都可在另一台機器以 python3 -X utf8 experiments/v2/mutants.py 重跑，不依賴聊天暫存檔"
         }
       ],
       "unknown": "完整依賴／授權清單、環境搬遷及跨工具證據尚未驗收",

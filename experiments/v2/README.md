@@ -186,6 +186,16 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 `test_impact.py` 4 個測試，其中一個讀真實的 `status.json`；scratch 副本逐一移除 8 個守門都讓測試失敗（原本「改到的測試本身也列入」那一行因為已被需求對應涵蓋，刪掉了）。邊界：粒度是檔案；目前有 14 個 v2 檔（如 `broker.py`、`session.py`、`lifecycle.py`）沒被列為任何 ID 的證據，改它們只會回全驗；專案安裝清單由呼叫端提供，未接 `sync_project.py`。
 
+## 可重跑的 mutation 檢查（2026-11-09）
+
+本輪各節提到的「scratch 副本逐一移除守門」原本只存在聊天暫存檔，換機就拿不到（F49）。現在刪改清單存在 `mutants.json`（每項記檔案、原文、替換與要跑的測試模組），`mutants.py` 在暫存複本逐一套用並跑測試，結果分 killed、survived、stale（原文不是恰好出現一次，代表規格過期）；只有全部 killed 才 exit 0，工作樹不被改動。
+
+```bash
+python3 -X utf8 experiments/v2/mutants.py
+```
+
+2026-11-09 macOS 實跑：144 個全部 killed，約 90 秒；先前 `lines.py` 刪掉的兩段冗餘守門對應的刪改已從清單移除（執行器把它們報為 stale）。`test_mutants.py` 用合成套件測執行器本身。邊界：只涵蓋本輪新增模組，較早模組的 mutation 仍只在上文敘述；刪改由人挑選；太慢，不在 `verify_v2.py` 預設流程。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。

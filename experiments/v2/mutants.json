@@ -1,0 +1,789 @@
+{
+ "schema": 1,
+ "groups": [
+  {
+   "tests": [
+    "experiments.v2.test_preflight",
+    "experiments.v2.test_batch"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/preflight.py",
+     "old": "    if not isinstance(owner, str) or len(owner_parts(owner.strip()) or ()) != 3:\n        raise GitGateDenied('invalid-owner')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/preflight.py",
+     "old": "    if ahead and behind:\n        raise GitGateDenied('diverged')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/preflight.py",
+     "old": "    if behind:\n        raise GitGateDenied('behind-pull-required')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/preflight.py",
+     "old": "    if remote_owner is None:\n        raise GitGateDenied('owner-unknown')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/preflight.py",
+     "old": "    if remote_owner == IDLE:\n        raise GitGateDenied('not-claimed')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/preflight.py",
+     "old": "    if remote_owner != owner:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/preflight.py",
+     "old": "    _fetch(repo, env, remote)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/preflight.py",
+     "old": "            confirmed = self.gate.confirm(operation)\n",
+     "new": "            confirmed = {'operation': operation, 'epoch': 1, 'manifest': ''}\n"
+    },
+    {
+     "file": "experiments/v2/batch.py",
+     "old": "                if confirm is not None:\n                    row['manifest'] = confirm(path)['manifest']\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/batch.py",
+     "old": "            except Denied as error:\n                row.update(outcome='failed', code='release:' + str(error))\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_lines"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/lines.py",
+     "old": "        if not isinstance(line_id, str) or not line_id or line_id in ids:\n            row['codes'].append('duplicate-line')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/lines.py",
+     "old": "not line_id or line_id in ids",
+     "new": "line_id in ids"
+    },
+    {
+     "file": "experiments/v2/lines.py",
+     "old": "        if actual != branch:\n            row['codes'].append('branch-mismatch')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/lines.py",
+     "old": "    for groups, code in ((by_tree, 'shared-worktree'), (by_index, 'shared-index'),",
+     "new": "    for groups, code in ((by_index, 'shared-index'),"
+    },
+    {
+     "file": "experiments/v2/lines.py",
+     "old": "(by_index, 'shared-index'),\n",
+     "new": "\n"
+    },
+    {
+     "file": "experiments/v2/lines.py",
+     "old": "\n                         (by_branch, 'shared-branch')):",
+     "new": "):"
+    },
+    {
+     "file": "experiments/v2/lines.py",
+     "old": "return {'ok': bool(rows) and all(",
+     "new": "return {'ok': all("
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_readonly"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "'--no-optional-locks', ",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "    elif before['refs'] != after['refs'] or before['head'] != after['head']:",
+     "new": "    elif before['refs'] != after['refs']:"
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "before['refs'] != after['refs'] or ",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "    if before['index'] != after['index']:\n        changes.append('index-changed')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "    if before['files'] != after['files']:\n        changes.append('worktree-changed')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "    elif before['remote'] != after['remote']:\n        changes.append('remote-changed')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "    if before['remote'] is None or after['remote'] is None:\n        unverified.append('remote')\n    elif",
+     "new": "    if"
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "    if before['refs'] is None or after['refs'] is None:\n        unverified.append('local-refs')\n    elif",
+     "new": "    if"
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "        advertised = data if listed == 0 else None",
+     "new": "        advertised = data"
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "            files[path] = data.strip() if code_ == 0 else b'unreadable'",
+     "new": "            files[path] = b''"
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "        error.read_report = compare(before, snapshot(repo, env))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/readonly.py",
+     "old": "return {'ok': not changes and not unverified,",
+     "new": "return {'ok': not changes,"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_state"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/state.py",
+     "old": "if not isinstance(goal, dict) or not str(goal.get('text', '')).strip():",
+     "new": "if not isinstance(goal, dict):"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        if not isinstance(ids, list) or not ids:\n            findings.append(('goal', 'goal-without-ids'))\n        elif",
+     "new": "        if"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        elif any(i not in known for i in ids):\n            findings.append(('goal', 'goal-unknown-id'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        if current is None:\n            findings.append(('goal', 'decision-version-unreadable'))\n        elif",
+     "new": "        if"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        elif goal.get('decision_version') != current:\n            findings.append(('goal', 'goal-stale-version'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "or not (Path(root) / source).is_file():",
+     "new": "or False:"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        if not isinstance(tid, str) or not tid or tid in seen:\n            findings.append((str(tid), 'duplicate-or-missing-id'))\n            continue\n",
+     "new": "        if not isinstance(tid, str):\n            continue\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        if task.get('status') not in TASK_STATES:\n            findings.append((tid, 'task-status-invalid'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        if task.get('status') == 'done' and not task.get('evidence'):\n            findings.append((tid, 'done-without-evidence'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "            findings.append((tid, 'blocked-without-reason'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "            findings.append((str(tid), 'next-unknown-task'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "            findings.append((tid, 'done-listed-as-next'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        findings.append(('next', 'next-duplicate'))\n",
+     "new": "        pass\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        findings.append((tid, 'open-not-scheduled'))\n",
+     "new": "        pass\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "            findings.append((rid, 'risk-kind-invalid'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        findings += _evidence_findings(risk, root, rid)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        findings += _evidence_findings(task, root, tid)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "            findings.append((rid, risk['kind'] + '-without-evidence'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        if not isinstance(rid, str) or not rid or rid in seen:",
+     "new": "        if not isinstance(rid, str) or not rid:"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        return [(where, 'evidence-invalid')]\n",
+     "new": "        return []\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "                or '..' in path.split('/')):",
+     "new": "):"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "            found.append((where, 'evidence-missing'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        return 'unknown'\n",
+     "new": "        return risk.get('kind')\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": " or 'evidence-missing' in codes):",
+     "new": "):"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        if task is None or task.get('status') == 'done':",
+     "new": "        if task is None:"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "            tasks.setdefault(task['id'], task)",
+     "new": "            tasks[task['id']] = task"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "    if unscheduled:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "    if other:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/state.py",
+     "old": "        status = '未驗證' if by_where.get('goal') else '已核對'",
+     "new": "        status = '已核對'"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_evidence"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "and not value.startswith('/') and '..' not in value.split('/'):",
+     "new": ":"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "and '..' not in value.split('/'):",
+     "new": ":"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "            except OSError:\n                return None\n",
+     "new": "            except OSError:\n                return ''\n"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "        if kind == 'env' and value in environ:",
+     "new": "        if kind == 'env':"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "    if not isinstance(record, dict) or record.get('result') not in RESULTS:",
+     "new": "    if not isinstance(record, dict):"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "    if record.get('id') in revoked:\n        return '未驗證', 'revoked'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "        if not all(isinstance(record.get(key), str) and record.get(key).strip()",
+     "new": "        if not all(isinstance(record.get(key), str)"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "for key in ('source', 'acquired_at', 'scope')):",
+     "new": "for key in ('source',)):"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "        if not isinstance(depends, dict) or not depends:",
+     "new": "        if not isinstance(depends, dict):"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "            if current is None:\n                return '未驗證', 'dependency-unreadable:' + name\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "            if current != digest:\n                return '未驗證', 'expired:' + name\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "    if result in ('FAIL', 'ERROR'):",
+     "new": "    if result in ('FAIL',):"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "    if result in ('SKIP', 'NOT_CONFIGURED'):",
+     "new": "    if result in ('SKIP',):"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "    elif '不通過' in states:\n        overall = '不通過'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "    elif '未驗證' in states:\n        overall = '未驗證'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "    if not rows:\n        overall = '未驗證'\n    elif",
+     "new": "    if"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "            rows.append({'claim': claim, 'state': '未驗證', 'reason': 'no-evidence'})\n            continue\n",
+     "new": "            continue\n"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "        state, reason = _resolve(candidates[-1],",
+     "new": "        state, reason = _resolve(candidates[0],"
+    },
+    {
+     "file": "experiments/v2/evidence.py",
+     "old": "    fresh = record.get('round') == round_id",
+     "new": "    fresh = True"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_facts"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/facts.py",
+     "old": "    if result.returncode:\n        raise LookupError('git query failed')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/facts.py",
+     "old": "    if (not isinstance(relative, str) or not relative or relative.startswith('/')\n            or '..' in relative.split('/')):\n        raise LookupError('path outside repository')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/facts.py",
+     "old": " or relative.startswith('/')",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/facts.py",
+     "old": "\n            or '..' in relative.split('/')):",
+     "new": "):"
+    },
+    {
+     "file": "experiments/v2/facts.py",
+     "old": "        elif claim['fact'] not in allowed:\n            row.update(state='未知', reason='not-authorized')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/facts.py",
+     "old": "                row.update(state='一致' if observed == claim.get('expected') else '不一致',",
+     "new": "                row.update(state='一致',"
+    },
+    {
+     "file": "experiments/v2/facts.py",
+     "old": "    overall = ('不一致' if '不一致' in states else '未知' if '未知' in states or not rows\n               else '一致')",
+     "new": "    overall = ('不一致' if '不一致' in states else '未知' if '未知' in states\n               else '一致')"
+    },
+    {
+     "file": "experiments/v2/facts.py",
+     "old": "    overall = ('不一致' if '不一致' in states else '未知'",
+     "new": "    overall = ('未知' if '未知' in states else '不一致' if '不一致' in states else '未知'"
+    },
+    {
+     "file": "experiments/v2/facts.py",
+     "old": "'--no-optional-locks', ",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/facts.py",
+     "old": "_git(repo, env, 'status', '--porcelain') == ''",
+     "new": "True"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_decisions"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "    return isinstance(value, str) and value.strip() != ''",
+     "new": "    return isinstance(value, str)"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "    return isinstance(value, list) and value and all(_text(item) for item in value)",
+     "new": "    return isinstance(value, list) and all(_text(item) for item in value)"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "    return isinstance(value, list) and value and all(",
+     "new": "    return value and all("
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "    return [d for d in valid if affects <= set(d['scope'])]",
+     "new": "    return [d for d in valid if affects & set(d['scope'])]"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "        if (delegation.get('granted_by') == 'user' and _text(delegation.get('source'))",
+     "new": "        if (_text(delegation.get('source'))"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": " and _text(delegation.get('source'))\n",
+     "new": "\n"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "                and _ids(delegation.get('scope'))):",
+     "new": "                ):"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "        if not _text(did) or did in ids:",
+     "new": "        if not _text(did):"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "        if not (_text(decision.get('question')) and _ids(decision.get('affects'))):",
+     "new": "        if not _ids(decision.get('affects')):"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "and _ids(decision.get('affects'))):",
+     "new": "):"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "            if not _ids(decision.get('options')):\n                findings.append((did, 'pending-without-options'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "            if covered:\n                findings.append((did, 'delegated-but-waiting-for-user'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "                if not covered:\n                    findings.append((did, 'ai-decided-without-delegation'))\n                elif",
+     "new": "                if"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "                elif not _text(decision.get('rationale')):\n                    findings.append((did, 'delegated-without-rationale'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "            elif by != 'user':\n                findings.append((did, 'decider-unknown'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "            if not _text(decision.get('source')):\n                findings.append((did, 'decided-without-source'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "        else:\n            findings.append((did, 'decision-status-invalid'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "        if waits not in ids:\n            findings.append((str(task.get('id')), 'waits-for-unregistered-decision'))\n        elif",
+     "new": "        if"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "        elif waits not in pending:\n            findings.append((str(task.get('id')), 'waits-for-settled-decision'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "        if not _text(eid) or eid in ids:",
+     "new": "        if not _text(eid):"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "        for key in ('what', 'authorized_by', 'source', 'scope', 'reason'):",
+     "new": "        for key in ('what',):"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "        if not isinstance(recheck, dict) or not (_text(recheck.get('when'))\n                                                  or _text(recheck.get('until'))):",
+     "new": "        if not isinstance(recheck, dict):"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "                findings.append((eid, 'exception-recheck-invalid'))\n",
+     "new": "                pass\n"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "                if due <= today:",
+     "new": "                if due < today:"
+    },
+    {
+     "file": "experiments/v2/decisions.py",
+     "old": "    if not pending:\n        lines.append('無登記中的待決事項。')\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_policy"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        if any(entry.get('owner') not in RELEASED for entry in manifest.values()):\n            raise Denied('manifest-owner-invalid')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "    for manifest in (old, new):",
+     "new": "    for manifest in (new,):"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        if not any(path == root or path.startswith(root.rstrip('/') + '/')",
+     "new": "        if not any(path == root or path.startswith(root.rstrip('/'))"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "            if path in new or path in old:\n                raise Denied('ownership-conflict:' + path)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "            if path in local and path in old and local[path] != old[path]['sha256']:\n                raise Denied('released-file-edited:' + path)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "            if path in local and path not in old and local[path] != new[path]['sha256']:\n                raise Denied('ownership-unknown:' + path)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "            plan[path] = 'unchanged' if local.get(path) == new[path]['sha256'] else 'replace'",
+     "new": "            plan[path] = 'replace'"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "            if local[path] != old[path]['sha256']:\n                raise Denied('released-file-edited:' + path)\n            plan[path] = 'remove-released'",
+     "new": "            plan[path] = 'remove-released'"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        else:\n            raise Denied('ownership-unknown:' + path)\n",
+     "new": "        else:\n            plan[path] = 'keep-project'\n"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        if direction not in DIRECTIONS:\n            problems.append((name, 'direction-unknown'))\n        elif",
+     "new": "        if"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        elif effect not in ('restrict', 'permit'):\n            problems.append((name, 'effect-unconfirmed'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        elif (direction, effect) not in COHERENT:\n            problems.append((name, 'direction-loosens'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        if name in schema.get('slots', {}):\n            problems.append((name, 'mandatory-has-override-slot'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "    if check_schema(schema):\n        raise Denied('schema-invalid')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        if key in mandatory:\n            raise Denied('mandatory-not-overridable:' + key)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        if key not in slots:\n            raise Denied('unknown-field:' + key)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        if type(value) is not kind or type(base) is not kind:",
+     "new": "        if type(value) is not kind:"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        if type(value) is not kind or type(base) is not kind:",
+     "new": "        if type(base) is not kind:"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "            if missing:\n                raise Denied('loosens:' + key)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        elif direction == 'at-least' and value < base:",
+     "new": "        elif direction == 'at-least' and value < 0:"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        elif direction == 'at-most' and value > base:",
+     "new": "        elif direction == 'at-most' and False:"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        elif direction == 'true-only' and base and not value:",
+     "new": "        elif direction == 'true-only' and False:"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "        base = core.get(key, slots[key].get('default'))",
+     "new": "        base = slots[key].get('default')"
+    },
+    {
+     "file": "experiments/v2/policy.py",
+     "old": "    lines += [f'- {name}' for name in sorted(schema.get('mandatory', ()))]",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_impact"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/impact.py",
+     "old": "        items = [row] + list(row.get('parts', {}).values())",
+     "new": "        items = [row]"
+    },
+    {
+     "file": "experiments/v2/impact.py",
+     "old": "                if path:\n",
+     "new": "                if True:\n"
+    },
+    {
+     "file": "experiments/v2/impact.py",
+     "old": "    return path.rsplit('/', 1)[-1].startswith('test_')",
+     "new": "    return 'test_' in path"
+    },
+    {
+     "file": "experiments/v2/impact.py",
+     "old": "                          and not any(path in installed for installed in projects.values()))",
+     "new": "                          )"
+    },
+    {
+     "file": "experiments/v2/impact.py",
+     "old": "                          if path not in components\n",
+     "new": "                          if False\n"
+    },
+    {
+     "file": "experiments/v2/impact.py",
+     "old": "    tests = {path for path in all_tests if components[path] & requirements}",
+     "new": "    tests = set()"
+    },
+    {
+     "file": "experiments/v2/impact.py",
+     "old": "                      if any(path in installed for path in changed))",
+     "new": "                      )"
+    },
+    {
+     "file": "experiments/v2/impact.py",
+     "old": "'tests': sorted(all_tests), 'projects': sorted(projects)}",
+     "new": "'tests': sorted(all_tests), 'projects': []}"
+    }
+   ]
+  }
+ ]
+}
