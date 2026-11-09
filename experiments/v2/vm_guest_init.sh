@@ -23,18 +23,20 @@ $BB sleep 1
 if $BB flock -n /mnt/probe/lock $BB true; then echo GUEST_LOCK_NOT_HELD >/dev/hvc0; else echo GUEST_LOCK_HELD >/dev/hvc0; fi
 set -- $($BB cat /proc/$child/stat)
 echo GUEST_CHILD_SESSION=$6 >/dev/hvc0
-while :; do
-    for request in /mnt/probe/request-*; do
-        [ -f "$request" ] || continue
-        read request_id epoch factor value < "$request"
-        case "$request_id:$epoch:$factor:$value" in
-            *[!0123456789abcdef:-]* | *::* | :* | *:) echo GUEST_BAD_REQUEST >/dev/hvc0; continue ;;
-        esac
-        result="/mnt/probe/result-$request_id"
-        $BB printf '%s %s %s\n' "$request_id" "$epoch" "$((factor * value))" > "$result.tmp"
-        $BB mv "$result.tmp" "$result"
-        $BB rm "$request"
-        echo GUEST_COMPUTED=$request_id >/dev/hvc0
-    done
-    $BB sleep 0.1
+if ! exec 3<>/dev/hvc1; then
+    echo GUEST_CHANNEL_FAILED >/dev/hvc0
+    while :; do $BB sleep 1; done
+fi
+if ! $BB stty raw -echo <&3; then
+    echo GUEST_CHANNEL_TERMIOS_FAILED >/dev/hvc0
+    while :; do $BB sleep 1; done
+fi
+echo GUEST_CHANNEL_READY >/dev/hvc0
+while read -r request_id epoch factor value <&3; do
+    case "$request_id:$epoch:$factor:$value" in
+        *[!0123456789abcdef:-]* | *::* | :* | *:) echo GUEST_BAD_REQUEST >/dev/hvc0; continue ;;
+    esac
+    echo GUEST_COMPUTED=$request_id >/dev/hvc0
+    $BB printf '%s %s %s\n' "$request_id" "$epoch" "$((factor * value))" >&3
 done
+echo GUEST_CHANNEL_CLOSED >/dev/hvc0

@@ -18,7 +18,6 @@ import re
 import secrets
 import select
 import shutil
-import stat
 import subprocess
 import sys
 import tempfile
@@ -128,7 +127,8 @@ def check_guest(log: Path, share: Path, process: subprocess.Popen[bytes], probe_
         output = log.read_text(errors="replace")
         pid = re.search(r"GUEST_CHILD_PID=(\d+)", output)
         session = re.search(r"GUEST_CHILD_SESSION=(\d+)", output)
-        if ("GUEST_LOCK_HELD" in output and f"GUEST_PROBE_ID={probe_id}" in output
+        if ("GUEST_LOCK_HELD" in output and "GUEST_CHANNEL_READY" in output
+                and f"GUEST_PROBE_ID={probe_id}" in output
                 and pid and session and heartbeat_count(share, probe_id) >= 3):
             if pid.group(1) != session.group(1):
                 raise RuntimeError("guest child did not create its own session")
@@ -157,20 +157,59 @@ def launch(runner: Path, kernel: Path, ramdisk: Path, share: Path, seconds: int,
            log: Path, probe_id: str) -> tuple[subprocess.Popen[bytes], object, object]:
     output = log.open("wb")
     control_read, control_write = os.pipe()
+    request_read, request_write = os.pipe()
+    reply_read, reply_write = os.pipe()
     try:
         process = subprocess.Popen(
             [str(runner), str(kernel), str(ramdisk), str(share), str(seconds),
-             probe_id, str(control_read)],
+             probe_id, str(control_read), str(request_read), str(reply_write)],
             stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
-            pass_fds=(control_read,),
+            pass_fds=(control_read, request_read, reply_write),
         )
     except BaseException:
         os.close(control_write)
+        os.close(request_write)
+        os.close(reply_read)
         output.close()
         raise
     finally:
         os.close(control_read)
+        os.close(request_read)
+        os.close(reply_write)
+    process.guest_request = os.fdopen(request_write, "wb", buffering=0)
+    process.guest_reply = os.fdopen(reply_read, "rb", buffering=0)
     return process, output, os.fdopen(control_write, "wb", buffering=0)
+
+
+def close_guest_channel(process: subprocess.Popen[bytes]) -> None:
+    process.guest_request.close()
+    process.guest_reply.close()
+
+
+def read_guest_result(process: subprocess.Popen[bytes], request_id: str,
+                      epoch: int, deadline: float) -> int:
+    """Read one bounded reply from this VM's private serial port, not virtiofs."""
+    raw = bytearray()
+    while b"\n" not in raw:
+        if process.poll() is not None:
+            raise RuntimeError("VM exited during computation")
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RuntimeError("guest operation timed out")
+        if not select.select([process.guest_reply], [], [], min(0.1, remaining))[0]:
+            continue
+        chunk = os.read(process.guest_reply.fileno(), 129 - len(raw))
+        if not chunk:
+            raise RuntimeError("guest capability channel closed")
+        raw.extend(chunk)
+        if len(raw) > 128:
+            raise RuntimeError("invalid guest result")
+    if not re.fullmatch(rb"[0-9a-f]{32} [0-9]+ -?[0-9]+\n", raw):
+        raise RuntimeError("invalid guest result")
+    observed_id, observed_epoch, observed_value = raw.decode("ascii").split()
+    if observed_id != request_id or int(observed_epoch) != epoch:
+        raise RuntimeError("wrong guest result identity or epoch")
+    return int(observed_value)
 
 
 class VMRetirementGate:
@@ -196,52 +235,19 @@ class VMRetirementGate:
         check_guest(self.log, self.share, self.process, self.probe_id)
 
     def compute(self, epoch: int, factor: int, value: int) -> int:
-        """Run one bounded synthetic operation in the guest scratch share."""
+        """Run one bounded synthetic operation over this guest's serial port."""
         if self.process is None or self.process.poll() is not None:
             raise RuntimeError("VM is not live for computation")
         if (type(epoch) is not int or not 0 <= epoch <= 1000
                 or any(type(item) is not int or abs(item) > 1000 for item in (factor, value))):
             raise ValueError("invalid guest operation")
         request_id = secrets.token_hex(16)
-        request = self.share / ("request-" + request_id)
-        result = self.share / ("result-" + request_id)
-        temporary = self.share / ("request-" + request_id + ".tmp")
         try:
-            fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-            with os.fdopen(fd, "wb") as output:
-                output.write(f"{request_id} {epoch} {factor} {value}\n".encode("ascii"))
-            temporary.replace(request)
-            deadline = time.monotonic() + 8
-            while not result.exists():
-                if self.process.poll() is not None:
-                    raise RuntimeError("VM exited during computation")
-                if time.monotonic() >= deadline:
-                    raise RuntimeError("guest operation timed out")
-                time.sleep(0.05)
-            try:
-                fd = os.open(result, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
-            except OSError as error:
-                raise RuntimeError("guest result is not a regular file") from error
-            with os.fdopen(fd, "rb") as source:
-                info = os.fstat(source.fileno())
-                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
-                    raise RuntimeError("guest result is not a regular file")
-                raw = source.read(129)
-            if len(raw) > 128 or not re.fullmatch(
-                    rb"[0-9a-f]{32} [0-9]+ -?[0-9]+\n", raw):
-                raise RuntimeError("invalid guest result")
-            observed_id, observed_epoch, observed_value = raw.decode("ascii").split()
-            if observed_id != request_id or int(observed_epoch) != epoch:
-                raise RuntimeError("wrong guest result identity or epoch")
-            while f"GUEST_COMPUTED={request_id}" not in self.log.read_text(errors="replace"):
-                if self.process.poll() is not None or time.monotonic() >= deadline:
-                    raise RuntimeError("guest result lacks execution marker")
-                time.sleep(0.05)
-            return int(observed_value)
-        finally:
-            temporary.unlink(missing_ok=True)
-            request.unlink(missing_ok=True)
-            result.unlink(missing_ok=True)
+            self.process.guest_request.write(
+                f"{request_id} {epoch} {factor} {value}\n".encode("ascii"))
+        except BrokenPipeError as error:
+            raise RuntimeError("guest capability channel closed") from error
+        return read_guest_result(self.process, request_id, epoch, time.monotonic() + 8)
 
     def retire(self) -> dict:
         if self.process is None or self.process.poll() is not None:
@@ -250,6 +256,7 @@ class VMRetirementGate:
         self.control.close()
         result = self.process.wait(timeout=15)
         self.output.close()
+        close_guest_channel(self.process)
         output = self.log.read_text(errors="replace")
         if result != 0 or "HOST_STOPPED state=0" not in output:
             raise RuntimeError(f"VM stop was not confirmed: {output[-2000:]}")
@@ -265,6 +272,8 @@ class VMRetirementGate:
             self.control.close()
         if self.output is not None:
             self.output.close()
+        if self.process is not None:
+            close_guest_channel(self.process)
 
 
 def probe(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
@@ -306,12 +315,14 @@ def probe(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
                         restart.kill()
                         restart.wait()
                     restart_control.close()
+                    close_guest_channel(restart)
                     restart_output.close()
         finally:
             if process.poll() is None:
                 process.kill()
                 process.wait()
             control.close()
+            close_guest_channel(process)
             output.close()
 
 
@@ -345,6 +356,7 @@ def probe_cross_vm(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> Non
                     process.kill()
                 process.wait(timeout=5)
                 control.close()
+                close_guest_channel(process)
                 output.close()
 
 
@@ -366,6 +378,7 @@ def probe_owner_eof(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> No
             process.kill()
             process.wait(timeout=5)
         control.close()
+        close_guest_channel(process)
         output.close()
 
 

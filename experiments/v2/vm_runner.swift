@@ -2,8 +2,8 @@ import Foundation
 import Virtualization
 import Darwin
 
-if CommandLine.arguments.count != 7 {
-    fputs("usage: vm_runner KERNEL INITRAMFS SHARE_DIR STOP_AFTER_SECONDS PROBE_ID CONTROL_FD\n", stderr)
+if CommandLine.arguments.count != 9 {
+    fputs("usage: vm_runner KERNEL INITRAMFS SHARE_DIR STOP_AFTER_SECONDS PROBE_ID CONTROL_FD REQUEST_FD REPLY_FD\n", stderr)
     exit(2)
 }
 let kernel = URL(fileURLWithPath: CommandLine.arguments[1])
@@ -22,7 +22,17 @@ serial.attachment = VZFileHandleSerialPortAttachment(
     fileHandleForReading: FileHandle.standardInput,
     fileHandleForWriting: FileHandle.standardOutput
 )
-config.serialPorts = [serial]
+guard let requestFD = Int32(CommandLine.arguments[7]),
+      let replyFD = Int32(CommandLine.arguments[8]) else {
+    fputs("HOST_INVALID_GUEST_CHANNEL_FD\n", stderr)
+    exit(2)
+}
+let workPort = VZVirtioConsoleDeviceSerialPortConfiguration()
+workPort.attachment = VZFileHandleSerialPortAttachment(
+    fileHandleForReading: FileHandle(fileDescriptor: requestFD, closeOnDealloc: false),
+    fileHandleForWriting: FileHandle(fileDescriptor: replyFD, closeOnDealloc: false)
+)
+config.serialPorts = [serial, workPort]
 config.networkDevices = []
 let fs = VZVirtioFileSystemDeviceConfiguration(tag: "probe")
 fs.share = VZSingleDirectoryShare(directory: VZSharedDirectory(url: shareDir, readOnly: false))

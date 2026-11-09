@@ -139,11 +139,11 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "Mac 兩個相繼 epoch 的固定合成 guest 算術經 parent broker 寫入合成工作樹；逐 epoch 退場證據保留、舊請求拒絕；setsid 後代在 VM stop、host runner SIGKILL、控制管道 EOF 後停止共享寫入；父程序 SIGKILL 後因缺持久證據拒絕恢復；未接真實工具或 guest 獨立歸因"
+          "scope": "Mac 兩個相繼 epoch 的固定合成 guest 算術經專用雙向 virtio console 回傳，再由 parent broker 寫入合成工作樹；逐 epoch 退場證據保留、舊請求拒絕；setsid 後代在 VM stop、host runner SIGKILL、控制管道 EOF 後停止共享寫入；父程序 SIGKILL 後因缺持久證據拒絕恢復；未接真實工具或 guest 獨立歸因"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
-      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；程序群組候選被 setsid 反例否決。VM 已在兩個 epoch 接固定合成操作及退場切換順序，但尚須讓真實受管工具在 VM 內、隔離已寫效果、提供 guest 獨立身分並驗未解執行恢復及其他 OS，不外推完整歸因",
+      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；程序群組候選被 setsid 反例否決。VM 已在兩個 epoch 用專用 console 回傳固定合成操作及驗退場切換順序，但尚須讓真實受管工具在 VM 內接 broker 授權、隔離已寫效果、提供 guest 獨立身分並驗未解執行恢復及其他 OS，不外推完整歸因",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -428,14 +428,14 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "可重跑的 Mac Apple silicon 合成 VM：setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
+          "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
         },
         {
           "path": "experiments/v2/test_vm_probe.py",
-          "scope": "退場後仍寫入與後代未脫離 session 的離線負向控制；不代替 VM 實跑"
+          "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch 與截斷回覆的離線負向控制；不代替 VM 實跑"
         }
       ],
-      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。VM 不執行受管工具或連 broker，guest 共享效果不回滾；父程序中斷而 VM 退場證據未保存時仍阻擋且無安全自動恢復。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
+      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定算術透過 VM 專用 console 回傳，VM 仍不執行受管工具或接 broker 授權；guest 共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無安全自動恢復。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
       "next": "先讓 VM 內工具經受控 broker 通道，隔離或冪等化已寫共享效果，並設計失去持久退場證據後的可信恢復；再驗 host／hypervisor 異常、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
     },
     {
