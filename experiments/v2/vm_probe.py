@@ -15,8 +15,10 @@ import os
 from pathlib import Path
 import platform
 import re
+import secrets
 import select
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -192,6 +194,54 @@ class VMRetirementGate:
             self.log, self.probe_id,
         )
         check_guest(self.log, self.share, self.process, self.probe_id)
+
+    def compute(self, epoch: int, factor: int, value: int) -> int:
+        """Run one bounded synthetic operation in the guest scratch share."""
+        if self.process is None or self.process.poll() is not None:
+            raise RuntimeError("VM is not live for computation")
+        if (type(epoch) is not int or not 0 <= epoch <= 1000
+                or any(type(item) is not int or abs(item) > 1000 for item in (factor, value))):
+            raise ValueError("invalid guest operation")
+        request_id = secrets.token_hex(16)
+        request = self.share / ("request-" + request_id)
+        result = self.share / ("result-" + request_id)
+        temporary = self.share / ("request-" + request_id + ".tmp")
+        try:
+            fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, "wb") as output:
+                output.write(f"{request_id} {epoch} {factor} {value}\n".encode("ascii"))
+            temporary.replace(request)
+            deadline = time.monotonic() + 8
+            while not result.exists():
+                if self.process.poll() is not None:
+                    raise RuntimeError("VM exited during computation")
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("guest operation timed out")
+                time.sleep(0.05)
+            try:
+                fd = os.open(result, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+            except OSError as error:
+                raise RuntimeError("guest result is not a regular file") from error
+            with os.fdopen(fd, "rb") as source:
+                info = os.fstat(source.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    raise RuntimeError("guest result is not a regular file")
+                raw = source.read(129)
+            if len(raw) > 128 or not re.fullmatch(
+                    rb"[0-9a-f]{32} [0-9]+ -?[0-9]+\n", raw):
+                raise RuntimeError("invalid guest result")
+            observed_id, observed_epoch, observed_value = raw.decode("ascii").split()
+            if observed_id != request_id or int(observed_epoch) != epoch:
+                raise RuntimeError("wrong guest result identity or epoch")
+            while f"GUEST_COMPUTED={request_id}" not in self.log.read_text(errors="replace"):
+                if self.process.poll() is not None or time.monotonic() >= deadline:
+                    raise RuntimeError("guest result lacks execution marker")
+                time.sleep(0.05)
+            return int(observed_value)
+        finally:
+            temporary.unlink(missing_ok=True)
+            request.unlink(missing_ok=True)
+            result.unlink(missing_ok=True)
 
     def retire(self) -> dict:
         if self.process is None or self.process.poll() is not None:
@@ -401,12 +451,19 @@ def probe_managed_switch(work: Path, runner: Path, kernel: Path, ramdisk: Path) 
         fixture.start(2)
         fixture.attach_vm_gate(gate)
         old_worker = fixture.child
+        fixture.begin(5)
+        first_id = fixture.stage_result()
+        first = fixture.send()
+        if (first.get('id') != first_id or first.get('code') != 'ok'
+                or (repo / 'managed.txt').read_bytes() != b'10'
+                or 'GUEST_COMPUTED=' not in gate.log.read_text(errors='replace')):
+            raise RuntimeError("guest computation did not pass through the broker")
         fixture.begin(7)
-        stale_id = fixture.stage_result()
+        stale_id = fixture.stage_result(base=first['digest'])
         interrupted = fixture.begin(8)
         fixture.change(3)
         row = fixture.lab.db.execute(
-            'SELECT epoch, state, evidence FROM managed_vm_runs').fetchone()
+            'SELECT epoch, state, evidence FROM managed_vm_runs WHERE epoch=0').fetchone()
         evidence = json.loads(row['evidence']) if row['evidence'] else {}
         if (tuple(row[:2]) != (0, 'retired') or evidence.get('stop_marker') != 'HOST_STOPPED state=0'
                 or evidence.get('final_heartbeat', 0) < 3
@@ -416,18 +473,31 @@ def probe_managed_switch(work: Path, runner: Path, kernel: Path, ramdisk: Path) 
         old_status = fixture.lab.db.execute(
             'SELECT status FROM operations WHERE ticket=?', (interrupted,)).fetchone()[0]
         if (stale != {'id': stale_id, 'code': 'premise-not-current'}
-                or old_status != 'invalid' or (repo / 'managed.txt').exists()):
+                or old_status != 'invalid' or (repo / 'managed.txt').read_bytes() != b'10'):
             raise RuntimeError("old epoch effect crossed the managed barrier")
+        replacement = VMRetirementGate(
+            runner, kernel, ramdisk, work / "replacement-vm-share",
+            work / "replacement-vm.log", "new-epoch")
+        fixture.attach_vm_gate(replacement)
         fixture.begin(7)
-        fresh_id = fixture.stage_result()
+        fresh_id = fixture.stage_result(base=first['digest'])
         fresh = fixture.send()
         if (fresh.get('id') != fresh_id or fresh.get('code') != 'ok'
-                or (repo / 'managed.txt').read_bytes() != b'21'):
+                or (repo / 'managed.txt').read_bytes() != b'21'
+                or 'GUEST_COMPUTED=' not in replacement.log.read_text(errors='replace')):
             raise RuntimeError("fresh epoch effect was not materialized")
         if heartbeat_count(gate.share, gate.probe_id) != evidence['final_heartbeat']:
             raise RuntimeError("old guest wrote after the new epoch was activated")
-        print("managed_vm_switch: old guest stop persisted before epoch 1; "
-              "old outbox denied; only epoch 1 content materialized")
+        fixture.change(4)
+        runs = list(fixture.lab.db.execute(
+            'SELECT epoch, state, evidence FROM managed_vm_runs ORDER BY epoch'))
+        if (len(runs) != 2 or [(row['epoch'], row['state']) for row in runs]
+                != [(0, 'retired'), (1, 'retired')]
+                or any(not json.loads(row['evidence']).get('stop_marker') for row in runs)):
+            raise RuntimeError(f"both guest retirements were not retained: "
+                               f"{[(row['epoch'], row['state'], row['evidence']) for row in runs]}")
+        print("managed_vm_switch: guest computed in epochs 0 and 1; broker applied "
+              "both results; old guest retired before new guest; stale outbox denied")
 
 
 def main() -> int:

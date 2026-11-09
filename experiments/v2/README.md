@@ -1,6 +1,6 @@
 # v2 P0：可重跑的契約與架構門檻
 
-> 最後更新：2026-11-08
+> 最後更新：2026-11-09
 > 範圍：v2 分支的合成實驗，沒有部署、模型呼叫、付費服務或正式制度切換。
 
 需求以 [決策書](../../project-bootstrap-requirements-decision.md) 為準；[實現規劃](../../project-bootstrap-implementation-plan.md) 定義 P0–P5。現行部署包仍是 22 檔的唯一權威。本目錄不是第二份 handoff 制度，也不複製其他專案的檔案。
@@ -90,9 +90,11 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 同輪實測 [`stop`](https://developer.apple.com/documentation/virtualization/vzvirtualmachine/stop(completionhandler:)) 回呼成功且 VM state=0 後，heartbeat 停止；直接 SIGKILL host runner 後 heartbeat 也停止，重新啟動 VM 才恢復增加，舊 guest 的獨立 heartbeat 檔保持不變。**host 的 `flock` 對同一 virtiofs 檔案在 guest 持鎖期間仍可取得鎖**；再同時啟動兩台 VM 共用同一目錄與鎖檔，兩個 guest 都回報持鎖且各自的 heartbeat 增加。這個鎖不能跨 host／VM 協調單 writer，也不能用 host 鎖取得當作退場證據。
 
-2026-11-08 的後續整合：runner 增加父程序獨占的控制管道，收到停止命令或父端消失時呼叫 VM stop，避免用舊 PID 發訊號。`vm_probe.py` 實跑控制管道 EOF 後的停止，並把一台仍寫 heartbeat 的合成 VM 接到 `managed_fixture.py` 的切換：先在私有資料庫記錄未確認 VM，再封住 epoch 0、回收單 worker、要求 VM stop、核對回呼及 heartbeat 穩定並保存證據，最後才啟用 epoch 1。舊 outbox 被拒、舊運算失效，只有新 epoch 的內容套用到合成工作樹。若退場失敗或證據未保存，切換維持 pending；重啟拒絕把未知 VM 當成已退場。負向測試使用失敗的 gate 驗證該阻擋；真 VM 探針驗正常順序，另以 SIGKILL 父程序實測 guest 因管道 EOF 退場、但新父程序因無持久退場證據而拒絕恢復。這個流程仍有獨立的單 worker 和 VM，**VM 並未執行受管工具或連接 broker 管道**；不能以它宣稱 F28 或 P0 通過。
+2026-11-08 的後續整合：runner 增加父程序獨占的控制管道，收到停止命令或父端消失時呼叫 VM stop，避免用舊 PID 發訊號。`vm_probe.py` 實跑控制管道 EOF 後的停止，並把一台仍寫 heartbeat 的合成 VM 接到 `managed_fixture.py` 的切換：先在私有資料庫記錄未確認 VM，再封住 epoch 0、回收單 worker、要求 VM stop、核對回呼及 heartbeat 穩定並保存證據，最後才啟用 epoch 1。若退場失敗或證據未保存，切換維持 pending；重啟拒絕把未知 VM 當成已退場。真 VM 探針另以 SIGKILL 父程序實測 guest 因管道 EOF 退場、但新父程序因無持久退場證據而拒絕恢復。
 
-共享目錄仍不是完整效果隔離：guest 可直接修改該目錄，已寫效果不回滾；外部網路、其他共享資源、host／hypervisor 崩潰、重啟後對實際 VM 的持久身分核對與成本尚未驗。父程序在保存證據前中斷時故意保持阻擋，尚無安全解除途徑。`VM_PROBE_OK` 只表示本機合成觀察完成，不解除 Mac 多程序工具的阻擋。
+2026-11-09 再接一項固定合成操作：epoch 0／1 的整數乘法各由一台 guest 讀取暫存共享目錄內的具名請求後執行，host 核對請求 ID／epoch、結果形狀與 guest 日誌，再經既有 outbox／broker 寫入合成工作樹。真 VM 探針量到兩個 epoch 的 guest 結果都經 broker 套用；未送出的舊 epoch 請求在 VM 退場後被拒。VM 退場紀錄改按 actor＋epoch 保存，探針核對兩筆退場證據都保留。首次連續啟兩台的反例抓到啟動狀態只按 actor 更新、使舊列從 retired 倒退為 running；現改按 actor＋epoch 且只許 unconfirmed→running。host 讀回 guest 結果時拒絕 symlink／hardlink 並只讀固定長度；離線負向測試以合成私有檔的連結確認 host 不跟隨或讀取。VM 的正式寫入能力仍只有這個 parent broker，沒有直接掛載合成 repo。
+
+共享目錄仍不是完整效果隔離：guest 可直接修改該暫存目錄，已寫效果不回滾；結果日誌不是防同 UID host 程序偽造的身分證明。broker 收到的仍是 parent 借用 host worker channel 送出的請求，事件只可歸到該合成 principal，**不能獨立歸因 guest**。這是固定 shell 算術，未讓任意受管工具在 VM 執行，也未把 broker 能力管道接進 guest；每個 epoch 仍有一個獨立 host worker 負責原有載入／授權流程。外部網路、其他共享資源、host／hypervisor 崩潰、重啟後對實際 VM 的持久身分核對與成本尚未驗。父程序在保存證據前中斷時故意保持阻擋，尚無安全解除途徑。舊實驗庫的單鍵 VM 紀錄不自動遷移，應使用新合成 fixture 重跑。`VM_PROBE_OK` 只表示本機合成觀察完成，不解除 Mac 多程序工具的阻擋。
 
 2026-11-08：`managed_fixture.py` 將 supervisor 的固定 worker 協定、guardian 和父程序 outbox 接到同一個 macOS 合成執行面。一鍵入口的 `managed_probe` 先在 epoch 0 留下一筆未送出的結果與一件執行中的工作，再寫入通知並封住 epoch 0。舊 worker 確認退場後，替代 worker 沿用固定啟動計畫，從管道讀取新前提並回報摘要；確認與啟用在同一交易完成。重送舊請求保留原始 bytes 並被拒，只有 epoch 1 的新結果寫到合成工作樹。`test_managed_fixture.py` 另驗停止未確認、載入舊前提、離線收件者與回應遺失。
 

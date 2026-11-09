@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-11-08",
+  "updated": "2026-11-09",
   "authority": "全部 51 ID 與 F11／F13／F43 子項的持續實作狀態；需求仍以決策書為準",
   "transfer": {
     "from": "fdc0bbd:HANDOFF.md",
@@ -139,11 +139,11 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "Mac 合成 guest 的 setsid 後代在 VM stop、host runner SIGKILL、控制管道 EOF 後停止共享寫入；退場證據接到受管 epoch 切換，父程序 SIGKILL 後因缺持久證據拒絕恢復；未接真實工具或完整歸因"
+          "scope": "Mac 兩個相繼 epoch 的固定合成 guest 算術經 parent broker 寫入合成工作樹；逐 epoch 退場證據保留、舊請求拒絕；setsid 後代在 VM stop、host runner SIGKILL、控制管道 EOF 後停止共享寫入；父程序 SIGKILL 後因缺持久證據拒絕恢復；未接真實工具或 guest 獨立歸因"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
-      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；程序群組候選被 setsid 反例否決。VM 合成退場已接切換順序，但尚須讓受管工具在 VM 內、隔離已寫效果並驗未解執行恢復及其他 OS，不外推完整歸因",
+      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；程序群組候選被 setsid 反例否決。VM 已在兩個 epoch 接固定合成操作及退場切換順序，但尚須讓真實受管工具在 VM 內、隔離已寫效果、提供 guest 獨立身分並驗未解執行恢復及其他 OS，不外推完整歸因",
       "parts": {
         "a": {
           "result": "未驗證",

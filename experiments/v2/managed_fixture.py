@@ -29,15 +29,16 @@ class ManagedFixture:
     def __init__(self, launcher, handle, plan):
         self.launcher, self.lab = launcher, launcher.lab
         self.handle, self.plan = handle, plan
-        self.child = self.pending = None
+        self.child = self.pending = self.pending_value = None
         self.vm_gate = None
         self.epoch = 0
+        self.factor = None
         self.ready = False
         self.lab.db.execute('''CREATE TABLE IF NOT EXISTS managed_initial_context (
             actor TEXT PRIMARY KEY, context TEXT NOT NULL)''')
         self.lab.db.execute('''CREATE TABLE IF NOT EXISTS managed_vm_runs (
-            actor TEXT PRIMARY KEY, epoch INTEGER NOT NULL, state TEXT NOT NULL,
-            probe_id TEXT NOT NULL, evidence TEXT)''')
+            actor TEXT NOT NULL, epoch INTEGER NOT NULL, state TEXT NOT NULL,
+            probe_id TEXT NOT NULL, evidence TEXT, PRIMARY KEY(actor, epoch))''')
 
     def receive(self):
         result = queue.Queue(maxsize=1)
@@ -87,6 +88,7 @@ class ManagedFixture:
         if reply != {'type': 'ready', 'epoch': epoch,
                      'context_digest': hashlib.sha256(context.encode()).hexdigest()}:
             raise Denied('worker-context-not-confirmed')
+        self.factor = json.loads(context)['factor']
 
     def start(self, factor):
         context = self.context(factor)
@@ -120,17 +122,24 @@ class ManagedFixture:
         actor = self.lab.actor(self.child.channel.capability)
         with self.lab.transaction():
             previous = self.lab.db.execute(
-                'SELECT state FROM managed_vm_runs WHERE actor=?', (actor,)).fetchone()
+                'SELECT epoch, state FROM managed_vm_runs WHERE actor=? '
+                'ORDER BY epoch DESC LIMIT 1', (actor,)).fetchone()
             if previous is not None and previous['state'] != 'retired':
                 raise Denied('vm-retirement-unconfirmed')
-            self.lab.db.execute('INSERT OR REPLACE INTO managed_vm_runs VALUES (?, ?, ?, ?, NULL)',
+            if previous is not None and previous['epoch'] >= self.epoch:
+                raise Denied('vm-run-already-recorded')
+            self.lab.db.execute('INSERT INTO managed_vm_runs VALUES (?, ?, ?, ?, NULL)',
                                 (actor, self.epoch, 'unconfirmed', gate.probe_id))
         self.vm_gate = gate
         try:
             gate.start()
             with self.lab.transaction():
-                self.lab.db.execute("UPDATE managed_vm_runs SET state='running' WHERE actor=?",
-                                    (actor,))
+                updated = self.lab.db.execute(
+                    "UPDATE managed_vm_runs SET state='running' "
+                    "WHERE actor=? AND epoch=? AND state='unconfirmed'",
+                    (actor, self.epoch))
+                if updated.rowcount != 1:
+                    raise Denied('vm-run-not-current')
         except BaseException:
             self.close()
             raise
@@ -157,7 +166,7 @@ class ManagedFixture:
                     if updated.rowcount != 1:
                         raise Denied('vm-retirement-unconfirmed')
                 self.vm_gate = None
-            self.pending = None
+            self.pending = self.pending_value = None
             self.activate(epoch, context)
         except BaseException:
             self.close()
@@ -171,8 +180,9 @@ class ManagedFixture:
             actor = self.launcher.reconcile(self.handle, self.plan)
             with self.lab.transaction():
                 vm = self.lab.db.execute(
-                    'SELECT state FROM managed_vm_runs WHERE actor=?', (actor,)).fetchone()
-                if vm is not None and vm['state'] != 'retired':
+                    "SELECT 1 FROM managed_vm_runs WHERE actor=? AND state!='retired' LIMIT 1",
+                    (actor,)).fetchone()
+                if vm is not None:
                     raise Denied('vm-retirement-unconfirmed')
                 epoch, context, pending = self.recovery_context(actor)
                 # A replacement cannot complete an interrupted computation
@@ -225,32 +235,40 @@ class ManagedFixture:
         try:
             self.launcher.check()
             ticket = self.lab.begin(self.child.channel.capability, self.epoch)
-            if self.exchange({'type': 'begin', 'value': value}) != {'type': 'started', 'epoch': self.epoch}:
-                raise Denied('work-not-started')
+            if self.vm_gate is None or not hasattr(self.vm_gate, 'compute'):
+                if self.exchange({'type': 'begin', 'value': value}) != {'type': 'started', 'epoch': self.epoch}:
+                    raise Denied('work-not-started')
         except BaseException:
             self.close()
             raise
         self.pending = ticket
+        self.pending_value = value
         return ticket
 
     def stage_result(self, base=None):
         if not self.ready or self.pending is None:
             raise Denied('no-current-work')
         try:
-            result = self.exchange({'type': 'finish'})
-            if (not isinstance(result, dict) or result.get('type') != 'result'
-                    or result.get('epoch') != self.epoch or type(result.get('value')) is not int):
-                raise Denied('wrong-worker-result')
+            if self.vm_gate is not None and hasattr(self.vm_gate, 'compute'):
+                value = self.vm_gate.compute(self.epoch, self.factor, self.pending_value)
+                if type(value) is not int:
+                    raise Denied('wrong-guest-result')
+            else:
+                result = self.exchange({'type': 'finish'})
+                if (not isinstance(result, dict) or result.get('type') != 'result'
+                        or result.get('epoch') != self.epoch or type(result.get('value')) is not int):
+                    raise Denied('wrong-worker-result')
+                value = result['value']
             journal = self.outbox()
             with self.launcher.broker.lock, self.lab.transaction():
                 self.lab.complete(self.child.channel.capability, self.pending)
                 request_id = journal.prepare({
                     'method': 'write', 'resource': 'note', 'base': base,
-                    'text': str(result['value']), 'epoch': self.epoch})
+                    'text': str(value), 'epoch': self.epoch})
         except BaseException:
             self.close()
             raise
-        self.pending = None
+        self.pending = self.pending_value = None
         return request_id
 
     def outbox(self):

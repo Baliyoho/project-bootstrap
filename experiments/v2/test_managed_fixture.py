@@ -186,6 +186,38 @@ class ManagedFixtureTests(TestCase):
                 self.assertEqual(fixture.lab.db.execute(
                     'SELECT state FROM managed_vm_runs').fetchone()[0], 'unconfirmed')
 
+    def test_new_epoch_guest_does_not_reopen_retired_vm_record(self):
+        if not managed.supported():
+            self.skipTest('macOS confined worker required')
+
+        class SyntheticGate:
+            def __init__(self, probe_id):
+                self.probe_id = probe_id
+
+            def start(self):
+                pass
+
+            def retire(self):
+                return {'probe_id': self.probe_id, 'stop_marker': 'synthetic-stop'}
+
+            def close(self):
+                pass
+
+        with managed.managed_environment() as (fixture, _):
+            fixture.start(2)
+            fixture.attach_vm_gate(SyntheticGate('old'))
+            fixture.change(3)
+            fixture.attach_vm_gate(SyntheticGate('new'))
+            rows = list(fixture.lab.db.execute(
+                'SELECT epoch, state, probe_id FROM managed_vm_runs ORDER BY epoch'))
+            self.assertEqual([tuple(row) for row in rows],
+                             [(0, 'retired', 'old'), (1, 'running', 'new')])
+            fixture.change(4)
+            rows = list(fixture.lab.db.execute(
+                'SELECT epoch, state, probe_id FROM managed_vm_runs ORDER BY epoch'))
+            self.assertEqual([tuple(row) for row in rows],
+                             [(0, 'retired', 'old'), (1, 'retired', 'new')])
+
     def test_real_replacement_with_wrong_context_digest_cannot_acknowledge(self):
         if not managed.supported():
             self.assertEqual(managed.probe_managed()['result'], '未驗證')
