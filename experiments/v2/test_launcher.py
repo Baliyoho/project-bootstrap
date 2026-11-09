@@ -56,6 +56,23 @@ class LauncherTests(unittest.TestCase):
         self.client.prepare(self.write())
         self.assertEqual(json.loads(self.client.send())['code'], 'ok')
 
+    def test_exact_child_request_is_durable_and_sequence_is_parent_checked(self):
+        raw = b'{"id":1,"method":"write","resource":"note","base":null,"text":"10","epoch":0}\n'
+        for bad in (raw.replace(b'"id":1', b'"id":2'),
+                    raw.replace(b'"id":1', b'"id":1,"id":1')):
+            with self.subTest(raw=bad), self.assertRaises(Denied):
+                self.client.prepare_raw(bad)
+        self.assertEqual(self.count('client_requests'), 0)
+        self.assertEqual(self.client.prepare_raw(raw), 1)
+        self.assertEqual(self.lab.db.execute('SELECT raw FROM client_requests').fetchone()[0], raw)
+        with self.assertRaises(Denied):
+            self.client.prepare_raw(raw)
+        self.restart()
+        self.assertEqual(json.loads(self.client.send())['code'], 'ok')
+        self.assertEqual(self.lab.db.execute('SELECT raw, completed FROM client_requests').fetchone()[:],
+                         (raw, 1))
+        self.assertEqual(self.count('writes'), 1)
+
     def test_rotation_invalidates_old_pipe_and_restart_preserves_scope(self):
         old = self.channel
         replacement = self.authority.connect(self.ticket)

@@ -7,7 +7,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from experiments.v2.vm_probe import VMRetirementGate, check_guest, stable_after_exit
+from experiments.v2.vm_probe import (VMRetirementGate, check_guest,
+                                     read_guest_write_request, stable_after_exit)
 
 
 class _Running:
@@ -26,6 +27,40 @@ class _Running:
 
 
 class VMProbeEvidenceTests(unittest.TestCase):
+    def test_guest_broker_request_is_bound_to_nonce_epoch_and_sequence(self):
+        nonce = "a" * 32
+        payload = b'{"id":1,"method":"write","resource":"note","base":null,"text":"10","epoch":0}'
+        process = _Running(nonce.encode() + b" " + payload + b"\n")
+        try:
+            self.assertEqual(read_guest_write_request(process, nonce, 0, 1, 10**20),
+                             payload + b"\n")
+        finally:
+            process.close()
+
+    def test_guest_broker_request_rejects_wrong_epoch_and_extra_authority(self):
+        nonce = "b" * 32
+        for payload, message in (
+            (b'{"id":1,"method":"write","resource":"note","base":null,"text":"10","epoch":1}',
+             "wrong guest broker request identity or epoch"),
+            (b'{"id":1,"method":"write","resource":"note","base":null,"text":"10","epoch":0,"actor":"other"}',
+             "invalid guest broker request"),
+        ):
+            with self.subTest(payload=payload):
+                process = _Running(nonce.encode() + b" " + payload + b"\n")
+                try:
+                    with self.assertRaisesRegex(RuntimeError, message):
+                        read_guest_write_request(process, nonce, 0, 1, 10**20)
+                finally:
+                    process.close()
+
+    def test_guest_broker_request_rejects_truncation(self):
+        process = _Running(b"c" * 32 + b" {\"id\":1")
+        try:
+            with self.assertRaisesRegex(RuntimeError, "capability channel closed"):
+                read_guest_write_request(process, "c" * 32, 0, 1, 10**20)
+        finally:
+            process.close()
+
     def test_guest_result_symlink_in_scratch_is_ignored(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

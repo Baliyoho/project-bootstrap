@@ -184,6 +184,28 @@ class RequestJournal:
             self.lab.db.execute('UPDATE client_cursor SET next_id=? WHERE actor=?', (next_id + 1, actor))
         return next_id
 
+    def prepare_raw(self, raw):
+        """Persist an exact bounded child request before dispatching its bytes."""
+        if not isinstance(raw, bytes) or len(raw) > MAX_REQUEST_BYTES:
+            raise Denied('request-too-large-or-invalid')
+        try:
+            request = json.loads(raw.decode('utf-8'), object_pairs_hook=self.broker.unique_keys)
+        except (ValueError, UnicodeError, RecursionError):
+            raise Denied('invalid-client-request') from None
+        if not isinstance(request, dict) or type(request.get('id')) is not int:
+            raise Denied('invalid-client-request')
+        with self.broker.lock, self.lab.transaction():
+            actor, next_id, rows = self.validate()
+            if rows and not rows[-1]['completed']:
+                raise Denied('request-already-pending')
+            if request['id'] != next_id:
+                raise Denied('client-sequence-is-managed')
+            self.lab.db.execute('INSERT INTO client_requests VALUES (?, ?, ?, ?, 0)',
+                                (actor, next_id, raw, hashlib.sha256(raw).hexdigest()))
+            self.lab.db.execute('UPDATE client_cursor SET next_id=? WHERE actor=?',
+                                (next_id + 1, actor))
+        return next_id
+
     def send(self):
         with self.broker.lock:
             with self.lab.transaction():

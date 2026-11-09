@@ -32,10 +32,23 @@ if ! $BB stty raw -echo <&3; then
     while :; do $BB sleep 1; done
 fi
 echo GUEST_CHANNEL_READY >/dev/hvc0
-while read -r request_id epoch factor value <&3; do
+while read -r first second third fourth fifth sixth <&3; do
+    if [ "$first" = W ]; then
+        request_id=$second; epoch=$third; factor=$fourth; value=$fifth; sequence=$sixth
+    else
+        request_id=$first; epoch=$second; factor=$third; value=$fourth; sequence=
+        if [ -n "$fifth$sixth" ]; then echo GUEST_BAD_REQUEST >/dev/hvc0; continue; fi
+    fi
     case "$request_id:$epoch:$factor:$value" in
         *[!0123456789abcdef:-]* | *::* | :* | *:) echo GUEST_BAD_REQUEST >/dev/hvc0; continue ;;
     esac
+    if [ "$first" = W ]; then
+        case "$sequence" in *[!0123456789]* | '') echo GUEST_BAD_REQUEST >/dev/hvc0; continue ;; esac
+        echo GUEST_WRITE_REQUEST=$request_id >/dev/hvc0
+        $BB printf '%s {"id":%s,"method":"write","resource":"note","base":null,"text":"%s","epoch":%s}\n' \
+            "$request_id" "$sequence" "$((factor * value))" "$epoch" >&3
+        continue
+    fi
     echo GUEST_COMPUTED=$request_id >/dev/hvc0
     $BB printf '%s %s %s\n' "$request_id" "$epoch" "$((factor * value))" >&3
 done

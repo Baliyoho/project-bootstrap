@@ -186,9 +186,7 @@ def close_guest_channel(process: subprocess.Popen[bytes]) -> None:
     process.guest_reply.close()
 
 
-def read_guest_result(process: subprocess.Popen[bytes], request_id: str,
-                      epoch: int, deadline: float) -> int:
-    """Read one bounded reply from this VM's private serial port, not virtiofs."""
+def read_guest_line(process: subprocess.Popen[bytes], limit: int, deadline: float) -> bytes:
     raw = bytearray()
     while b"\n" not in raw:
         if process.poll() is not None:
@@ -198,18 +196,40 @@ def read_guest_result(process: subprocess.Popen[bytes], request_id: str,
             raise RuntimeError("guest operation timed out")
         if not select.select([process.guest_reply], [], [], min(0.1, remaining))[0]:
             continue
-        chunk = os.read(process.guest_reply.fileno(), 129 - len(raw))
+        chunk = os.read(process.guest_reply.fileno(), limit + 1 - len(raw))
         if not chunk:
             raise RuntimeError("guest capability channel closed")
         raw.extend(chunk)
-        if len(raw) > 128:
+        if len(raw) > limit:
             raise RuntimeError("invalid guest result")
+    return bytes(raw)
+
+
+def read_guest_result(process: subprocess.Popen[bytes], request_id: str,
+                      epoch: int, deadline: float) -> int:
+    """Read one bounded reply from this VM's private serial port, not virtiofs."""
+    raw = read_guest_line(process, 128, deadline)
     if not re.fullmatch(rb"[0-9a-f]{32} [0-9]+ -?[0-9]+\n", raw):
         raise RuntimeError("invalid guest result")
     observed_id, observed_epoch, observed_value = raw.decode("ascii").split()
     if observed_id != request_id or int(observed_epoch) != epoch:
         raise RuntimeError("wrong guest result identity or epoch")
     return int(observed_value)
+
+
+def read_guest_write_request(process: subprocess.Popen[bytes], request_id: str,
+                             epoch: int, sequence: int, deadline: float) -> bytes:
+    """Bind a fixed guest-originated broker request to this serial exchange."""
+    raw = read_guest_line(process, 256, deadline)
+    match = re.fullmatch(
+        rb'([0-9a-f]{32}) (\{"id":[0-9]+,"method":"write","resource":"note",'
+        rb'"base":null,"text":"-?[0-9]+","epoch":[0-9]+\})\n', raw)
+    if match is None or match[1].decode('ascii') != request_id:
+        raise RuntimeError("invalid guest broker request")
+    request = json.loads(match[2])
+    if request['id'] != sequence or request['epoch'] != epoch:
+        raise RuntimeError("wrong guest broker request identity or epoch")
+    return match[2] + b'\n'
 
 
 class VMRetirementGate:
@@ -248,6 +268,23 @@ class VMRetirementGate:
         except BrokenPipeError as error:
             raise RuntimeError("guest capability channel closed") from error
         return read_guest_result(self.process, request_id, epoch, time.monotonic() + 8)
+
+    def write_request(self, epoch: int, factor: int, value: int, sequence: int) -> bytes:
+        """Ask the guest to create one fixed synthetic broker write request."""
+        if self.process is None or self.process.poll() is not None:
+            raise RuntimeError("VM is not live for computation")
+        if (type(sequence) is not int or not 1 <= sequence <= 1000
+                or type(epoch) is not int or not 0 <= epoch <= 1000
+                or any(type(item) is not int or abs(item) > 1000 for item in (factor, value))):
+            raise ValueError("invalid guest operation")
+        request_id = secrets.token_hex(16)
+        try:
+            self.process.guest_request.write(
+                f"W {request_id} {epoch} {factor} {value} {sequence}\n".encode("ascii"))
+        except BrokenPipeError as error:
+            raise RuntimeError("guest capability channel closed") from error
+        return read_guest_write_request(
+            self.process, request_id, epoch, sequence, time.monotonic() + 8)
 
     def retire(self) -> dict:
         if self.process is None or self.process.poll() is not None:
@@ -513,6 +550,57 @@ def probe_managed_switch(work: Path, runner: Path, kernel: Path, ramdisk: Path) 
               "both results; old guest retired before new guest; stale outbox denied")
 
 
+def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
+    """Route a fixed guest-produced write through its own scoped broker channel."""
+    if str(HERE.parents[1]) not in sys.path:
+        sys.path.insert(0, str(HERE.parents[1]))
+    from experiments.v2.launcher import RequestJournal
+    from experiments.v2.managed_fixture import open_managed
+
+    root = work / "guest-broker"
+    root.mkdir()
+    gate = VMRetirementGate(runner, kernel, ramdisk, work / "guest-broker-share",
+                            work / "guest-broker.log", "guest-broker")
+    with open_managed(root) as (fixture, repo):
+        fixture.start(2)
+        authority = fixture.launcher.authority
+        host_actor = fixture.lab.actor(fixture.child.channel.capability)
+        ticket = authority.issue(("note",), "synthetic-vm-parent", time.time() + 60)
+        channel = authority.connect(ticket)
+        guest_actor = fixture.lab.actor(channel.capability)
+        if guest_actor == host_actor:
+            raise RuntimeError("guest and host worker share a principal")
+        journal = RequestJournal(authority, channel)
+        try:
+            gate.start()
+            first_raw = gate.write_request(0, 2, 5, 1)
+            journal.prepare_raw(first_raw)
+            fresh = json.loads(journal.send())
+            events = list(fixture.lab.db.execute(
+                "SELECT actor, after FROM writes ORDER BY at"))
+            recorded = fixture.lab.db.execute(
+                "SELECT raw, completed FROM client_requests WHERE actor=? AND request_id=1",
+                (guest_actor,)).fetchone()
+            if (fresh.get("code") != "ok" or (repo / "managed.txt").read_bytes() != b"10"
+                    or [tuple(row) for row in events] != [(guest_actor, b"10")]
+                    or recorded is None or tuple(recorded) != (first_raw, 1)):
+                raise RuntimeError("guest principal write was not materialized")
+            fixture.lab.propose('{"factor":3}')
+            journal.prepare_raw(gate.write_request(0, 2, 7, 2))
+            stale = json.loads(journal.send())
+            if (stale != {"id": 2, "code": "premise-not-current"}
+                    or (repo / "managed.txt").read_bytes() != b"10"
+                    or fixture.lab.db.execute("SELECT COUNT(*) FROM writes").fetchone()[0] != 1):
+                raise RuntimeError("stale guest write crossed the premise barrier")
+            if gate.retire().get("stop_marker") != "HOST_STOPPED state=0":
+                raise RuntimeError("guest retirement was not confirmed")
+            authority.revoke(ticket)
+            print("guest_broker: VM serial request used a distinct broker principal; "
+                  "scoped write applied; pending-epoch write denied")
+        finally:
+            gate.close()
+
+
 def main() -> int:
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         print("UNVERIFIED: this probe requires an Apple silicon Mac", file=sys.stderr)
@@ -536,6 +624,7 @@ def main() -> int:
             probe_cross_vm(work, runner, raw_kernel, guest_ramdisk)
             probe_owner_eof(work, runner, raw_kernel, guest_ramdisk)
             probe_managed_switch(work, runner, raw_kernel, guest_ramdisk)
+            probe_guest_broker(work, runner, raw_kernel, guest_ramdisk)
             probe_parent_crash_fail_closed(work, runner, raw_kernel, guest_ramdisk)
         print("VM_PROBE_OK: synthetic guest only; P0 remains unverified")
         return 0

@@ -139,11 +139,11 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "Mac 兩個相繼 epoch 的固定合成 guest 算術經專用雙向 virtio console 回傳，再由 parent broker 寫入合成工作樹；逐 epoch 退場證據保留、舊請求拒絕；setsid 後代在 VM stop、host runner SIGKILL、控制管道 EOF 後停止共享寫入；父程序 SIGKILL 後因缺持久證據拒絕恢復；未接真實工具或 guest 獨立歸因"
+          "scope": "Mac 兩個相繼 epoch 的固定 guest 算術與獨立的合成 guest broker principal：專用 console 送原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending epoch 拒絕舊 guest 寫入。逐 epoch 退場證據與 VM stop／runner SIGKILL／控制 EOF 反例保留；父程序 SIGKILL 後因缺持久證據拒絕恢復。未接真實工具、guest 身分證明或崩潰後 VM 恢復"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
-      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；程序群組候選被 setsid 反例否決。VM 已在兩個 epoch 用專用 console 回傳固定合成操作及驗退場切換順序，但尚須讓真實受管工具在 VM 內接 broker 授權、隔離已寫效果、提供 guest 獨立身分並驗未解執行恢復及其他 OS，不外推完整歸因",
+      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；程序群組候選被 setsid 反例否決。VM 的固定合成 guest 請求已用獨立 principal 經專用 console 與持久 outbox 寫入；下一步讓受管工具本體在 guest 內運行、讓 VM 身分與退場可重啟核對、隔離已寫效果並驗其他 OS。當前 parent 管道綁定不是防同 UID host 偽造的身分證明，不外推完整歸因",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -182,6 +182,10 @@
             {
               "path": "experiments/v2/test_tree_probe.py",
               "scope": "程序群組對一般後代有效但 setsid 可脫離；移除逃逸後負向測試失敗，不能作任意後代完整歸因保證"
+            },
+            {
+              "path": "experiments/v2/vm_probe.py",
+              "scope": "Mac 真 VM 固定合成寫入：guest serial 原始請求由獨立 principal 的持久 outbox 送 broker；事件 actor 與 host worker 不同，pending epoch 舊寫入拒絕。非真實工具、可信 guest 身分或完整覆寫歸因"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
