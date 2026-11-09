@@ -50,8 +50,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/evidence.py",
+          "scope": "M2 證據帳原型 resolve：每個宣稱由證據紀錄決定，本輪實查、沿用、未驗證、不通過四組分開；沿用須有來源、取得時間、範圍與依賴輸入 digest，依賴變動或讀不到即失效，使用者可撤銷；SKIP／NOT_CONFIGURED／無紀錄為未驗證；任一宣稱未驗證或不通過整體就不是通過。file_probe 以檔案內容與環境變數取 digest"
+        },
+        {
+          "path": "experiments/v2/test_evidence.py",
+          "scope": "實測混入一個無證據的宣稱整份為未驗證；SKIP、NOT_CONFIGURED 為未驗證，FAIL、ERROR 為不通過，不通過優先於未驗證；無效紀錄、空宣稱集合不算通過；報告四組分開且空組照列；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "證據帳是合成原型，現行 verify_state／verify_bootstrap 輸出尚未轉成證據紀錄；不保證識破偽造紀錄；未接進任何工具；跨工具與跨 OS 尚未驗收",
       "next": "混入無證據成功聲稱不能整份顯示通過"
     },
     {
@@ -429,8 +438,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/facts.py",
+          "scope": "M2 事實 adapter 原型 check_claims：每個宣稱帶文件、命題文字、adapter 與預期值，對真 Git／檔案實查（目前分支、工作樹乾淨、檔案存在、檔案內容），結果為一致、不一致（列文件、命題、預期與實際）或未知；未授權、沒有 adapter、查詢失敗都是未知，不算一致。handoff_claims 從 HANDOFF 實際格式取出骨架版本與待續分支。唯讀，查詢不改寫 index"
+        },
+        {
+          "path": "experiments/v2/test_facts.py",
+          "scope": "真 Git 實測：與實況相符為一致；VERSION 與分支被改時逐條列出文件、命題、預期、實際；未授權、未知 adapter、repo 外路徑（檔案存在且內容相符仍拒絕）、檔案不存在、缺參數、非 UTF-8、detached 都是未知；不一致優先於未知；stat 過期時查詢不改寫 index；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "只有四個本機 adapter，服務、憑證與遠端狀態未涵蓋；只從 HANDOFF 取兩個欄位，其他文件命題要人工寫成宣稱；未接進任何工具；跨工具與跨 OS 尚未驗收",
       "next": "指出具體文件與命題；無權查證標未知"
     },
     {
@@ -712,8 +730,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/evidence.py",
+          "scope": "M2 證據帳原型 resolve：每個宣稱由證據紀錄決定，本輪實查、沿用、未驗證、不通過四組分開；沿用須有來源、取得時間、範圍與依賴輸入 digest，依賴變動或讀不到即失效，使用者可撤銷；SKIP／NOT_CONFIGURED／無紀錄為未驗證；任一宣稱未驗證或不通過整體就不是通過。file_probe 以檔案內容與環境變數取 digest"
+        },
+        {
+          "path": "experiments/v2/test_evidence.py",
+          "scope": "實測沿用缺來源／時間／範圍或缺依賴為未驗證；依賴檔內容改變、環境變數改變、依賴檔被改名都使沿用失效；改名無關檔案不誤失效；使用者撤銷生效；較新的無效紀錄不被較舊的通過靜默取代；逃逸路徑以真實存在的檔案測試拒絕；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "依賴清單由產生證據的一方宣告，宣告漏列的輸入改變時不會失效；撤銷清單的保存與來源未實作；不保證識破偽造紀錄；未接進任何工具；跨工具與跨 OS 尚未驗收",
       "next": "影響版本／設定／環境變更自動失效；無關改名不誤失效；使用者可撤銷"
     },
     {
