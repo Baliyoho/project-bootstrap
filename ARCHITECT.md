@@ -2,6 +2,8 @@
 
 > 最後更新：2026-11-09。`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh`、`vm_managed_worker.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的合成探針及離線負向控制：固定映像 digest、無網路 guest。退場與跨 VM 鎖反例掛獨立暫存共享目錄及 `setsid` 後代；新固定工具路徑由 `/init` 在無共享 guest 中啟動 `vm_managed_worker.sh`，只經第二個雙向 virtio console 載入前提並發原始 broker 請求。host 核對請求後由 outbox／broker／materializer 寫入合成工作樹，正式 repo 不掛載進 VM。舊 `managed_fixture.py` 路徑仍用 host worker，按 actor＋epoch 保存各台 VM 退場證據，未確認時重啟保持阻擋；新無共享工具路徑另由 `guest_runs.py`（離線測試 `test_guest_runs.py`）在同一私有資料庫持久記錄每台 guest 的 parent 選定身分 digest 與 host 停機證據，未退場時新 guest、ACK、寫入與重啟都阻擋；每台 run 綁一個 broker channel，退場時輪換 capability。runner 的 host 標記另寫 `.host` 日誌，不與 guest console 混用。這些資料流仍未接真實工具或現行部署包，也不提供 host 故障後的自動復原保證。詳見 [P0 說明](experiments/v2/README.md)。
 
+> 2026-11-09 新增 `experiments/v2/release.py` 與 `test_release.py`：M1 整包 manifest（元件 digest）與每次寫入前的 nonce 簽章新鮮度確認原型（F18／F32／F33），沒有快取路徑。未接進現行 `git-freshness.sh` 或同步工具。
+
 > 2026-11-09 新增 `experiments/v2/gitclaim.py` 與 `test_gitclaim.py`：F9／F10 的 M3 開工資格與收尾閘門原型，對本機 bare origin 實測，收尾成功才產生 `session.py` 的交棒收據。未接進現行程序。詳見 [P0 說明](experiments/v2/README.md)。
 
 > 2026-11-08 新增 `experiments/v2/tree_probe.py` 與 `test_tree_probe.py`，只在合成 POSIX 程序群組比較一般後代與脫離 session 的後代，透過檔案鎖觀察退場。一鍵入口列出這個候選反例；它不接入 `lifecycle.py`，也不提供任意程序樹保證。詳見 [P0 說明](experiments/v2/README.md)。

@@ -128,6 +128,12 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 `test_gitclaim.py` 用本機 bare origin 與多個 clone 實測 15 個情境（含檢查收據）：乾淨對齊、ahead-only／分岔／落後、離線（搬走 origin 而 tracking ref 仍在）、未追蹤與已追蹤變更、無 upstream／追錯分支／detached、本機空閒而遠端他人占用、自己的標記、缺／重複／空的欄位、兩條分支各自占用互不阻擋而同一分支第二個 writer 停止（標記再舊也不當租約到期，F25）；收尾端測成功（收據只計一次）、遠端前進時不推、pre-receive 拒絕、離線、推送後被另一 writer 搶占。scratch 副本逐一移除 22 個守門，21 個讓測試失敗；剩下的推送後「標記已釋出」再查在邏輯上由推送前的 HEAD 檢查蘊含，沒有輸入能單獨觸發，已在程式註明。邊界：這是協調檢查不是原子 claim，判定到推送之間仍有時間窗；只在 macOS 本機 Git 跑過，未接進現行 A／B 程序或任何工具。
 
+## M1 整包 manifest 與逐次寫入確認（2026-11-09）
+
+`release.py` 是 F18／F32／F33 的原型。`build_manifest` 對一份來源樹列出每個元件的 SHA-256（路徑不得逃逸、不得是 symlink），整包 digest 取 canonical JSON；所以只改 hook 或 schema 時，版本字串不變也會得到不同 digest。`WriteGate.confirm` 在**每次**受管寫入前產生新 nonce，向可信端要一份用 ssh-keygen 簽的 channel 聲明（channel、epoch、manifest digest、nonce、簽發與到期時間），依序驗簽章與 namespace、channel 名、nonce、時效、epoch 不倒退、manifest 與本機一致、正式版，最後重算本機元件 digest。程式沒有任何快取路徑：拿不到聲明就 `channel-unreachable`，重播先前合法的聲明因 nonce 不符而 `stale-confirmation`。
+
+`test_release.py` 6 個測試用拋棄式 ed25519 金鑰實測：每次寫入都重新確認；離線與重播；就地改元件（F32）；只改 hook 或 schema 的新 release 讓舊客戶停止（F18）；他人金鑰、錯 namespace、竄改、錯 channel、過期、未來簽發、型別錯、epoch 倒退、調試版。scratch 副本逐一移除 12 個守門都會讓測試失敗；原本的「開頭為 `/`」檢查被空片段檢查涵蓋而無法單獨測，已刪除。邊界：可信端與金鑰是測試替身，沒有 CI 身分、金鑰治理、網路傳輸或原子安裝；沒有接進現行 `git-freshness.sh`、`sync_project.py` 或任何工具，現行 720 分鐘快取照舊。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。

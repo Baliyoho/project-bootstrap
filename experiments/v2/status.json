@@ -340,8 +340,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "Windows 部署專案尚未同步 bash 3.2 hook 修正；v2 整包版本／遷移尚未實作",
+      "evidence": [
+        {
+          "path": "experiments/v2/release.py",
+          "scope": "M1 原型：manifest 列整包元件 SHA-256；寫入前 WriteGate 向可信端要一份綁定本次 client nonce 的 ssh-keygen 簽章聲明，驗簽、channel、時效、epoch 不倒退、manifest 一致、非調試版，再重算本機元件 digest。無快取路徑。拋棄式測試金鑰，無 CI 身分、網路傳輸或原子安裝"
+        },
+        {
+          "path": "experiments/v2/test_release.py",
+          "scope": "實測只改 hook 或只改 schema、版本字串與 SKILL digest 都不變的新 release，舊客戶端以 release-mismatch 停止寫入；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "Windows 部署專案尚未同步 bash 3.2 hook 修正；M1 原型未接進現行部署包、sync_project 或任何工具，無遷移流程；跨工具與跨 OS 尚未驗收",
       "next": "單改 hook／schema 也使受影響舊客戶停止，不能只比 skill"
     },
     {
@@ -530,8 +539,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/release.py",
+          "scope": "M1 原型：manifest 列整包元件 SHA-256；寫入前 WriteGate 向可信端要一份綁定本次 client nonce 的 ssh-keygen 簽章聲明，驗簽、channel、時效、epoch 不倒退、manifest 一致、非調試版，再重算本機元件 digest。無快取路徑。拋棄式測試金鑰，無 CI 身分、網路傳輸或原子安裝"
+        },
+        {
+          "path": "experiments/v2/test_release.py",
+          "scope": "實測就地改元件內容而版本不變，以 component-drift 拒絕；換成 symlink 拒絕；元件路徑逃逸（..、絕對、空片段）以真實存在的檔案測試拒絕；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "只在 macOS 合成目錄驗證；現行 VERSION 仍只追 SKILL，原型未取代 git-freshness.sh；跨工具與跨 OS 尚未驗收",
       "next": "內容變而版本不變仍由 digest 發現"
     },
     {
@@ -539,8 +557,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/release.py",
+          "scope": "M1 原型：manifest 列整包元件 SHA-256；寫入前 WriteGate 向可信端要一份綁定本次 client nonce 的 ssh-keygen 簽章聲明，驗簽、channel、時效、epoch 不倒退、manifest 一致、非調試版，再重算本機元件 digest。無快取路徑。拋棄式測試金鑰，無 CI 身分、網路傳輸或原子安裝"
+        },
+        {
+          "path": "experiments/v2/test_release.py",
+          "scope": "實測離線時即使先前確認成功仍 channel-unreachable；重播先前合法簽章回覆以 stale-confirmation 拒絕；過期、未來簽發、他人金鑰、錯 namespace、竄改、epoch 倒退都拒絕；每次寫入都重新確認；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "可信端與簽章金鑰是測試替身，沒有 CI 身分、金鑰治理或真實網路；原型未接進現行寫入入口；跨工具與跨 OS 尚未驗收",
       "next": "有舊快取但拿不到新鮮確認仍拒絕寫入"
     },
     {
