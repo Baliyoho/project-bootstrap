@@ -953,6 +953,215 @@
      "new": "            path = path + [heading.group(2)]"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_trail"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if not _text(iid) or iid in seen:",
+     "new": "        if not _text(iid):"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if d.get('status') not in STATUSES:",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        for key in ('title', 'rationale', 'baseline'):",
+     "new": "        for key in ('title',):"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if not _date(d.get('date')):",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "            if not (_text(alt.get('option')) and alt.get('outcome') in ('rejected', 'deferred')\n                    and _text(alt.get('reason'))):",
+     "new": "            if not _text(alt.get('option')):"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "            if newer not in by_id:",
+     "new": "            if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "            elif by_id[newer].get('supersedes') != did:",
+     "new": "            elif False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        elif newer is not None:",
+     "new": "        elif False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if older is not None and (older not in by_id or by_id[older].get('superseded_by') != did):",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if did not in by_id:\n            findings.append((str(rid), 'rule-without-decision'))",
+     "new": "        if did not in by_id:\n            pass"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        elif by_id[did].get('status') == 'rejected':",
+     "new": "        elif False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        elif by_id[did].get('status') == 'superseded':",
+     "new": "        elif False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        did = d.get('superseded_by')",
+     "new": "        did = None"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if d.get('status') == 'rejected':\n            routes.append",
+     "new": "        if False:\n            routes.append"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        for alt in d.get('alternatives') or []:\n            routes.append",
+     "new": "        for alt in []:\n            routes.append"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if did not in new:\n            findings.append((str(did), 'decision-erased'))",
+     "new": "        if did not in new:\n            continue"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "            if alt.get('option') not in kept:",
+     "new": "            if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if d.get('rationale') != new[did].get('rationale'):",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "    if not any(m.get('status') in ('active', 'planned') for m in by_id.values()):",
+     "new": "    if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if not _text(m.get('goal')):",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if m.get('status') not in ('planned', 'active', 'done', 'dropped'):",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if m.get('status') == 'dropped' and not _text(m.get('reason')):",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        if mid not in by_id:\n            findings.append((tid, 'task-without-milestone'))",
+     "new": "        if mid not in by_id:\n            pass"
+    },
+    {
+     "file": "experiments/v2/trail.py",
+     "old": "        elif task.get('status') != 'done' and by_id[mid].get('status') in ('done', 'dropped'):",
+     "new": "        elif by_id[mid].get('status') == 'done':"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_confluence"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    if not all(_text(finding.get(k)) for k in ('line', 'key', 'source')):",
+     "new": "    if not all(_text(finding.get(k)) for k in ('line', 'key')):"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "        datetime.datetime.fromisoformat(finding.get('obtained_at'))\n    except (TypeError, ValueError):\n        return False",
+     "new": "        datetime.datetime.fromisoformat(finding.get('obtained_at'))\n    except (TypeError, ValueError):\n        pass"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    return isinstance(finding.get('scope'), dict) and finding.get('status') in ('verified', 'claimed')",
+     "new": "    return finding.get('status') in ('verified', 'claimed')"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    return isinstance(finding.get('scope'), dict) and finding.get('status') in ('verified', 'claimed')",
+     "new": "    return isinstance(finding.get('scope'), dict)"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    return all(a[k] == b[k] for k in set(a) & set(b))",
+     "new": "    return True"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    return all(a[k] == b[k] for k in set(a) & set(b))",
+     "new": "    return a == b"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "        elif finding['status'] == 'claimed':",
+     "new": "        elif False:"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "                if a.get('value') != b.get('value') and _overlap(a['scope'], b['scope']):",
+     "new": "                if False:"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "        rest = [f for i, f in enumerate(group) if i not in clashing]",
+     "new": "        rest = group"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "        whole = len(buckets) == 1 and not clashing",
+     "new": "        whole = len(buckets) == 1"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "        whole = len(buckets) == 1 and not clashing",
+     "new": "        whole = True"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "            scope = tuple(sorted(finding['scope'].items()))",
+     "new": "            scope = ()"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    if any(c['key'] == key for c in merged['conflicts']):",
+     "new": "    if False:"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "        if entry['key'] == key and all(scope.get(k) == v for k, v in entry['scope'].items()):",
+     "new": "        if entry['key'] == key:"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    for entry in merged['shared'] + merged['conditional']:",
+     "new": "    for entry in merged['shared'] + merged['conditional'] + merged['unconfirmed']:"
+    }
+   ]
   }
  ]
 }
