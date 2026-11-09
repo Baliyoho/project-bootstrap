@@ -1634,6 +1634,73 @@
      "new": "        if not LINE.match(line):\n            continue"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_trail_sources"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    end = re.search(r'^#{2,%d} ' % level, rest, re.MULTILINE)",
+     "new": "    end = None"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "            if started:\n                break",
+     "new": "            if started:\n                pass"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        if not re.match(r'^\\|[\\s|:-]+\\|$', line):",
+     "new": "        if True:"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    return rows[1:]",
+     "new": "    return rows"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        title, _, rationale = item.partition('理由：')",
+     "new": "        title, _, rationale = item.partition('。')"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    baseline = f'決策書決策版本 {version.group(1)}' if version else ''",
+     "new": "    baseline = '決策書'"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "                          'date': date.group(1) if date else '', 'baseline': baseline,",
+     "new": "                          'date': '2026-11-06', 'baseline': baseline,"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    if len(chosen) != 1:",
+     "new": "    if not chosen:"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    rows = [r for r in _rows(body) if len(r) == 4]",
+     "new": "    rows = _rows(body)"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "                              for r in rows if r is not chosen[0]]}]",
+     "new": "                              for r in rows]}]"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "            milestones.append({'id': phase.group(1), 'goal': row[1], 'exit': row[2],\n                               'status': status.get(phase.group(1), 'planned')})",
+     "new": "            milestones.append({'id': phase.group(1), 'goal': row[1], 'exit': row[2],\n                               'status': 'planned'})"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        phase = re.match(r'(P\\d)\\s', row[0] + ' ')",
+     "new": "        phase = re.match(r'(\\S+)\\s', row[0] + ' ')"
+    }
+   ]
   }
  ]
 }

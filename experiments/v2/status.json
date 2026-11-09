@@ -124,9 +124,21 @@
         {
           "path": "experiments/v2/test_trail.py",
           "scope": "合成紀錄實測規則找到理由與基準、引用被取代決策報出且鏈走到現行、缺決策／不存在／被否決報出、決策缺理由／基準／日期／標題、狀態無效、重複編號；mutants.json 24 個刪改全部 killed"
+        },
+        {
+          "path": "experiments/v2/trail_sources.py",
+          "scope": "讀決策書第 7 節為決策紀錄（理由、日期、決策版本基準）；2026-11-10 抓到第 7 條缺理由標記並補上"
+        },
+        {
+          "path": "experiments/v2/test_trail_sources.py",
+          "scope": "合成文件：節界、第一張表、表頭、非階段列、缺節／日期／版本、推薦不唯一、壞列；mutants.json 12 個刪改全部 killed"
+        },
+        {
+          "path": "experiments/v2/test_trail_repo.py",
+          "scope": "真文件：第 7 節 7 筆決策都有理由日期基準、兩條否決路線有理由、P0–P5 且有進行中里程碑"
         }
       ],
-      "unknown": "只檢查呼叫端保存的紀錄，不能證明理由為真或紀錄完整；現行決策書第 7 節、ARCHITECT 與各報告仍是手寫散文，未轉成紀錄；本 repo 尚無路線圖檔；未接進任何工具；跨工具與跨 OS 尚未驗收",
+      "unknown": "只檢查呼叫端保存的紀錄，不能證明理由為真或紀錄完整；決策書第 7 節與實現規劃路線表／分期表已直接讀取，ARCHITECT 與各報告的決策未轉；路線圖進度只有 P0 由測試標為進行中；未接進任何工具；跨工具與跨 OS 尚未驗收",
       "next": "找到規則採納理由與當時基準；理由被改寫要報出"
     },
     {
@@ -142,9 +154,21 @@
         {
           "path": "experiments/v2/test_trail.py",
           "scope": "合成紀錄實測列出三條沒走的路與理由、替代方案缺理由或結果無效報出、取代關係單向／指向不存在／未取代卻有後繼報出、刪除決策／刪替代方案／改寫理由（含狀態一起改）報出；mutants.json 24 個刪改全部 killed"
+        },
+        {
+          "path": "experiments/v2/trail_sources.py",
+          "scope": "讀實現規劃 3.4 路線表：推薦列為選擇，其餘為否決路線並以代價為理由"
+        },
+        {
+          "path": "experiments/v2/test_trail_sources.py",
+          "scope": "合成文件：節界、第一張表、表頭、非階段列、缺節／日期／版本、推薦不唯一、壞列；mutants.json 12 個刪改全部 killed"
+        },
+        {
+          "path": "experiments/v2/test_trail_repo.py",
+          "scope": "真文件：第 7 節 7 筆決策都有理由日期基準、兩條否決路線有理由、P0–P5 且有進行中里程碑"
         }
       ],
-      "unknown": "只檢查呼叫端保存的紀錄，不能證明理由為真或紀錄完整；現行決策書第 7 節、ARCHITECT 與各報告仍是手寫散文，未轉成紀錄；本 repo 尚無路線圖檔；未接進任何工具；跨工具與跨 OS 尚未驗收",
+      "unknown": "只檢查呼叫端保存的紀錄，不能證明理由為真或紀錄完整；決策書第 7 節與實現規劃路線表／分期表已直接讀取，ARCHITECT 與各報告的決策未轉；路線圖進度只有 P0 由測試標為進行中；未接進任何工具；跨工具與跨 OS 尚未驗收",
       "next": "否決理由可找到；刪改成從未考慮要報出"
     },
     {
@@ -160,9 +184,21 @@
         {
           "path": "experiments/v2/test_trail.py",
           "scope": "合成紀錄實測 HANDOFF 清空任務後路線圖仍完整、任務缺里程碑／掛在已完成或已放棄里程碑、無開放里程碑、缺目標、狀態無效、放棄無理由、重複編號報出；mutants.json 24 個刪改全部 killed"
+        },
+        {
+          "path": "experiments/v2/trail_sources.py",
+          "scope": "讀實現規劃第 7 節分期表為路線圖（P0–P5），進度由呼叫端提供"
+        },
+        {
+          "path": "experiments/v2/test_trail_sources.py",
+          "scope": "合成文件：節界、第一張表、表頭、非階段列、缺節／日期／版本、推薦不唯一、壞列；mutants.json 12 個刪改全部 killed"
+        },
+        {
+          "path": "experiments/v2/test_trail_repo.py",
+          "scope": "真文件：第 7 節 7 筆決策都有理由日期基準、兩條否決路線有理由、P0–P5 且有進行中里程碑"
         }
       ],
-      "unknown": "只檢查呼叫端保存的紀錄，不能證明理由為真或紀錄完整；現行決策書第 7 節、ARCHITECT 與各報告仍是手寫散文，未轉成紀錄；本 repo 尚無路線圖檔；未接進任何工具；跨工具與跨 OS 尚未驗收",
+      "unknown": "只檢查呼叫端保存的紀錄，不能證明理由為真或紀錄完整；決策書第 7 節與實現規劃路線表／分期表已直接讀取，ARCHITECT 與各報告的決策未轉；路線圖進度只有 P0 由測試標為進行中；未接進任何工具；跨工具與跨 OS 尚未驗收",
       "next": "交接摘要清理後仍能定位路線"
     },
     {
