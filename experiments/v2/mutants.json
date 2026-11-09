@@ -1537,6 +1537,103 @@
      "new": "                 else 'clean')"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_ingest"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "        if not CANDIDATE.match(line):\n            continue",
+     "new": "        if not line.startswith('['):\n            continue"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "        if not match:\n            records.append(_record(f'verify_bootstrap:unparsed-line-{number}', 'ERROR', meta, line))\n            continue",
+     "new": "        if not match:\n            continue"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "        if claim in seen:\n            records.append(_record(claim + ':duplicate', 'ERROR', meta, line))\n            continue",
+     "new": "        if False:\n            continue"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    if not records:\n        overall = 'FAIL'",
+     "new": "    if not records:\n        overall = 'PASS'"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    elif exit_code == 0 and results == {'PASS'}:",
+     "new": "    elif results == {'PASS'}:"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    elif exit_code == 0 and results == {'PASS'}:",
+     "new": "    elif exit_code == 0 and 'FAIL' not in results:"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    elif exit_code == 1 and 'SKIP' in results and results <= {'PASS', 'SKIP'}:",
+     "new": "    elif 'SKIP' in results and results <= {'PASS', 'SKIP'}:"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    elif exit_code == 1 and 'SKIP' in results and results <= {'PASS', 'SKIP'}:",
+     "new": "    elif exit_code == 1 and 'SKIP' in results:"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    if not isinstance(tests, dict) or not all(isinstance(tests.get(k), int)",
+     "new": "    if not isinstance(tests, dict) or not all(True"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    if tests['failed'] or tests['errors'] or not tests['run']:",
+     "new": "    if tests['failed'] or tests['errors']:"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    if tests['failed'] or tests['errors'] or not tests['run']:",
+     "new": "    if tests['failed'] or not tests['run']:"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    elif tests['skipped']:\n        test_result = 'SKIP'",
+     "new": "    elif False:\n        test_result = 'SKIP'"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    registry = 'PASS' if report.get('registry_errors') == [] else 'FAIL'",
+     "new": "    registry = 'PASS' if not report.get('registry_errors') else 'FAIL'"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    harness = 'PASS' if report.get('harness_passed') is True and exit_code == 0 else 'FAIL'",
+     "new": "    harness = 'PASS' if report.get('harness_passed') else 'FAIL'"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "    strict = 'PASS' if report.get('strict_ready') is True else 'FAIL'",
+     "new": "    strict = 'PASS'"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "            'depends': dict(meta['depends']), 'detail': detail}",
+     "new": "            'depends': {}, 'detail': detail}"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "            'round': meta['round'], 'source': f\"{meta['command']} @ {meta['commit']}\",",
+     "new": "            'round': meta['round'], 'source': meta['command'],"
+    },
+    {
+     "file": "experiments/v2/ingest.py",
+     "old": "        if not CANDIDATE.match(line):\n            continue",
+     "new": "        if not LINE.match(line):\n            continue"
+    }
+   ]
   }
  ]
 }

@@ -58,6 +58,18 @@
         {
           "path": "experiments/v2/test_evidence.py",
           "scope": "實測混入一個無證據的宣稱整份為未驗證；SKIP、NOT_CONFIGURED 為未驗證，FAIL、ERROR 為不通過，不通過優先於未驗證；無效紀錄、空宣稱集合不算通過；報告四組分開且空組照列；移除各守門後測試失敗"
+        },
+        {
+          "path": "experiments/v2/ingest.py",
+          "scope": "把 verify_bootstrap 文字輸出與結束碼、verify_v2 --json 轉成帶輪次、命令與 commit、時間、範圍、輸入 digest 的紀錄；看不懂的狀態行與重複項記 ERROR，結束碼與各行矛盾或無檢查行整體 FAIL，資訊行不算檢查"
+        },
+        {
+          "path": "experiments/v2/test_ingest.py",
+          "scope": "真實格式轉換後本輪通過、FAIL／SKIP 保留語意、SKIP only＋exit 1 為未驗證、結束碼矛盾整體 FAIL、看不懂／重複／空輸出不算通過、輸入改變使沿用失效、v2 報告四筆與各種失敗與壞報告；mutants.json 18 個刪改全部 killed；2026-11-10 實跑輸出轉成 59 筆全 PASS"
+        },
+        {
+          "path": "experiments/v2/test_ingest_format.py",
+          "scope": "測試用格式與 verify_bootstrap.py 的 record 實際輸出逐字相同"
         }
       ],
       "unknown": "證據帳是合成原型，現行 verify_state／verify_bootstrap 輸出尚未轉成證據紀錄；不保證識破偽造紀錄；未接進任何工具；跨工具與跨 OS 尚未驗收",
@@ -950,6 +962,18 @@
         {
           "path": "experiments/v2/test_evidence.py",
           "scope": "實測沿用缺來源／時間／範圍或缺依賴為未驗證；依賴檔內容改變、環境變數改變、依賴檔被改名都使沿用失效；改名無關檔案不誤失效；使用者撤銷生效；較新的無效紀錄不被較舊的通過靜默取代；逃逸路徑以真實存在的檔案測試拒絕；移除各守門後測試失敗"
+        },
+        {
+          "path": "experiments/v2/ingest.py",
+          "scope": "把 verify_bootstrap 文字輸出與結束碼、verify_v2 --json 轉成帶輪次、命令與 commit、時間、範圍、輸入 digest 的紀錄；看不懂的狀態行與重複項記 ERROR，結束碼與各行矛盾或無檢查行整體 FAIL，資訊行不算檢查"
+        },
+        {
+          "path": "experiments/v2/test_ingest.py",
+          "scope": "真實格式轉換後本輪通過、FAIL／SKIP 保留語意、SKIP only＋exit 1 為未驗證、結束碼矛盾整體 FAIL、看不懂／重複／空輸出不算通過、輸入改變使沿用失效、v2 報告四筆與各種失敗與壞報告；mutants.json 18 個刪改全部 killed；2026-11-10 實跑輸出轉成 59 筆全 PASS"
+        },
+        {
+          "path": "experiments/v2/test_ingest_format.py",
+          "scope": "測試用格式與 verify_bootstrap.py 的 record 實際輸出逐字相同"
         }
       ],
       "unknown": "依賴清單由產生證據的一方宣告，宣告漏列的輸入改變時不會失效；撤銷清單的保存與來源未實作；不保證識破偽造紀錄；未接進任何工具；跨工具與跨 OS 尚未驗收",

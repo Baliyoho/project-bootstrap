@@ -244,6 +244,12 @@ python3 -X utf8 experiments/v2/mutants.py
 
 `test_install.py` 8 個、`test_inventory.py` 2 個測試；`mutants.json` 各 14、8 個刪改全部 killed（`install` 的 `.git` 判斷與「其他項目」重複，已刪掉冗餘守門）。邊界：只處理呼叫端給的檔案集合，部署包第 3 節的範本還沒轉成套件；未接 `sync_project.py`；盤點不掃整顆磁碟，也不判斷修改是否合理。
 
+## 驗證器輸出轉成證據紀錄（2026-11-10）
+
+`ingest.py` 把真實驗證器輸出轉成 `evidence.py` 的紀錄。`from_bootstrap` 讀 `verify_bootstrap.py` 每項一行的 `[  ok  ]`／`[ FAIL ]`／`[ skip ]` 與結束碼，每項一筆，再加一筆整體；`from_v2` 讀 `verify_v2.py --json` 成測試、索引、整體、嚴格模式四筆（嚴格模式未就緒照實記 FAIL）。每筆帶輪次、命令與 commit、取得時間、範圍與宣告輸入的 digest，`resolve` 因此分得出本輪與沿用，輸入改了沿用就失效。看不懂的狀態行記 ERROR、重複項記 ERROR、結束碼與各行矛盾或完全沒有檢查行時整體 FAIL；`[index] …` 這類資訊行不算檢查（mutation 抓到原本會把它誤記為 ERROR）。2026-11-10 拿本 session 實跑的輸出轉換：58 項加整體共 59 筆，全部 PASS。
+
+`test_ingest.py` 7 個測試，行格式由本地函式產生；`test_ingest_format.py` 拿 `verify_bootstrap.py` 自己的 `record` 比對同一格式（它 import `tools/`，所以不放進 mutation 群組）；`mutants.json` 18 個刪改全部 killed。邊界：宣告輸入由呼叫端列，漏列的輸入改變不會失效；解析只證明紀錄與輸出一致，不證明輸出未被偽造；尚未把紀錄寫進任何持久位置或接進 A4／B7。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。
