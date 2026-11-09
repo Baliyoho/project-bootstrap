@@ -4,7 +4,7 @@
 
 > 2026-11-09 新增 `experiments/v2/release.py` 與 `test_release.py`：M1 整包 manifest（元件 digest）與每次寫入前的 nonce 簽章新鮮度確認原型（F18／F32／F33），沒有快取路徑。未接進現行 `git-freshness.sh` 或同步工具。
 
-> 2026-11-09 新增 `experiments/v2/gitclaim.py` 與 `test_gitclaim.py`：F9／F10 的 M3 開工資格與收尾閘門原型，對本機 bare origin 實測，收尾成功才產生 `session.py` 的交棒收據。未接進現行程序。詳見 [P0 說明](experiments/v2/README.md)。
+> 2026-11-09 新增 `experiments/v2/gitclaim.py` 與 `test_gitclaim.py`：F9／F10 的 M3 開工資格與收尾閘門原型，對本機 bare origin 實測，收尾成功才產生 `session.py` 的交棒收據。`batch.py`／`test_batch.py` 在其上做多目標彙總（F30）。未接進現行程序。詳見 [P0 說明](experiments/v2/README.md)。
 
 > 2026-11-08 新增 `experiments/v2/tree_probe.py` 與 `test_tree_probe.py`，只在合成 POSIX 程序群組比較一般後代與脫離 session 的後代，透過檔案鎖觀察退場。一鍵入口列出這個候選反例；它不接入 `lifecycle.py`，也不提供任意程序樹保證。詳見 [P0 說明](experiments/v2/README.md)。
 

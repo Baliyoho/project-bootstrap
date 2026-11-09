@@ -110,7 +110,7 @@ class GitGateTests(unittest.TestCase):
         self.git(self.a, 'push', '--quiet')
         self.git(self.b, 'fetch', '--quiet')
         self.git(self.b, 'pull', '--quiet', '--ff-only')
-        self.denied('busy-other', assess_start, self.b, ME, env=self.env)
+        self.denied('busy-other-machine', assess_start, self.b, ME, env=self.env)
         self.commit(self.a, 'HANDOFF.md', handoff(ME))
         self.git(self.a, 'push', '--quiet')
         self.git(self.b, 'pull', '--quiet', '--ff-only')
@@ -132,9 +132,37 @@ class GitGateTests(unittest.TestCase):
         self.git(self.a, 'push', '--quiet')
         self.git(self.b, 'fetch', '--quiet')
         self.git(self.b, 'switch', '--quiet', '--track', 'origin/line2')
-        self.denied('busy-other', assess_start, self.b, OTHER, env=self.env)
+        self.denied('busy-other-machine', assess_start, self.b, OTHER, env=self.env)
         self.git(self.b, 'switch', '--quiet', 'main')
         assess_start(self.b, OTHER, env=self.env)
+
+    def test_occupancy_codes_separate_machine_tool_and_session(self):
+        # F4: same machine with another tool, another session, an old marker
+        # without a tool field and an unreadable remote are all told apart.
+        cases = (
+            ('`win` ／ `Claude Code` ／ `s1`', 'busy-other-machine'),
+            ('`mac` ／ `Codex CLI` ／ `s1`', 'busy-same-machine-other-tool'),
+            ('`mac` ／ `Claude Code` ／ `㊣　26110800｜舊的｜工作中｜交棒0次`，2026-11-08 開工',
+             'busy-same-tool-other-session'),
+            ('`mac` ／ `Claude Code`', 'busy-same-tool-other-session'),
+            ('`mac` ／ `Claude Code`，2026-11-08 開工', 'busy-same-tool-other-session'),
+            ('`mac` ／ `㊣　26110800｜舊格式｜工作中`', 'busy-unidentified-tool'),
+            ('`mac`', 'owner-unknown'),
+            ('`mac` ／ `` ／ `s1`', 'owner-unknown'),
+            ('`mac` ／ `  ` ／ `s1`', 'owner-unknown'),
+            ('mac ／ Claude Code ／ s1', 'owner-unknown'),
+            ('`mac`x ／ `Claude Code` ／ `s1`', 'owner-unknown'),
+        )
+        for marker, code in cases:
+            with self.subTest(marker=marker):
+                self.commit(self.a, 'HANDOFF.md', handoff(marker))
+                self.git(self.a, 'push', '--quiet')
+                self.denied(code, assess_start, self.a, ME, env=self.env)
+        for bad in ('not a marker', '`mac` ／ `Claude Code`', '`mac` ／ `` ／ `s`'):
+            with self.subTest(owner=bad):
+                self.denied('invalid-owner', assess_start, self.a, bad, env=self.env)
+        self.origin.rename(self.root / 'moved.git')
+        self.denied('fetch-failed', assess_start, self.a, ME, env=self.env)
 
     def test_missing_or_ambiguous_owner_is_unknown_not_idle(self):
         for text in ('# HANDOFF\n', handoff(IDLE) + handoff(IDLE), handoff('')):

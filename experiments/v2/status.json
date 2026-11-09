@@ -41,8 +41,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/gitclaim.py",
+          "scope": "遠端標記拆成機器／工具／session 三欄判讀：別台機器、同機別工具、同工具別 session（含缺 session）、兩欄且第二欄不是慣用工具名（舊格式）各給不同代碼；空白欄、缺反引號、尾端雜訊算 owner-unknown；遠端查不到是 fetch-failed。自己的標記必須是完整三欄"
+        },
+        {
+          "path": "experiments/v2/test_gitclaim.py",
+          "scope": "本機 bare origin 實測 11 種遠端標記與 3 種不合格自身標記；移除各解析守門後測試失敗。工具身分仍由寫標記者自填，不是環境偵測或身分證明"
+        }
+      ],
+      "unknown": "只在 gitclaim 原型區分；現行 hook 判讀未改；工具欄仍由寫標記的那一棒自填；跨工具與跨 OS 尚未驗收",
       "next": "同機換工具、缺 session、無法查遠端可區分"
     },
     {
@@ -429,7 +438,7 @@
       "evidence": [
         {
           "path": "experiments/v2/test_gitclaim.py",
-          "scope": "本機 bare origin：兩條分支各帶自己的標記互不阻擋；同一分支已有他人標記時第二個 writer 以 busy-other 停止，標記時間再舊也不當租約到期"
+          "scope": "本機 bare origin：兩條分支各帶自己的標記互不阻擋；同一分支已有他人標記時第二個 writer 以 busy-* 停止，標記時間再舊也不當租約到期"
         }
       ],
       "unknown": "只驗分支層的兩線區分與遠端標記；同一工作樹兩個 writer 共用 index 不在此原型範圍，未接進任何工具；跨工具與跨 OS 尚未驗收",
@@ -521,8 +530,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/batch.py",
+          "scope": "批次彙總原型：每個輸入目標恰列一次；archived 列為 excluded 不隱藏；重複、缺失、未知狀態、被拒與非預期例外都算失敗且不中斷其他目標；有任一失敗或沒有處理任何目標就不是 ok"
+        },
+        {
+          "path": "experiments/v2/test_batch.py",
+          "scope": "20 個真 Git 目標（14 正常、他人占用、dirty、ahead-only、離線、已搬走、archived）全數列出，摘要寫 NOT OK 與實際計數；移除各守門後測試失敗。只做開工資格彙總，不是 sync_project 的同步批次"
+        }
+      ],
+      "unknown": "原型只彙總 gitclaim 開工資格，未接進 sync_project.py 的實際同步；現行同步器的 inventory 行為以 verify_bootstrap 為準；跨工具與跨 OS 尚未驗收",
       "next": "20 目標完整列出，一壞不能宣稱全部成功"
     },
     {

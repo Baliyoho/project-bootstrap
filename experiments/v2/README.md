@@ -124,9 +124,11 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 ## M3 開工／收尾閘門（2026-11-09）
 
-`gitclaim.py` 是 F9／F10 的原型，對真 Git 判定，不讀聊天或本機 HANDOFF。`assess_start` 先確認站在追蹤自己遠端同名分支的分支上，再 fetch；fetch 失敗一律 `fetch-failed`，即使舊 tracking ref 看起來對齊且空閒。之後依序拒絕未知 dirty（含未追蹤檔）、分岔、ahead-only、落後（要先 ff pull 再重判）；占用只看遠端那一份 HANDOFF 的「工作中」欄位，缺欄、重複或空值算 `owner-unknown`，不當成空閒；只有空閒或完全等於本 session 的標記才放行。`finish` 不收布林值，只收 `run_check` 的檢查收據：在乾淨工作樹上執行驗證，記結束碼、行首 `skip` 行數與當時的 HEAD tree，執行中改動工作樹就不給收據；收據為空、非零、有 SKIP 或 tree 不是現在的 HEAD tree（驗證後又 commit）都拒絕（F19）。另要求工作樹乾淨、HEAD 的標記已釋出，fetch 後遠端不能有 HEAD 沒有的 commit，push 不 force；推送後再 fetch，遠端等於 HEAD 且標記已釋出才回傳 `session.py` 的 `HandoffReceipt`，F50 計數因此只在真的交棒成功時加一。
+`gitclaim.py` 是 F9／F10 的原型，對真 Git 判定，不讀聊天或本機 HANDOFF。`assess_start` 先確認站在追蹤自己遠端同名分支的分支上，再 fetch；fetch 失敗一律 `fetch-failed`，即使舊 tracking ref 看起來對齊且空閒。之後依序拒絕未知 dirty（含未追蹤檔）、分岔、ahead-only、落後（要先 ff pull 再重判）；占用只看遠端那一份 HANDOFF 的「工作中」欄位，缺欄、重複或空值算 `owner-unknown`，不當成空閒；只有空閒或完全等於本 session 的標記才放行。被占用時把標記拆成機器／工具／session 三欄，分別回報別台機器、同機別工具、同工具別 session（含缺 session）與無法辨識工具的兩欄舊格式；空白欄、缺反引號或欄位後有雜訊算 `owner-unknown`，遠端查不到則是 `fetch-failed`（F4）。自己要寫的標記也必須是完整三欄，否則 `invalid-owner`。`finish` 不收布林值，只收 `run_check` 的檢查收據：在乾淨工作樹上執行驗證，記結束碼、行首 `skip` 行數與當時的 HEAD tree，執行中改動工作樹就不給收據；收據為空、非零、有 SKIP 或 tree 不是現在的 HEAD tree（驗證後又 commit）都拒絕（F19）。另要求工作樹乾淨、HEAD 的標記已釋出，fetch 後遠端不能有 HEAD 沒有的 commit，push 不 force；推送後再 fetch，遠端等於 HEAD 且標記已釋出才回傳 `session.py` 的 `HandoffReceipt`，F50 計數因此只在真的交棒成功時加一。
 
-`test_gitclaim.py` 用本機 bare origin 與多個 clone 實測 15 個情境（含檢查收據）：乾淨對齊、ahead-only／分岔／落後、離線（搬走 origin 而 tracking ref 仍在）、未追蹤與已追蹤變更、無 upstream／追錯分支／detached、本機空閒而遠端他人占用、自己的標記、缺／重複／空的欄位、兩條分支各自占用互不阻擋而同一分支第二個 writer 停止（標記再舊也不當租約到期，F25）；收尾端測成功（收據只計一次）、遠端前進時不推、pre-receive 拒絕、離線、推送後被另一 writer 搶占。scratch 副本逐一移除 22 個守門，21 個讓測試失敗；剩下的推送後「標記已釋出」再查在邏輯上由推送前的 HEAD 檢查蘊含，沒有輸入能單獨觸發，已在程式註明。邊界：這是協調檢查不是原子 claim，判定到推送之間仍有時間窗；只在 macOS 本機 Git 跑過，未接進現行 A／B 程序或任何工具。
+`test_gitclaim.py` 用本機 bare origin 與多個 clone 實測 16 個情境（含檢查收據與占用代碼）：乾淨對齊、ahead-only／分岔／落後、離線（搬走 origin 而 tracking ref 仍在）、未追蹤與已追蹤變更、無 upstream／追錯分支／detached、本機空閒而遠端他人占用、自己的標記、缺／重複／空的欄位、兩條分支各自占用互不阻擋而同一分支第二個 writer 停止（標記再舊也不當租約到期，F25）；收尾端測成功（收據只計一次）、遠端前進時不推、pre-receive 拒絕、離線、推送後被另一 writer 搶占。scratch 副本逐一移除 22 個守門，21 個讓測試失敗；剩下的推送後「標記已釋出」再查在邏輯上由推送前的 HEAD 檢查蘊含，沒有輸入能單獨觸發，已在程式註明。邊界：這是協調檢查不是原子 claim，判定到推送之間仍有時間窗；只在 macOS 本機 Git 跑過，未接進現行 A／B 程序或任何工具。
+
+`batch.py` 在其上做 F30 的批次彙總：每個輸入目標恰好列一次，archived 列為 excluded，重複、缺失、未知狀態、被拒或非預期例外都算失敗且不中斷其他目標；有失敗或一個都沒處理就不是 ok。`test_batch.py` 用 20 個真 Git 目標（14 正常與 6 種例外／失效）實測，摘要為 `NOT OK: 14 eligible, 5 failed, 1 excluded of 20 listed`；移除 8 個守門都會讓測試失敗。它只彙總開工資格，不取代 `sync_project.py` 的同步批次。
 
 ## M1 整包 manifest 與逐次寫入確認（2026-11-09）
 

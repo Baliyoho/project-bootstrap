@@ -43,6 +43,44 @@ def owner_field(text):
     return values[0] if len(values) == 1 and values[0] else None
 
 
+_FIELD = re.compile(r'`([^`]*)`')
+KNOWN_TOOLS = ('Claude Code', 'Codex CLI', 'Gemini CLI', 'Antigravity')
+
+
+def owner_parts(value):
+    """Split ``machine ／ tool ／ session`` (session optional); None if malformed.
+
+    Each field must be a non-blank backticked value; text after the last field
+    (the start time) is ignored. Two fields means the old format without tool.
+    """
+    parts = value.split(' ／ ')
+    if not 2 <= len(parts) <= 3:
+        return None
+    fields = []
+    for index, part in enumerate(parts):
+        match = _FIELD.match(part.strip())
+        if (match is None or not match.group(1).strip()
+                or (index < len(parts) - 1 and match.end() != len(part.strip()))):
+            return None
+        fields.append(match.group(1).strip())
+    return fields
+
+
+def _busy_code(remote_owner, owner):
+    theirs, mine = owner_parts(remote_owner), owner_parts(owner)
+    if theirs is None:
+        return 'owner-unknown'
+    # Two fields are either machine／tool (session omitted) or the old
+    # machine／session format. Only a known tool name settles it; both deny.
+    if len(theirs) == 2 and theirs[1] not in KNOWN_TOOLS:
+        return 'busy-unidentified-tool'
+    if theirs[0] != mine[0]:
+        return 'busy-other-machine'
+    if theirs[1] != mine[1]:
+        return 'busy-same-machine-other-tool'
+    return 'busy-same-tool-other-session'
+
+
 def _remote_owner(repo, env, ref, marker_path):
     shown = _git(repo, env, 'show', f'{ref}:{marker_path}', check=False)
     if shown.returncode != 0:
@@ -87,7 +125,7 @@ def assess_start(repo, owner, env=None, marker_path='HANDOFF.md'):
     ``owner`` is the full marker value this session would write; an exact
     match means the remote marker already names this session.
     """
-    if not isinstance(owner, str) or not owner.strip() or owner.strip() == IDLE:
+    if not isinstance(owner, str) or len(owner_parts(owner.strip()) or ()) != 3:
         raise GitGateDenied('invalid-owner')
     branch, remote, upstream = _locate(repo, env)
     _fetch(repo, env, remote)
@@ -104,7 +142,7 @@ def assess_start(repo, owner, env=None, marker_path='HANDOFF.md'):
     if remote_owner is None:
         raise GitGateDenied('owner-unknown')
     if remote_owner not in (IDLE, owner.strip()):
-        raise GitGateDenied('busy-other')
+        raise GitGateDenied(_busy_code(remote_owner, owner.strip()))
     return {'branch': branch, 'upstream': upstream,
             'remote_sha': _out(repo, env, 'rev-parse', upstream),
             'remote_owner': remote_owner}
