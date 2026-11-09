@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-09。`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh`、`vm_managed_worker.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的合成探針及離線負向控制：固定映像 digest、無網路 guest。退場與跨 VM 鎖反例掛獨立暫存共享目錄及 `setsid` 後代；新固定工具路徑由 `/init` 在無共享 guest 中啟動 `vm_managed_worker.sh`，只經第二個雙向 virtio console 載入前提並發原始 broker 請求。host 核對請求後由 outbox／broker／materializer 寫入合成工作樹，正式 repo 不掛載進 VM。舊 `managed_fixture.py` 路徑仍用 host worker，按 actor＋epoch 保存各台 VM 退場證據，未確認時重啟保持阻擋；新無共享工具路徑另由 `guest_runs.py`（離線測試 `test_guest_runs.py`）在同一私有資料庫持久記錄每台 guest 的 parent 選定身分 digest 與 host 停機證據，未退場時新 guest、ACK、寫入與重啟都阻擋；每台 run 綁一個 broker channel，退場時輪換 capability。runner 的 host 標記另寫 `.host` 日誌，不與 guest console 混用。這些資料流仍未接真實工具或現行部署包，也不提供 host 故障後的自動復原保證。詳見 [P0 說明](experiments/v2/README.md)。
+> 最後更新：2026-11-10。根目錄表的決策書需求數更正為 51（2026-11-06 補 F50 後漏改，`experiments/v2/contradictions.py` 首次對 ARCHITECT 跑時抓到）。
+
+> 2026-11-09：`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh`、`vm_managed_worker.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的合成探針及離線負向控制：固定映像 digest、無網路 guest。退場與跨 VM 鎖反例掛獨立暫存共享目錄及 `setsid` 後代；新固定工具路徑由 `/init` 在無共享 guest 中啟動 `vm_managed_worker.sh`，只經第二個雙向 virtio console 載入前提並發原始 broker 請求。host 核對請求後由 outbox／broker／materializer 寫入合成工作樹，正式 repo 不掛載進 VM。舊 `managed_fixture.py` 路徑仍用 host worker，按 actor＋epoch 保存各台 VM 退場證據，未確認時重啟保持阻擋；新無共享工具路徑另由 `guest_runs.py`（離線測試 `test_guest_runs.py`）在同一私有資料庫持久記錄每台 guest 的 parent 選定身分 digest 與 host 停機證據，未退場時新 guest、ACK、寫入與重啟都阻擋；每台 run 綁一個 broker channel，退場時輪換 capability。runner 的 host 標記另寫 `.host` 日誌，不與 guest console 混用。這些資料流仍未接真實工具或現行部署包，也不提供 host 故障後的自動復原保證。詳見 [P0 說明](experiments/v2/README.md)。
 
 > 2026-11-09 新增 `experiments/v2/doctor.py` 與 `test_doctor.py`：F16b 本機能力診斷，缺工具／缺設定／連線失敗分開報，不讀出設定值。
 
@@ -92,7 +94,7 @@
 | [project-bootstrap-audit-progress.md](project-bootstrap-audit-progress.md) | **查核報告 16 條的處理進度**：已修的做了什麼與守門人、未修的建議作法與驗收門檻、跨條目的共同規則。查核報告是凍結快照，所以狀態有自己的家。不部署、不同步 | 任何一條的狀態改變，跟那個改動同一個 commit |
 | [project-bootstrap-reaudit-2026-11-03.md](project-bootstrap-reaudit-2026-11-03.md) | **第二輪複審快照**：R01–R09 的證據、改善與驗收門檻、原 F01–F16 的複審判定；2026-11-03 使用者要求下一輪先讀。不部署、不同步，原始探針留在審查聊天產物 | 查核結論需勘誤時；當下實作進度看 HANDOFF |
 | [project-bootstrap-efficiency-plan.md](project-bootstrap-efficiency-plan.md) | **效率改進設計提案**：接棒分流、驗證分層、必讀內容精簡、原始碼與部署產物分離；尚未實施，不部署、不同步，不取代現行程序 | 設計決策改變時；實作進度看 HANDOFF |
-| [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 現行需求唯一權威：D1–D8、50 條需求、驗收、待決與變更理由。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
+| [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 現行需求唯一權威：D1–D8、51 條需求、驗收、待決與變更理由。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
 | [project-bootstrap-implementation-plan.md](project-bootstrap-implementation-plan.md) | 依決策書評估既有程式與開源工具；推薦技術棧、50 項映射、可行性門檻、遷移與驗收。不承載滾動達成狀態，不部署、不同步 | 選型或實現方案改變時 |
 | [project-bootstrap-requirements-history.md](project-bootstrap-requirements-history.md) | 原 v3.10 全文與修訂理由，歷史封存；不再指示現行操作 | 僅補帶日期的歷史勘誤 |
 | [project-bootstrap-requirements-review-2026-11-04.md](project-bootstrap-requirements-review-2026-11-04.md) | 需求審閱建議快照 Q1–Q7，供下一棒 Opus 討論；未採納，不改變需求權威或現行程序。不部署、不同步 | 本次審閱快照；採納結果另改需求文件 |

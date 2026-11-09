@@ -204,7 +204,7 @@ python3 -X utf8 experiments/v2/mutants.py
 
 `contradictions.py` 是 F45 的原型，只比對宣告過的規則表與待決登記，不判斷任意散文。每條規則列出各說法的正規式與正確說法：寫成反向說法的位置報 `reverse-rule`（文件、節、行號），同一檔不同節說法不同報 `section-conflict`，不同檔說法不同報 `cross-doc-conflict`。待決部分讀決策書第 6 節的登記列（`- **Q1** … 狀態：待決／已決`）：HANDOFF 懸置節每一條都要引用仍待決的編號，否則 `pending-unregistered`；已決編號在懸置節或任何文件與「待決／待使用者決定」同行出現就報 `decided-still-pending`。讀不到的文件、必須出現卻沒出現的規則、缺登記節都是未知，不算通過；程式碼區塊與呼叫端標為歷史的節會跳過，但跳過的行數照列。部署包的範本放在程式碼區塊裡，所以對它設為照掃。
 
-`REPO_CONFIG` 是本 repo 的宣告表（核心優先序一條規則、決策書第 6 節、HANDOFF 懸置節），`python3 -X utf8 experiments/v2/contradictions.py` 直接對本 repo 跑。2026-11-10 第一次跑就抓到一處：HANDOFF 懸置的「崩潰後人工解除的可信核准來源」沒登記，決策書第 6 節卻寫「無」；已補登為 Q1，HANDOFF 改成指向它。`test_contradictions.py` 15 個合成測試、`test_contradictions_repo.py` 對本 repo 文件要求未發現；`mutants.json` 23 個刪改全部 killed。邊界：只認宣告過的說法，換個寫法就看不到；登記列格式固定；HANDOFF 懸置每條都要引用編號，之後交棒寫懸置節要照這個格式；未接進現行 A／B 程序。
+`REPO_CONFIG` 是本 repo 的宣告表（核心優先序、需求數兩條規則、決策書第 6 節、HANDOFF 懸置節；ARCHITECT 開頭的日期紀錄行與決策書第 7 節當時的決定標為歷史，照列跳過行數），`python3 -X utf8 experiments/v2/contradictions.py` 直接對本 repo 跑。2026-11-10 第一次跑就抓到一處：HANDOFF 懸置的「崩潰後人工解除的可信核准來源」沒登記，決策書第 6 節卻寫「無」；已補登為 Q1，HANDOFF 改成指向它。同日加入需求數規則，抓到 ARCHITECT 根目錄表仍寫決策書「50 條需求」（決策書是 51），已更正。`test_contradictions.py` 16 個合成測試、`test_contradictions_repo.py` 對本 repo 文件要求未發現；`mutants.json` 24 個刪改全部 killed。邊界：只認宣告過的說法，換個寫法就看不到；登記列格式固定；HANDOFF 懸置每條都要引用編號，之後交棒寫懸置節要照這個格式；未接進現行 A／B 程序。
 
 ## 規則理由、否決路線與路線圖（2026-11-10）
 

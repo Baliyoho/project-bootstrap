@@ -874,7 +874,7 @@
     },
     {
      "file": "experiments/v2/contradictions.py",
-     "old": "            if _history(doc, row[0], history):",
+     "old": "            if _history(doc, row[0], row[2], history):",
      "new": "            if False:"
     },
     {
@@ -951,6 +951,11 @@
      "file": "experiments/v2/contradictions.py",
      "old": "            path = path[:level - 1] + [''] * max(0, level - 1 - len(path)) + [heading.group(2)]",
      "new": "            path = path + [heading.group(2)]"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "                                       else re.search(item['line'], line))",
+     "new": "                                       else False)"
     }
    ]
   },

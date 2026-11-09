@@ -40,8 +40,11 @@ def sections(text, transparent=False):
     return rows, skipped
 
 
-def _history(doc, heading, history):
-    return any(item['doc'] == doc and re.search(item['heading'], heading) for item in history)
+def _history(doc, heading, line, history):
+    """A history entry names a doc and a ``heading`` or ``line`` pattern (dated log lines)."""
+    return any(item['doc'] == doc and (re.search(item['heading'], heading) if 'heading' in item
+                                       else re.search(item['line'], line))
+               for item in history)
 
 
 def _scan(docs, history, transparent=()):
@@ -54,7 +57,7 @@ def _scan(docs, history, transparent=()):
         rows, fenced = sections(text, doc in transparent)
         kept, excluded = [], 0
         for row in rows:
-            if _history(doc, row[0], history):
+            if _history(doc, row[0], row[2], history):
                 excluded += 1
             else:
                 kept.append(row)
@@ -194,14 +197,28 @@ REPO_CONFIG = {
         },
         'docs': ['README.md', 'AGENTS.md', 'PROJECT-BOOTSTRAP.md'],
         'required_in': ['README.md', 'PROJECT-BOOTSTRAP.md'],
+    }, {
+        'id': 'requirement-count',
+        'canonical': '51',
+        'variants': {
+            '51': [r'(?<!\d)51 ?(個穩定需求 ?ID|條需求|個需求|項需求)'],
+            'other': [r'(?<!\d)(?!51)\d{2} ?(個穩定需求 ?ID|條需求|個需求|項需求)'],
+        },
+        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'HANDOFF.md',
+                 'project-bootstrap-requirements-decision.md',
+                 'project-bootstrap-implementation-plan.md'],
+        'required_in': ['AGENTS.md', 'project-bootstrap-requirements-decision.md'],
     }],
     'registry': {'doc': 'project-bootstrap-requirements-decision.md', 'heading': r'(^| > )6\. 待決事項$'},
     'pending_sections': [{'doc': 'HANDOFF.md', 'heading': r'懸置事項'}],
-    'history': [],
+    # Dated log lines and the decisions record state what was true then.
+    'history': [{'doc': 'ARCHITECT.md', 'line': r'^> (最後更新：)?\d{4}-\d{2}-\d{2}'},
+                {'doc': 'project-bootstrap-requirements-decision.md',
+                 'heading': r'(^| > )7\. 本次整理'}],
     'scan_fences': ['PROJECT-BOOTSTRAP.md'],
 }
-REPO_DOCS = ('README.md', 'AGENTS.md', 'PROJECT-BOOTSTRAP.md', 'HANDOFF.md',
-             'project-bootstrap-requirements-decision.md')
+REPO_DOCS = ('README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md', 'HANDOFF.md',
+             'project-bootstrap-requirements-decision.md', 'project-bootstrap-implementation-plan.md')
 
 
 def read_docs(root, names):

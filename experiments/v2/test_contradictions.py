@@ -149,6 +149,13 @@ class ContradictionTests(unittest.TestCase):
                          ('未發現', [('AGENTS.md', 'history-section', 2)]))
         self.assertIn('reverse-rule', codes(check(docs(**{'AGENTS.md': agents}), CONFIG)))
 
+    def test_dated_log_lines_can_be_marked_history_by_pattern(self):
+        agents = '# A\n\n> 2026-11-01 當時衝突時以協定為準。\n\n衝突時以協定為準。\n'
+        config = dict(CONFIG, history=[{'doc': 'AGENTS.md', 'line': r'^> \d{4}-'}])
+        result = check(docs(**{'AGENTS.md': agents}), config)
+        self.assertEqual([f['line'] for f in result['findings'] if f['code'] == 'reverse-rule'], [5])
+        self.assertEqual(result['skipped'], [('AGENTS.md', 'history-section', 1)])
+
     def test_section_paths_follow_heading_levels(self):
         rows, skipped = sections('# A\n\n## B\n\nx\n\n### C\n\ny\n\n## D\n\nz\n')
         self.assertEqual([(r[0], r[2]) for r in rows if r[2]],
