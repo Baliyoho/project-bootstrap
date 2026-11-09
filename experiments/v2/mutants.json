@@ -1413,6 +1413,130 @@
      "new": "        pass"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_install"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/install.py",
+     "old": "    if not relative or relative.startswith('/') or '\\\\' in relative or any(\n            p in ('', '.', '..') for p in parts):",
+     "new": "    if not relative or any(p == '..' for p in parts):"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "    if target in (home, Path(target.anchor)):",
+     "new": "    if target == home:"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "    if target in (home, Path(target.anchor)):",
+     "new": "    if False:"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "    if not target.is_dir():\n        raise Denied('target-missing')",
+     "new": "    if False:\n        raise Denied('target-missing')"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "        if path.is_symlink() or (path.exists() and not path.is_file()):",
+     "new": "        if path.exists() and not path.is_file():"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "        if current == package[relative]:",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "        elif relative in APPEND_ONLY:",
+     "new": "        elif False:"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "                       if line and line not in have]",
+     "new": "                       if line]"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "            actions.append({'path': relative, 'action': 'append' if missing else 'same',",
+     "new": "            actions.append({'path': relative, 'action': 'append',"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "    if current != approved:\n        raise Denied('plan-changed')",
+     "new": "    if False:\n        raise Denied('plan-changed')"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "            with path.open('xb') as handle:",
+     "new": "            with path.open('wb') as handle:"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "            text = ('' if before.endswith(b'\\n') or not before else '\\n') + ''.join(",
+     "new": "            text = ''.join("
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "            with path.open('ab') as handle:",
+     "new": "            with path.open('wb') as handle:"
+    },
+    {
+     "file": "experiments/v2/install.py",
+     "old": "'existing_project': bool(others),",
+     "new": "'existing_project': False,"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_inventory"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/inventory.py",
+     "old": "        if manifest is None:\n            report.append({'project': name, 'state': 'unknown-manifest', 'files': {}})\n            continue",
+     "new": "        if manifest is None:\n            continue"
+    },
+    {
+     "file": "experiments/v2/inventory.py",
+     "old": "            if owners.get(relative) not in ('core', 'adapter'):",
+     "new": "            if False:"
+    },
+    {
+     "file": "experiments/v2/inventory.py",
+     "old": "            if owners.get(relative) not in ('core', 'adapter'):",
+     "new": "            if owners.get(relative) != 'core':"
+    },
+    {
+     "file": "experiments/v2/inventory.py",
+     "old": "            except FileNotFoundError:\n                files[relative] = 'missing'\n                continue",
+     "new": "            except FileNotFoundError:\n                continue"
+    },
+    {
+     "file": "experiments/v2/inventory.py",
+     "old": "            except OSError:\n                files[relative] = 'unreadable'\n                continue",
+     "new": "            except OSError:\n                continue"
+    },
+    {
+     "file": "experiments/v2/inventory.py",
+     "old": "            files[relative] = 'ok' if hashlib.sha256(data).hexdigest() == digest else 'edited'",
+     "new": "            files[relative] = 'ok'"
+    },
+    {
+     "file": "experiments/v2/inventory.py",
+     "old": "        state = ('edited' if 'edited' in states else 'incomplete' if states - {'ok'}",
+     "new": "        state = ('incomplete' if states - {'ok'} else 'edited' if 'edited' in states"
+    },
+    {
+     "file": "experiments/v2/inventory.py",
+     "old": "                 else 'clean' if files else 'nothing-to-check')",
+     "new": "                 else 'clean')"
+    }
+   ]
   }
  ]
 }

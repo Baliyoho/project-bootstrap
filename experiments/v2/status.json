@@ -429,9 +429,18 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
-      "next": "空專案與既有專案預演；保留原內容、可列改動"
+      "evidence": [
+        {
+          "path": "experiments/v2/install.py",
+          "scope": "預演原型：plan 不寫檔，每套件檔一動作（新建／已相同／.gitignore 只補缺行／其他既有檔保留給人）；拒絕家目錄與根目錄；有非套件項目（含 .git）標既有專案；apply 重新預演不同即拒，只新建與附加，新建排他開檔"
+        },
+        {
+          "path": "experiments/v2/test_install.py",
+          "scope": "空資料夾預演不寫、套用後全新建、再跑全相同；既有專案保留 AGENTS、.gitignore 只補缺行且補換行；預演後被改即拒且不動檔；家目錄／根目錄／不存在／壞路徑拒絕；目錄、符號連結（含指向相同內容與懸空）保留；只有 .git 或只有其他檔都算既有；預演後才出現的檔不被覆寫；mutants.json 14 個刪改全部 killed"
+        }
+      ],
+      "unknown": "只處理呼叫端給的檔案集合，部署包範本尚未轉成套件；中文與空白路徑只測目標資料夾名；未接 sync_project.py；跨工具與跨 OS 尚未驗收",
+      "next": "把部署包第 3 節轉成套件後對真實空專案與既有專案預演"
     },
     {
       "id": "F18",
@@ -855,9 +864,18 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
-      "next": "未知客製列差異不覆蓋；不排程無限期全盤掃描"
+      "evidence": [
+        {
+          "path": "experiments/v2/inventory.py",
+          "scope": "一次性盤點原型：對明列專案以其記錄的 manifest 比對 core／adapter 檔，逐檔正常／被改／遺失／讀不到，未知版本不算乾淨；只讀不覆蓋"
+        },
+        {
+          "path": "experiments/v2/test_inventory.py",
+          "scope": "六個專案：乾淨、改 core、缺 adapter、只改專案檔仍乾淨、版本未知、讀不到；被改優先於遺失；無發布檔為無可檢查；掃描前後檔案位元組不變；mutants.json 8 個刪改全部 killed"
+        }
+      ],
+      "unknown": "清單由呼叫端提供，不掃整顆磁碟；不判斷修改是否該搬進覆寫；未對真實專案跑；跨工具與跨 OS 尚未驗收",
+      "next": "對真實專案清單跑一次並把被改檔交人判斷"
     },
     {
       "id": "F40",
