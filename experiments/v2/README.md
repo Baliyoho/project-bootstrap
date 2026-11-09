@@ -122,6 +122,12 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 **適用邊界**：只在 POSIX 合成且由 broker 獨占的工作樹驗收，不是多 writer 的原子 CAS。外部程序若能在檢查與 rename 間改目錄／檔案，仍超出此保障，必須由 OS 隔離排除；不宣稱能歸因外部寫入恰好與 after 相同的內容。不支援自動建立目錄、刪除、整批檔案交易、真實專案遷移或 Windows。SQLite FULL 與 fsync 加上程序終止測試不是實測斷電；磁碟毀損／設備遺失仍未驗。尚未接 Gitleaks 或完整提交／發布代理，不能把可套用檔案等同敏感資料不進 Git。
 
+## M3 開工／收尾閘門（2026-11-09）
+
+`gitclaim.py` 是 F9／F10 的原型，對真 Git 判定，不讀聊天或本機 HANDOFF。`assess_start` 先確認站在追蹤自己遠端同名分支的分支上，再 fetch；fetch 失敗一律 `fetch-failed`，即使舊 tracking ref 看起來對齊且空閒。之後依序拒絕未知 dirty（含未追蹤檔）、分岔、ahead-only、落後（要先 ff pull 再重判）；占用只看遠端那一份 HANDOFF 的「工作中」欄位，缺欄、重複或空值算 `owner-unknown`，不當成空閒；只有空閒或完全等於本 session 的標記才放行。`finish` 不收布林值，只收 `run_check` 的檢查收據：在乾淨工作樹上執行驗證，記結束碼、行首 `skip` 行數與當時的 HEAD tree，執行中改動工作樹就不給收據；收據為空、非零、有 SKIP 或 tree 不是現在的 HEAD tree（驗證後又 commit）都拒絕（F19）。另要求工作樹乾淨、HEAD 的標記已釋出，fetch 後遠端不能有 HEAD 沒有的 commit，push 不 force；推送後再 fetch，遠端等於 HEAD 且標記已釋出才回傳 `session.py` 的 `HandoffReceipt`，F50 計數因此只在真的交棒成功時加一。
+
+`test_gitclaim.py` 用本機 bare origin 與多個 clone 實測 15 個情境（含檢查收據）：乾淨對齊、ahead-only／分岔／落後、離線（搬走 origin 而 tracking ref 仍在）、未追蹤與已追蹤變更、無 upstream／追錯分支／detached、本機空閒而遠端他人占用、自己的標記、缺／重複／空的欄位、兩條分支各自占用互不阻擋而同一分支第二個 writer 停止（標記再舊也不當租約到期，F25）；收尾端測成功（收據只計一次）、遠端前進時不推、pre-receive 拒絕、離線、推送後被另一 writer 搶占。scratch 副本逐一移除 22 個守門，21 個讓測試失敗；剩下的推送後「標記已釋出」再查在邏輯上由推送前的 HEAD 檢查蘊含，沒有輸入能單獨觸發，已在程式註明。邊界：這是協調檢查不是原子 claim，判定到推送之間仍有時間窗；只在 macOS 本機 Git 跑過，未接進現行 A／B 程序或任何工具。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。

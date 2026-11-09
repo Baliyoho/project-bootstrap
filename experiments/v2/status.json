@@ -86,8 +86,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/gitclaim.py",
+          "scope": "M3 開工資格原型 assess_start：對真 Git 先 fetch，失敗就拒絕且不用舊 tracking ref；未知 dirty、ahead-only、分岔、落後、無 upstream、追錯分支、detached、遠端標記缺／重複／他人占用都拒絕；只讀 origin 的標記。非原子 claim"
+        },
+        {
+          "path": "experiments/v2/test_gitclaim.py",
+          "scope": "本機 bare origin＋多 clone 實測上述情境（含本機標記空閒而遠端他人占用）；移除任一守門後測試失敗。只測 macOS 本機 Git，非跨工具／OS 驗收"
+        }
+      ],
+      "unknown": "原型只在 macOS 本機 Git 驗證，尚未接進任何工具的開工流程；跨工具與跨 OS 尚未驗收，檢查到推送之間仍有時間窗（非原子 claim）",
       "next": "ahead-only、分岔、離線、未知 dirty 都不能取得寫入資格"
     },
     {
@@ -95,8 +104,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/gitclaim.py",
+          "scope": "M3 收尾原型 finish：只收 run_check 產生、綁定 HEAD tree 的檢查收據（布林值不收）；缺收據、非零、SKIP、舊 tree、工作樹不乾淨、HEAD 未釋出標記、fetch 失敗、遠端出現 HEAD 沒有的 commit、push 被拒都不推或不給收據；推送後重新 fetch，遠端等於 HEAD 且標記已釋出才回 HandoffReceipt。不 force"
+        },
+        {
+          "path": "experiments/v2/test_gitclaim.py",
+          "scope": "本機 bare origin 實測成功收尾（收據只讓 F50 計數加一次）、遠端前進、pre-receive 拒絕、離線、推送後被搶占；移除任一可獨立觸發的守門後測試失敗"
+        }
+      ],
+      "unknown": "原型未接進現行 B 模式或任何工具；推送後「標記已釋出」再查在邏輯上由推送前檢查蘊含，無獨立負向測試；跨工具與跨 OS 尚未驗收",
       "next": "push 失敗或遠端前進不得釋出／宣稱已交棒"
     },
     {
@@ -331,8 +349,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/gitclaim.py",
+          "scope": "run_check 在乾淨工作樹執行驗證並記結束碼、SKIP 行數與 HEAD tree；執行中改動工作樹不給收據。finish 遇空收據、非零、SKIP、欄位不符或 tree 不同就拒絕交棒"
+        },
+        {
+          "path": "experiments/v2/test_gitclaim.py",
+          "scope": "本機 Git 實測：布林／空清單／缺欄位／多欄位、exit 1、一筆 SKIP、多筆中一筆失敗、驗證後又 commit（舊 tree）都拒絕；移除各守門後測試失敗。SKIP 只認行首 skip 字樣，非通用輸出解析"
+        }
+      ],
+      "unknown": "只涵蓋 gitclaim 收尾這一個入口；現行 B 模式與其他工具的跳驗未接；SKIP 判讀限行首 skip 字樣；跨工具與跨 OS 尚未驗收",
       "next": "跳驗、SKIP、缺收據都不顯示通過"
     },
     {
@@ -390,8 +417,13 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/test_gitclaim.py",
+          "scope": "本機 bare origin：兩條分支各帶自己的標記互不阻擋；同一分支已有他人標記時第二個 writer 以 busy-other 停止，標記時間再舊也不當租約到期"
+        }
+      ],
+      "unknown": "只驗分支層的兩線區分與遠端標記；同一工作樹兩個 writer 共用 index 不在此原型範圍，未接進任何工具；跨工具與跨 OS 尚未驗收",
       "next": "同專案兩線可分辨；同線第二 writer 停止，不當作租約到期"
     },
     {

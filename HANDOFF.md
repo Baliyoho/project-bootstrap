@@ -26,6 +26,7 @@
 - **host／guest 日誌分離**：原本 runner stderr（`HOST_*`）與 guest console 合寫同一檔，guest 印出 `HOST_STOPPED state=0` 就能混進停機判讀。已改成 stderr 寫 `<log>.host`，所有探針的 host 啟動／停機判讀只讀該檔且整行比對。
 - 真 VM `guest_broker` 改經帳本跑完兩 epoch 並重開資料庫核對；新增 `guest_parent_sigkill`：guest 運行中 SIGKILL 父程序，VM 因控制 EOF 停止，重開帳本仍 `running` 並阻擋重啟。
 - 新增 `test_guest_runs.py` 8 測試＋`test_vm_probe.py` 2 案例；在 scratch 副本逐一移除 11 個守門條件，測試全部失敗（CAUGHT）。
+- **M3 開工／收尾閘門 `gitclaim.py`（F9／F10／F19／F25 原型證據）**：對真 Git 判定開工資格（fetch 失敗不用舊 ref；dirty、ahead-only、分岔、落後、無／錯 upstream、detached、遠端標記缺／重複／他人都拒絕）；收尾只收綁定 HEAD tree 的檢查收據，遠端前進、push 被拒、離線、推送後被搶占都不給 `HandoffReceipt`。`test_gitclaim.py` 15 個本機 bare origin 情境；移除 22 個守門中 21 個會讓測試失敗，剩下一個在邏輯上被前一個檢查蘊含（已註明）。未接進現行 A／B 程序。
 - 本輪只改 v2 隔離原型、索引、原型說明及 ARCHITECT 結構摘要；現行 22 檔部署包、skill／hook 副本及 `VERSION` 未改，無同步債；未呼叫額外模型或真實服務。
 
 ## 未完成／下一步
@@ -45,9 +46,9 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-09 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，全部檢查通過，含 148 個 v2 契約／索引測試；提交候選另用 `--staged` 驗。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
+- 2026-11-09 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，全部檢查通過，含 163 個 v2 契約／索引測試；提交候選另用 `--staged` 驗。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
 - 2026-11-09 `python3 -X utf8 experiments/v2/vm_probe.py` exit 0：舊反例保留；`guest_broker`（兩 epoch、退場後舊 channel 拒絕、重開核對身分）與 `guest_parent_sigkill` 通過。runner SHA-256 `2e7d8f1be9a08c2ee1608c743a02724461c47cc4d2355dc29b728d94beed7a54`、guest init `3beb1059f912c0dbdabac1791c09b78393c34fb72454937db987aa5cd6d508ec`、工具 `ff9c8ccc0dc791e72d8d071f10b299b07d3b244a7f9e7a809d2d5ccd3384df67`；未測真實工具或 host OS 崩潰。
-- 2026-11-09 `python3 -X utf8 tools/verify_v2.py` exit 0，148 測試、三個預期反例重現、`strict_ready=False`。接線未改，信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
+- 2026-11-09 `python3 -X utf8 tools/verify_v2.py` exit 0，163 測試、三個預期反例重現、`strict_ready=False`。接線未改，信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
 
 ## 懸置事項（AI 勿自行處理）
 
