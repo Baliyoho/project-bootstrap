@@ -1,8 +1,8 @@
 """Mac-only synthetic VM termination probe. No project data enters the guest.
 
 The pinned Alpine netboot images are cached outside the repository. The runner
-shares only a fresh temporary directory with the guest and configures no network
-device. This is an experiment, not a general-purpose sandbox or P0 acceptance.
+shares a fresh temporary directory only in legacy heartbeat cases. The managed
+tool case has no directory share or network device. This is not P0 acceptance.
 """
 
 from __future__ import annotations
@@ -85,6 +85,10 @@ def prepare_guest(work: Path, kernel: Path, ramdisk: Path) -> tuple[Path, Path]:
     init = root / "init"
     init.write_bytes((HERE / "vm_guest_init.sh").read_bytes())
     init.chmod(0o755)
+    tool = root / "usr/local/bin/v2-managed-worker"
+    tool.parent.mkdir(parents=True, exist_ok=True)
+    tool.write_bytes((HERE / "vm_managed_worker.sh").read_bytes())
+    tool.chmod(0o755)
     paths = subprocess.check_output(["find", ".", "-print"], cwd=root)
     archive = subprocess.run(
         ["cpio", "-o", "-H", "newc", "--quiet"], input=paths,
@@ -230,18 +234,28 @@ def read_guest_result(process: subprocess.Popen[bytes], request_id: str,
 
 
 def read_guest_write_request(process: subprocess.Popen[bytes], request_id: str,
-                             epoch: int, sequence: int, deadline: float) -> bytes:
+                             epoch: int, sequence: int, deadline: float,
+                             expected_base: str | None = None) -> bytes:
     """Bind a fixed guest-originated broker request to this serial exchange."""
     raw = read_guest_line(process, 256, deadline)
     match = re.fullmatch(
         rb'([0-9a-f]{32}) (\{"id":[0-9]+,"method":"write","resource":"note",'
-        rb'"base":null,"text":"-?[0-9]+","epoch":[0-9]+\})\n', raw)
+        rb'"base":(?:null|"[0-9a-f]{64}"),"text":"-?[0-9]+","epoch":[0-9]+\})\n', raw)
     if match is None or match[1].decode('ascii') != request_id:
         raise RuntimeError("invalid guest broker request")
     request = json.loads(match[2])
-    if request['id'] != sequence or request['epoch'] != epoch:
+    if (request['id'] != sequence or request['epoch'] != epoch
+            or request['base'] != expected_base):
         raise RuntimeError("wrong guest broker request identity or epoch")
     return match[2] + b'\n'
+
+
+def read_guest_context_ack(process: subprocess.Popen[bytes], request_id: str,
+                           epoch: int, factor: int, deadline: float) -> None:
+    raw = read_guest_line(process, 128, deadline)
+    expected = f"{request_id} {epoch} {factor} READY\n".encode('ascii')
+    if raw != expected:
+        raise RuntimeError("guest tool did not confirm loaded context")
 
 
 class VMRetirementGate:
@@ -298,6 +312,34 @@ class VMRetirementGate:
             raise RuntimeError("guest capability channel closed") from error
         return read_guest_write_request(
             self.process, request_id, epoch, sequence, time.monotonic() + 8)
+
+    def load_context(self, epoch: int, factor: int) -> None:
+        if self.share is not None or self.process is None or self.process.poll() is not None:
+            raise RuntimeError("unshared guest tool is not live")
+        if (type(epoch) is not int or not 0 <= epoch <= 1000
+                or type(factor) is not int or abs(factor) > 1000):
+            raise ValueError("invalid guest context")
+        request_id = secrets.token_hex(16)
+        self.process.guest_request.write(f"L {request_id} {epoch} {factor}\n".encode('ascii'))
+        read_guest_context_ack(self.process, request_id, epoch, factor,
+                               time.monotonic() + 8)
+
+    def managed_write_request(self, epoch: int, value: int, sequence: int,
+                              base: str | None = None) -> bytes:
+        if self.share is not None or self.process is None or self.process.poll() is not None:
+            raise RuntimeError("unshared guest tool is not live")
+        if (type(epoch) is not int or not 0 <= epoch <= 1000
+                or type(value) is not int or abs(value) > 1000
+                or type(sequence) is not int or not 1 <= sequence <= 1000):
+            raise ValueError("invalid guest operation")
+        if base is not None and (not isinstance(base, str) or
+                                 not re.fullmatch(r'[0-9a-f]{64}', base)):
+            raise ValueError("invalid guest base")
+        request_id = secrets.token_hex(16)
+        self.process.guest_request.write(
+            f"W {request_id} {value} {sequence} {base or 'null'}\n".encode('ascii'))
+        return read_guest_write_request(self.process, request_id, epoch, sequence,
+                                        time.monotonic() + 8, expected_base=base)
 
     def retire(self) -> dict:
         if self.process is None or self.process.poll() is not None:
@@ -565,56 +607,86 @@ def probe_managed_switch(work: Path, runner: Path, kernel: Path, ramdisk: Path) 
 
 
 def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
-    """Route a fixed guest-produced write through its own scoped broker channel."""
+    """Run the synthetic tool inside two unshared guests, not a host worker."""
     if str(HERE.parents[1]) not in sys.path:
         sys.path.insert(0, str(HERE.parents[1]))
-    from experiments.v2.launcher import RequestJournal
-    from experiments.v2.managed_fixture import open_managed
+    from experiments.v2.broker import Broker
+    from experiments.v2.contracts import Lab, digest as content_digest
+    from experiments.v2.launcher import LaunchAuthority, RequestJournal
+    from experiments.v2.materializer import Materializer
 
     root = work / "guest-broker"
     root.mkdir()
-    gate = VMRetirementGate(runner, kernel, ramdisk, None,
-                            work / "guest-broker.log", "guest-broker")
-    with open_managed(root) as (fixture, repo):
-        fixture.start(2)
-        authority = fixture.launcher.authority
-        host_actor = fixture.lab.actor(fixture.child.channel.capability)
+    repo = root / "repo"
+    repo.mkdir()
+    lab = Lab(root / "private.sqlite")
+    old_gate = VMRetirementGate(runner, kernel, ramdisk, None,
+                                work / "guest-broker-old.log", "guest-broker-old")
+    new_gate = VMRetirementGate(runner, kernel, ramdisk, None,
+                                work / "guest-broker-new.log", "guest-broker-new")
+    try:
+        authority = LaunchAuthority(Broker(lab, Materializer(lab, repo, {'note': 'managed.txt'})))
         ticket = authority.issue(("note",), "synthetic-vm-parent", time.time() + 60)
-        channel = authority.connect(ticket)
-        guest_actor = fixture.lab.actor(channel.capability)
-        if guest_actor == host_actor:
-            raise RuntimeError("guest and host worker share a principal")
-        journal = RequestJournal(authority, channel)
-        try:
-            gate.start()
-            if (work / "guest-broker-share").exists():
-                raise RuntimeError("unshared broker guest created a shared scratch directory")
-            first_raw = gate.write_request(0, 2, 5, 1)
-            journal.prepare_raw(first_raw)
-            fresh = json.loads(journal.send())
-            events = list(fixture.lab.db.execute(
-                "SELECT actor, after FROM writes ORDER BY at"))
-            recorded = fixture.lab.db.execute(
-                "SELECT raw, completed FROM client_requests WHERE actor=? AND request_id=1",
-                (guest_actor,)).fetchone()
-            if (fresh.get("code") != "ok" or (repo / "managed.txt").read_bytes() != b"10"
-                    or [tuple(row) for row in events] != [(guest_actor, b"10")]
-                    or recorded is None or tuple(recorded) != (first_raw, 1)):
-                raise RuntimeError("guest principal write was not materialized")
-            fixture.lab.propose('{"factor":3}')
-            journal.prepare_raw(gate.write_request(0, 2, 7, 2))
-            stale = json.loads(journal.send())
-            if (stale != {"id": 2, "code": "premise-not-current"}
-                    or (repo / "managed.txt").read_bytes() != b"10"
-                    or fixture.lab.db.execute("SELECT COUNT(*) FROM writes").fetchone()[0] != 1):
-                raise RuntimeError("stale guest write crossed the premise barrier")
-            if gate.retire().get("stop_marker") != "HOST_STOPPED state=0":
-                raise RuntimeError("guest retirement was not confirmed")
-            authority.revoke(ticket)
-            print("guest_broker: VM serial request used a distinct broker principal; "
-                  "scoped write applied; pending-epoch write denied")
-        finally:
-            gate.close()
+        old_channel = authority.connect(ticket)
+        actor = lab.actor(old_channel.capability)
+        old_journal = RequestJournal(authority, old_channel)
+        old_gate.start()
+        old_gate.load_context(0, 2)
+        first_op = lab.begin(old_channel.capability, 0)
+        first_raw = old_gate.managed_write_request(0, 5, 1)
+        lab.complete(old_channel.capability, first_op)
+        old_journal.prepare_raw(first_raw)
+        first = json.loads(old_journal.send())
+        recorded = lab.db.execute(
+            "SELECT raw, completed FROM client_requests WHERE actor=? AND request_id=1",
+            (actor,)).fetchone()
+        if (first.get('code') != 'ok' or (repo / 'managed.txt').read_bytes() != b'10'
+                or recorded is None or tuple(recorded) != (first_raw, 1)):
+            raise RuntimeError('guest tool write was not materialized')
+        interrupted = lab.begin(old_channel.capability, 0)
+        pending_epoch = lab.propose('{"factor":3}')
+        stale_raw = old_gate.managed_write_request(0, 7, 2, first['digest'])
+        old_journal.prepare_raw(stale_raw)
+        stale = json.loads(old_journal.send())
+        old_status = lab.db.execute('SELECT status FROM operations WHERE ticket=?',
+                                    (interrupted,)).fetchone()[0]
+        if (stale != {'id': 2, 'code': 'premise-not-current'}
+                or old_status != 'invalid' or (repo / 'managed.txt').read_bytes() != b'10'):
+            raise RuntimeError('old guest crossed the premise barrier')
+        if old_gate.retire().get('stop_marker') != 'HOST_STOPPED state=0':
+            raise RuntimeError('old guest retirement was not confirmed')
+        new_gate.start()
+        new_gate.load_context(pending_epoch, 3)
+        new_channel = authority.connect(ticket)
+        lab.acknowledge(new_channel.capability, pending_epoch, '{"factor":3}',
+                        application=True)
+        lab.activate()
+        fresh_op = lab.begin(new_channel.capability, pending_epoch)
+        fresh_raw = new_gate.managed_write_request(pending_epoch, 7, 3,
+                                                    content_digest(b'10'))
+        lab.complete(new_channel.capability, fresh_op)
+        journal = RequestJournal(authority, new_channel)
+        journal.prepare_raw(fresh_raw)
+        fresh = json.loads(journal.send())
+        events = [tuple(row) for row in lab.db.execute(
+            'SELECT w.actor, w.after, e.epoch FROM writes w '
+            'JOIN write_epochs e USING(event) ORDER BY w.seq')]
+        requests = [tuple(row) for row in lab.db.execute(
+            'SELECT raw, completed FROM client_requests WHERE actor=? ORDER BY request_id',
+            (actor,))]
+        if (fresh.get('code') != 'ok' or (repo / 'managed.txt').read_bytes() != b'21'
+                or events != [(actor, b'10', 0), (actor, b'21', 1)]
+                or requests != [(first_raw, 1), (stale_raw, 1), (fresh_raw, 1)]):
+            raise RuntimeError('new guest tool write or attribution failed')
+        if new_gate.retire().get('stop_marker') != 'HOST_STOPPED state=0':
+            raise RuntimeError('new guest retirement was not confirmed')
+        authority.revoke(ticket)
+        print('guest_broker: unshared guest tool loaded two epoch contexts; '
+              'old request denied; new scoped write materialized and attributed')
+    finally:
+        new_gate.close()
+        old_gate.close()
+        lab.close()
 
 
 def main() -> int:
@@ -631,7 +703,9 @@ def main() -> int:
         ramdisk = image(cache, "initramfs-virt")
         print(f"acquired_at={datetime.now(timezone.utc).isoformat()} host={platform.platform()}")
         print(f"Alpine 3.24.4 aarch64 netboot SHA-256: kernel={digest(kernel)}, initramfs={digest(ramdisk)}")
-        print(f"probe SHA-256: runner={digest(HERE / 'vm_runner.swift')}, guest_init={digest(HERE / 'vm_guest_init.sh')}")
+        print(f"probe SHA-256: runner={digest(HERE / 'vm_runner.swift')}, "
+              f"guest_init={digest(HERE / 'vm_guest_init.sh')}, "
+              f"managed_tool={digest(HERE / 'vm_managed_worker.sh')}")
         with tempfile.TemporaryDirectory(prefix="project-bootstrap-vm-") as directory:
             work = Path(directory)
             raw_kernel, guest_ramdisk = prepare_guest(work, kernel, ramdisk)

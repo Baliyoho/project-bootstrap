@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-09。`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的合成探針及離線負向控制：固定映像 digest、無網路 guest。退場與跨 VM 鎖反例掛獨立暫存共享目錄及 `setsid` 後代；固定 guest broker 寫入路徑則不配置共享目錄，只經第二個雙向 virtio console 送請求。runner 的專用控制管道可在收到停止命令或父端關閉時要求 VM stop。兩個相繼 epoch 的 guest 各執行固定合成算術，請求與回覆經第二個 console；host 核對回覆後由原有 broker／materializer 寫入合成工作樹，正式 repo 不掛載進 VM。`managed_fixture.py` 按 actor＋epoch 保存各台 VM 的退場證據，先記未確認狀態，再封住舊 epoch、回收 worker、確認 VM 停止後保存退場證據，才啟用新前提並處理 outbox；未確認時重啟保持阻擋。這條資料流仍未接真實工具或現行部署包，也不提供 host 故障後的自動復原保證。詳見 [P0 說明](experiments/v2/README.md)。
+> 最後更新：2026-11-09。`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh`、`vm_managed_worker.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的合成探針及離線負向控制：固定映像 digest、無網路 guest。退場與跨 VM 鎖反例掛獨立暫存共享目錄及 `setsid` 後代；新固定工具路徑由 `/init` 在無共享 guest 中啟動 `vm_managed_worker.sh`，只經第二個雙向 virtio console 載入前提並發原始 broker 請求。host 核對請求後由 outbox／broker／materializer 寫入合成工作樹，正式 repo 不掛載進 VM。舊 `managed_fixture.py` 路徑仍用 host worker，按 actor＋epoch 保存各台 VM 退場證據，未確認時重啟保持阻擋；新無共享工具路徑尚未持久保存可重啟核對的 VM 退場證據。這些資料流仍未接真實工具或現行部署包，也不提供 host 故障後的自動復原保證。詳見 [P0 說明](experiments/v2/README.md)。
 
 > 2026-11-08 新增 `experiments/v2/tree_probe.py` 與 `test_tree_probe.py`，只在合成 POSIX 程序群組比較一般後代與脫離 session 的後代，透過檔案鎖觀察退場。一鍵入口列出這個候選反例；它不接入 `lifecycle.py`，也不提供任意程序樹保證。詳見 [P0 說明](experiments/v2/README.md)。
 

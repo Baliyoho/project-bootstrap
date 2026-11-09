@@ -8,7 +8,8 @@ import unittest
 from unittest.mock import patch
 
 from experiments.v2.vm_probe import (VMRetirementGate, check_guest,
-                                     read_guest_write_request, stable_after_exit)
+                                     read_guest_context_ack, read_guest_write_request,
+                                     stable_after_exit)
 
 
 class _Running:
@@ -87,6 +88,36 @@ class VMProbeEvidenceTests(unittest.TestCase):
         try:
             with self.assertRaisesRegex(RuntimeError, "capability channel closed"):
                 read_guest_write_request(process, "c" * 32, 0, 1, 10**20)
+        finally:
+            process.close()
+
+    def test_guest_tool_context_ack_requires_exact_epoch_and_factor(self):
+        nonce = "d" * 32
+        for response in (f"{nonce} 1 2 READY\n", f"{nonce} 0 3 READY\n"):
+            with self.subTest(response=response):
+                process = _Running(response.encode())
+                try:
+                    with self.assertRaisesRegex(RuntimeError, "loaded context"):
+                        read_guest_context_ack(process, nonce, 0, 2, 10**20)
+                finally:
+                    process.close()
+
+    def test_guest_tool_write_requires_expected_base(self):
+        nonce = "e" * 32
+        base = "a" * 64
+        raw = (f'{nonce} {{"id":2,"method":"write","resource":"note",'
+               f'"base":"{base}","text":"21","epoch":1}}\n').encode()
+        process = _Running(raw)
+        try:
+            self.assertEqual(read_guest_write_request(process, nonce, 1, 2, 10**20,
+                                                      expected_base=base), raw[33:])
+        finally:
+            process.close()
+        process = _Running(raw)
+        try:
+            with self.assertRaisesRegex(RuntimeError, "identity or epoch"):
+                read_guest_write_request(process, nonce, 1, 2, 10**20,
+                                         expected_base="b" * 64)
         finally:
             process.close()
 

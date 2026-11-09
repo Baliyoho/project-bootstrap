@@ -139,11 +139,15 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "Mac 兩個相繼 epoch 的固定 guest 算術與獨立的合成 guest broker principal：專用 console 送原始寫入請求，固定 broker 路徑不掛共享目錄，parent outbox 保存原 bytes，broker 套用合成工作樹；pending epoch 拒絕舊 guest 寫入。其餘反例仍掛 scratch；逐 epoch 退場證據與 VM stop／runner SIGKILL／控制 EOF 反例保留；父程序 SIGKILL 後因缺持久證據拒絕恢復。未接真實工具、guest 身分證明或崩潰後 VM 恢復"
+          "scope": "Mac 兩條獨立路徑：舊 host worker／共享 scratch 的逐 epoch 退場探針，及無共享 guest 的固定受管 shell 工具。後者在 guest 內載入前提、兩 epoch 經專用 console 發原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending 舊寫入拒絕、新 epoch 寫入有事件關聯。新路徑尚無可重啟核對的持久 VM 退場證據；未接真實工具或可信 guest 身分"
+        },
+        {
+          "path": "experiments/v2/vm_managed_worker.sh",
+          "scope": "封入無共享 guest initramfs 的固定合成工具；一次載入前提，後續由 guest 產生受限 broker 請求。非通用工具或正式身分證明"
         }
       ],
-      "unknown": "同 UID／現行執行介面反例可重現；代理隔離與執行中上下文重建尚未成立",
-      "next": "已補限期票據、固定計畫、監護回收與 Mac 禁 fork；程序群組候選被 setsid 反例否決。VM 的固定合成 guest 請求已用獨立 principal 經專用 console 與持久 outbox 寫入；下一步讓受管工具本體在 guest 內運行、讓 VM 身分與退場可重啟核對、隔離已寫效果並驗其他 OS。當前 parent 管道綁定不是防同 UID host 偽造的身分證明，不外推完整歸因",
+      "unknown": "同 UID／現行執行介面反例可重現；固定合成 shell 工具已進無共享 guest，通用受管工具與完整覆寫歸因仍未成立",
+      "next": "固定合成工具已在無共享 guest 中執行；接下來讓 VM 身分與退場可重啟核對、隔離已寫效果並驗其他 OS。當前 parent 管道綁定不是防同 UID host 偽造的身分證明，不外推完整歸因",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -185,7 +189,7 @@
             },
             {
               "path": "experiments/v2/vm_probe.py",
-              "scope": "Mac 真 VM 無共享目錄的固定合成寫入：guest serial 原始請求由獨立 principal 的持久 outbox 送 broker；事件 actor 與 host worker 不同，pending epoch 舊寫入拒絕。非真實工具、可信 guest 身分或完整覆寫歸因"
+              "scope": "Mac 真 VM 無共享目錄的固定合成 shell 工具：guest 載入 epoch／factor，原始請求由持久 outbox 送 broker；兩個 epoch 的事件歸同一 principal，pending 舊寫入拒絕。非通用工具、可信 guest 身分或完整覆寫歸因"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -435,12 +439,16 @@
           "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
         },
         {
+          "path": "experiments/v2/vm_managed_worker.sh",
+          "scope": "無共享 guest 中的固定合成工具，載入 epoch／factor 並產生受限寫入請求；真 VM 測兩個 epoch、舊請求拒絕與新寫入"
+        },
+        {
           "path": "experiments/v2/test_vm_probe.py",
-          "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch、截斷回覆及無共享路徑缺啟動標記／虛報 mount 的離線負向控制；不代替 VM 實跑"
+          "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch／context ACK／base、截斷回覆及無共享路徑缺啟動標記／虛報 mount 的離線負向控制；不代替 VM 實跑"
         }
       ],
-      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定 broker 寫入路徑不掛共享目錄，其餘 VM 反例仍掛可寫 scratch；固定算術透過 VM 專用 console 回傳，VM 仍不執行受管工具或接 broker 授權；舊路徑的共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無安全自動恢復。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
-      "next": "讓受管工具本體在無共享目錄 VM 內運行並經受控 broker 管道發請求；舊共享路徑仍須隔離或冪等化已寫效果，另設計失去持久退場證據後的可信恢復；再驗 host／hypervisor 異常、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
+      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑 VM 退場證據尚未持久保存供重啟核對。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無安全自動恢復。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
+      "next": "將無共享工具路徑的 VM 身分與退場證據持久化並可重啟核對；舊共享路徑仍須隔離或冪等化已寫效果，再驗 host／hypervisor 異常、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
     },
     {
       "id": "F29",

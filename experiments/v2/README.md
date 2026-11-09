@@ -100,7 +100,9 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 2026-11-09 後續將固定 guest broker 寫入路徑改成無共享目錄模式：runner 不配置 virtiofs 裝置，guest 反向嘗試 mount `probe` 並要求失敗，也不啟 heartbeat 子程序；雙方啟動標記與專用 serial 就緒後才受理請求。真 VM 再跑 `guest_broker`，合成寫入與 pending epoch 拒絕仍通過；離線負向測試驗缺任一標記、guest 宣稱已 mount 或意外取得共享目錄會阻擋。其他 VM 退場、兩 epoch 與跨 VM `flock` 反例仍刻意掛可寫 scratch，用來量測原邊界；不能把固定 broker 路徑的無共享配置外推到它們。
 
-專用 console 讓請求與同一台 VM 的裝置連接，但不是防同 UID host 程序偽造的身分證明；可信 parent 仍可代送，故 actor 只能代表本合成管道的授權歸屬，**不是對任意實際操作者的完整歸因**。先前的兩 epoch 路徑仍借 host worker channel；新路徑獨立證明 guest 請求可用另一 principal，不把兩條路徑的結果拼成完整保障。每個 epoch 仍有一個獨立 host worker 負責原有載入／授權流程。掛共享 scratch 的舊路徑仍有 guest 可直接改檔及已寫效果不回滾的問題；無共享路徑尚未承載受管工具或正式工作樹。外部網路、其他共享資源、host／hypervisor 崩潰、重啟後對實際 VM 的持久身分核對與成本尚未驗。父程序在保存證據前中斷時故意保持阻擋，尚無安全解除途徑。舊實驗庫的單鍵 VM 紀錄不自動遷移，應使用新合成 fixture 重跑。`VM_PROBE_OK` 只表示本機合成觀察完成，不解除 Mac 多程序工具的阻擋。
+2026-11-09 再將**固定合成受管程式**拆成 `vm_managed_worker.sh` 並封入 initramfs。無共享 guest 的 `/init` 設好 console 後執行它；worker 一次載入 epoch／factor，之後 parent 只送 value／序號／base，乘法與 broker 請求由 guest worker 完成。`guest_broker` 探針不啟 host worker，在 epoch 0 啟 guest、記原始請求、完成寫入；建立 pending 後，仍在運行的舊 guest 請求遭拒，未完成操作失效。確認舊 VM stop 後啟另一台無共享 VM，載入 epoch 1 的 factor，取得載入確認、application ACK 並啟用新前提；新 guest 寫入 `21`，私有日誌保留兩筆寫入的同一 principal、各自 epoch 及三筆原始請求。真 VM 探針 exit 0；離線負向測試另驗 context ACK 與 base 不符。這只把**固定 shell 工具**放進 VM，沒有模型或通用桌面工具，也沒有讓 guest 取得 broker 管理權或票據。
+
+專用 console 讓請求與同一台 VM 的裝置連接，但不是防同 UID host 程序偽造的身分證明；可信 parent 仍可代送，故 actor 只能代表本合成管道的授權歸屬，**不是對任意實際操作者的完整歸因**。舊 `managed_vm_switch` 路徑仍借 host worker channel 並掛共享 scratch；新 `guest_broker` 是獨立的無共享 guest worker 路徑，不能把兩條路徑的證據拼成完整保障。新路徑的 VM stop 證據尚未持久記錄並供重啟核對；掛共享 scratch 的舊路徑仍有 guest 可直接改檔及已寫效果不回滾的問題。正式工作樹、外部網路／效果、host／hypervisor 崩潰、其他 OS、真實工具及成本尚未驗。父程序在保存證據前中斷時故意保持阻擋，尚無安全解除途徑。舊實驗庫的單鍵 VM 紀錄不自動遷移，應使用新合成 fixture 重跑。`VM_PROBE_OK` 只表示本機合成觀察完成，不解除 Mac 多程序工具的阻擋。
 
 2026-11-08：`managed_fixture.py` 將 supervisor 的固定 worker 協定、guardian 和父程序 outbox 接到同一個 macOS 合成執行面。一鍵入口的 `managed_probe` 先在 epoch 0 留下一筆未送出的結果與一件執行中的工作，再寫入通知並封住 epoch 0。舊 worker 確認退場後，替代 worker 沿用固定啟動計畫，從管道讀取新前提並回報摘要；確認與啟用在同一交易完成。重送舊請求保留原始 bytes 並被拒，只有 epoch 1 的新結果寫到合成工作樹。`test_managed_fixture.py` 另驗停止未確認、載入舊前提、離線收件者與回應遺失。
 

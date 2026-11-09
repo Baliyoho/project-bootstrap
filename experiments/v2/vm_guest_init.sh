@@ -49,6 +49,9 @@ if ! $BB stty raw -echo <&3; then
     while :; do $BB sleep 1; done
 fi
 echo GUEST_CHANNEL_READY >/dev/hvc0
+if [ "$PROBE_SHARE" = 0 ]; then
+    exec /usr/local/bin/v2-managed-worker <&3 >&3
+fi
 while read -r first second third fourth fifth sixth <&3; do
     if [ "$first" = W ]; then
         request_id=$second; epoch=$third; factor=$fourth; value=$fifth; sequence=$sixth
