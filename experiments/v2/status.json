@@ -103,9 +103,17 @@
         {
           "path": "experiments/v2/test_gitclaim.py",
           "scope": "本機 bare origin＋多 clone 實測上述情境（含本機標記空閒而遠端他人占用）；移除任一守門後測試失敗。只測 macOS 本機 Git，非跨工具／OS 驗收"
+        },
+        {
+          "path": "experiments/v2/preflight.py",
+          "scope": "寫入時資格 assess_write：開工後每次寫入先 fetch，遠端標記必須正好是本 session（空閒＝not-claimed、他人照占用代碼），落後或分岔拒絕；未提交與未推送的本機工作允許。ManagedWrite 先過 Git 再要發布確認，Git 拒絕時不消耗確認。非原子 claim"
+        },
+        {
+          "path": "experiments/v2/test_preflight.py",
+          "scope": "真 Git 實測：持有者帶未提交／未推送工作可寫；空閒、他人、同工具別 session、標記不可讀、無效 owner 都拒絕；開工後被他人搶占時本機 HANDOFF 仍寫自己，寫入檢查以 behind／diverged 擋下；離線不用舊 tracking ref；移除各守門後測試失敗"
         }
       ],
-      "unknown": "原型只在 macOS 本機 Git 驗證，尚未接進任何工具的開工流程；跨工具與跨 OS 尚未驗收，檢查到推送之間仍有時間窗（非原子 claim）",
+      "unknown": "原型只在 macOS 本機 Git 驗證，尚未接進任何工具的開工流程；跨工具與跨 OS 尚未驗收，檢查到推送之間仍有時間窗（非原子 claim）；preflight 組合檢查同樣未接進任何工具的寫入入口",
       "next": "ahead-only、分岔、離線、未知 dirty 都不能取得寫入資格"
     },
     {
@@ -538,9 +546,13 @@
         {
           "path": "experiments/v2/test_batch.py",
           "scope": "20 個真 Git 目標（14 正常、他人占用、dirty、ahead-only、離線、已搬走、archived）全數列出，摘要寫 NOT OK 與實際計數；移除各守門後測試失敗。只做開工資格彙總，不是 sync_project 的同步批次"
+        },
+        {
+          "path": "experiments/v2/test_preflight.py",
+          "scope": "批次帶 confirm 時逐目標做發布確認：Git 乾淨對齊但套件已漂移的目標列 failed／release:component-drift、不算 eligible；confirm 例外記 target-error；Git 先拒絕的目標不呼叫 confirm；移除各守門後測試失敗"
         }
       ],
-      "unknown": "原型只彙總 gitclaim 開工資格，未接進 sync_project.py 的實際同步；現行同步器的 inventory 行為以 verify_bootstrap 為準；跨工具與跨 OS 尚未驗收",
+      "unknown": "原型只彙總 gitclaim 開工資格與可選的逐目標發布確認，未接進 sync_project.py 的實際同步；現行同步器的 inventory 行為以 verify_bootstrap 為準；跨工具與跨 OS 尚未驗收",
       "next": "20 目標完整列出，一壞不能宣稱全部成功"
     },
     {
@@ -583,9 +595,17 @@
         {
           "path": "experiments/v2/test_release.py",
           "scope": "實測離線時即使先前確認成功仍 channel-unreachable；重播先前合法簽章回覆以 stale-confirmation 拒絕；過期、未來簽發、他人金鑰、錯 namespace、竄改、epoch 倒退都拒絕；每次寫入都重新確認；移除各守門後測試失敗"
+        },
+        {
+          "path": "experiments/v2/preflight.py",
+          "scope": "ManagedWrite 把 M3 寫入資格與 M1 WriteGate 組成單一寫入前檢查，每次寫入兩邊都重新查，拒絕代碼標明 git: 或 release: 層"
+        },
+        {
+          "path": "experiments/v2/test_preflight.py",
+          "scope": "實測連續兩次寫入各要一次新確認；通道離線、元件就地改動、無效操作在 Git 已通過時仍以 release: 代碼拒絕；移除確認呼叫後測試失敗"
         }
       ],
-      "unknown": "可信端與簽章金鑰是測試替身，沒有 CI 身分、金鑰治理或真實網路；原型未接進現行寫入入口；跨工具與跨 OS 尚未驗收",
+      "unknown": "可信端與簽章金鑰是測試替身，沒有 CI 身分、金鑰治理或真實網路；原型未接進現行寫入入口；跨工具與跨 OS 尚未驗收；preflight 組合檢查同樣未接進任何工具的寫入入口",
       "next": "有舊快取但拿不到新鮮確認仍拒絕寫入"
     },
     {

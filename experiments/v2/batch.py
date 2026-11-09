@@ -4,14 +4,23 @@ Every requested target appears exactly once in the report. A target the
 caller marked archived is listed as excluded, never silently dropped; a
 missing, duplicate or refused active target is a failure, and one failure
 makes the batch not ok. Exceptions inside one target never stop the others.
+
+``confirm`` optionally checks each eligible target's installed package
+against the current release (``release.WriteGate`` per target). A target
+whose Git state is fine but whose package drifted or is stale is a failure,
+not eligible, and the code says it came from the release layer.
 """
 from pathlib import Path
 
+from experiments.v2.contracts import Denied
 from experiments.v2.gitclaim import GitGateDenied, assess_start
 
 
-def assess_many(targets, owner, env=None):
-    """``targets``: iterable of (path, state) with state 'active' or 'archived'."""
+def assess_many(targets, owner, env=None, confirm=None):
+    """``targets``: iterable of (path, state) with state 'active' or 'archived'.
+
+    ``confirm(path)`` returns the release confirmation or raises Denied.
+    """
     results, seen = [], set()
     for path, state in targets:
         key = str(Path(path).resolve())
@@ -28,8 +37,12 @@ def assess_many(targets, owner, env=None):
             try:
                 facts = assess_start(path, owner, env=env)
                 row.update(outcome='eligible', code='ok', remote_sha=facts['remote_sha'])
+                if confirm is not None:
+                    row['manifest'] = confirm(path)['manifest']
             except GitGateDenied as error:
                 row.update(outcome='failed', code=str(error))
+            except Denied as error:
+                row.update(outcome='failed', code='release:' + str(error))
             except Exception:
                 row.update(outcome='failed', code='target-error')
         seen.add(key)

@@ -136,6 +136,12 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 `test_release.py` 6 個測試用拋棄式 ed25519 金鑰實測：每次寫入都重新確認；離線與重播；就地改元件（F32）；只改 hook 或 schema 的新 release 讓舊客戶停止（F18）；他人金鑰、錯 namespace、竄改、錯 channel、過期、未來簽發、型別錯、epoch 倒退、調試版。scratch 副本逐一移除 12 個守門都會讓測試失敗；原本的「開頭為 `/`」檢查被空片段檢查涵蓋而無法單獨測，已刪除。邊界：可信端與金鑰是測試替身，沒有 CI 身分、金鑰治理、網路傳輸或原子安裝；沒有接進現行 `git-freshness.sh`、`sync_project.py` 或任何工具，現行 720 分鐘快取照舊。
 
+## 受管寫入前檢查（2026-11-09）
+
+`preflight.py` 把上面兩個原型組成一次寫入前的檢查。`assess_start` 問的是「能不能開工」，要求乾淨工作樹；寫入卻發生在開工之後、工作還沒提交時，所以另有 `assess_write`：每次都先 fetch，遠端標記必須**正好**是本 session（空閒回 `not-claimed`，他人照 F4 的占用代碼），落後回 `behind-pull-required`、分岔回 `diverged`；未提交與尚未推送的本機工作是預期狀態，不擋。`ManagedWrite.check(operation)` 先跑 Git 再跑 `WriteGate.confirm`，拒絕代碼帶 `git:` 或 `release:` 前綴標明是哪一層；Git 已拒絕時不消耗發布確認。兩層每次都重查，沒有快取。`batch.assess_many` 多一個可選的 `confirm(path)`：Git 乾淨對齊但套件漂移的目標記為 `failed`／`release:<代碼>`，不算 eligible。
+
+`test_preflight.py` 8 個測試用真 Git 與拋棄式 ed25519 金鑰：持有者帶未提交／未推送工作可寫；空閒、他人、同工具別 session、標記不可讀、無效 owner 都拒絕；開工後被他人搶占時本機 HANDOFF 仍寫著自己，寫入檢查以落後／分岔擋下；離線不用舊 tracking ref；每次寫入都要新確認；通道離線、元件就地改動在 Git 通過時以 `release:` 拒絕；批次的漂移目標與 confirm 例外。scratch 副本逐一移除 11 個守門，10 個讓測試失敗；剩下的是批次失敗列的 `pop('manifest')`，manifest 只在確認成功後才寫入，那兩行是死碼，已刪除。邊界：仍是協調檢查不是原子 claim，檢查到寫入之間有時間窗；簽章端與金鑰仍是測試替身；沒有接進任何工具的寫入入口。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。
