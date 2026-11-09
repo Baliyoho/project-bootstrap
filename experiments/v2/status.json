@@ -250,6 +250,42 @@
         {
           "path": "experiments/v2/vm_managed_worker.sh",
           "scope": "封入無共享 guest initramfs 的固定合成工具；一次載入前提，後續由 guest 產生受限 broker 請求。非通用工具或正式身分證明"
+        },
+        {
+          "path": "experiments/v2/contracts.py",
+          "scope": "P0 交易模型與管理／agent API 契約，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/broker.py",
+          "scope": "父程序持有的 agent RPC，身分來自繼承管道，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/guardian.py",
+          "scope": "直接子程序監護與生命週期管道，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/launcher.py",
+          "scope": "受信父程序啟動權與耐久請求 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/lifecycle.py",
+          "scope": "受監護 worker 生命週期與票據保管，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/managed_fixture.py",
+          "scope": "單一受限 worker 整合前提屏障與 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/test_broker_fixture.py",
+          "scope": "broker_fixture 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/vm_guest_init.sh",
+          "scope": "無共享 guest 的 init，vm_probe 載入，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/vm_runner.swift",
+          "scope": "Virtualization.framework runner，vm_probe 編譯，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；固定合成 shell 工具已進無共享 guest，通用受管工具與完整覆寫歸因仍未成立",
@@ -337,6 +373,14 @@
         {
           "path": "experiments/v2/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
+        },
+        {
+          "path": "experiments/v2/launcher.py",
+          "scope": "請求保存與恢復，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/lifecycle.py",
+          "scope": "中斷後未解決 run 的阻擋，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
       "unknown": "合成 parent 被殺且 guardian 寫成回收紀錄時已測續接；監護失效或缺證據仍停止，真實交棒／理由／裝置遺失未完整驗收",
@@ -658,6 +702,22 @@
         {
           "path": "experiments/v2/test_vm_probe.py",
           "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch／context ACK／base、截斷回覆、無共享路徑缺啟動標記／虛報 mount，及 guest console 偽造 host 啟動／停機標記的離線負向控制；不代替 VM 實跑"
+        },
+        {
+          "path": "experiments/v2/managed_fixture.py",
+          "scope": "前提屏障與 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/test_supervisor.py",
+          "scope": "supervisor 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/vm_guest_init.sh",
+          "scope": "guest init，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/vm_runner.swift",
+          "scope": "VM runner，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
       "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑的 run 身分與 host 停機證據已持久保存，重開資料庫可核對，父程序 SIGKILL 後仍阻擋；runner stderr 與 guest console 已分成兩個檔，host 啟動／停機標記只從 host 檔讀；離線測試驗 guest console 偽造標記不被採用。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無安全自動恢復。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
@@ -719,10 +779,10 @@
         },
         {
           "path": "experiments/v2/test_impact.py",
-          "scope": "實測改一個接線檔列出對應需求、重驗測試與安裝它的專案；共用元件列出兩個需求與兩組測試；只被專案認領的元件列專案不列測試；檔名含 test_ 但不以它開頭的檔不算測試；空路徑證據不進圖；混入一個未分類路徑即回全驗；另以真實 status.json 確認 gitclaim 變更會指到 test_gitclaim；移除各守門後測試失敗"
+          "scope": "實測改一個接線檔列出對應需求、重驗測試與安裝它的專案；共用元件列出兩個需求與兩組測試；只被專案認領的元件列專案不列測試；檔名含 test_ 但不以它開頭的檔不算測試；空路徑證據不進圖；混入一個未分類路徑即回全驗；另以真實 status.json 確認 gitclaim 變更會指到 test_gitclaim；移除各守門後測試失敗；另測每個 v2 檔都被認領（只剩 __init__.py 與 status.json）"
         }
       ],
-      "unknown": "對應粒度是檔案，不是函式或規則；status.json 目前有 14 個 v2 檔（如 broker.py、session.py、lifecycle.py 與部分測試）沒被列為任何 ID 的證據，改它們只會回全驗；專案安裝清單由呼叫端提供，未接 sync_project；跨工具與跨 OS 尚未驗收",
+      "unknown": "對應粒度是檔案，不是函式或規則；除 __init__.py 與 status.json（刻意回全驗）外每個 v2 檔都有 ID 認領，較早實作檔的認領是對應而非新證據；專案安裝清單由呼叫端提供，未接 sync_project；跨工具與跨 OS 尚未驗收",
       "next": "未分類變更回全驗；變一接線能列受影響專案與重驗點"
     },
     {
@@ -933,6 +993,26 @@
         {
           "path": "experiments/v2/test_approvals.py",
           "scope": "合成刪除以固定公開金鑰驗分離簽章；竄改、異簽署者、錯範圍、舊 epoch、重播與缺收據不授權"
+        },
+        {
+          "path": "experiments/v2/approvals.py",
+          "scope": "合成動作的分離簽核，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/broker.py",
+          "scope": "RPC 無管理方法與任意命令，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/launcher.py",
+          "scope": "啟動授權，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/lifecycle.py",
+          "scope": "票據保管，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/test_broker_fixture.py",
+          "scope": "broker_fixture 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
       "unknown": "已驗合成動作簽核、票據續期與有證據時的重啟；票據續期仍由合成父程序授權，真人核准、任意後代及真實動作未驗收",
@@ -1018,6 +1098,14 @@
         {
           "path": "experiments/v2/test_contradictions_repo.py",
           "scope": "對本 repo 的 README、AGENTS、部署包、HANDOFF、決策書跑宣告表須未發現；2026-11-10 首跑抓到 HANDOFF 懸置未登記，已補登決策書第 6 節 Q1"
+        },
+        {
+          "path": "experiments/v2/registry.py",
+          "scope": "status.json 與決策書第 3 節 ID 集合的一致性核對（同一事實在兩份文件），實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/test_registry.py",
+          "scope": "registry 的缺漏、重複、子項遺失、證據不存在與憑空成功測試；目前只核對 ID 集合，不核對各列內容"
         }
       ],
       "unknown": "只認宣告過的說法正規式，換個寫法或未列的事實看不到；不判斷任意語意；登記列格式固定；現行宣告表只有一條規則與待決登記，ARCHITECT 與其他報告未列；未接進現行 A／B 程序；跨工具與跨 OS 尚未驗收",
@@ -1124,6 +1212,10 @@
         {
           "path": "experiments/v2/test_contracts.py",
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
+        },
+        {
+          "path": "experiments/v2/session.py",
+          "scope": "改名狀態轉移與 adapter 契約，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
       "unknown": "狀態機與假 adapter 可驗；尚未接入各工具事件／耐久 session store，不能宣稱自動整合完成",

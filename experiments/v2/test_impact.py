@@ -69,6 +69,15 @@ class ImpactTests(unittest.TestCase):
         self.assertEqual(result['scope'], 'targeted')
         self.assertIn('experiments/v2/test_gitclaim.py', result['tests'])
 
+    def test_every_v2_file_is_claimed_except_the_index_itself(self):
+        root = Path(__file__).resolve().parent
+        graph = graph_from_status(json.loads((root / 'status.json').read_text(encoding='utf-8')))
+        files = {f'experiments/v2/{p.name}' for p in root.iterdir()
+                 if p.is_file() and p.suffix in ('.py', '.sh', '.swift', '.json')}
+        # Changing the index or the package marker must force a full rerun.
+        self.assertEqual(sorted(files - set(graph)),
+                         ['experiments/v2/__init__.py', 'experiments/v2/status.json'])
+
 
 if __name__ == '__main__':
     unittest.main()
