@@ -174,6 +174,12 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 `test_decisions.py` 6 個測試；scratch 副本逐一移除 25 個守門都讓測試失敗。邊界：只能檢查已登記的內容，完全沒登記、只在聊天裡的待決事項發現不了；委任範圍以需求 ID 比對；現行決策書第 6 節、HANDOFF 懸置節與 ARCHITECT 的三項來源例外仍是手寫，尚未轉成紀錄；未接進任何工具。
 
+## 所有權與只能加嚴的覆寫（2026-11-09）
+
+`policy.py` 是 F36／F37／F38 的原型。`plan_update` 用發布清單（每個路徑標 `core` 或 `adapter`）加上專案宣告的 project-owned 清單規劃更新：本機仍等於舊發布的檔案才取代，專案檔保留，受管目錄下沒人宣告的路徑（`ownership-unknown`）或被就地改過的發布檔（`released-file-edited`）一律停止，不猜。`merge` 只接受 schema 宣告的空位，並只能往宣告的方向加嚴（清單只增、下限只升、上限只降、開關只開）；mandatory 沒有覆寫入口，即使覆寫值相同也拒絕；未知欄位與型別不符拒絕，不產生有效政策。`check_schema` 先擋 schema 本身：方向未知、效果（restrict／permit）未確認、或方向與效果不一致（例如只增不減的**允許**清單）都不能當空位——位置合法不等於語意加嚴。`describe` 列出可填空位與不可改部分。
+
+`test_policy.py` 7 個測試；scratch 副本逐一移除 24 個守門都讓測試失敗。邊界：只在合成清單與 schema 上驗證；現行 `sync_project.py` 與骨架都沒有改用這套清單與 schema，專案仍能直接改 skill／hook 原檔；「效果」靠 schema 作者宣告，宣告錯了發現不了；未接進任何工具。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。

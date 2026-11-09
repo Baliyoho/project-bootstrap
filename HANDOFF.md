@@ -27,6 +27,7 @@
 - **`state.py` M2 狀態模型（F1／F2／F5）**：目標、任務、下一步、風險存成資料，check 指出舊版本／未知 ID／完成無證據／已完成仍列下一步／無證據宣稱已知正常；render 生成 HANDOFF 四節。未取代手寫 HANDOFF。
 - **`evidence.py`（F3／F40）與 `facts.py`（F20）**：證據分本輪實查／沿用／未驗證／不通過，沿用要來源、時間、範圍與依賴 digest，變動即失效、可撤銷；文件命題對 Git／檔案實查，查不到或未授權是未知。
 - **`decisions.py`（F44／F34）**：待決事項要登記問題／影響 ID／選項，AI 只在使用者委任內定案並記理由，委任內不得掛成待使用者決定；例外要有授權、來源、範圍、理由、重檢條件，列為「宣告不等於通過」。
+- **`policy.py`（F36／F37／F38）**：更新只取代未改過的發布檔、保留專案檔，未知所有權停止；覆寫只能填宣告空位並往加嚴方向，mandatory 無入口；schema 擋方向與效果不一致的空位。
 - **`preflight.py` 受管寫入前檢查**：寫入時遠端標記須正好是本 session、不得落後／分岔（未提交工作允許），再要發布確認；拒絕代碼標 `git:`／`release:`。`batch` 可選逐目標發布確認，漂移目標算失敗。
 - 本輪新增模組都在 scratch 副本做過 mutation：移除守門會讓測試失敗；唯一例外是 gitclaim 推送後的「標記已釋出」再查，它被推送前檢查蘊含，已註明。多餘的絕對路徑檢查已刪。
 - 索引只補證據，以上 ID 結果仍是「未驗證／不通過」：都是本機合成原型，未接進現行 A／B 程序、hook 或任何工具。現行 22 檔部署包、skill／hook 副本及 `VERSION` 未改，無同步債；未呼叫額外模型或真實服務。
@@ -47,9 +48,9 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-09 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，全部檢查通過，含 211 個 v2 契約／索引測試；提交候選另用 `--staged` 驗。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
+- 2026-11-09 `python3 -X utf8 tools/verify_bootstrap.py` exit 0，全部檢查通過，含 218 個 v2 契約／索引測試；提交候選另用 `--staged` 驗。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
 - 2026-11-09 `python3 -X utf8 experiments/v2/vm_probe.py` exit 0（帳本與 channel 綁定版本）：舊反例保留，`guest_broker`、`guest_parent_sigkill` 通過。runner SHA-256 `2e7d8f1be9a08c2ee1608c743a02724461c47cc4d2355dc29b728d94beed7a54`、guest init `3beb1059f912c0dbdabac1791c09b78393c34fb72454937db987aa5cd6d508ec`、工具 `ff9c8ccc0dc791e72d8d071f10b299b07d3b244a7f9e7a809d2d5ccd3384df67`；之後的 gitclaim／release／batch 改動未碰 VM 程式。
-- 2026-11-09 `python3 -X utf8 tools/verify_v2.py` exit 0，211 測試、三個預期反例重現、`strict_ready=False`。接線未改，信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
+- 2026-11-09 `python3 -X utf8 tools/verify_v2.py` exit 0，218 測試、三個預期反例重現、`strict_ready=False`。接線未改，信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
 
 ## 懸置事項（AI 勿自行處理）
 

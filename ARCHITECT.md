@@ -2,6 +2,8 @@
 
 > 最後更新：2026-11-09。`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh`、`vm_managed_worker.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的合成探針及離線負向控制：固定映像 digest、無網路 guest。退場與跨 VM 鎖反例掛獨立暫存共享目錄及 `setsid` 後代；新固定工具路徑由 `/init` 在無共享 guest 中啟動 `vm_managed_worker.sh`，只經第二個雙向 virtio console 載入前提並發原始 broker 請求。host 核對請求後由 outbox／broker／materializer 寫入合成工作樹，正式 repo 不掛載進 VM。舊 `managed_fixture.py` 路徑仍用 host worker，按 actor＋epoch 保存各台 VM 退場證據，未確認時重啟保持阻擋；新無共享工具路徑另由 `guest_runs.py`（離線測試 `test_guest_runs.py`）在同一私有資料庫持久記錄每台 guest 的 parent 選定身分 digest 與 host 停機證據，未退場時新 guest、ACK、寫入與重啟都阻擋；每台 run 綁一個 broker channel，退場時輪換 capability。runner 的 host 標記另寫 `.host` 日誌，不與 guest console 混用。這些資料流仍未接真實工具或現行部署包，也不提供 host 故障後的自動復原保證。詳見 [P0 說明](experiments/v2/README.md)。
 
+> 2026-11-09 新增 `experiments/v2/policy.py` 與 `test_policy.py`：F36 依所有權規劃更新、F37 只能加嚴的覆寫合併、F38 空位 schema 與說明。未接進 `sync_project.py` 或骨架。
+
 > 2026-11-09 新增 `experiments/v2/decisions.py` 與 `test_decisions.py`：F44 待決事項與委任、F34 已宣告例外的紀錄檢查與生成視圖。未接進現行程序。
 
 > 2026-11-09 新增 `experiments/v2/evidence.py`、`facts.py` 與對應測試：M2 證據帳（本輪／沿用／未驗證／不通過分開，沿用依賴 digest 失效與撤銷，F3／F40）與文件命題對 Git／檔案的事實 adapter（F20）。未接進現行程序。

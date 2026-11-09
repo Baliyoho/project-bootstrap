@@ -703,8 +703,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/policy.py",
+          "scope": "M1／M3 所有權與覆寫原型：plan_update 以發布清單（core／adapter）與專案宣告的 project-owned 規劃更新，只取代本機仍等於舊發布的檔案、保留專案檔，受管目錄下沒人宣告的路徑或被就地改過的發布檔一律停止；merge 只接受 schema 宣告的空位且只往加嚴方向，mandatory 無覆寫入口；check_schema 拒絕方向與效果不一致（例如只增不減的允許清單）或效果未確認的空位；describe 列出可填空位與不可改部分"
+        },
+        {
+          "path": "experiments/v2/test_policy.py",
+          "scope": "實測更新取代核心、保留專案 hook、略過非受管與只是前綴相同的目錄、移除舊發布檔；未宣告的檔案、本機改過的核心或將被移除的發布檔、專案檔佔到新發布路徑、專案宣告與發布清單衝突、清單 owner 非法都停止；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "只在合成清單驗證；現行 sync_project.py 仍用自己的 INSTANCE／WIRING 規則，未改用此清單；檔案 digest 由呼叫端提供；跨工具與跨 OS 尚未驗收",
       "next": "保留專案自訂內容；未知所有權停止"
     },
     {
@@ -712,8 +721,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/policy.py",
+          "scope": "M1／M3 所有權與覆寫原型：plan_update 以發布清單（core／adapter）與專案宣告的 project-owned 規劃更新，只取代本機仍等於舊發布的檔案、保留專案檔，受管目錄下沒人宣告的路徑或被就地改過的發布檔一律停止；merge 只接受 schema 宣告的空位且只往加嚴方向，mandatory 無覆寫入口；check_schema 拒絕方向與效果不一致（例如只增不減的允許清單）或效果未確認的空位；describe 列出可填空位與不可改部分"
+        },
+        {
+          "path": "experiments/v2/test_policy.py",
+          "scope": "實測加嚴的覆寫合併成功且核心不被改動；覆寫 mandatory（即使值相同）、未知欄位、清單刪項、下限調低、上限調高、已開啟的 true-only 關掉、型別錯（含 bool 冒充 int、浮點）、核心值型別錯都拒絕且不產生有效政策；schema 不一致時整個合併拒絕；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "只是合併函式層的阻擋；現行骨架沒有受限設定 schema，專案仍能直接改 skill／hook 原檔，原型未接進任何載入路徑；「效果」由 schema 作者宣告，宣告錯誤時無法發現；跨工具與跨 OS 尚未驗收",
       "next": "本地 override 不能關閉 mandatory；未知欄位拒絕、語意未確認不放行"
     },
     {
@@ -721,8 +739,17 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "evidence": [
+        {
+          "path": "experiments/v2/policy.py",
+          "scope": "M1／M3 所有權與覆寫原型：plan_update 以發布清單（core／adapter）與專案宣告的 project-owned 規劃更新，只取代本機仍等於舊發布的檔案、保留專案檔，受管目錄下沒人宣告的路徑或被就地改過的發布檔一律停止；merge 只接受 schema 宣告的空位且只往加嚴方向，mandatory 無覆寫入口；check_schema 拒絕方向與效果不一致（例如只增不減的允許清單）或效果未確認的空位；describe 列出可填空位與不可改部分"
+        },
+        {
+          "path": "experiments/v2/test_policy.py",
+          "scope": "實測新發布加入的合法空位可直接使用；schema 中允許清單用只增方向、效果未宣告或未知、方向未知、mandatory 同時有空位都被指出；說明列出每個空位的方向、預設與用途，並單獨列出沒有覆寫入口的 mandatory；移除各守門後測試失敗"
+        }
+      ],
+      "unknown": "只有合成 schema；現行部署包的可填位置仍靠範本文字與佔位符說明；跨工具與跨 OS 尚未驗收",
       "next": "新增合法欄位成功；不可改部分無合法覆寫入口"
     },
     {
