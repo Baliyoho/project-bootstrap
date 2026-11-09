@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-11-09",
+  "updated": "2026-11-10",
   "authority": "全部 51 ID 與 F11／F13／F43 子項的持續實作狀態；需求仍以決策書為準",
   "transfer": {
     "from": "fdc0bbd:HANDOFF.md",
@@ -921,9 +921,22 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
-      "next": "README／AGENTS／操作卡反向規則與節間矛盾；自由散文未知仍需人工審閱"
+      "evidence": [
+        {
+          "path": "experiments/v2/contradictions.py",
+          "scope": "M4 跨文件矛盾偵測原型：宣告式規則表逐行比對（跳過程式碼區塊與標為歷史的節並列出跳過數，部署包範本照掃），報反向規則、同檔節間衝突、跨文件衝突；讀決策書第 6 節登記列，HANDOFF 懸置每條須引用仍待決的編號，已決編號被稱為待決即報；讀不到、規則缺席、缺登記節為未知。REPO_CONFIG 宣告本 repo 的核心優先序與待決登記"
+        },
+        {
+          "path": "experiments/v2/test_contradictions.py",
+          "scope": "合成文件實測：README 反向規則（含節與行號）、跨文件衝突、無正確說法時的節間衝突、待決漏登、已決仍稱待決（懸置節與其他文件）、登記列格式錯／重複／缺節、文件讀不到／規則缺席為未知、規則限定文件、程式碼區塊與歷史節跳過照列、描述舊規則不誤報；mutants.json 23 個刪改全部 killed"
+        },
+        {
+          "path": "experiments/v2/test_contradictions_repo.py",
+          "scope": "對本 repo 的 README、AGENTS、部署包、HANDOFF、決策書跑宣告表須未發現；2026-11-10 首跑抓到 HANDOFF 懸置未登記，已補登決策書第 6 節 Q1"
+        }
+      ],
+      "unknown": "只認宣告過的說法正規式，換個寫法或未列的事實看不到；不判斷任意語意；登記列格式固定；現行宣告表只有一條規則與待決登記，ARCHITECT 與其他報告未列；未接進現行 A／B 程序；跨工具與跨 OS 尚未驗收",
+      "next": "把更多已知分岔事實（版本號規則、序號規則、prompt 名稱）轉成宣告表；人的入口與操作卡逐條覆蓋"
     },
     {
       "id": "F46",

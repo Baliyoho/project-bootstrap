@@ -831,6 +831,128 @@
      "new": "    return {'ok': True, 'rows': rows}"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_contradictions"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            if hit['variant'] != rule['canonical']:",
+     "new": "            if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "                if len(in_doc) > 1:",
+     "new": "                if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            if len(docs) > 1:",
+     "new": "            if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            elif not any(hit['doc'] == doc for hit in hits):",
+     "new": "            elif False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            if doc not in lines:\n                unknown.append((doc, 'required-doc-unreadable:' + rule['id']))",
+     "new": "            if False:\n                pass"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            if rule.get('docs') and doc not in rule['docs']:",
+     "new": "            if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "        if fenced and not transparent:",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            if _history(doc, row[0], history):",
+     "new": "            if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "        if fenced:\n            skipped.append",
+     "new": "        if False:\n            skipped.append"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "        if excluded:",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            unknown.append((doc, 'doc-unreadable'))",
+     "new": "            pass"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "        if not entry:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "        elif entry.group('id') in entries:",
+     "new": "        elif False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "    unknown = [] if found else [(registry_doc, 'registry-section-missing')]",
+     "new": "    unknown = []"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            unknown.append((doc, 'pending-doc-unreadable'))",
+     "new": "            pass"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            if re.match(r'^\\s*[-*]\\s+無[。.]?\\s*$', line):",
+     "new": "            if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            if not cited:",
+     "new": "            if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "                if entries[cid] != 'pending':",
+     "new": "                if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "                if not PENDING_WORDS.search(line):",
+     "new": "                if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "                    if entries[cid] == 'decided':",
+     "new": "                    if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "                if doc == registry_doc and re.search(registry_heading, section):",
+     "new": "                if False:"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "    overall = '矛盾' if findings else '未知' if unknown else '未發現'",
+     "new": "    overall = '矛盾' if findings else '未發現'"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "            path = path[:level - 1] + [''] * max(0, level - 1 - len(path)) + [heading.group(2)]",
+     "new": "            path = path + [heading.group(2)]"
+    }
+   ]
   }
  ]
 }
