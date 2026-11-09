@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from experiments.v2.vm_probe import (VMRetirementGate, check_guest,
+from experiments.v2.vm_probe import (VMRetirementGate, check_guest, host_log,
                                      read_guest_context_ack, read_guest_write_request,
                                      stable_after_exit)
 
@@ -36,23 +36,24 @@ class VMProbeEvidenceTests(unittest.TestCase):
     def test_unshared_guest_requires_both_host_and_guest_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
             log = Path(directory) / "guest.log"
+            ready = "GUEST_NO_SHARED_DIRECTORY\nGUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n"
             process = _Exited()
             try:
-                for output in (
-                    "GUEST_NO_SHARED_DIRECTORY\nGUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n",
-                    "HOST_NO_SHARED_DIRECTORY\nGUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n",
-                    "HOST_NO_SHARED_DIRECTORY\nGUEST_NO_SHARED_DIRECTORY\n"
-                    "GUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\nGUEST_MOUNTED\n",
-                    "HOST_NO_SHARED_DIRECTORY\nGUEST_NO_SHARED_DIRECTORY\n"
-                    "GUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n"
-                    "GUEST_UNEXPECTED_SHARED_DIRECTORY\n",
+                for host, output in (
+                    ("HOST_NO_SHARED_DIRECTORY\n", "GUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n"),
+                    ("", ready),
+                    # The guest console cannot supply the host marker.
+                    ("", "HOST_NO_SHARED_DIRECTORY\n" + ready),
+                    ("HOST_NO_SHARED_DIRECTORY\n", ready + "GUEST_MOUNTED\n"),
+                    ("HOST_NO_SHARED_DIRECTORY\n", ready + "GUEST_UNEXPECTED_SHARED_DIRECTORY\n"),
                 ):
-                    with self.subTest(output=output):
+                    with self.subTest(host=host, output=output):
                         log.write_text(output)
+                        host_log(log).write_text(host)
                         with self.assertRaisesRegex(RuntimeError, "unshared guest was ready"):
                             check_guest(log, None, process, "case")
-                log.write_text("HOST_NO_SHARED_DIRECTORY\nGUEST_NO_SHARED_DIRECTORY\n"
-                               "GUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n")
+                log.write_text(ready)
+                host_log(log).write_text("HOST_CONFIG_VALID\nHOST_NO_SHARED_DIRECTORY\n")
                 self.assertEqual(check_guest(log, None, process, "case"), 0)
             finally:
                 process.close()
@@ -202,6 +203,49 @@ class VMProbeEvidenceTests(unittest.TestCase):
                     check_guest(log, root, process, "case")
             finally:
                 process.close()
+
+    def test_retirement_ignores_stop_marker_from_guest_console(self):
+        class _Stopped(_Running):
+            def poll(self):
+                return None
+
+            def wait(self, timeout=None):
+                return 0
+
+        class _Sink:
+            def __init__(self):
+                self.closed = []
+
+            def write(self, data):
+                self.closed.append(data)
+
+            def close(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log = root / "guest.log"
+            for host, guest, accepted in (
+                ("", "HOST_STOPPED state=0\n", False),
+                ("HOST_STOPPED state=1\n", "HOST_STOPPED state=0\n", False),
+                ("HOST_STARTED\nHOST_STOPPED state=0\n", "", True),
+            ):
+                with self.subTest(host=host, guest=guest):
+                    log.write_text(guest)
+                    host_log(log).write_text(host)
+                    gate = VMRetirementGate(root / "runner", root / "kernel", root / "ramdisk",
+                                            None, log, "case")
+                    gate.process, gate.output, gate.control = _Stopped(), _Sink(), _Sink()
+                    try:
+                        if accepted:
+                            self.assertEqual(gate.retire(), {
+                                "probe_id": "case", "stop_marker": "HOST_STOPPED state=0",
+                                "host_exit": 0})
+                        else:
+                            with self.assertRaisesRegex(RuntimeError, "not confirmed"):
+                                gate.retire()
+                    finally:
+                        gate.process.close()
 
     def test_guest_effect_after_host_exit_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

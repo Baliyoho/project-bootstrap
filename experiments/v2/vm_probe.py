@@ -120,6 +120,37 @@ def build_runner(work: Path) -> Path:
     return runner
 
 
+STOP_MARKER = "HOST_STOPPED state=0"
+
+
+def host_log(log: Path) -> Path:
+    """Runner stderr only. The guest console never reaches this file."""
+    return log.with_name(log.name + ".host")
+
+
+def host_text(log: Path) -> str:
+    path = host_log(log)
+    return path.read_text(errors="replace") if path.exists() else ""
+
+
+def host_stopped(log: Path) -> bool:
+    return STOP_MARKER in host_text(log).splitlines()
+
+
+def both_logs(log: Path) -> str:
+    guest = log.read_text(errors="replace") if log.exists() else ""
+    return f"[host]\n{host_text(log)[-1000:]}\n[guest]\n{guest[-1000:]}"
+
+
+class _Logs:
+    def __init__(self, guest, host):
+        self.guest, self.host = guest, host
+
+    def close(self) -> None:
+        self.guest.close()
+        self.host.close()
+
+
 def heartbeat_count(share: Path, probe_id: str) -> int:
     heartbeat = share / ("heartbeat-" + probe_id)
     return heartbeat.read_bytes().count(b"tick\n") if heartbeat.exists() else 0
@@ -130,7 +161,7 @@ def check_guest(log: Path, share: Path | None, process: subprocess.Popen[bytes],
     while time.monotonic() < deadline:
         output = log.read_text(errors="replace")
         if share is None:
-            if ("HOST_NO_SHARED_DIRECTORY" in output
+            if ("HOST_NO_SHARED_DIRECTORY" in host_text(log).splitlines()
                     and "GUEST_NO_SHARED_DIRECTORY" in output
                     and "GUEST_CHANNEL_READY" in output
                     and f"GUEST_PROBE_ID={probe_id}" in output
@@ -138,7 +169,7 @@ def check_guest(log: Path, share: Path | None, process: subprocess.Popen[bytes],
                     and "GUEST_UNEXPECTED_SHARED_DIRECTORY" not in output):
                 return 0
             if process.poll() is not None:
-                raise RuntimeError(f"VM exited before unshared guest was ready: {output[-2000:]}")
+                raise RuntimeError(f"VM exited before unshared guest was ready: {both_logs(log)}")
             time.sleep(0.1)
             continue
         pid = re.search(r"GUEST_CHILD_PID=(\d+)", output)
@@ -171,7 +202,7 @@ def stable_after_exit(share: Path, probe_id: str) -> int:
 
 def launch(runner: Path, kernel: Path, ramdisk: Path, share: Path | None, seconds: int,
            log: Path, probe_id: str) -> tuple[subprocess.Popen[bytes], object, object]:
-    output = log.open("wb")
+    output = _Logs(log.open("wb"), host_log(log).open("wb"))
     control_read, control_write = os.pipe()
     request_read, request_write = os.pipe()
     reply_read, reply_write = os.pipe()
@@ -179,7 +210,7 @@ def launch(runner: Path, kernel: Path, ramdisk: Path, share: Path | None, second
         process = subprocess.Popen(
             [str(runner), str(kernel), str(ramdisk), str(share) if share else "-", str(seconds),
              probe_id, str(control_read), str(request_read), str(reply_write)],
-            stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL, stdout=output.guest, stderr=output.host,
             pass_fds=(control_read, request_read, reply_write),
         )
     except BaseException:
@@ -349,13 +380,21 @@ class VMRetirementGate:
         result = self.process.wait(timeout=15)
         self.output.close()
         close_guest_channel(self.process)
-        output = self.log.read_text(errors="replace")
-        if result != 0 or "HOST_STOPPED state=0" not in output:
-            raise RuntimeError(f"VM stop was not confirmed: {output[-2000:]}")
-        evidence = {"probe_id": self.probe_id, "stop_marker": "HOST_STOPPED state=0"}
+        if result != 0 or not host_stopped(self.log):
+            raise RuntimeError(f"VM stop was not confirmed: {both_logs(self.log)}")
+        evidence = {"probe_id": self.probe_id, "stop_marker": STOP_MARKER,
+                    "host_exit": result}
         if self.share is not None:
             evidence["final_heartbeat"] = stable_after_exit(self.share, self.probe_id)
         return evidence
+
+    def identity(self) -> dict:
+        """Digests of the exact files this parent hands to the runner."""
+        return {"probe_id": self.probe_id, "share": None,
+                "runner": digest(self.runner), "kernel": digest(self.kernel),
+                "ramdisk": digest(self.ramdisk),
+                "guest_init": digest(HERE / "vm_guest_init.sh"),
+                "tool": digest(HERE / "vm_managed_worker.sh")}
 
     def close(self) -> None:
         if self.process is not None and self.process.poll() is None:
@@ -382,8 +421,8 @@ def probe(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
                 process.kill()
             result = process.wait(timeout=15)
             output.close()
-            if mode == "stop" and (result != 0 or "HOST_STOPPED state=0" not in log.read_text(errors="replace")):
-                raise RuntimeError(f"VM stop failed: {log.read_text(errors='replace')[-2000:]}")
+            if mode == "stop" and (result != 0 or not host_stopped(log)):
+                raise RuntimeError(f"VM stop failed: {both_logs(log)}")
             if mode == "host_kill" and result != -9:
                 raise RuntimeError(f"VM host was not killed: exit {result}")
             after = stable_after_exit(share, mode)
@@ -462,7 +501,7 @@ def probe_owner_eof(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> No
     try:
         check_guest(log, share, process, "owner-eof")
         control.close()
-        if process.wait(timeout=15) != 0 or "HOST_STOPPED state=0" not in log.read_text(errors="replace"):
+        if process.wait(timeout=15) != 0 or not host_stopped(log):
             raise RuntimeError("VM did not stop after control owner disappeared")
         stable_after_exit(share, "owner-eof")
         print("owner_eof: VM stopped after control pipe closed; heartbeat stable")
@@ -516,7 +555,7 @@ def probe_parent_crash_fail_closed(work: Path, runner: Path, kernel: Path,
         parent.kill()
         parent.wait(timeout=5)
         deadline = time.monotonic() + 8
-        while "HOST_STOPPED state=0" not in log.read_text(errors="replace"):
+        while not host_stopped(log):
             if time.monotonic() >= deadline:
                 raise RuntimeError("VM did not retire after parent SIGKILL")
             time.sleep(0.05)
@@ -606,35 +645,127 @@ def probe_managed_switch(work: Path, runner: Path, kernel: Path, ramdisk: Path) 
               "both results; old guest retired before new guest; stale outbox denied")
 
 
+GUEST_CRASH_PARENT = '''from pathlib import Path
+import sys
+from experiments.v2.contracts import Lab
+from experiments.v2.guest_runs import GuestRunLedger
+from experiments.v2.vm_probe import VMRetirementGate
+db, runner, kernel, ramdisk, log = map(Path, sys.argv[1:])
+lab = Lab(db)
+capability = lab.register('guest-crash-parent')
+ledger = GuestRunLedger(lab)
+gate = VMRetirementGate(runner, kernel, ramdisk, None, log, 'guest-crash', stop_after=12)
+run = ledger.open_run('guest-crash-parent', 0, gate.identity())
+gate.start()
+ledger.mark_running(run, {'probe_id': gate.probe_id, 'shared_directory': False}, capability)
+gate.load_context(0, 2)
+print(run, flush=True)
+sys.stdin.read()
+'''
+
+
+def probe_guest_parent_crash(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
+    """SIGKILL the parent of an unshared guest; reopening the ledger must block."""
+    if str(HERE.parents[1]) not in sys.path:
+        sys.path.insert(0, str(HERE.parents[1]))
+    from experiments.v2.contracts import Denied, Lab
+    from experiments.v2.guest_runs import GuestRunLedger
+
+    db = work / "guest-crash.sqlite"
+    log = work / "guest-crash.log"
+    parent = subprocess.Popen(
+        [sys.executable, "-B", "-u", "-c", GUEST_CRASH_PARENT, str(db), str(runner),
+         str(kernel), str(ramdisk), str(log)],
+        cwd=HERE.parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        if not select.select([parent.stdout], [], [], 25)[0]:
+            raise RuntimeError("guest crash fixture did not start: "
+                               + parent.stderr.read1(4000).decode(errors="replace"))
+        run_id = parent.stdout.readline().decode().strip()
+        if not re.fullmatch(r"[0-9a-f]{32}", run_id):
+            raise RuntimeError("guest crash fixture gave no run id")
+        parent.kill()
+        parent.wait(timeout=5)
+        deadline = time.monotonic() + 8
+        while not host_stopped(log):
+            if time.monotonic() >= deadline:
+                raise RuntimeError("unshared VM did not stop after parent SIGKILL")
+            time.sleep(0.05)
+        lab = Lab(db)
+        try:
+            ledger = GuestRunLedger(lab)
+            runs = ledger.runs("guest-crash-parent")
+            if [(run["run_id"], run["state"]) for run in runs] != [(run_id, "running")]:
+                raise RuntimeError(f"crashed guest run was not durable: {runs}")
+            for call in (lambda: ledger.require_quiescent("guest-crash-parent"),
+                         lambda: ledger.open_run("guest-crash-parent", 0,
+                                                 runs[0]["identity"])):
+                try:
+                    call()
+                except Denied as error:
+                    if str(error) != "vm-retirement-unconfirmed":
+                        raise RuntimeError(f"unexpected restart result: {error}") from error
+                else:
+                    raise RuntimeError("restart accepted a guest with no durable retirement")
+        finally:
+            lab.close()
+        print("guest_parent_sigkill: unshared guest stopped on control EOF; reopened "
+              "ledger keeps the run unretired and blocks restart")
+    finally:
+        if parent.poll() is None:
+            parent.kill()
+            parent.wait(timeout=5)
+        for stream in (parent.stdin, parent.stdout, parent.stderr):
+            stream.close()
+
+
 def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
     """Run the synthetic tool inside two unshared guests, not a host worker."""
     if str(HERE.parents[1]) not in sys.path:
         sys.path.insert(0, str(HERE.parents[1]))
     from experiments.v2.broker import Broker
-    from experiments.v2.contracts import Lab, digest as content_digest
+    from experiments.v2.contracts import Denied, Lab, digest as content_digest
+    from experiments.v2.guest_runs import GuestRunLedger
     from experiments.v2.launcher import LaunchAuthority, RequestJournal
     from experiments.v2.materializer import Materializer
+
+    def expect_denied(code, call):
+        try:
+            call()
+        except Denied as error:
+            if str(error) != code:
+                raise RuntimeError(f"expected {code}, got {error}") from error
+        else:
+            raise RuntimeError(f"ledger accepted a call it must deny ({code})")
 
     root = work / "guest-broker"
     root.mkdir()
     repo = root / "repo"
     repo.mkdir()
-    lab = Lab(root / "private.sqlite")
+    db = root / "private.sqlite"
+    lab = Lab(db)
     old_gate = VMRetirementGate(runner, kernel, ramdisk, None,
                                 work / "guest-broker-old.log", "guest-broker-old")
     new_gate = VMRetirementGate(runner, kernel, ramdisk, None,
                                 work / "guest-broker-new.log", "guest-broker-new")
     try:
         authority = LaunchAuthority(Broker(lab, Materializer(lab, repo, {'note': 'managed.txt'})))
+        ledger = GuestRunLedger(lab)
         ticket = authority.issue(("note",), "synthetic-vm-parent", time.time() + 60)
         old_channel = authority.connect(ticket)
         actor = lab.actor(old_channel.capability)
         old_journal = RequestJournal(authority, old_channel)
+        old_run = ledger.open_run(actor, 0, old_gate.identity())
         old_gate.start()
+        ledger.mark_running(old_run, {'probe_id': old_gate.probe_id, 'shared_directory': False},
+                            old_channel.capability)
         old_gate.load_context(0, 2)
         first_op = lab.begin(old_channel.capability, 0)
         first_raw = old_gate.managed_write_request(0, 5, 1)
         lab.complete(old_channel.capability, first_op)
+        ledger.require_live(old_run, old_channel.capability, 0)
         old_journal.prepare_raw(first_raw)
         first = json.loads(old_journal.send())
         recorded = lab.db.execute(
@@ -646,6 +777,9 @@ def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) ->
         interrupted = lab.begin(old_channel.capability, 0)
         pending_epoch = lab.propose('{"factor":3}')
         stale_raw = old_gate.managed_write_request(0, 7, 2, first['digest'])
+        expect_denied('guest-run-not-live',
+                      lambda: ledger.require_live(old_run, old_channel.capability, 0))
+        # The broker must refuse on its own as well, so send it anyway.
         old_journal.prepare_raw(stale_raw)
         stale = json.loads(old_journal.send())
         old_status = lab.db.execute('SELECT status FROM operations WHERE ticket=?',
@@ -653,18 +787,35 @@ def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) ->
         if (stale != {'id': 2, 'code': 'premise-not-current'}
                 or old_status != 'invalid' or (repo / 'managed.txt').read_bytes() != b'10'):
             raise RuntimeError('old guest crossed the premise barrier')
-        if old_gate.retire().get('stop_marker') != 'HOST_STOPPED state=0':
-            raise RuntimeError('old guest retirement was not confirmed')
+        expect_denied('vm-retirement-unconfirmed',
+                      lambda: ledger.open_run(actor, pending_epoch, new_gate.identity()))
+        ledger.retire(old_run, old_gate.retire())
+        late_raw = b'{"id":3,"method":"write","resource":"note","base":null,"text":"99","epoch":0}\n'
+        try:
+            old_journal.prepare_raw(late_raw)
+            old_journal.send()
+        except Denied as error:
+            if str(error) != 'unknown-session':
+                raise RuntimeError(f'retired channel gave {error}') from error
+        else:
+            raise RuntimeError('retired guest channel still reached the broker')
+        if (repo / 'managed.txt').read_bytes() != b'10':
+            raise RuntimeError('retired guest channel changed the work tree')
+        new_run = ledger.open_run(actor, pending_epoch, new_gate.identity())
         new_gate.start()
-        new_gate.load_context(pending_epoch, 3)
         new_channel = authority.connect(ticket)
-        lab.acknowledge(new_channel.capability, pending_epoch, '{"factor":3}',
-                        application=True)
+        ledger.mark_running(new_run, {'probe_id': new_gate.probe_id, 'shared_directory': False},
+                            new_channel.capability)
+        new_gate.load_context(pending_epoch, 3)
+        expect_denied('guest-run-not-live', lambda: ledger.acknowledge(
+            new_channel.capability, old_run, pending_epoch, '{"factor":3}'))
+        ledger.acknowledge(new_channel.capability, new_run, pending_epoch, '{"factor":3}')
         lab.activate()
         fresh_op = lab.begin(new_channel.capability, pending_epoch)
         fresh_raw = new_gate.managed_write_request(pending_epoch, 7, 3,
                                                     content_digest(b'10'))
         lab.complete(new_channel.capability, fresh_op)
+        ledger.require_live(new_run, new_channel.capability, pending_epoch)
         journal = RequestJournal(authority, new_channel)
         journal.prepare_raw(fresh_raw)
         fresh = json.loads(journal.send())
@@ -678,11 +829,24 @@ def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) ->
                 or events != [(actor, b'10', 0), (actor, b'21', 1)]
                 or requests != [(first_raw, 1), (stale_raw, 1), (fresh_raw, 1)]):
             raise RuntimeError('new guest tool write or attribution failed')
-        if new_gate.retire().get('stop_marker') != 'HOST_STOPPED state=0':
-            raise RuntimeError('new guest retirement was not confirmed')
+        ledger.retire(new_run, new_gate.retire())
         authority.revoke(ticket)
-        print('guest_broker: unshared guest tool loaded two epoch contexts; '
-              'old request denied; new scoped write materialized and attributed')
+        lab.close()
+        lab = Lab(db)
+        reopened = GuestRunLedger(lab)
+        reopened.require_quiescent(actor)
+        runs = reopened.runs(actor)
+        if ([(run['run_id'], run['epoch'], run['state']) for run in runs]
+                != [(old_run, 0, 'retired'), (new_run, 1, 'retired')]
+                or runs[0]['identity'] != old_gate.identity()
+                or runs[1]['identity'] != new_gate.identity()
+                or any(run['evidence'] != {'probe_id': run['identity']['probe_id'],
+                                           'stop_marker': 'HOST_STOPPED state=0',
+                                           'host_exit': 0} for run in runs)):
+            raise RuntimeError(f'guest run ledger did not survive reopen: {runs}')
+        print('guest_broker: unshared guest tool loaded two epoch contexts; retired channel refused; '
+              'old request denied; new scoped write materialized and attributed; '
+              'both runs durably retired with identity after reopen')
     finally:
         new_gate.close()
         old_gate.close()
@@ -716,6 +880,7 @@ def main() -> int:
             probe_managed_switch(work, runner, raw_kernel, guest_ramdisk)
             probe_guest_broker(work, runner, raw_kernel, guest_ramdisk)
             probe_parent_crash_fail_closed(work, runner, raw_kernel, guest_ramdisk)
+            probe_guest_parent_crash(work, runner, raw_kernel, guest_ramdisk)
         print("VM_PROBE_OK: synthetic guest only; P0 remains unverified")
         return 0
     except (OSError, RuntimeError, subprocess.SubprocessError, zlib.error) as error:

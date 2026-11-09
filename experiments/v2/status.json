@@ -139,7 +139,15 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "Mac 兩條獨立路徑：舊 host worker／共享 scratch 的逐 epoch 退場探針，及無共享 guest 的固定受管 shell 工具。後者在 guest 內載入前提、兩 epoch 經專用 console 發原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending 舊寫入拒絕、新 epoch 寫入有事件關聯。新路徑尚無可重啟核對的持久 VM 退場證據；未接真實工具或可信 guest 身分"
+          "scope": "Mac 兩條獨立路徑：舊 host worker／共享 scratch 的逐 epoch 退場探針，及無共享 guest 的固定受管 shell 工具。後者在 guest 內載入前提、兩 epoch 經專用 console 發原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending 舊寫入拒絕、新 epoch 寫入有事件關聯。新路徑經 guest_runs 帳本持久記錄 run 身分與 host 停機證據，重開資料庫核對；父程序 SIGKILL 後重開仍阻擋。未接真實工具或可信 guest 身分"
+        },
+        {
+          "path": "experiments/v2/guest_runs.py",
+          "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明"
+        },
+        {
+          "path": "experiments/v2/test_guest_runs.py",
+          "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗"
         },
         {
           "path": "experiments/v2/vm_managed_worker.sh",
@@ -147,7 +155,7 @@
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；固定合成 shell 工具已進無共享 guest，通用受管工具與完整覆寫歸因仍未成立",
-      "next": "固定合成工具已在無共享 guest 中執行；接下來讓 VM 身分與退場可重啟核對、隔離已寫效果並驗其他 OS。當前 parent 管道綁定不是防同 UID host 偽造的身分證明，不外推完整歸因",
+      "next": "無共享 guest 的 run 身分、退場與 channel 綁定已可重開核對；接下來設計崩潰後可信的人工解除、隔離已寫效果並驗其他 OS。當前 parent 管道綁定不是防同 UID host 偽造的身分證明，不外推完整歸因",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -189,7 +197,7 @@
             },
             {
               "path": "experiments/v2/vm_probe.py",
-              "scope": "Mac 真 VM 無共享目錄的固定合成 shell 工具：guest 載入 epoch／factor，原始請求由持久 outbox 送 broker；兩個 epoch 的事件歸同一 principal，pending 舊寫入拒絕。非通用工具、可信 guest 身分或完整覆寫歸因"
+              "scope": "Mac 真 VM 無共享目錄的固定合成 shell 工具：guest 載入 epoch／factor，原始請求由持久 outbox 送 broker；兩個 epoch 的事件歸同一 principal，pending 舊寫入拒絕；寫入前須帳本確認該 run 為唯一存活 run。非通用工具、可信 guest 身分或完整覆寫歸因"
             }
           ],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
@@ -443,12 +451,20 @@
           "scope": "無共享 guest 中的固定合成工具，載入 epoch／factor 並產生受限寫入請求；真 VM 測兩個 epoch、舊請求拒絕與新寫入"
         },
         {
+          "path": "experiments/v2/guest_runs.py",
+          "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明"
+        },
+        {
+          "path": "experiments/v2/test_guest_runs.py",
+          "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗"
+        },
+        {
           "path": "experiments/v2/test_vm_probe.py",
-          "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch／context ACK／base、截斷回覆及無共享路徑缺啟動標記／虛報 mount 的離線負向控制；不代替 VM 實跑"
+          "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch／context ACK／base、截斷回覆、無共享路徑缺啟動標記／虛報 mount，及 guest console 偽造 host 啟動／停機標記的離線負向控制；不代替 VM 實跑"
         }
       ],
-      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑 VM 退場證據尚未持久保存供重啟核對。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無安全自動恢復。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
-      "next": "將無共享工具路徑的 VM 身分與退場證據持久化並可重啟核對；舊共享路徑仍須隔離或冪等化已寫效果，再驗 host／hypervisor 異常、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
+      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑的 run 身分與 host 停機證據已持久保存，重開資料庫可核對，父程序 SIGKILL 後仍阻擋；runner stderr 與 guest console 已分成兩個檔，host 啟動／停機標記只從 host 檔讀；離線測試驗 guest console 偽造標記不被採用。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無安全自動恢復。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
+      "next": "無共享路徑的 run 身分、退場與 channel 綁定已持久化；下一步設計父程序崩潰後可信的人工解除，驗 host／hypervisor 異常；舊共享路徑仍須隔離或冪等化已寫效果，再驗 host／hypervisor 異常、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
     },
     {
       "id": "F29",
