@@ -9,10 +9,11 @@ if CommandLine.arguments.count != 9 {
 let kernel = URL(fileURLWithPath: CommandLine.arguments[1])
 let ramdisk = URL(fileURLWithPath: CommandLine.arguments[2])
 let shareDir = URL(fileURLWithPath: CommandLine.arguments[3])
+let sharedProbe = CommandLine.arguments[3] != "-"
 let stopAfter = Double(CommandLine.arguments[4]) ?? 0
 let boot = VZLinuxBootLoader(kernelURL: kernel)
 boot.initialRamdiskURL = ramdisk
-boot.commandLine = "console=hvc0 rdinit=/init devtmpfs.mount=1 probe_id=\(CommandLine.arguments[5])"
+boot.commandLine = "console=hvc0 rdinit=/init devtmpfs.mount=1 probe_id=\(CommandLine.arguments[5]) probe_share=\(sharedProbe ? 1 : 0)"
 let config = VZVirtualMachineConfiguration()
 config.cpuCount = 2
 config.memorySize = 512 * 1024 * 1024
@@ -34,9 +35,14 @@ workPort.attachment = VZFileHandleSerialPortAttachment(
 )
 config.serialPorts = [serial, workPort]
 config.networkDevices = []
-let fs = VZVirtioFileSystemDeviceConfiguration(tag: "probe")
-fs.share = VZSingleDirectoryShare(directory: VZSharedDirectory(url: shareDir, readOnly: false))
-config.directorySharingDevices = [fs]
+if sharedProbe {
+    let fs = VZVirtioFileSystemDeviceConfiguration(tag: "probe")
+    fs.share = VZSingleDirectoryShare(directory: VZSharedDirectory(url: shareDir, readOnly: false))
+    config.directorySharingDevices = [fs]
+} else {
+    config.directorySharingDevices = []
+    fputs("HOST_NO_SHARED_DIRECTORY\n", stderr)
+}
 do {
     try config.validate()
     fputs("HOST_CONFIG_VALID\n", stderr)

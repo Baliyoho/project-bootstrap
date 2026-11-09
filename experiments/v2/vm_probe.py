@@ -121,10 +121,22 @@ def heartbeat_count(share: Path, probe_id: str) -> int:
     return heartbeat.read_bytes().count(b"tick\n") if heartbeat.exists() else 0
 
 
-def check_guest(log: Path, share: Path, process: subprocess.Popen[bytes], probe_id: str) -> int:
+def check_guest(log: Path, share: Path | None, process: subprocess.Popen[bytes], probe_id: str) -> int:
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         output = log.read_text(errors="replace")
+        if share is None:
+            if ("HOST_NO_SHARED_DIRECTORY" in output
+                    and "GUEST_NO_SHARED_DIRECTORY" in output
+                    and "GUEST_CHANNEL_READY" in output
+                    and f"GUEST_PROBE_ID={probe_id}" in output
+                    and "GUEST_MOUNTED" not in output
+                    and "GUEST_UNEXPECTED_SHARED_DIRECTORY" not in output):
+                return 0
+            if process.poll() is not None:
+                raise RuntimeError(f"VM exited before unshared guest was ready: {output[-2000:]}")
+            time.sleep(0.1)
+            continue
         pid = re.search(r"GUEST_CHILD_PID=(\d+)", output)
         session = re.search(r"GUEST_CHILD_SESSION=(\d+)", output)
         if ("GUEST_LOCK_HELD" in output and "GUEST_CHANNEL_READY" in output
@@ -153,7 +165,7 @@ def stable_after_exit(share: Path, probe_id: str) -> int:
     return second
 
 
-def launch(runner: Path, kernel: Path, ramdisk: Path, share: Path, seconds: int,
+def launch(runner: Path, kernel: Path, ramdisk: Path, share: Path | None, seconds: int,
            log: Path, probe_id: str) -> tuple[subprocess.Popen[bytes], object, object]:
     output = log.open("wb")
     control_read, control_write = os.pipe()
@@ -161,7 +173,7 @@ def launch(runner: Path, kernel: Path, ramdisk: Path, share: Path, seconds: int,
     reply_read, reply_write = os.pipe()
     try:
         process = subprocess.Popen(
-            [str(runner), str(kernel), str(ramdisk), str(share), str(seconds),
+            [str(runner), str(kernel), str(ramdisk), str(share) if share else "-", str(seconds),
              probe_id, str(control_read), str(request_read), str(reply_write)],
             stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
             pass_fds=(control_read, request_read, reply_write),
@@ -240,14 +252,15 @@ class VMRetirementGate:
     """
 
     def __init__(self, runner: Path, kernel: Path, ramdisk: Path,
-                 share: Path, log: Path, probe_id: str, stop_after: int = 0):
+                 share: Path | None, log: Path, probe_id: str, stop_after: int = 0):
         self.runner, self.kernel, self.ramdisk = runner, kernel, ramdisk
         self.share, self.log, self.probe_id = share, log, probe_id
         self.stop_after = stop_after
         self.process = self.output = self.control = None
 
     def start(self) -> None:
-        self.share.mkdir()
+        if self.share is not None:
+            self.share.mkdir()
         self.process, self.output, self.control = launch(
             self.runner, self.kernel, self.ramdisk, self.share, self.stop_after,
             self.log, self.probe_id,
@@ -297,9 +310,10 @@ class VMRetirementGate:
         output = self.log.read_text(errors="replace")
         if result != 0 or "HOST_STOPPED state=0" not in output:
             raise RuntimeError(f"VM stop was not confirmed: {output[-2000:]}")
-        final = stable_after_exit(self.share, self.probe_id)
-        return {"probe_id": self.probe_id, "final_heartbeat": final,
-                "stop_marker": "HOST_STOPPED state=0"}
+        evidence = {"probe_id": self.probe_id, "stop_marker": "HOST_STOPPED state=0"}
+        if self.share is not None:
+            evidence["final_heartbeat"] = stable_after_exit(self.share, self.probe_id)
+        return evidence
 
     def close(self) -> None:
         if self.process is not None and self.process.poll() is None:
@@ -559,7 +573,7 @@ def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) ->
 
     root = work / "guest-broker"
     root.mkdir()
-    gate = VMRetirementGate(runner, kernel, ramdisk, work / "guest-broker-share",
+    gate = VMRetirementGate(runner, kernel, ramdisk, None,
                             work / "guest-broker.log", "guest-broker")
     with open_managed(root) as (fixture, repo):
         fixture.start(2)
@@ -573,6 +587,8 @@ def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) ->
         journal = RequestJournal(authority, channel)
         try:
             gate.start()
+            if (work / "guest-broker-share").exists():
+                raise RuntimeError("unshared broker guest created a shared scratch directory")
             first_raw = gate.write_request(0, 2, 5, 1)
             journal.prepare_raw(first_raw)
             fresh = json.loads(journal.send())

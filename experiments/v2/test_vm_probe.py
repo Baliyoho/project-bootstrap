@@ -26,7 +26,36 @@ class _Running:
         self.guest_reply.close()
 
 
+class _Exited(_Running):
+    def poll(self):
+        return 0
+
+
 class VMProbeEvidenceTests(unittest.TestCase):
+    def test_unshared_guest_requires_both_host_and_guest_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "guest.log"
+            process = _Exited()
+            try:
+                for output in (
+                    "GUEST_NO_SHARED_DIRECTORY\nGUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n",
+                    "HOST_NO_SHARED_DIRECTORY\nGUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n",
+                    "HOST_NO_SHARED_DIRECTORY\nGUEST_NO_SHARED_DIRECTORY\n"
+                    "GUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\nGUEST_MOUNTED\n",
+                    "HOST_NO_SHARED_DIRECTORY\nGUEST_NO_SHARED_DIRECTORY\n"
+                    "GUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n"
+                    "GUEST_UNEXPECTED_SHARED_DIRECTORY\n",
+                ):
+                    with self.subTest(output=output):
+                        log.write_text(output)
+                        with self.assertRaisesRegex(RuntimeError, "unshared guest was ready"):
+                            check_guest(log, None, process, "case")
+                log.write_text("HOST_NO_SHARED_DIRECTORY\nGUEST_NO_SHARED_DIRECTORY\n"
+                               "GUEST_CHANNEL_READY\nGUEST_PROBE_ID=case\n")
+                self.assertEqual(check_guest(log, None, process, "case"), 0)
+            finally:
+                process.close()
+
     def test_guest_broker_request_is_bound_to_nonce_epoch_and_sequence(self):
         nonce = "a" * 32
         payload = b'{"id":1,"method":"write","resource":"note","base":null,"text":"10","epoch":0}'
