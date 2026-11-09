@@ -1162,6 +1162,180 @@
      "new": "    for entry in merged['shared'] + merged['conditional'] + merged['unconfirmed']:"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_campaign"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "        if target in seen:\n            problems.append((target, 'listed-twice'))\n            continue",
+     "new": "        if False:\n            continue"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "            action = 'update' if every or target in affected else 'skip-unaffected'",
+     "new": "            action = 'update'"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "            action = 'update' if every or target in affected else 'skip-unaffected'",
+     "new": "            action = 'update' if target in affected else 'skip-unaffected'"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "        elif code in MANUAL_CODES:",
+     "new": "        elif False:"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "            action = 'failed'\n            code = 'unknown-outcome'",
+     "new": "            action = 'excluded'"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "    for target in sorted(affected - seen):",
+     "new": "    for target in []:"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "    if updates:\n        prompts.append({'kind': 'approve-release'})",
+     "new": "    if updates:\n        pass"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "    if review:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "    prompts += [{'kind': 'compare-by-hand', 'targets': [t]} for t in by_hand]",
+     "new": "    prompts += [{'kind': 'compare-by-hand', 'targets': by_hand}] if by_hand else []"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "    within = len(prompts) <= budget",
+     "new": "    within = True"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "    ok = within and not review and not by_hand and not problems",
+     "new": "    ok = within and not review and not problems"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "    ok = within and not review and not by_hand and not problems",
+     "new": "    ok = within and not by_hand and not problems"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "    ok = within and not review and not by_hand and not problems",
+     "new": "    ok = within and not review and not by_hand"
+    },
+    {
+     "file": "experiments/v2/campaign.py",
+     "old": "    ok = within and not review and not by_hand and not problems",
+     "new": "    ok = not review and not by_hand and not problems"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_publish"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if not isinstance(report, dict):\n        return False",
+     "new": "    if not isinstance(report, dict):\n        return True"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if report.get('overall') != '通過' or not isinstance(rows, list) or not rows:",
+     "new": "    if not isinstance(rows, list) or not rows:"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if report.get('overall') != '通過' or not isinstance(rows, list) or not rows:",
+     "new": "    if report.get('overall') != '通過' or not isinstance(rows, list):"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    return all(isinstance(r, dict) and r.get('state') == '本輪實查' for r in rows)",
+     "new": "    return all(isinstance(r, dict) and r.get('state') in ('本輪實查', '沿用') for r in rows)"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    return all(isinstance(r, dict) and r.get('state') == '本輪實查' for r in rows)",
+     "new": "    return any(isinstance(r, dict) and r.get('state') == '本輪實查' for r in rows)"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if not isinstance(signature, bytes) or not 1 <= len(signature) <= 2048:\n        raise Denied('invalid-attestation-signature')",
+     "new": "    if not isinstance(signature, bytes):\n        raise Denied('invalid-attestation-signature')"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if result.returncode:\n        raise Denied('not-signed-by-ci')",
+     "new": "    if False:\n        raise Denied('not-signed-by-ci')"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "                [str(VERIFIER), '-Y', 'verify', '-f', str(signers), '-I', CI_SIGNER,\n                 '-n', NAMESPACE, '-s', str(proof)],",
+     "new": "                [str(VERIFIER), '-Y', 'check-novalidate', '-n', NAMESPACE, '-s', str(proof)],"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "            or not re.fullmatch(rb'ssh-ed25519 [A-Za-z0-9+/]{68}', ci_key)):",
+     "new": "            and False):"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if (not isinstance(manifest, dict) or manifest.get('kind') not in KINDS\n            or not re.fullmatch(r'[0-9A-Za-z][0-9A-Za-z.-]{0,63}', str(manifest.get('version')))):",
+     "new": "    if not isinstance(manifest, dict) or manifest.get('kind') not in KINDS:"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if (not isinstance(manifest, dict) or manifest.get('kind') not in KINDS\n",
+     "new": "    if (not isinstance(manifest, dict)\n"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if not _verified_this_round(report):",
+     "new": "    if manifest.get('kind') == 'formal' and not _verified_this_round(report):"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if not _verified_this_round(report):",
+     "new": "    if False:"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if not isinstance(document, bytes) or not 1 <= len(document) <= 1024:",
+     "new": "    if not isinstance(document, bytes):"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if not isinstance(fields, dict) or set(fields) != ATTESTATION_FIELDS:",
+     "new": "    if not isinstance(fields, dict):"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if fields['manifest'] != manifest_digest(manifest) or fields['report'] != report_digest(report):",
+     "new": "    if fields['manifest'] != manifest_digest(manifest):"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if fields['manifest'] != manifest_digest(manifest) or fields['report'] != report_digest(report):",
+     "new": "    if fields['report'] != report_digest(report):"
+    },
+    {
+     "file": "experiments/v2/publish.py",
+     "old": "    if target.exists():",
+     "new": "    if False:"
+    }
+   ]
   }
  ]
 }

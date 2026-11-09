@@ -533,9 +533,18 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
-      "next": "20 專案正常／例外／失效混合，人工確認 ≤3；逐項不漏報"
+      "evidence": [
+        {
+          "path": "experiments/v2/campaign.py",
+          "scope": "多專案更新規劃原型：吃 batch 報告與 impact 受影響清單，每目標恰一列動作（更新／未受影響略過／排除／失敗／逐專案比對）；人工確認分為放行版本、整份更新清單、全部失敗審閱各一次，漂移專案各算一次；超過上限（預設 3）照實報，失敗、需比對、重複、受影響未評估都不是 ok"
+        },
+        {
+          "path": "experiments/v2/test_campaign.py",
+          "scope": "20 個混合目標（10 更新、4 未受影響、1 排除、5 失敗）全列、3 次確認仍 NOT OK；乾淨 2 次 OK；無更新 0 次；兩個漂移超過上限；未知結果、重複、受影響未評估、上限收緊各自不 ok；另以真 assess_many 列產生缺失與排除；mutants.json 14 個刪改全部 killed"
+        }
+      ],
+      "unknown": "確認次數是規劃值，未量真人實際操作與時間；impact 專案名到批次目標的對應由呼叫端提供；未接 sync_project.py 實際同步；跨工具與跨 OS 尚未驗收",
+      "next": "接 sync_project 實跑 20 專案並量實際人工確認次數"
     },
     {
       "id": "F25",
@@ -761,9 +770,18 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
-      "next": "FAIL／未驗調試包、偽造結果、非 CI 發布都拒絕"
+      "evidence": [
+        {
+          "path": "experiments/v2/publish.py",
+          "scope": "阻擋原型：驗證報告須整體通過且每列本輪實查（沿用／未驗證／FAIL 拒絕，調試包無例外）；CI 證明同時簽 manifest 與報告 digest，改報告或換套件為偽造；只認設定的 CI 金鑰、身分與 namespace；版本字串限定字元；同版本不重發；拒絕時不寫任何檔"
+        },
+        {
+          "path": "experiments/v2/test_publish.py",
+          "scope": "ssh-keygen 拋棄式金鑰實測：正式與調試包驗證通過才發布；九種未驗證報告（含整體與列不一致、空列、非 dict）對正式與調試包都拒絕；簽後改報告、換套件、簽別的內容、空簽章、壞證明拒絕；開發者金鑰、錯 namespace、非 ed25519 金鑰拒絕；壞 manifest 與跳目錄版本拒絕；每次拒絕後發布目錄為空；mutants.json 18 個刪改全部 killed"
+        }
+      ],
+      "unknown": "CI 金鑰是測試替身，握有金鑰即可發布；無真 CI 身分、傳輸與原子安裝；未接進現行發布流程（現行阻擋仍是 verify_bootstrap 的 ZIP 門檻）；跨工具與跨 OS 尚未驗收",
+      "next": "接真 CI 身分與金鑰治理；接進實際發布入口"
     },
     {
       "id": "F36",
