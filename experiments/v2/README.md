@@ -230,6 +230,12 @@ python3 -X utf8 experiments/v2/mutants.py
 
 `test_publish.py` 5 個測試（ssh-keygen 拋棄式金鑰，非 macOS 時驗證器不可用即拒絕）；`mutants.json` 18 個刪改全部 killed。邊界：CI 金鑰是測試替身，握有那把金鑰就能發布；沒有真的 CI 身分、傳輸或原子安裝；現行 `verify_bootstrap.py` 的 ZIP 發布門檻仍是現行程序的阻擋點，本原型未取代它。
 
+## 繞過規則：擋下或留痕（2026-11-10）
+
+`bypass.py` 是 F21 的原型，照決策書分層。阻擋：`guard_commit` 讀已部署專案的 Git index（不是工作樹），已安裝 manifest 裡屬於 core／adapter 的檔，staged 內容與發布版不同或從 index 刪掉就拒絕提交——共用制度只能回來源改再同步；專案自己的檔不受限。發布未驗證來源由 `publish.py` 擋。留痕：`record` 把步驟完成或略過（略過必須附理由）寫進 JSON lines，每行帶前一行的 SHA-256；`audit` 沿鏈檢查，必要步驟既沒完成也沒登記略過就是無聲略過，鏈斷之後的行一律不採信，繞過 `record` 直接寫入的無理由略過也不算數。
+
+`test_bypass.py` 10 個測試（真 Git index）；`mutants.json` 14 個刪改全部 killed。邊界：能改寫整份紀錄的人也能重算整條鏈，所以只抓意外與局部改動，不證明紀錄為真；`guard_commit` 未掛成 pre-commit hook，`--no-verify` 之類的繞法未處理；未接進現行 A／B 程序。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。

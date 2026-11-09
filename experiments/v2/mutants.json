@@ -1336,6 +1336,83 @@
      "new": "    if False:"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_bypass"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "        if owners.get(path) not in ('core', 'adapter'):",
+     "new": "        if owners.get(path) != 'core':"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "        if result.returncode:\n            raise Denied('in-place-core-delete:' + path)",
+     "new": "        if result.returncode:\n            continue"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "        if hashlib.sha256(result.stdout).hexdigest() != manifest['components'][path]:",
+     "new": "        if False:"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "        result = subprocess.run(['git', '-C', str(repo), 'show', ':' + path],",
+     "new": "        result = subprocess.run(['git', '-C', str(repo), 'show', 'HEAD:' + path],"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "    if event.get('status') not in ('done', 'skipped') or not event.get('step'):",
+     "new": "    if not event.get('step'):"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "    if event.get('status') not in ('done', 'skipped') or not event.get('step'):",
+     "new": "    if event.get('status') not in ('done', 'skipped'):"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "    if event['status'] == 'skipped' and not str(event.get('reason') or '').strip():",
+     "new": "    if False:"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "            previous = _line_digest(lines[-1])",
+     "new": "            previous = GENESIS"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "            if not isinstance(event, dict) or event.get('prev') != previous:",
+     "new": "            if not isinstance(event, dict):"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "                break\n            events.append(event)",
+     "new": "                continue\n            events.append(event)"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "        elif event.get('status') == 'skipped' and str(event.get('reason') or '').strip():",
+     "new": "        elif event.get('status') == 'skipped':"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "            findings.append((str(event.get('step')), 'event-unaccounted'))",
+     "new": "            pass"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "        if step not in steps:\n            steps[step] = 'silent-skip'",
+     "new": "        if False:\n            steps[step] = 'silent-skip'"
+    },
+    {
+     "file": "experiments/v2/bypass.py",
+     "old": "        findings.append(('log', 'log-missing'))",
+     "new": "        pass"
+    }
+   ]
   }
  ]
 }

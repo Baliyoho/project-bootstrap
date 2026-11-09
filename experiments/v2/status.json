@@ -492,9 +492,22 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
-      "evidence": [],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
-      "next": "直接寫 policy、未驗 release 被拒；跳步留可查事件"
+      "evidence": [
+        {
+          "path": "experiments/v2/bypass.py",
+          "scope": "分層原型：guard_commit 讀 Git index 比對已安裝 manifest 的 core／adapter 檔，staged 改動或刪除拒絕提交（阻擋就地改共用制度）；record／audit 以前一行 SHA-256 串成 JSON lines，必要步驟未完成也未登記略過為無聲略過，略過須附理由，鏈斷後不採信（跳步留痕）"
+        },
+        {
+          "path": "experiments/v2/test_bypass.py",
+          "scope": "真 Git index 實測：未改與改專案檔通過；staged 改 core／adapter 拒絕；只改工作樹不擋、index 改了而工作樹還原仍擋；從 index 刪發布檔拒絕。紀錄：完成與附理由略過涵蓋必要步驟、缺步驟為無聲略過、無理由／未知狀態寫入被拒、繞過 record 的無理由略過不算、改行／截斷／插入垃圾行鏈斷且其後不採信、缺紀錄檔回報；mutants.json 14 個刪改全部 killed"
+        },
+        {
+          "path": "experiments/v2/publish.py",
+          "scope": "發布未驗證來源的阻擋層，見 F35"
+        }
+      ],
+      "unknown": "guard_commit 未掛成 pre-commit hook，--no-verify 等繞法未處理；紀錄可被整份重寫重算，不證明為真；未接進現行 A／B 程序；跨工具與跨 OS 尚未驗收",
+      "next": "掛進實際提交入口並驗 --no-verify 等繞法；跳步紀錄接 A／B 程序"
     },
     {
       "id": "F22",
