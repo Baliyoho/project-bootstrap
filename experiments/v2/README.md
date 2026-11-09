@@ -168,6 +168,12 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 `test_evidence.py` 5 個、`test_facts.py` 5 個測試；scratch 副本逐一移除守門，證據帳 19 個、事實 adapter 10 個都讓測試失敗（補強過的兩處：逃逸路徑改指向真實存在的檔案、補 index 不被改寫的測試）。邊界：依賴清單由產生證據的一方宣告，漏列的輸入改變不會失效；撤銷清單的保存未實作；adapter 只有四個本機查詢，服務與遠端狀態未涵蓋；不保證識破偽造紀錄；未接進任何工具。
 
+## 待決事項與已宣告例外（2026-11-09）
+
+`decisions.py` 是 F44／F34 的原型。`check_decisions`：待決事項要有問題、影響的需求 ID 與選項；AI 只能在使用者授予、有來源、範圍涵蓋全部影響 ID 的委任內定案，而且要記理由，否則 `ai-decided-without-delegation` 或 `delegated-without-rationale`；反過來，委任範圍內的事項不能掛成待使用者決定（`delegated-but-waiting-for-user`）。任務標了 `waits_for_decision` 就必須指向已登記且仍待決的事項，問題不能只藏在任務欄位裡。`check_exceptions`：例外要有內容、授權者、來源、範圍、理由與重檢條件，日期型重檢到期就標出。`render` 生成「懸置事項」與「已宣告例外（宣告不等於通過）」兩節。
+
+`test_decisions.py` 6 個測試；scratch 副本逐一移除 25 個守門都讓測試失敗。邊界：只能檢查已登記的內容，完全沒登記、只在聊天裡的待決事項發現不了；委任範圍以需求 ID 比對；現行決策書第 6 節、HANDOFF 懸置節與 ARCHITECT 的三項來源例外仍是手寫，尚未轉成紀錄；未接進任何工具。
+
 ## F50 與索引權威
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。
