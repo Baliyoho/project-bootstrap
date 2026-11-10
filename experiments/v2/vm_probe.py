@@ -977,6 +977,93 @@ def probe_guest_unread_request(work: Path, runner: Path, kernel: Path, ramdisk: 
             stream.close()
 
 
+def probe_guest_runner_sigkill(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
+    """SIGKILL the VM runner (the hypervisor process) while the parent lives.
+
+    2026-11-10, F28 "host／hypervisor 異常". The runner never prints its stop
+    line, so there is no host proof: retirement must fail, the ledger must keep
+    blocking after reopen, and crash release must refuse without ever asking
+    the person (Q1: no host evidence falls back to (c), stay blocked).
+    """
+    if str(HERE.parents[1]) not in sys.path:
+        sys.path.insert(0, str(HERE.parents[1]))
+    from experiments.v2 import crash_release
+    from experiments.v2.contracts import Denied, Lab
+    from experiments.v2.guest_runs import GuestRunLedger
+
+    db = work / "runner-kill.sqlite"
+    log = work / "runner-kill.log"
+    actor = "runner-kill-parent"
+    lab = Lab(db)
+    gate = VMRetirementGate(runner, kernel, ramdisk, None, log, "runner-kill", stop_after=12)
+    try:
+        capability = lab.register(actor)
+        ledger = GuestRunLedger(lab)
+        run = ledger.open_run(actor, 0, gate.identity(),
+                              host_log=os.path.abspath(str(log) + ".host"))
+        gate.start()
+        ledger.mark_running(run, {"probe_id": gate.probe_id, "shared_directory": False},
+                            capability)
+        gate.load_context(0, 2)
+        gate.process.kill()
+        gate.process.wait(timeout=5)
+        if host_stopped(log):
+            raise RuntimeError("killed runner still printed a clean stop line")
+        for call in (lambda: gate.managed_write_request(0, 5, 1), gate.retire):
+            try:
+                call()
+            except RuntimeError:
+                pass
+            else:
+                raise RuntimeError("dead runner still accepted work or retirement")
+    finally:
+        gate.close()
+        lab.close()
+
+    lab = Lab(db)
+    try:
+        ledger = GuestRunLedger(lab)
+        runs = ledger.runs(actor)
+        if [(item["run_id"], item["state"]) for item in runs] != [(run, "running")]:
+            raise RuntimeError(f"killed runner's run was not kept unretired: {runs}")
+        for call in (lambda: ledger.require_quiescent(actor),
+                     lambda: ledger.open_run(actor, 0, runs[0]["identity"])):
+            try:
+                call()
+            except Denied as error:
+                if str(error) != "vm-retirement-unconfirmed":
+                    raise RuntimeError(f"unexpected restart result: {error}") from error
+            else:
+                raise RuntimeError("restart accepted a run whose runner was killed")
+    finally:
+        lab.close()
+
+    asked = []
+
+    def terminal():
+        asked.append(True)
+        return _ScriptedTerminal()
+
+    try:
+        crash_release.release(db, run, terminal)
+    except Denied as error:
+        if str(error) != "crash-release-unconfirmed":
+            raise RuntimeError(f"unexpected crash release result: {error}") from error
+    else:
+        raise RuntimeError("crash release accepted a runner that never stopped cleanly")
+    if asked:
+        raise RuntimeError("crash release asked the person without host evidence")
+    lab = Lab(db)
+    try:
+        if [item["state"] for item in GuestRunLedger(lab).runs(actor)] != ["running"]:
+            raise RuntimeError("refused crash release changed the ledger")
+    finally:
+        lab.close()
+    print("guest_runner_sigkill: killed runner left no host stop line; retirement and "
+          "writes refused; reopened ledger blocks restart; crash release refused "
+          "without asking (Q1 falls back to (c))")
+
+
 def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
     """Run the synthetic tool inside two unshared guests, not a host worker."""
     if str(HERE.parents[1]) not in sys.path:
@@ -1139,6 +1226,7 @@ def main() -> int:
             probe_guest_parent_crash(work, runner, raw_kernel, guest_ramdisk)
             probe_guest_crash_replay(work, runner, raw_kernel, guest_ramdisk)
             probe_guest_unread_request(work, runner, raw_kernel, guest_ramdisk)
+            probe_guest_runner_sigkill(work, runner, raw_kernel, guest_ramdisk)
         print("VM_PROBE_OK: synthetic guest only; P0 remains unverified")
         return 0
     except (OSError, RuntimeError, subprocess.SubprocessError, zlib.error) as error:

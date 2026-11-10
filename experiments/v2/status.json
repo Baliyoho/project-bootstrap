@@ -349,7 +349,7 @@
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；固定合成 shell 工具已進無共享 guest，通用受管工具與完整覆寫歸因仍未成立",
-      "next": "無共享 guest 的 run 身分、退場、channel 綁定與崩潰後人工解除（Q1 (a)）已有合成證據；接下來隔離已寫效果並驗其他 OS。解除與 parent 管道綁定都不是防同 UID host 偽造的證明，不外推完整歸因；日後改簽署金鑰（Q1 (b)）另登新編號",
+      "next": "無共享 guest 的 run 身分、退場、channel 綁定與崩潰後人工解除（Q1 (a)）已有合成證據；舊共享 scratch 路徑 2026-11-10 定位為已被取代的實驗，不作寫入或歸因證據；接下來驗其他 OS、通用工具進無共享 guest。解除與 parent 管道綁定都不是防同 UID host 偽造的證明，不外推完整歸因；日後改簽署金鑰（Q1 (b)）另登新編號",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -758,7 +758,7 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復，無共享路徑再以真 runner 停機紀錄加合成終端替身走崩潰解除、guest console 日誌被拒；另一台在 outbox 已存、未送出時 SIGKILL 父程序，解除後替代 parent 重送原 bytes 只套用一次；2026-11-10 再加 guest_unread_request：guest 已產生寫入請求（console 有標記）、parent 還沒讀就被 SIGKILL，解除後沒有可重送的請求，帳本與工作樹都沒有效果；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
+          "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復，無共享路徑再以真 runner 停機紀錄加合成終端替身走崩潰解除、guest console 日誌被拒；另一台在 outbox 已存、未送出時 SIGKILL 父程序，解除後替代 parent 重送原 bytes 只套用一次；2026-11-10 再加 guest_unread_request：guest 已產生寫入請求（console 有標記）、parent 還沒讀就被 SIGKILL，解除後沒有可重送的請求，帳本與工作樹都沒有效果；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收；2026-11-10 guest_runner_sigkill：父程序活著、直接 SIGKILL VM runner，host 檔沒有停機行，退場與寫入都拒絕，重開帳本阻擋，崩潰解除不開終端就拒絕（Q1 退回 (c)）"
         },
         {
           "path": "experiments/v2/vm_managed_worker.sh",
@@ -801,8 +801,8 @@
           "scope": "VM runner，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
-      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑的 run 身分與 host 停機證據已持久保存，重開資料庫可核對，父程序 SIGKILL 後仍阻擋；runner stderr 與 guest console 已分成兩個檔，host 啟動／停機標記只從 host 檔讀；離線測試驗 guest console 偽造標記不被採用。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無自動恢復；無共享路徑可用 crash_release 以開機前登記的 runner 停機紀錄加 host 本機終端確認人工解除（Q1 (a)），缺證據不解除；同 UID 可偽造 host 檔與偽終端，不是真人證明；舊共享路徑仍無解除。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
-      "next": "無共享路徑的 run 身分、退場與 channel 綁定已持久化；父程序崩潰後的人工解除已有合成證據（Q1 (a)）；下一步驗 host／hypervisor 異常；舊共享路徑仍須隔離或冪等化已寫效果，再驗 host／hypervisor 異常、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
+      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑的 run 身分與 host 停機證據已持久保存，重開資料庫可核對，父程序 SIGKILL 後仍阻擋；runner stderr 與 guest console 已分成兩個檔，host 啟動／停機標記只從 host 檔讀；離線測試驗 guest console 偽造標記不被採用。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無自動恢復；無共享路徑可用 crash_release 以開機前登記的 runner 停機紀錄加 host 本機終端確認人工解除（Q1 (a)），缺證據不解除；同 UID 可偽造 host 檔與偽終端，不是真人證明；舊共享路徑仍無解除。host／兩 VM 的 flock 對 virtiofs 不互通。hypervisor 程序被殺只驗了 runner SIGKILL（2026-11-10），host 整機崩潰／斷電未驗；真實工具、完整效果隔離與跨機即時推送未驗收",
+      "next": "無共享路徑的 run 身分、退場與 channel 綁定已持久化；父程序崩潰後的人工解除已有合成證據（Q1 (a)）；2026-11-10 真 VM guest_runner_sigkill 已驗 hypervisor 程序被殺時維持阻擋、解除拒絕；舊共享路徑定位為已被取代的退場閘門實驗，不修、不作寫入證據（理由見 v2 README）；下一步驗 host 整機崩潰、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
     },
     {
       "id": "F29",
