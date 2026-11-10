@@ -33,7 +33,7 @@
 2. 可信真人核准、簽署金鑰發行／撤銷（Q1 (b) 日後另登）與額度來源；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。
 3. **六檔版 skill**：只留在本分支部署包與這台 Mac 的兩個全域副本；不上 `main`、不同步專案（使用者回答「不要」）。別台機器與各專案仍是舊單檔。規則逐條連到 `reasons.md` 錨點沒做。本 repo 必讀約 16,100 仍超標，使用者說之後回頭修。
 4. **動作當下送規則試行中**：三種提醒都在真 session 進了 context。2026-11-10 查明先前的誤報：PostToolUse 的輸入含指令輸出，輸出裡換行後出現 git push（git 自己的 hint）就觸發；已改成解析 JSON、只看 `tool_input` 並照 shell 切詞，真 session 重測不再誤報。已知漏報：`bash -c "git push"` 這類包在引號裡的寫法。沒有 python 時退回舊的原始字串比對。去留看試用結果。
-5. trail：AGENTS 規則、第 6 節已決 Q、效率計畫非目標都已轉；多數採用理由只能寫「當時沒有記錄理由」，Q2 (b) 一條標為推論。Swift runner 與 guest 腳本沒有離線測試，未轉 mutation 規格；`guest_runner_sigkill` 只在真 VM 跑，沒有 mutation 規格。F14／F15 需另一個工具或 OS；F41 使用者已決定先不用雲端。
+5. trail：AGENTS 規則、第 6 節已決 Q、效率計畫非目標都已轉；多數採用理由只能寫「當時沒有記錄理由」，Q2 (b) 一條標為推論。guest 腳本已補離線測試與 18 個刪改（跑的是 host 的 dash／sh，不是 busybox ash）；Swift runner 仍沒有離線測試，只有真 VM 的 `runner_refusals` 驗拒絕路徑；`guest_runner_sigkill` 只在真 VM 跑，沒有 mutation 規格。F14／F15 需另一個工具或 OS；F41 使用者已決定先不用雲端。
 6. Windows hook 同步、R01–R09 獨立複審、Mac Codex 真實注入、F28 模型探針都先不做（使用者 2026-11-10 裁定）。
 
 ## 地雷與注意事項

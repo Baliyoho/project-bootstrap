@@ -514,6 +514,71 @@ def probe_owner_eof(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> No
         output.close()
 
 
+def probe_runner_refusals(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
+    """The runner's own refusals: none of them may print the host stop line.
+
+    The Swift runner has no offline test, so its argument and control-channel
+    checks are exercised here against the real binary.
+    """
+    def refused(arguments, codes, marker, pass_fds=()):
+        done = subprocess.run([str(runner), *arguments], stdin=subprocess.DEVNULL,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                              pass_fds=pass_fds, timeout=30)
+        text = done.stderr.decode("utf-8", errors="replace")
+        if (done.returncode not in codes or marker not in text or STOP_MARKER in text
+                or "HOST_STARTED" in text):
+            raise RuntimeError(f"runner refusal differs for {marker}: "
+                               f"exit {done.returncode}, {text[-300:]!r}")
+
+    read_end, write_end = os.pipe()
+    try:
+        refused([], {2}, "usage: vm_runner")
+        refused([kernel, ramdisk, "-", "0", "refusal", str(read_end), "x", "y"], {2},
+                "HOST_INVALID_GUEST_CHANNEL_FD", pass_fds=(read_end,))
+        refused([kernel, ramdisk, "-", "0", "refusal", "x", str(read_end), str(write_end)],
+                {2}, "HOST_INVALID_CONTROL_FD", pass_fds=(read_end, write_end))
+        refused([work / "no-such-kernel", ramdisk, "-", "0", "refusal", str(read_end),
+                 str(read_end), str(write_end)], {3, 4}, "_ERROR",
+                pass_fds=(read_end, write_end))
+    finally:
+        os.close(read_end)
+        os.close(write_end)
+
+    # A byte that is not the stop command ends the runner (and so the VM)
+    # without the stop line: garbage on the control pipe is not stop evidence.
+    log = work / "runner-refusal.log"
+    process, output, control = launch(runner, kernel, ramdisk, None, 0, log, "bad-control")
+    try:
+        deadline = time.monotonic() + 15
+        while "HOST_STARTED" not in host_text(log).splitlines():
+            if process.poll() is not None or time.monotonic() > deadline:
+                raise RuntimeError("runner did not start for the control probe\n" + both_logs(log))
+            time.sleep(0.1)
+        control.write(b"X")
+        if (process.wait(timeout=15) != 7 or host_stopped(log)
+                or "HOST_INVALID_CONTROL_MESSAGE" not in host_text(log).splitlines()):
+            raise RuntimeError("invalid control byte was not refused\n" + both_logs(log))
+        if str(HERE.parents[1]) not in sys.path:
+            sys.path.insert(0, str(HERE.parents[1]))
+        from experiments.v2 import crash_release
+        from experiments.v2.contracts import Denied
+        try:
+            crash_release.host_evidence(str(host_log(log).resolve()), "bad-control")
+        except Denied:
+            pass
+        else:
+            raise RuntimeError("runner log without a stop line was accepted as evidence")
+        print("runner_refusals: bad arguments, missing kernel and an invalid control byte "
+              "all exit non-zero without the host stop line")
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+        control.close()
+        close_guest_channel(process)
+        output.close()
+
+
 CRASH_PARENT = '''from pathlib import Path
 import sys
 from experiments.v2.managed_fixture import open_managed
@@ -1220,6 +1285,7 @@ def main() -> int:
             probe(work, runner, raw_kernel, guest_ramdisk)
             probe_cross_vm(work, runner, raw_kernel, guest_ramdisk)
             probe_owner_eof(work, runner, raw_kernel, guest_ramdisk)
+            probe_runner_refusals(work, runner, raw_kernel, guest_ramdisk)
             probe_managed_switch(work, runner, raw_kernel, guest_ramdisk)
             probe_guest_broker(work, runner, raw_kernel, guest_ramdisk)
             probe_parent_crash_fail_closed(work, runner, raw_kernel, guest_ramdisk)

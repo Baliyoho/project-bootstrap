@@ -2,6 +2,14 @@
 # Synthetic managed tool. It owns its loaded premise for one VM lifetime.
 # The host sends only a value and sequence after loading the context.
 BB=/usr/bin/busybox
+# Numbers must be plain decimal integers. The earlier character-class check
+# also let through "1-2" (evaluated as an expression), "-" (a shell error that
+# ended this script) and "010" (octal); found by the offline tests, 2026-11-10.
+is_uint() {
+    case "$1" in '' | *[!0123456789]* | 0?*) return 1 ;; esac
+    [ "${#1}" -le 6 ]
+}
+is_int() { is_uint "${1#-}"; }
 loaded=0
 while read -r opcode nonce first second extra; do
     case "$nonce" in
@@ -15,7 +23,7 @@ while read -r opcode nonce first second extra; do
         L)
             if [ -n "$extra" ]; then echo GUEST_TOOL_BAD_CONTEXT >/dev/hvc0; continue; fi
             if [ "$loaded" -ne 0 ]; then echo GUEST_TOOL_ALREADY_LOADED >/dev/hvc0; continue; fi
-            case "$first:$second" in *[!0123456789:-]* | *::* | :* | *:) echo GUEST_TOOL_BAD_CONTEXT >/dev/hvc0; continue ;; esac
+            if ! is_uint "$first" || ! is_int "$second"; then echo GUEST_TOOL_BAD_CONTEXT >/dev/hvc0; continue; fi
             epoch=$first
             factor=$second
             loaded=1
@@ -23,7 +31,7 @@ while read -r opcode nonce first second extra; do
             ;;
         W)
             if [ "$loaded" -ne 1 ]; then echo GUEST_TOOL_NOT_LOADED >/dev/hvc0; continue; fi
-            case "$first:$second" in *[!0123456789:-]* | *::* | :* | *:) echo GUEST_TOOL_BAD_REQUEST >/dev/hvc0; continue ;; esac
+            if ! is_int "$first" || ! is_uint "$second"; then echo GUEST_TOOL_BAD_REQUEST >/dev/hvc0; continue; fi
             value=$first
             sequence=$second
             case "$extra" in

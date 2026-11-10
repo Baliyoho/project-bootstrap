@@ -1,5 +1,13 @@
 #!/usr/bin/sh
 BB=/usr/bin/busybox
+# Numbers must be plain decimal integers. The earlier character-class check
+# also let through "1-2" (evaluated as an expression), "-" (a shell error that
+# ended this script) and "010" (octal); found by the offline tests, 2026-11-10.
+is_uint() {
+    case "$1" in '' | *[!0123456789]* | 0?*) return 1 ;; esac
+    [ "${#1}" -le 6 ]
+}
+is_int() { is_uint "${1#-}"; }
 $BB mount -t proc proc /proc
 $BB mount -t sysfs sysfs /sys
 $BB mount -t devtmpfs devtmpfs /dev
@@ -59,11 +67,13 @@ while read -r first second third fourth fifth sixth <&3; do
         request_id=$first; epoch=$second; factor=$third; value=$fourth; sequence=
         if [ -n "$fifth$sixth" ]; then echo GUEST_BAD_REQUEST >/dev/hvc0; continue; fi
     fi
-    case "$request_id:$epoch:$factor:$value" in
-        *[!0123456789abcdef:-]* | *::* | :* | *:) echo GUEST_BAD_REQUEST >/dev/hvc0; continue ;;
-    esac
+    case "$request_id" in '' | *[!0123456789abcdef]*) echo GUEST_BAD_REQUEST >/dev/hvc0; continue ;; esac
+    if ! is_uint "$epoch" || ! is_int "$factor" || ! is_int "$value"; then
+        echo GUEST_BAD_REQUEST >/dev/hvc0
+        continue
+    fi
     if [ "$first" = W ]; then
-        case "$sequence" in *[!0123456789]* | '') echo GUEST_BAD_REQUEST >/dev/hvc0; continue ;; esac
+        if ! is_uint "$sequence"; then echo GUEST_BAD_REQUEST >/dev/hvc0; continue; fi
         echo GUEST_WRITE_REQUEST=$request_id >/dev/hvc0
         $BB printf '%s {"id":%s,"method":"write","resource":"note","base":null,"text":"%s","epoch":%s}\n' \
             "$request_id" "$sequence" "$((factor * value))" "$epoch" >&3

@@ -308,6 +308,10 @@
           "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋且沒有解除途徑（決策書 Q15）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：帳本檔遺失或變空檔時讀起來跟第一次啟動一樣"
         },
         {
+          "path": "experiments/v2/test_vm_guest_scripts.py",
+          "scope": "guest 殼層腳本的離線測試（不開 VM、不用 busybox）：把腳本的 busybox 路徑換成殼層內建、console 換成暫存檔後在 host 的 dash 與 sh 執行，回覆直接餵給 vm_probe 的 host 解析函式；逐條驗受管工具的錯誤代碼、被拒的行不結束程式也不改已載入的前提，以及舊共享路徑請求迴圈的格式。mutants.json 18 個刪改全部 killed。不涵蓋掛載、virtiofs、序列埠與 busybox ash 本身"
+        },
+        {
           "path": "experiments/v2/vm_managed_worker.sh",
           "scope": "封入無共享 guest initramfs 的固定合成工具；一次載入前提，後續由 guest 產生受限 broker 請求。非通用工具或正式身分證明"
         },
@@ -789,6 +793,10 @@
           "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋且沒有解除途徑（決策書 Q15）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：帳本檔遺失或變空檔時讀起來跟第一次啟動一樣"
         },
         {
+          "path": "experiments/v2/test_vm_guest_scripts.py",
+          "scope": "guest 殼層腳本的離線測試（不開 VM、不用 busybox）：把腳本的 busybox 路徑換成殼層內建、console 換成暫存檔後在 host 的 dash 與 sh 執行，回覆直接餵給 vm_probe 的 host 解析函式；逐條驗受管工具的錯誤代碼、被拒的行不結束程式也不改已載入的前提，以及舊共享路徑請求迴圈的格式。mutants.json 18 個刪改全部 killed。不涵蓋掛載、virtiofs、序列埠與 busybox ash 本身"
+        },
+        {
           "path": "experiments/v2/test_vm_probe.py",
           "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch／context ACK／base、截斷回覆、無共享路徑缺啟動標記／虛報 mount，及 guest console 偽造 host 啟動／停機標記的離線負向控制；不代替 VM 實跑"
         },
@@ -831,7 +839,7 @@
           "scope": "合成套件實測執行器分得出被測到的守門（killed）、沒被測到的守門（survived）、原文不存在與出現兩次（stale）、檔案不存在（stale）；空規格不算通過；只跑指定測試模組；原始檔不被改動"
         }
       ],
-      "unknown": "VM 探針的 Swift runner 與 guest 殼層腳本沒有離線測試，未轉成規格（只有真 VM 探針覆蓋）；全量 673 個 macOS 實跑全部 killed（約 14 分鐘），其後 7 個單獨跑；刪改由人挑選，不是自動產生；未納入 verify_v2 預設流程（太慢）；跨工具與跨 OS 尚未驗收",
+      "unknown": "Swift runner 沒有離線測試，未轉成規格（真 VM 探針的 runner_refusals 只驗它的拒絕路徑）；guest 殼層腳本 2026-11-10 補了離線測試與 18 個刪改，但跑的是 host 的 dash／sh 而不是 guest 的 busybox ash，開機與掛載段仍只有真 VM 探針覆蓋；清單共 713 個，其中 673 個做過全量實跑（約 14 分鐘），其後加入的各組都只單獨跑過；刪改由人挑選，不是自動產生；未納入 verify_v2 預設流程（太慢）；跨工具與跨 OS 尚未驗收",
       "next": "移除判斷後測試真的失敗；不只比規則字串"
     },
     {

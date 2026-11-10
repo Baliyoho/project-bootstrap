@@ -3743,6 +3743,103 @@
      "new": ""
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_vm_guest_scripts"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "    case \"$1\" in '' | *[!0123456789]* | 0?*) return 1 ;; esac\n",
+     "new": "    case \"$1\" in '' | *[!0123456789]*) return 1 ;; esac\n"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "    [ \"${#1}\" -le 6 ]\n",
+     "new": "    true\n"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "is_int() { is_uint \"${1#-}\"; }\n",
+     "new": "is_int() { true; }\n"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "if ! is_uint \"$first\" || ! is_int \"$second\"; then echo GUEST_TOOL_BAD_CONTEXT",
+     "new": "if false; then echo GUEST_TOOL_BAD_CONTEXT"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "if ! is_int \"$first\" || ! is_uint \"$second\"; then echo GUEST_TOOL_BAD_REQUEST",
+     "new": "if false; then echo GUEST_TOOL_BAD_REQUEST"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "if [ \"$loaded\" -ne 0 ]; then",
+     "new": "if false; then"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "if [ \"$loaded\" -ne 1 ]; then",
+     "new": "if false; then"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "if [ -n \"$extra\" ]; then echo GUEST_TOOL_BAD_CONTEXT",
+     "new": "if false; then echo GUEST_TOOL_BAD_CONTEXT"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "    if [ \"${#nonce}\" -ne 32 ]; then\n",
+     "new": "    if false; then\n"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "if [ \"${#extra}\" -ne 64 ]; then",
+     "new": "if false; then"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "        '' | *[!0123456789abcdef]*) echo GUEST_TOOL_BAD_NONCE",
+     "new": "        '') echo GUEST_TOOL_BAD_NONCE"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "                *[!0123456789abcdef]* | '') echo GUEST_TOOL_BAD_BASE",
+     "new": "                '') echo GUEST_TOOL_BAD_BASE"
+    },
+    {
+     "file": "experiments/v2/vm_managed_worker.sh",
+     "old": "\"$((factor * value))\" \"$epoch\"",
+     "new": "\"$((factor + value))\" \"$epoch\""
+    },
+    {
+     "file": "experiments/v2/vm_guest_init.sh",
+     "old": "    if ! is_uint \"$epoch\" || ! is_int \"$factor\" || ! is_int \"$value\"; then\n",
+     "new": "    if false; then\n"
+    },
+    {
+     "file": "experiments/v2/vm_guest_init.sh",
+     "old": "        if ! is_uint \"$sequence\"; then",
+     "new": "        if false; then"
+    },
+    {
+     "file": "experiments/v2/vm_guest_init.sh",
+     "old": "        if [ -n \"$fifth$sixth\" ]; then",
+     "new": "        if false; then"
+    },
+    {
+     "file": "experiments/v2/vm_guest_init.sh",
+     "old": "    case \"$request_id\" in '' | *[!0123456789abcdef]*)",
+     "new": "    case \"$request_id\" in '')"
+    },
+    {
+     "file": "experiments/v2/vm_guest_init.sh",
+     "old": "    case \"$1\" in '' | *[!0123456789]* | 0?*) return 1 ;; esac\n",
+     "new": "    case \"$1\" in '' | *[!0123456789]*) return 1 ;; esac\n"
+    }
+   ]
   }
  ]
 }
