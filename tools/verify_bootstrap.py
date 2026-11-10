@@ -1239,6 +1239,100 @@ def step_repo_handoff():
     return True
 
 
+# 2026-11-10／F22：AGENTS.md 的事故與理由搬到 AGENTS-reasons.md，入口只留規則。
+# 搬走之後「保留每條規則的為什麼」（鐵律 3）不能只靠自律：規則沒有理由連結、
+# 連結指不到段落、或段落是空的，都要被擋下來。
+REASON_FILE = 'AGENTS-reasons.md'
+REASON_LINK = re.compile(r'\]\(' + re.escape(REASON_FILE) + r'#([A-Za-z0-9-]+)\)')
+REASON_ITEM_SECTIONS = ('鐵律', '副本規則', '改兩支 hook 的訊息時')
+REASON_MIN_BODY = 40
+
+
+def reason_link_problems(agents, reasons):
+    """agents／reasons：兩份文件的全文 → 問題清單。"""
+    problems = []
+    bodies = {}
+    chunks = re.split(r'(?m)^<a id="([A-Za-z0-9-]+)"></a>\s*$', reasons)
+    for anchor, body in zip(chunks[1::2], chunks[2::2]):
+        if anchor in bodies:
+            problems.append('理由檔的錨點重複：' + anchor)
+        text = '\n'.join(l for l in body.split('\n') if not l.startswith('## '))
+        bodies[anchor] = text.strip()
+    if not bodies:
+        problems.append('理由檔沒有任何錨點')
+    used = set()
+    sections = re.split(r'(?m)^## ', agents)[1:]
+    if not sections:
+        problems.append('AGENTS.md 沒有任何章節')
+    for section in sections:
+        title, _, body = section.partition('\n')
+        title = title.strip()
+        found = REASON_LINK.findall(body)
+        used.update(found)
+        if not found:
+            problems.append('章節沒有理由連結：' + title)
+        if not any(title.startswith(name) for name in REASON_ITEM_SECTIONS):
+            continue
+        items, current = [], None
+        for line in body.split('\n'):
+            if re.match(r'(- |\d+\. )', line):
+                current = [line]
+                items.append(current)
+            elif current is not None and line.startswith(' '):
+                current.append(line)
+            else:
+                current = None
+        if not items:
+            problems.append('章節沒有任何規則項目：' + title)
+        for item in items:
+            if not REASON_LINK.search('\n'.join(item)):
+                problems.append('規則沒有理由連結（%s）：%s' % (title, item[0][:30]))
+    for anchor in sorted(used):
+        if anchor not in bodies:
+            problems.append('理由連結指不到段落：#' + anchor)
+        elif len(bodies[anchor]) < REASON_MIN_BODY:
+            problems.append('理由段落是空的或過短：#' + anchor)
+    return problems
+
+
+def step_reason_links():
+    title = '規則理由連結'
+    agents = read_lf(ROOT / 'AGENTS.md')
+    path = ROOT / REASON_FILE
+    reasons = read_lf(path) if path.is_file() else ''
+    problems = reason_link_problems(agents, reasons)
+    first = REASON_LINK.search(agents.split('\n## 鐵律', 1)[-1])
+    rule = '](%s#%s)' % (REASON_FILE, first.group(1)) if first else None
+    anchor = '<a id="%s"></a>' % first.group(1) if first else None
+    cases = () if not first else (
+        ('理由檔不存在', agents, ''),
+        ('規則拿掉理由連結', agents.replace('[為什麼' + rule, '', 1), reasons),
+        ('連結指向不存在的段落', agents.replace(rule, '](%s#no-such-reason)' % REASON_FILE, 1),
+         reasons),
+        ('理由段落被清空', agents,
+         re.sub(re.escape(anchor) + r'.*?(?=\n<a id=|\Z)', anchor + '\n\n## 空\n', reasons,
+                count=1, flags=re.S)),
+        ('錨點重複', agents, reasons + '\n' + anchor + '\n\n## 重複\n' + '字' * REASON_MIN_BODY),
+        ('整節沒有理由連結', agents + '\n## 新的一節\n\n只有規則，沒有理由。\n', reasons),
+        ('新增規則沒有理由', agents.replace('\n## 副本規則\n', '\n7. **新規則。**\n\n## 副本規則\n', 1),
+         reasons),
+    )
+    if not first:
+        problems.append('鐵律一節找不到任何理由連結，負向測試無從建立')
+    for name, mutated_agents, mutated_reasons in cases:
+        if (mutated_agents, mutated_reasons) == (agents, reasons):
+            problems.append('負向測試沒有改到內容：' + name)
+        elif not reason_link_problems(mutated_agents, mutated_reasons):
+            problems.append('負向測試未擋住：' + name)
+    if problems:
+        record('FAIL', title, '；'.join(problems))
+        return False
+    record('OK', title,
+           'AGENTS.md 每節與鐵律／副本規則／hook 訊息每條都連到 %s 的非空段落；%d 個負向測試通過'
+           '（只查連結與段落存在，不判斷理由寫得對不對）' % (REASON_FILE, len(cases)))
+    return True
+
+
 SOURCE_EXCEPTIONS = (
     ('handoff skill', '.claude/skills/handoff/SKILL.md'),
     ('pre-push-handoff.sh', '.claude/hooks/pre-push-handoff.sh'),
@@ -4388,6 +4482,7 @@ def run_checks(dest, tmp):
     step_eol(dest)
     step_self()
     step_repo_handoff()
+    step_reason_links()
     if seen:
         step_source_exceptions(dest, tmp)
         step_handoff_parity(dest)

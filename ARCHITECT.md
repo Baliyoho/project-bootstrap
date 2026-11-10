@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-10。根目錄表的決策書需求數更正為 51（2026-11-06 補 F50 後漏改，`experiments/v2/contradictions.py` 首次對 ARCHITECT 跑時抓到）。
+> 最後更新：2026-11-10。根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+
+> 2026-11-10 稍早：根目錄表的決策書需求數更正為 51（2026-11-06 補 F50 後漏改，`experiments/v2/contradictions.py` 首次對 ARCHITECT 跑時抓到）。
 
 > 2026-11-09：`experiments/v2/vm_probe.py`、`vm_runner.swift`、`vm_guest_init.sh`、`vm_managed_worker.sh` 與 `test_vm_probe.py` 是 Mac VM 候選的合成探針及離線負向控制：固定映像 digest、無網路 guest。退場與跨 VM 鎖反例掛獨立暫存共享目錄及 `setsid` 後代；新固定工具路徑由 `/init` 在無共享 guest 中啟動 `vm_managed_worker.sh`，只經第二個雙向 virtio console 載入前提並發原始 broker 請求。host 核對請求後由 outbox／broker／materializer 寫入合成工作樹，正式 repo 不掛載進 VM。舊 `managed_fixture.py` 路徑仍用 host worker，按 actor＋epoch 保存各台 VM 退場證據，未確認時重啟保持阻擋；新無共享工具路徑另由 `guest_runs.py`（離線測試 `test_guest_runs.py`）在同一私有資料庫持久記錄每台 guest 的 parent 選定身分 digest 與 host 停機證據，未退場時新 guest、ACK、寫入與重啟都阻擋；每台 run 綁一個 broker channel，退場時輪換 capability。runner 的 host 標記另寫 `.host` 日誌，不與 guest console 混用。這些資料流仍未接真實工具或現行部署包，也不提供 host 故障後的自動復原保證。詳見 [P0 說明](experiments/v2/README.md)。
 
@@ -88,11 +90,12 @@
 | [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **權威版部署包**：訪談表＋各檔範本＋上 GitHub＋自檢清單＋維持操作卡 | 制度要改就改它（鐵律第 1 條） |
 | [README.md](README.md) | 人的入口：怎麼用、部署後長什麼樣、跨工具相容性、改這份骨架的開場 prompt | 用法或相容性改變 |
 | [AGENTS.md](AGENTS.md) | AI 的入口：這個 repo 是什麼、鐵律、副本位置、行末規則 | 多一條鐵律、副本位置改變 |
+| [AGENTS-reasons.md](AGENTS-reasons.md) | **AGENTS 每條規則的完整原文、理由與事故**；2026-11-10 從 AGENTS.md 逐字搬來，入口用「為什麼」連結指過來。不是每輪必讀，不部署、不同步 | 規則改了就在對應段落補帶日期的理由，不刪舊事故 |
 | [CLAUDE.md](CLAUDE.md)、[GEMINI.md](GEMINI.md) | Claude 用 `@AGENTS.md` import；Gemini 用文字指標 | 幾乎不動 |
 | [HANDOFF.md](HANDOFF.md) | **當下交接快照與跨機器工作標記**。範本 3.3 的*實例*，不是副本，不在副本拓撲裡、不要用 `sync_project.py` 同步。≤80 行、覆寫不累積，維護義務與事故見 [AGENTS.md](AGENTS.md)「本 repo 的交接快照」 | A5 寫標記；B6 核對整份現況、待辦、限制與驗證，清掉已完成待辦 |
 | [project-bootstrap-audit.md](project-bootstrap-audit.md) | 2026-11-02 使用者要求隨交棒保存的查核快照；供下一手評估改善，不是制度權威、不部署也不同步。原始探針只留在原聊天產物 | 查核結論需勘誤時；實作進度寫 HANDOFF，不在報告累積 |
 | [project-bootstrap-audit-progress.md](project-bootstrap-audit-progress.md) | **查核報告 16 條的處理進度**：已修的做了什麼與守門人、未修的建議作法與驗收門檻、跨條目的共同規則。查核報告是凍結快照，所以狀態有自己的家。不部署、不同步 | 任何一條的狀態改變，跟那個改動同一個 commit |
-| [project-bootstrap-reaudit-2026-11-03.md](project-bootstrap-reaudit-2026-11-03.md) | **第二輪複審快照**：R01–R09 的證據、改善與驗收門檻、原 F01–F16 的複審判定；2026-11-03 使用者要求下一輪先讀。不部署、不同步，原始探針留在審查聊天產物 | 查核結論需勘誤時；當下實作進度看 HANDOFF |
+| [project-bootstrap-reaudit-2026-11-03.md](project-bootstrap-reaudit-2026-11-03.md) | **第二輪複審快照**：R01–R09 的證據、改善與驗收門檻、原 F01–F16 的複審判定；2026-11-03 使用者要求下一輪先讀，2026-11-10 使用者同意改成動到同步工具、驗證器、hook 或 R01–R09 相關處才讀。不部署、不同步，原始探針留在審查聊天產物 | 查核結論需勘誤時；當下實作進度看 HANDOFF |
 | [project-bootstrap-efficiency-plan.md](project-bootstrap-efficiency-plan.md) | **效率改進設計提案**：接棒分流、驗證分層、必讀內容精簡、原始碼與部署產物分離；尚未實施，不部署、不同步，不取代現行程序 | 設計決策改變時；實作進度看 HANDOFF |
 | [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 現行需求唯一權威：D1–D8、51 條需求、驗收、待決與變更理由。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
 | [project-bootstrap-implementation-plan.md](project-bootstrap-implementation-plan.md) | 依決策書評估既有程式與開源工具；推薦技術棧、50 項映射、可行性門檻、遷移與驗收。不承載滾動達成狀態，不部署、不同步 | 選型或實現方案改變時 |
@@ -197,6 +200,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 改名寫進回報模板 | A5／B9 各有必填 `session：` 與無改名工具時的回報選項，附負向測試 | 改名漏做卻在 repo 內沒有任何跡象 |
 | 續聊狀態與計數 | skill 與指標 description 觸發已交棒後每則新訊息；程序保留原時間與計數、先恢復工作中、只讀不寫 Git、改檔重跑 A、成功交棒才累加；附 18 個負向測試 | 同一 session 續聊仍掛著已交棒，或把問答／失敗 push 算成交棒；只守程序文字，不宣稱外部工具已實跑 |
 | 本 repo 交接狀態 | 必要欄位與章節、≤80 行、骨架版本符合 VERSION、禁止這次已知過期待辦與只改兩欄的入口規則；附負向測試 | 標記清了卻保留已完成待辦，下一棒被迫從聊天重建現況；不保證任意待辦的語意正確，仍需 B6 人工核對 |
+| 規則理由連結 | AGENTS.md 每節至少一個、鐵律／副本規則／hook 訊息每條各一個指向 AGENTS-reasons.md 的連結，連結的段落存在且非空；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
 | 來源例外可見性（F46 部分） | 每輪印出 handoff skill、pre-push-handoff.sh、check_docs.py 三項已宣告減項；確認來源缺、產物有，並對漏宣告／來源增項／產物缺項跑負向變異 | 三項減項再次從驗證輸出中靜默消失；這只驗可見性，未完成來源／產物全部同組情境 |
 | 來源／產物交接快照同組情境（F46 部分） | 同一組 11 種合成快照在來源檢查與部署後 `check_docs.py` 各跑一次：有效、整份缺失、占用欄缺失／重複、章節缺失、超行數、機器／工具欄正反例均須一致；來源檢查遇整份缺失須明確報錯 | 來源少了整份 `HANDOFF.md` 時只拋例外，或產物與來源對相同缺陷給出矛盾結論；實際接手流程仍待驗 |
 | 來源／產物文件同組情境（F46 部分） | 同一份合成文件在來源文件檢查與部署後 `check_docs.py` 各跑一次：20 種正反例涵蓋根目錄及巢狀文件的缺檔、死連結、程式碼、角括號加 title、片段、日期及佔位符；沿用來源實際檢查函式 | 同樣的文件缺陷在來源與產物給出不同結論；其他文件項仍待驗 |

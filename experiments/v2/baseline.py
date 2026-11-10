@@ -30,14 +30,17 @@ def measure(root, run_verifier=False):
     with tempfile.TemporaryDirectory(prefix='bootstrap-v2-baseline-') as directory:
         target = Path(directory)
         legacy.extract(target)
+        # 2026-11-10 (decision Q4, stage 1): the re-audit snapshot became read-on-demand and
+        # the incident text moved to AGENTS-reasons.md; neither is a per-session read any more.
         texts = {name: (root / name).read_text(encoding='utf-8') for name in (
-            'AGENTS.md', 'HANDOFF.md', 'project-bootstrap-reaudit-2026-11-03.md')}
+            'AGENTS.md', 'HANDOFF.md')}
         texts['handoff-skill-from-authority'] = (
             target / '.claude/skills/handoff/SKILL.md').read_text(encoding='utf-8')
     rows = [{'input': name, 'unicode_characters': len(text),
              'sha256': hashlib.sha256(text.encode('utf-8')).hexdigest()} for name, text in texts.items()]
     total = sum(row['unicode_characters'] for row in rows)
-    report = {'scope': '常態四份入口；skill 取部署包權威範本，非任意全域副本；不含任務專屬資料',
+    report = {'scope': '常態三份入口（AGENTS、HANDOFF、skill）；skill 取部署包權威範本，非任意全域副本；'
+                  '不含任務專屬資料、條件式才讀的複審快照與 AGENTS 理由檔',
         'inputs': rows, 'unicode_characters': total, 'limit': 12000,
         'reading_result': '通過' if total <= 12000 else '不通過',
         'tokens': '未量測，不以字元冒充 token',
