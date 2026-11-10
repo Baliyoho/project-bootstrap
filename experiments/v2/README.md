@@ -250,6 +250,18 @@ python3 -X utf8 experiments/v2/mutants.py
 
 `test_publish.py` 5 個測試（ssh-keygen 拋棄式金鑰，非 macOS 時驗證器不可用即拒絕）；`mutants.json` 18 個刪改全部 killed。邊界：CI 金鑰是測試替身，握有那把金鑰就能發布；沒有真的 CI 身分、傳輸或原子安裝；現行 `verify_bootstrap.py` 的 ZIP 發布門檻仍是現行程序的阻擋點，本原型未取代它。
 
+## 真人核准來源的候選探針（2026-11-10）
+
+崩潰解除現在問的是「本機終端前的人」，同 UID 程式可以自己開偽終端答題；使用者說過日後要改走簽署金鑰（Q1 (b)）。`presence_probe.py` 只量作業系統有沒有可用的積木，**不是核准機制，也沒有接進任何放行路徑**：它編一個未簽署的 Swift helper，用 CryptoKit 建三把 Secure Enclave 金鑰，全程禁止互動（不會跳出任何驗證視窗）。
+
+```bash
+python3 -X utf8 -m experiments.v2.presence_probe
+```
+
+2026-11-10 在這台 macOS 27.2／Apple silicon 實跑（exit 0）：未設門檻的對照金鑰可簽、驗章成立；設了 `.userPresence`（Touch ID 或登入密碼，由系統視窗詢問）的金鑰可以建立，簽章被 LocalAuthentication 以 -1004「需要使用者互動」拒絕；設 `.biometryCurrentSet`（只認指紋）的金鑰在禁止互動時連建立都失敗（-1000），所以「只認指紋」這一種沒有量到。結果判讀寫死成 `候選可用但未驗收`，`test_presence_probe.py` 驗任何輸出都不會被判成通過、設了門檻卻簽得出來會報反例；`mutants.json` 7 個刪改全部 killed。
+
+沒有驗的比驗了的多：沒有任何人被問過，所以「本人按了才簽得出來」這一半完全沒有證據；系統視窗上顯示的說明文字由發起簽章的程式提供，人看到的不一定是實際被簽的內容；`.userPresence` 接受登入密碼，知道密碼又能操作畫面的程式不被排除；金鑰的保存、輪替、撤銷與遺失後怎麼辦都沒有設計；SSH、螢幕鎖定、其他 OS 沒有量。要不要拿它做簽核原型是決策書 Q16。
+
 ## 繞過規則：擋下或留痕（2026-11-10）
 
 `bypass.py` 是 F21 的原型，照決策書分層。阻擋：`guard_commit` 讀已部署專案的 Git index（不是工作樹），已安裝 manifest 裡屬於 core／adapter 的檔，staged 內容與發布版不同或從 index 刪掉就拒絕提交——共用制度只能回來源改再同步；專案自己的檔不受限。發布未驗證來源由 `publish.py` 擋。留痕：`record` 把步驟完成或略過（略過必須附理由）寫進 JSON lines，每行帶前一行的 SHA-256；`audit` 沿鏈檢查，必要步驟既沒完成也沒登記略過就是無聲略過，鏈斷之後的行一律不採信，繞過 `record` 直接寫入的無理由略過也不算數。

@@ -3840,6 +3840,48 @@
      "new": "    case \"$1\" in '' | *[!0123456789]*) return 1 ;; esac\n"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_presence_probe"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/presence_probe.py",
+     "old": "    if any(value is not None and value.startswith('signed') for value in gated):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/presence_probe.py",
+     "old": "    if observed['CONTROL'] != 'signed valid':\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/presence_probe.py",
+     "old": "    if observed['PRESENCE'] != INTERACTION_REQUIRED:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/presence_probe.py",
+     "old": "    if set(lines) - set(observed) or len(lines) != len([l for l in output.splitlines() if l]):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/presence_probe.py",
+     "old": "    if set(lines) - set(observed) or len(lines)",
+     "new": "    if set(lines) - set(observed) and len(lines)"
+    },
+    {
+     "file": "experiments/v2/presence_probe.py",
+     "old": "'biometry_only': observed['BIOMETRY'] == INTERACTION_REQUIRED",
+     "new": "'biometry_only': True"
+    },
+    {
+     "file": "experiments/v2/presence_probe.py",
+     "old": "value.startswith('signed')",
+     "new": "value == 'signed valid'"
+    }
+   ]
   }
  ]
 }
