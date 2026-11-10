@@ -714,7 +714,7 @@ GUEST_CRASH_PARENT = '''from pathlib import Path
 import os
 import sys
 from experiments.v2.contracts import Lab
-from experiments.v2.guest_runs import GuestRunLedger
+from experiments.v2.guest_runs import GuestRunLedger, read_boot_session
 from experiments.v2.vm_probe import VMRetirementGate
 db, runner, kernel, ramdisk, log = map(Path, sys.argv[1:])
 lab = Lab(db)
@@ -722,7 +722,8 @@ capability = lab.register('guest-crash-parent')
 ledger = GuestRunLedger(lab)
 gate = VMRetirementGate(runner, kernel, ramdisk, None, log, 'guest-crash', stop_after=12)
 run = ledger.open_run('guest-crash-parent', 0, gate.identity(),
-                     host_log=os.path.abspath(str(log) + '.host'))
+                     host_log=os.path.abspath(str(log) + '.host'),
+                     boot_session=read_boot_session())
 gate.start()
 ledger.mark_running(run, {'probe_id': gate.probe_id, 'shared_directory': False}, capability)
 gate.load_context(0, 2)
@@ -781,7 +782,8 @@ def probe_guest_parent_crash(work: Path, runner: Path, kernel: Path, ramdisk: Pa
         release_after_crash(db, run_id, log)
         print("guest_parent_sigkill: unshared guest stopped on control EOF; reopened "
               "ledger keeps the run unretired and blocks restart; crash release accepted "
-              "the real runner log only, guest console refused")
+              "the real runner log only, guest console refused; same boot session "
+              "refused as reboot evidence")
     finally:
         if parent.poll() is None:
             parent.kill()
@@ -823,6 +825,22 @@ def release_after_crash(db: Path, run_id: str, log: Path) -> None:
         pass
     else:
         raise RuntimeError("guest console log was accepted as host stop evidence")
+    # Q15 (a): the parent recorded this host's boot session; without a reboot
+    # the same id is read back, so the reboot path must refuse.
+    from experiments.v2.guest_runs import BOOT_SESSION, read_boot_session
+    lab = Lab(db)
+    try:
+        recorded = GuestRunLedger(lab).boot_session(run_id)
+    finally:
+        lab.close()
+    if not isinstance(recorded, str) or not BOOT_SESSION.fullmatch(recorded):
+        raise RuntimeError(f"parent did not record a boot session: {recorded!r}")
+    try:
+        crash_release.reboot_evidence(recorded, "guest-crash", read_boot_session())
+    except Denied:
+        pass
+    else:
+        raise RuntimeError("same boot session was accepted as a host reboot")
     evidence, _ = crash_release.release(db, run_id, _ScriptedTerminal)
     if evidence["host_log"] != os.path.abspath(str(log) + ".host"):
         raise RuntimeError(f"crash release read an unexpected log: {evidence}")

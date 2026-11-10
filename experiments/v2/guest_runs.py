@@ -16,12 +16,21 @@ is release_crashed: host-side stop evidence read from the runner log path the
 parent recorded before boot, plus a confirmation typed at the host's local
 terminal (gathered by crash_release.py, never by this object). Without both
 the run stays blocked, which is decision Q1 (a) falling back to (c).
+
+A whole-host crash kills the runner too, so its stop line is never written.
+For that case (decision Q15 (a)) the parent also records the host's boot
+session id (macOS kern.bootsessionuuid) before boot. If the id read at release
+time differs, the host has rebooted since, so that VM process is gone; this
+still needs the same local confirmation. The id is not a clock or a PID and a
+same-UID process cannot set it, but the recorded copy lives in this database,
+which a same-UID process can edit like everything else here.
 """
 import hashlib
 import json
 import os
 import re
 import secrets
+import subprocess
 
 from experiments.v2.contracts import Denied
 
@@ -29,6 +38,19 @@ STOP_MARKER = 'HOST_STOPPED state=0'
 IDENTITY_DIGESTS = ('runner', 'guest_init', 'tool', 'kernel', 'ramdisk')
 _HEX64 = re.compile(r'[0-9a-f]{64}')
 _PROBE_ID = re.compile(r'[A-Za-z0-9_-]{1,64}')
+BOOT_SESSION = re.compile(r'[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+SYSCTL = '/usr/sbin/sysctl'
+
+
+def read_boot_session(run=subprocess.run):
+    """This host's boot session id (macOS kern.bootsessionuuid), or None if unreadable."""
+    try:
+        result = run([SYSCTL, '-n', 'kern.bootsessionuuid'], capture_output=True,
+                     text=True, timeout=5, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    value = result.stdout.strip() if isinstance(result.stdout, str) else ''
+    return value if result.returncode == 0 and BOOT_SESSION.fullmatch(value) else None
 
 
 def guest_identity(probe_id, digests):
@@ -51,10 +73,13 @@ class GuestRunLedger:
         self.lab.db.execute('''CREATE TABLE IF NOT EXISTS guest_runs (
             run_id TEXT PRIMARY KEY, actor TEXT NOT NULL, epoch INTEGER NOT NULL,
             state TEXT NOT NULL CHECK(state IN ('starting', 'running', 'retired')),
-            identity TEXT NOT NULL, channel TEXT, evidence TEXT, host_log TEXT)''')
+            identity TEXT NOT NULL, channel TEXT, evidence TEXT, host_log TEXT,
+            boot_session TEXT)''')
         columns = {row['name'] for row in self.lab.db.execute('PRAGMA table_info(guest_runs)')}
         if 'host_log' not in columns:
             self.lab.db.execute('ALTER TABLE guest_runs ADD COLUMN host_log TEXT')
+        if 'boot_session' not in columns:
+            self.lab.db.execute('ALTER TABLE guest_runs ADD COLUMN boot_session TEXT')
 
     def _row(self, run_id):
         if not isinstance(run_id, str) or not re.fullmatch(r'[0-9a-f]{32}', run_id):
@@ -70,18 +95,22 @@ class GuestRunLedger:
             "SELECT 1 FROM guest_runs WHERE actor=? AND state!='retired' AND run_id IS NOT ? "
             'LIMIT 1', (actor, except_run)).fetchone() is not None
 
-    def open_run(self, actor, epoch, identity, host_log=None):
+    def open_run(self, actor, epoch, identity, host_log=None, boot_session=None):
         """Record the run before boot so a crash during start is visible later.
 
         Only the active epoch (no change pending) or the pending epoch may get
         a guest, and only after every earlier guest of this actor is retired.
         host_log is where the runner's stderr will go; without it a crashed
-        run can never be released.
+        run can never be released. boot_session is read_boot_session() taken
+        now; without it a run cut off by a host crash can never be released.
         """
         if host_log is not None and (not isinstance(host_log, str)
                                      or not os.path.isabs(host_log)
                                      or os.path.normpath(host_log) != host_log):
             raise Denied('invalid-host-log')
+        if boot_session is not None and (not isinstance(boot_session, str)
+                                         or not BOOT_SESSION.fullmatch(boot_session)):
+            raise Denied('invalid-boot-session')
         canonical = guest_identity(identity.get('probe_id') if isinstance(identity, dict)
                                    else None,
                                    {k: identity.get(k) for k in IDENTITY_DIGESTS}
@@ -103,9 +132,10 @@ class GuestRunLedger:
                                    (actor, epoch)).fetchone():
                 raise Denied('vm-run-already-recorded')
             self.lab.db.execute(
-                "INSERT INTO guest_runs (run_id, actor, epoch, state, identity, host_log) "
-                "VALUES (?, ?, ?, 'starting', ?, ?)",
-                (run_id, actor, epoch, json.dumps(canonical, sort_keys=True), host_log))
+                "INSERT INTO guest_runs (run_id, actor, epoch, state, identity, host_log, "
+                "boot_session) VALUES (?, ?, ?, 'starting', ?, ?, ?)",
+                (run_id, actor, epoch, json.dumps(canonical, sort_keys=True), host_log,
+                 boot_session))
         return run_id
 
     @staticmethod
@@ -153,23 +183,20 @@ class GuestRunLedger:
     def release_crashed(self, run_id, evidence, confirmation):
         """Retire a run whose parent died, from host evidence plus a local confirmation.
 
-        evidence must name the host log recorded before boot; confirmation must
-        come from crash_release.local_confirmation. This object cannot tell a
-        real terminal from a forged dict, so only the release tool may call it.
+        evidence is either the host log recorded before boot, or a host reboot
+        (basis 'host-reboot': the boot session recorded before boot and a
+        different one now). confirmation must come from
+        crash_release.local_confirmation. This object cannot tell a real
+        terminal or a real sysctl read from a forged dict, so only the release
+        tool may call it.
         """
         with self.lab.transaction():
             row = self._row(run_id)
             identity = json.loads(row['identity'])
-            if row['host_log'] is None:
-                raise Denied('crash-release-unavailable')
-            if (not isinstance(evidence, dict)
-                    or set(evidence) != {'probe_id', 'stop_marker', 'host_log', 'host_log_sha256'}
-                    or evidence['probe_id'] != identity['probe_id']
-                    or evidence['stop_marker'] != STOP_MARKER
-                    or evidence['host_log'] != row['host_log']
-                    or not isinstance(evidence['host_log_sha256'], str)
-                    or not _HEX64.fullmatch(evidence['host_log_sha256'])):
-                raise Denied('crash-release-unconfirmed')
+            if isinstance(evidence, dict) and evidence.get('basis') == 'host-reboot':
+                self._check_reboot(row, identity, evidence)
+            else:
+                self._check_host_log(row, identity, evidence)
             if (not isinstance(confirmation, dict)
                     or set(confirmation) != {'method', 'run_id', 'tty', 'confirmed_at'}
                     or confirmation['method'] != 'local-terminal'
@@ -187,9 +214,38 @@ class GuestRunLedger:
                 raise Denied('vm-run-not-current')
             self.lab.resume(row['actor'])
 
+    @staticmethod
+    def _check_host_log(row, identity, evidence):
+        if row['host_log'] is None:
+            raise Denied('crash-release-unavailable')
+        if (not isinstance(evidence, dict)
+                or set(evidence) != {'probe_id', 'stop_marker', 'host_log', 'host_log_sha256'}
+                or evidence['probe_id'] != identity['probe_id']
+                or evidence['stop_marker'] != STOP_MARKER
+                or evidence['host_log'] != row['host_log']
+                or not isinstance(evidence['host_log_sha256'], str)
+                or not _HEX64.fullmatch(evidence['host_log_sha256'])):
+            raise Denied('crash-release-unconfirmed')
+
+    @staticmethod
+    def _check_reboot(row, identity, evidence):
+        if row['boot_session'] is None:
+            raise Denied('crash-release-unavailable')
+        if (set(evidence) != {'probe_id', 'basis', 'boot_session_recorded', 'boot_session_now'}
+                or evidence['probe_id'] != identity['probe_id']
+                or evidence['boot_session_recorded'] != row['boot_session']
+                or not isinstance(evidence['boot_session_now'], str)
+                or not BOOT_SESSION.fullmatch(evidence['boot_session_now'])
+                or evidence['boot_session_now'] == row['boot_session']):
+            raise Denied('crash-release-unconfirmed')
+
     def host_log(self, run_id):
         """The runner log path the parent recorded before boot, or None."""
         return self._row(run_id)['host_log']
+
+    def boot_session(self, run_id):
+        """The host boot session id the parent recorded before boot, or None."""
+        return self._row(run_id)['boot_session']
 
     def unretired(self, actor):
         return [run for run in self.runs(actor) if run['state'] != 'retired']

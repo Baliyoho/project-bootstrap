@@ -10,8 +10,9 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-10**（**handoff skill 從單檔拆成一個目錄、六個檔**，決策書 F22／Q9：單檔 22,040 字元，正常接棒只需要其中一小部分。3.8 現在產出入口 `SKILL.md`、`mode-a.md`（正常接棒）、`mode-a-stop.md`（完整判讀表與異常）、`mode-b.md`（交棒與中途同步）、`mode-0.md`（建制）、`reasons.md`（理由、事故與命名細則）；入口與 `mode-a.md` 是新寫的摘要，合計 5,380 字元，其餘四個檔逐字搬自單檔。3.10 `git-freshness.sh` 在 fetch 成功、不是 detached、upstream 是 `origin/<當前分支>`、沒有領先落後、工作樹乾淨、origin 的「工作中」是 `無（已交棒）` 全部成立時多印一行「全綠」，少一項就不印並指向 `mode-a-stop.md`。守門人：`verify_bootstrap.py` 新增「skill 拆分」（檔案齊全、六檔同版本、常態必讀 ≤6,000、入口與 mode-a 必備句、拆分前每一行逐字留存或列入已改寫清單）與「全綠行」（真 Git fixture 逐項打破條件）。`sync_project.py` 會替已有入口的專案補上五個新檔，並列出 skill 目錄裡不認得的檔。**沒有驗證的**：模型會不會真的從入口走到模式檔。）
-> 前一版 **2026-11-03**（複審 R04／R07–R09：先遮罩再摘要；先 stage 並拒絕文件／檢查器部分 stage；空工具欄與角括號 title 組合修正。R03 同步資格檢查在維護工具，依 README 逐專案 A1–A5。）
+> 版本：**2026-11-10.2**（**handoff skill 的 `reasons.md` 末尾加一張「規則 → 理由在哪」對照表**，決策書 Q17 (b)：入口與 `mode-a.md` 不逐條加連結（常態必讀不增加），改由對照表列出入口與四個模式檔每個段落的理由在哪；拆分前就沒寫理由的段落照實標「沒有寫下理由」。守門人：`verify_bootstrap.py` 的「skill 規則對照表」（每個段落標題都在左欄、右欄指到的段落存在，附負向測試；不判斷理由內容）。六個檔一起跳到 `v2026-11-10.2`。）
+> 前一版 **2026-11-10**（**handoff skill 從單檔拆成一個目錄、六個檔**，決策書 F22／Q9：單檔 22,040 字元，正常接棒只需要其中一小部分。3.8 現在產出入口 `SKILL.md`、`mode-a.md`（正常接棒）、`mode-a-stop.md`（完整判讀表與異常）、`mode-b.md`（交棒與中途同步）、`mode-0.md`（建制）、`reasons.md`（理由、事故與命名細則）；入口與 `mode-a.md` 是新寫的摘要，合計 5,380 字元，其餘四個檔逐字搬自單檔。3.10 `git-freshness.sh` 在 fetch 成功、不是 detached、upstream 是 `origin/<當前分支>`、沒有領先落後、工作樹乾淨、origin 的「工作中」是 `無（已交棒）` 全部成立時多印一行「全綠」，少一項就不印並指向 `mode-a-stop.md`。守門人：`verify_bootstrap.py` 新增「skill 拆分」（檔案齊全、六檔同版本、常態必讀 ≤6,000、入口與 mode-a 必備句、拆分前每一行逐字留存或列入已改寫清單）與「全綠行」（真 Git fixture 逐項打破條件）。`sync_project.py` 會替已有入口的專案補上五個新檔，並列出 skill 目錄裡不認得的檔。**沒有驗證的**：模型會不會真的從入口走到模式檔。）
+> 再前一版 **2026-11-03**（複審 R04／R07–R09：先遮罩再摘要；先 stage 並拒絕文件／檢查器部分 stage；空工具欄與角括號 title 組合修正。R03 同步資格檢查在維護工具，依 README 逐專案 A1–A5。）
 > 2026-11-06（**刻意不跳版**：`SKILL.md` 一個字沒動）：**3.10 `git-freshness.sh` 與 3.18 `ag-wrap.sh` 的訊息裡，`$變數` 後面緊接中文或全形標點的地方一律改成 `${變數}`**。macOS 內建的 `/bin/bash` 是 3.2，在 UTF-8 語系（`LANG=zh_TW.UTF-8` 之類，或 Python 3.7+ 對 C 語系的 locale coercion 把子程序設成 `C.UTF-8`）下，它會把緊接的多位元組字元的第一個位元組吃進變數名：`（branch=$branch）` 印成 `（branch=��`，「`$tool`」整個消失，`ag-wrap.sh` 找不到腳本時連 JSON 都吐不出來。判斷邏輯沒有壞（參數展開、`case`、`grep` 對中文都正常），壞的是每一句給人與模型看的結論。2026-11-06 第一次在 Mac 上跑 `verify_bootstrap.py` 時三項 FAIL 才發現——之前所有驗證都在 Windows 的 Git Bash（bash 5）上跑，那裡不會重現。兩檔 `source:` 標記更新為 `v2026-11-06`；`verify_bootstrap.py` 加「bash 3.2 多位元組變數」靜態檢查與負向測試，因為只有在 Mac 上實跑才看得到的錯，Windows 上的驗證永遠是綠的。
 >
 > 前一版 **2026-11-02.8**（2026-11-02／F16：自訂 ignore 規則進範本，本機驗收與 executable index mode 先於首 commit／發布；新增 local bare remote 部署生命週期測試。前一步 F12 完成協調邊界文件，原子 claim 依使用者決定留待另案；F13 同步範圍與 preflight 完成。）
@@ -894,7 +895,7 @@ name: handoff
 description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（入口）
 
@@ -963,7 +964,7 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
@@ -1030,7 +1031,7 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場沒有「全綠」行時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
@@ -1210,7 +1211,7 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -1374,7 +1375,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -1447,7 +1448,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
@@ -1545,6 +1546,53 @@ python -X utf8 tools/check_docs.py
 - ❌ 把改名綁在「開工標記 push 成功」之後 → 這輪只讀、或專案刻意沒有 `HANDOFF.md`，標記寫不了，側欄就永遠停在「接棒」。2026-10-30 在骨架自己的 repo 上發現：三個 session 全是 `↗ 已交棒`，一個 `㊣ 工作中` 都沒有過。
 - ❌ git 全做對、就是沒改 session 名稱 → 2026-11-01 量到六個收尾 session 裡有兩個這樣（全 Sonnet，git 結果全部正確，用的還是派工時給的標題）。**原因沒有量過**，所以別替它補一個；要知道的是**沒有任何檢查看得到這件事**（改名在 repo 外面），所以它只能靠 A5／B9 回報那一行 `session：` 露出來。
 - ❌ 已交棒後收到新訊息，因為使用者沒再說「接棒」就保留 `↗` → 使用者仍在續聊，側欄卻表示已結束；收到訊息就恢復 `㊣`、保留交棒次數，改檔前再跑 A 模式。單純答問不新增一次交棒（2026-11-02）。
+
+## 規則 → 理由在哪（對照表）
+
+> 2026-11-10（決策書 Q17 (b)）：入口與 `mode-a.md` 不逐條加理由連結，免得吃掉常態必讀的額度；改在這裡列出每個段落的理由在哪。「本段內文」＝理由就寫在那一段裡；「沒有寫下理由」＝拆分前的單檔就沒寫，照實標出來，不補編；「分節標題」＝規則在它底下各步驟。`verify_bootstrap.py` 守：入口與四個模式檔的每個段落標題都列在左欄，右欄指到的段落真的存在。**它不判斷理由寫得對不對。**
+
+| 規則（檔案 § 段落） | 理由在哪 |
+|---|---|
+| SKILL.md § 適用判斷（先做這一步） | reasons.md § 適用判斷：為什麼沒人提就不建<br>reasons.md § 反例（真的發生過，別重演） |
+| SKILL.md § 選模式，然後讀對應的檔 | reasons.md § 前言原文<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
+| SKILL.md § 全程禁令 | 沒有寫下理由 |
+| SKILL.md § 必須停下來問使用者（不得自行決定） | reasons.md § 停下來問人時為什麼要改名<br>mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>mode-0.md § 0-1 先確認你在對的資料夾、對的情境 |
+| SKILL.md § session 命名（每則訊息都適用） | reasons.md § session 命名（每輪必做；工具做不到就在回報裡寫「不適用」）<br>reasons.md § 已交棒後續聊（每則新訊息的入口）<br>reasons.md § 其他命名規則<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a.md § A1＋A2.5 同步與占用：先拿到「全綠」 | mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a.md § A2 站對分支 | mode-a-stop.md § A2 站對分支 |
+| mode-a.md § A3 最小讀取 | mode-a-stop.md § A3 最小讀取 |
+| mode-a.md § A4 驗證（只記錄，不修） | mode-a-stop.md § A4 一鍵驗證<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a.md § A5 回報後才動手 | mode-a-stop.md § A5 回報後才動手（3–5 行）<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） | 本段內文 |
+| mode-a-stop.md § A. 接棒 | 分節標題 |
+| mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a-stop.md § A2 站對分支 | 本段內文 |
+| mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a-stop.md § A3 最小讀取 | 本段內文 |
+| mode-a-stop.md § A4 一鍵驗證 | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a-stop.md § A5 回報後才動手（3–5 行） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a-stop.md § A6 回推補交接（只有在 A1 判定「前一輪漏交棒」時才走） | 本段內文 |
+| mode-b.md § 同一 session 的交棒計數 | 本段內文 |
+| mode-b.md § B. 交棒 | 分節標題 |
+| mode-b.md § B1 收斂到安全點 | 沒有寫下理由 |
+| mode-b.md § B2 持久知識落地（今天學到的寫進 repo，不要留在對話裡） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-b.md § B3 服務驗證 | reasons.md § 反例（真的發生過，別重演） |
+| mode-b.md § B4 文檔驗證（動過任何 `.md` 就必跑） | 本段內文 |
+| mode-b.md § B5 條件式例行檢查 | 本段內文 |
+| mode-b.md § B6 更新 `HANDOFF.md`（覆寫，≤80 行，不累積歷史） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-b.md § B7 安全提交 | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-b.md § B8 發布 | 本段內文 |
+| mode-b.md § B9 收尾與回報（≤5 行） | 本段內文<br>reasons.md § session 命名（每輪必做；工具做不到就在回報裡寫「不適用」） |
+| mode-b.md § C. 中途同步（還沒要交棒） | reasons.md § 反例（真的發生過，別重演） |
+| mode-0.md § 0. 建制（這個資料夾還沒有這套制度） | reasons.md § 模式 0 為什麼留在每一份副本裡 |
+| mode-0.md § 0-1 先確認你在對的資料夾、對的情境 | 本段內文<br>reasons.md § 適用判斷：為什麼沒人提就不建<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-0.md § 0-2 取得部署包（沒有它就停） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-0.md § 0-3 訪談：一次問完（部署包第 1 節） | 本段內文 |
+| mode-0.md § 0-4 逐檔建立（部署包第 3 節） | 本段內文 |
+| mode-0.md § 0-5 本機驗收後才首次發布（部署包第 4 節） | 本段內文 |
+| mode-0.md § 0-6 自檢（部署包第 5 節） | 本段內文 |
+| mode-0.md § 0-7 寫第一份 `HANDOFF.md` 與 `ARCHITECT.md` | 本段內文 |
+| mode-0.md § 0-8 刪掉部署包，回報 | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
 ````
 
 **同步規則（重要）**：這個 skill 目錄（六個檔）會同時存在於 ①本部署包 ②每個專案的 `.claude/skills/handoff/` ③（選用）全域 `~/.claude/skills/handoff/`。

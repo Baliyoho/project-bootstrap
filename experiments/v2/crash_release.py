@@ -2,9 +2,15 @@
 
 Two things must both hold, or the run stays blocked (Q1 falls back to (c)):
 
-1. Host-side stop evidence: the runner's own stderr log, at the path the
-   parent recorded before boot, ends with the stop marker the runner prints
-   right before exit(0). Guest console output is never read.
+1. Host-side stop evidence, one of:
+   - the runner's own stderr log, at the path the parent recorded before
+     boot, ends with the stop marker the runner prints right before exit(0).
+     Guest console output is never read.
+   - the host has rebooted since the run was recorded (decision Q15 (a)):
+     the boot session id the parent recorded before boot differs from the
+     one read now. A whole-host crash leaves no stop line, so this is the
+     only way out for it. The log is checked first; the reboot is only
+     consulted when the log is not proof.
 2. A person at the host's local terminal types a fresh challenge. The prompt
    goes to /dev/tty, not stdin, so a piped agent cannot answer it; SSH
    sessions are refused.
@@ -12,7 +18,8 @@ Two things must both hold, or the run stays blocked (Q1 falls back to (c)):
 Boundaries: the log is writable by any process with the same UID, and a
 same-UID program can allocate its own pseudo-terminal. This raises the bar
 against an agent answering for the user; it is not proof of a human. A
-signing-key approval (Q1 (b)) is the planned replacement.
+signing-key approval was considered (Q16) and set aside: the terminal
+challenge stays unless a project asks for more.
 
 Usage, from the repo root:
     python3 -X utf8 -m experiments.v2.crash_release DB RUN_ID
@@ -30,7 +37,8 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from experiments.v2.contracts import Denied, Lab
-from experiments.v2.guest_runs import STOP_MARKER, GuestRunLedger
+from experiments.v2.guest_runs import (BOOT_SESSION, STOP_MARKER, GuestRunLedger,
+                                       read_boot_session)
 
 # Exactly the lines the runner prints on a clean unshared run, in order.
 # Anything else (start or stop errors, a shared directory) proves no stop.
@@ -64,6 +72,15 @@ def host_evidence(path, probe_id):
         raise Denied('crash-release-unconfirmed')
     return {'probe_id': probe_id, 'stop_marker': STOP_MARKER, 'host_log': path,
             'host_log_sha256': hashlib.sha256(data).hexdigest()}
+
+
+def reboot_evidence(recorded, probe_id, now):
+    """A boot session id that differs from the recorded one: the host rebooted."""
+    if (not isinstance(now, str) or not BOOT_SESSION.fullmatch(now)
+            or now == recorded):
+        raise Denied('crash-release-unconfirmed')
+    return {'probe_id': probe_id, 'basis': 'host-reboot',
+            'boot_session_recorded': recorded, 'boot_session_now': now}
 
 
 class Terminal:
@@ -113,12 +130,18 @@ def local_confirmation(terminal, run, evidence, actor, challenge=None, now=None)
     """Show what will be released and require the person to type a fresh code."""
     challenge = challenge or secrets.token_hex(3)
     expected = f"release {run['run_id'][:8]} {challenge}"
+    if evidence.get('basis') == 'host-reboot':
+        proof = ('  basis    the host rebooted after this run was recorded\n'
+                 f"  boot was {evidence['boot_session_recorded']}\n"
+                 f"  boot now {evidence['boot_session_now']}\n")
+    else:
+        proof = (f"  host log {evidence['host_log']}\n"
+                 f"  sha256   {evidence['host_log_sha256']}\n")
     terminal.discard_pending()
     terminal.write(
         'Crash release: this marks a guest run as stopped and lets the actor start again.\n'
         f"  run      {run['run_id']}\n  actor    {actor}\n  epoch    {run['epoch']}\n"
-        f"  probe    {evidence['probe_id']}\n  host log {evidence['host_log']}\n"
-        f"  sha256   {evidence['host_log_sha256']}\n"
+        f"  probe    {evidence['probe_id']}\n" + proof +
         'Check that no VM for this run is still running, then type exactly:\n'
         f'  {expected}\n> ')
     if terminal.read_line() != expected:
@@ -129,7 +152,7 @@ def local_confirmation(terminal, run, evidence, actor, challenge=None, now=None)
             'confirmed_at': now.isoformat(timespec='seconds')}
 
 
-def release(db, run_id, terminal_opener=open_local_terminal):
+def release(db, run_id, terminal_opener=open_local_terminal, boot_reader=read_boot_session):
     """Evidence first: with no host proof the person is never even asked."""
     if not os.path.isfile(db):
         # Lab() would quietly create an empty ledger at a mistyped or lost path.
@@ -143,9 +166,19 @@ def release(db, run_id, terminal_opener=open_local_terminal):
         if run is None:
             raise Denied('vm-run-not-current')
         path = ledger.host_log(run_id)
-        if path is None:
+        recorded = ledger.boot_session(run_id)
+        if path is None and recorded is None:
             raise Denied('crash-release-unavailable')
-        evidence = host_evidence(path, run['identity']['probe_id'])
+        probe_id = run['identity']['probe_id']
+        evidence = None
+        if path is not None:
+            try:
+                evidence = host_evidence(path, probe_id)
+            except Denied:
+                if recorded is None:
+                    raise
+        if evidence is None:
+            evidence = reboot_evidence(recorded, probe_id, boot_reader())
         terminal = terminal_opener()
         try:
             confirmation = local_confirmation(terminal, run, evidence, row['actor'])
@@ -167,7 +200,8 @@ def main(argv):
     except Denied as error:
         print(f'refused: {error}', file=sys.stderr)
         return 1
-    print(f"released {argv[1]} from {evidence['host_log']} via {confirmation['tty']}")
+    source = evidence.get('host_log') or 'a host reboot'
+    print(f"released {argv[1]} from {source} via {confirmation['tty']}")
     return 0
 
 

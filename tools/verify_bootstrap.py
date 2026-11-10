@@ -4749,6 +4749,103 @@ def step_skill_split(dest):
               len(baseline['lines']) - len(baseline['rewritten']), len(baseline['rewritten']), len(cases)))
 
 
+RULE_MAP_HEAD = '## 規則 → 理由在哪（對照表）'
+RULE_MAP_SOURCES = ('SKILL.md', 'mode-a.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md')
+RULE_MAP_WORDS = ('本段內文', '沒有寫下理由', '分節標題')
+
+
+def skill_headings(text):
+    """## 與 ### 段落標題，略過圍欄裡的（mode-b.md 的 HANDOFF 範本也有 ## 標題）。"""
+    heads, fence = [], None
+    for line in text.split('\n'):
+        run = re.match(r'(`{3,})', line)
+        if run:
+            if fence is None:
+                fence = run[1]
+            elif line.strip() == fence:
+                fence = None
+            continue
+        if fence is None and re.match(r'#{2,3} ', line):
+            heads.append(line.split(' ', 1)[1].strip())
+    return heads
+
+
+def rule_map_problems(files):
+    """2026-11-10（決策書 Q17 (b)）：reasons.md 的對照表要涵蓋入口與四個模式檔的每個段落。
+
+    只查涵蓋與指向：左欄每個段落都在、沒有多出不存在的段落；右欄指到的段落真的存在，
+    或是三個固定字樣之一。理由寫得對不對、「本段內文」是不是真的有理由，這裡看不出來。
+    """
+    reasons = files.get('reasons.md', '')
+    if RULE_MAP_HEAD not in reasons:
+        return ['reasons.md 沒有「規則 → 理由在哪」對照表']
+    section = reasons.split(RULE_MAP_HEAD, 1)[1].split('\n## ', 1)[0]
+    heads = {name: skill_headings(files.get(name, '')) for name in RULE_MAP_SOURCES + ('reasons.md',)}
+    rows, bad = {}, []
+    for line in section.split('\n'):
+        if not line.startswith('| ') or line.startswith('| 規則（'):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip('|').split(' | ')]
+        if len(cells) != 2:
+            bad.append('對照表格式不對：' + line[:40])
+            continue
+        if cells[0] in rows:
+            bad.append('對照表重複列：' + cells[0])
+        rows[cells[0]] = [item.strip() for item in cells[1].split('<br>') if item.strip()]
+    for name in RULE_MAP_SOURCES:
+        for head in heads[name]:
+            if '%s § %s' % (name, head) not in rows:
+                bad.append('對照表缺：%s § %s' % (name, head))
+    for left, targets in rows.items():
+        name, _, head = left.partition(' § ')
+        if name not in RULE_MAP_SOURCES or head not in heads[name]:
+            bad.append('對照表左欄指到不存在的段落：' + left)
+        if not targets:
+            bad.append('對照表沒寫理由在哪：' + left)
+        for target in targets:
+            if target in RULE_MAP_WORDS:
+                continue
+            name, sep, head = target.partition(' § ')
+            if (not sep or name not in heads or head not in heads[name]
+                    or '## ' + head == RULE_MAP_HEAD):
+                bad.append('對照表右欄指到不存在的段落：' + target)
+    return bad
+
+
+def step_skill_rule_map(dest):
+    files = {name: read_lf(dest / (SKILL_DIR + name)) for name in SKILL_FILES
+             if (dest / (SKILL_DIR + name)).is_file()}
+    bad = rule_map_problems(files)
+    rows = sum(len(skill_headings(files.get(name, ''))) for name in RULE_MAP_SOURCES)
+
+    def mutated(name, old, new):
+        copy = dict(files)
+        if old not in copy[name]:
+            return None
+        copy[name] = copy[name].replace(old, new, 1)
+        return copy
+    cases = []
+    if not bad:
+        a2_row = '| mode-a.md § A2 站對分支 | mode-a-stop.md § A2 站對分支 |\n'
+        cases = [
+            ('少一列', mutated('reasons.md', a2_row, '')),
+            ('模式檔段落改名', mutated('mode-b.md', '### B8 發布', '### B8 發佈')),
+            ('入口多一段沒列', mutated('SKILL.md', '## 全程禁令', '## 新規則\n\n## 全程禁令')),
+            ('右欄指錯段落', mutated('reasons.md', a2_row, a2_row.replace('§ A2 站對分支 |\n', '§ A2 換分支 |\n'))),
+            ('右欄空白', mutated('reasons.md', a2_row, '| mode-a.md § A2 站對分支 |  |\n')),
+            ('重複列', mutated('reasons.md', a2_row, a2_row * 2)),
+            ('右欄指到對照表自己', mutated('reasons.md', a2_row, a2_row.replace(
+                'mode-a-stop.md § A2 站對分支 |', 'reasons.md § 規則 → 理由在哪（對照表） |'))),
+            ('沒有對照表', mutated('reasons.md', RULE_MAP_HEAD, '## 別的標題')),
+        ]
+        for name, copy in cases:
+            if copy is None or not rule_map_problems(copy):
+                bad.append('負向測試未擋：' + name)
+    record('FAIL' if bad else 'OK', 'skill 規則對照表', '；'.join(bad) if bad else
+           'reasons.md 對照表涵蓋入口與四個模式檔共 %d 個段落，右欄都指到存在的段落；%d 個負向測試'
+           '（只查涵蓋與指向，不判斷理由寫得對不對）' % (rows, len(cases)))
+
+
 def step_sync_skill_parts(dest, tmp):
     """舊專案只有單檔 SKILL.md：同步要補上五個新檔，而且入口最後才寫（2026-11-10）。
 
@@ -4947,6 +5044,7 @@ def run_checks(dest, tmp):
     step_core_priority(dest, tmp)
     step_coordination(dest)
     step_skill_split(dest)
+    step_skill_rule_map(dest)
     step_sync_skill_parts(dest, tmp)
     step_all_green(dest, tmp)
     step_sync_scope(dest, tmp)

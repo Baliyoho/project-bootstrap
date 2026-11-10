@@ -7,9 +7,11 @@ and crash-release gates do with it. No guard was added for these tests.
 
 What they show (2026-11-10):
 - A torn or zero-filled runner log is never accepted as stop evidence.
-- A run whose host died mid-run stays blocked and has NO release path: the
-  runner died with the host, so the stop line was never printed. The VM is
-  physically gone after a reboot, but nothing recorded here can prove it.
+- A run whose host died mid-run stays blocked: the runner died with the
+  host, so the stop line was never printed. Without a recorded boot session
+  it has NO release path. With one (decision Q15 (a), added 2026-11-10) a
+  different boot session at release time is the host evidence, still behind
+  the local terminal confirmation; the same boot keeps it blocked.
 - A ledger file cut short never reads as "nothing running".
 - A ledger file that is gone (or empty) reads exactly like a first start.
   That is a known gap, kept below as an observed counterexample, not a
@@ -32,7 +34,7 @@ import warnings
 from experiments.v2 import crash_release
 from experiments.v2.contracts import Denied, Lab
 from experiments.v2.guest_runs import IDENTITY_DIGESTS, GuestRunLedger, guest_identity
-from experiments.v2.test_crash_release import CLEAN, FakeTerminal
+from experiments.v2.test_crash_release import BOOT_A, BOOT_B, CLEAN, FakeTerminal
 
 
 def identity(probe_id):
@@ -131,6 +133,31 @@ class HostCrashStateTests(unittest.TestCase):
                             self.run, self.opener(FakeTerminal()))
                 self.assertEqual(self.opened, [])
                 self.assertEqual(self.run_state(), 'running')
+
+    def test_host_death_mid_run_with_a_recorded_boot_needs_a_reboot(self):
+        """Q15 (a): same leftovers, but the parent recorded the boot session first."""
+        lab = Lab(self.db)
+        try:
+            capability = lab.register('booted')
+            ledger = GuestRunLedger(lab)
+            run = ledger.open_run('booted', 0, identity('booted'), host_log=self.log + '.b',
+                                  boot_session=BOOT_A)
+            ledger.mark_running(run, {'probe_id': 'booted', 'shared_directory': False},
+                                capability)
+        finally:
+            lab.close()
+        Path(self.log + '.b').write_text(
+            'HOST_NO_SHARED_DIRECTORY\nHOST_CONFIG_VALID\nHOST_STARTED\n', encoding='ascii')
+        self.denied('crash-release-unconfirmed', crash_release.release, self.db, run,
+                    self.opener(FakeTerminal()), lambda: BOOT_A)
+        self.assertEqual(self.opened, [])
+        crash_release.release(self.db, run, self.opener(FakeTerminal()), lambda: BOOT_B)
+        self.assertEqual(len(self.opened), 1)
+        lab = Lab(self.db)
+        try:
+            GuestRunLedger(lab).require_quiescent('booted')
+        finally:
+            lab.close()
 
     def test_host_death_before_boot_confirmation_is_the_same_dead_end(self):
         directory = tempfile.TemporaryDirectory()

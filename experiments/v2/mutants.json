@@ -3019,23 +3019,23 @@
     },
     {
      "file": "experiments/v2/crash_release.py",
-     "old": "        if path is None:\n            raise Denied('crash-release-unavailable')\n",
+     "old": "        if path is None and recorded is None:\n            raise Denied('crash-release-unavailable')\n",
      "new": ""
     },
     {
      "file": "experiments/v2/guest_runs.py",
-     "old": "            if row['host_log'] is None:\n                raise Denied('crash-release-unavailable')\n",
+     "old": "        if row['host_log'] is None:\n            raise Denied('crash-release-unavailable')\n",
      "new": ""
     },
     {
      "file": "experiments/v2/guest_runs.py",
-     "old": "                    or evidence['host_log'] != row['host_log']\n",
+     "old": "                or evidence['host_log'] != row['host_log']\n",
      "new": ""
     },
     {
      "file": "experiments/v2/guest_runs.py",
-     "old": "                    or evidence['probe_id'] != identity['probe_id']\n                    or evidence['stop_marker'] != STOP_MARKER\n                    or evidence['host_log'] != row['host_log']\n",
-     "new": "                    or evidence['stop_marker'] != STOP_MARKER\n                    or evidence['host_log'] != row['host_log']\n"
+     "old": "                or evidence['probe_id'] != identity['probe_id']\n                or evidence['stop_marker'] != STOP_MARKER\n                or evidence['host_log'] != row['host_log']\n",
+     "new": "                or evidence['stop_marker'] != STOP_MARKER\n                or evidence['host_log'] != row['host_log']\n"
     },
     {
      "file": "experiments/v2/guest_runs.py",
@@ -3054,8 +3054,8 @@
     },
     {
      "file": "experiments/v2/guest_runs.py",
-     "old": "            self.lab.resume(row['actor'])\n\n    def host_log",
-     "new": "\n    def host_log"
+     "old": "            self.lab.resume(row['actor'])\n\n    @staticmethod\n    def _check_host_log",
+     "new": "\n    @staticmethod\n    def _check_host_log"
     },
     {
      "file": "experiments/v2/guest_runs.py",
@@ -3096,6 +3096,71 @@
      "file": "experiments/v2/guest_runs.py",
      "old": "    def require_quiescent(self, actor):\n        \"\"\"Restart gate: refuse while any recorded guest lacks durable retirement.\"\"\"\n        if self._unretired(actor):\n",
      "new": "    def require_quiescent(self, actor):\n        \"\"\"Restart gate: refuse while any recorded guest lacks durable retirement.\"\"\"\n        if False:\n"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        if boot_session is not None and (not isinstance(boot_session, str)",
+     "new": "        if False and (not isinstance(boot_session, str)"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            self.lab.db.execute('ALTER TABLE guest_runs ADD COLUMN boot_session TEXT')\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        if row['boot_session'] is None:\n            raise Denied('crash-release-unavailable')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                or evidence['boot_session_recorded'] != row['boot_session']\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                or evidence['boot_session_now'] == row['boot_session']):",
+     "new": "                or False):"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                or not BOOT_SESSION.fullmatch(evidence['boot_session_now'])\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                or evidence['probe_id'] != identity['probe_id']\n                or evidence['boot_session_recorded']",
+     "new": "                or evidence['boot_session_recorded']"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "    return value if result.returncode == 0 and BOOT_SESSION.fullmatch(value) else None",
+     "new": "    return value or None"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        result = run([SYSCTL, '-n', 'kern.bootsessionuuid'],",
+     "new": "        result = run(['sysctl', '-n', 'kern.bootsessionuuid'],"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "            or now == recorded):",
+     "new": "            or False):"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "    if (not isinstance(now, str) or not BOOT_SESSION.fullmatch(now)\n",
+     "new": "    if (not isinstance(now, str)\n"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "                if recorded is None:\n                    raise\n",
+     "new": "                raise\n"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "        if path is not None:\n            try:",
+     "new": "        if False:\n            try:"
     }
    ]
   },
