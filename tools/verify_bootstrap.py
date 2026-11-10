@@ -1959,6 +1959,66 @@ def step_handoff_flow_parity(dest, tmp):
            '兩端各走遠端占用→陳舊接手阻擋→釋出→A2.5/A5 SHA 變更→本機開工→任務推送→交棒；本機快照錯誤放行變異均重現。hook 只提醒，模型遵循未驗')
 
 
+REPO_START_HOOK = '.claude/hooks/repo-git-check.sh'
+REPO_ACTION_HOOK = '.claude/hooks/repo-action-rules.sh'
+# 2026-11-10 決策書 Q6 (a)：動作當下送規則只在 Claude Code 那份試行，Codex 那份仍只准 SessionStart。
+REPO_ACTION_EVENTS = {'.claude/settings.json': ('PreToolUse', 'PostToolUse'),
+                      '.codex/hooks.json': ()}
+
+
+def repo_wiring_problems(root):
+    """本 repo 兩份接線的問題清單。
+
+    兩份接線一起查（2026-11-01 加上 `.codex/hooks.json`）。這個 repo 的接線指的是它
+    自己那支 `repo-git-check.sh`，所以它們跟部署包 3.9／3.17 只是長得像、不是副本；
+    也因此沒有 `source:` 標記、落後偵測看不到它們，唯一的守門人就是這一項。
+    連「有沒有被 sync_project.py 覆蓋過」一起釘：那會把它們改成指向這裡不存在的
+    `git-freshness.sh`，開場檢查於是靜默失效——看起來有防護、實際上沒有。
+    2026-11-10（Q6 (a)）：原本只准 SessionStart；現在 Claude Code 那份可以多接
+    PreToolUse／PostToolUse，但每個 handler 都只能指向 repo-action-rules.sh，其他事件仍拒絕。
+    抽成函式是為了讓負向測試能對暫存目錄跑。
+    """
+    problems, present = [], []
+    for rel, extra in REPO_ACTION_EVENTS.items():
+        cfg = root / rel
+        if not cfg.exists():
+            problems.append('%s 不存在' % rel)
+            continue
+        raw = cfg.read_text(encoding='utf-8')
+        try:
+            data = json.loads(raw)
+        except Exception as e:
+            problems.append('%s 不是合法 JSON：%s' % (rel, e))
+            continue
+        present.append(rel)
+        for bad in ('git-freshness.sh', 'pre-push-handoff.sh'):
+            if bad in raw:
+                problems.append('%s 指向 %s，而這個 repo 沒有那個檔'
+                                '（被 sync_project.py 覆蓋過？）' % (rel, bad))
+        hooks = data.get('hooks', {})
+        for event, groups in hooks.items():
+            commands = [h.get('command', '') + ' ' + h.get('commandWindows', '')
+                        for g in (groups or []) for h in (g.get('hooks') or [])]
+            if event == 'SessionStart':
+                if not commands or any(REPO_START_HOOK not in c for c in commands):
+                    problems.append('%s 的 SessionStart 沒有都指向 %s' % (rel, REPO_START_HOOK))
+            elif event in extra:
+                if not commands or any(REPO_ACTION_HOOK not in c for c in commands):
+                    problems.append('%s 的 %s 只能指向 %s' % (rel, event, REPO_ACTION_HOOK))
+            else:
+                problems.append('%s 接了 %s，但這個 repo 只允許 SessionStart%s'
+                                % (rel, event, ('＋' + '／'.join(extra)) if extra else ''))
+        if 'SessionStart' not in hooks:
+            problems.append('%s 沒接 SessionStart' % rel)
+    if not (root / REPO_START_HOOK).exists():
+        problems.append('%s 不存在——兩份接線都指著一個不在的腳本' % REPO_START_HOOK)
+    if REPO_ACTION_HOOK in ''.join(
+            (root / r).read_text(encoding='utf-8') for r in REPO_ACTION_EVENTS
+            if (root / r).exists()) and not (root / REPO_ACTION_HOOK).exists():
+        problems.append('%s 不存在——接線指著一個不在的腳本' % REPO_ACTION_HOOK)
+    return problems, present
+
+
 def step_self():
     """本 repo 自己的 .md 與設定檔沒有任何自動檢查——`check_docs.py` 是骨架的檔，部署進來
     就成了副本，要跳版、要同步，而 sync_project.py 的 --all 又掃不到這個 repo（它靠
@@ -1993,38 +2053,7 @@ def step_self():
                '%d 個 .md 無死連結、受管非 Markdown 無殘留部署佔位符，日期標頭齊備'
                % len(mds))
 
-    # 兩份接線一起查（2026-11-01 加上 `.codex/hooks.json`）。這個 repo 的接線指的是它
-    # 自己那支 `repo-git-check.sh`，所以它們跟部署包 3.9／3.17 只是長得像、不是副本；
-    # 也因此沒有 `source:` 標記、落後偵測看不到它們，唯一的守門人就是這一項。
-    # 連「有沒有被 sync_project.py 覆蓋過」一起釘：那會把它們改成指向這裡不存在的
-    # `git-freshness.sh`，開場檢查於是靜默失效——看起來有防護、實際上沒有。
-    hook_rel = '.claude/hooks/repo-git-check.sh'
-    problems, present = [], []
-    for rel in ('.claude/settings.json', '.codex/hooks.json'):
-        cfg = ROOT / rel
-        if not cfg.exists():
-            problems.append('%s 不存在' % rel)
-            continue
-        raw = cfg.read_text(encoding='utf-8')
-        try:
-            data = json.loads(raw)
-        except Exception as e:
-            problems.append('%s 不是合法 JSON：%s' % (rel, e))
-            continue
-        present.append(rel)
-        if hook_rel not in raw:
-            problems.append('%s 沒指向 %s' % (rel, hook_rel))
-        for bad in ('git-freshness.sh', 'pre-push-handoff.sh'):
-            if bad in raw:
-                problems.append('%s 指向 %s，而這個 repo 沒有那個檔'
-                                '（被 sync_project.py 覆蓋過？）' % (rel, bad))
-        for event in data.get('hooks', {}):
-            if event != 'SessionStart':
-                problems.append('%s 接了 %s，但這個 repo 只有 SessionStart 那一支'
-                                % (rel, event))
-    if not (ROOT / hook_rel).exists():
-        problems.append('%s 不存在——兩份接線都指著一個不在的腳本' % hook_rel)
-
+    problems, present = repo_wiring_problems(ROOT)
     if problems:
         record('FAIL', '本 repo 兩份接線', '；'.join(problems))
         ok = False
@@ -2032,9 +2061,105 @@ def step_self():
         record('SKIP', '本 repo 兩份接線', '都不存在——開場沒有 git 檢查，接棒全靠人記得')
     else:
         record('OK', '本 repo 兩份接線',
-               '%s 都是合法 JSON、只接 SessionStart、都指向 repo-git-check.sh'
+               '%s 都是合法 JSON、SessionStart 指向 repo-git-check.sh；動作提醒只接在 Claude Code 那份'
                % '＋'.join(present))
     return ok
+
+
+def step_action_rules(tmp):
+    """動作當下送規則（決策書 Q6 (a)，2026-11-10）：實跑 repo-action-rules.sh，並對接線守門做負向測試。
+
+    只證明 hook 在該送的時候送出合法的 additionalContext、不該送的時候安靜、永遠不擋；
+    不證明 Claude Code 真的把它放進 context，也不證明模型照它做。
+    """
+    issues = []
+    bash = find_bash()
+    script = ROOT / REPO_ACTION_HOOK
+    cases = [
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git add a && git push -q origin b'}}, '準備 push'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git -C /x push'}}, '準備 push'),
+        ('pre', {'tool_name': 'Edit', 'tool_input': {'file_path': '/r/PROJECT-BOOTSTRAP.md'}}, '正在改部署包'),
+        ('pre', {'tool_name': 'Write', 'tool_input': {'file_path': '/r/.claude/hooks/x.sh'}}, '正在改 hook'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git status -sb'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git pushd'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo 提到 git push 而已'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'cat <<X\n說明 git push\nX'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git status\ngit push'}}, '準備 push'),
+        ('pre', {'tool_name': 'Edit', 'tool_input': {'file_path': '/r/README.md'}}, None),
+        ('pre', {'tool_name': 'Read', 'tool_input': {'file_path': '/r/PROJECT-BOOTSTRAP.md'}}, None),
+        ('post', {'tool_name': 'Bash', 'tool_input': {'command': 'git push'}}, 'push 指令剛執行完'),
+        ('post', {'tool_name': 'Bash', 'tool_input': {'command': 'git fetch origin'}}, None),
+    ]
+    if not bash:
+        issues.append('缺少可用 bash，腳本沒有實跑')
+    elif not script.exists():
+        issues.append('%s 不存在' % REPO_ACTION_HOOK)
+    else:
+        for compact in (True, False):
+            for phase, payload, want in cases:
+                event = 'PostToolUse' if phase == 'post' else 'PreToolUse'
+                body = dict(payload, hook_event_name=event)
+                text = json.dumps(body, ensure_ascii=False,
+                                  separators=(',', ':') if compact else (', ', ': '))
+                r = run([bash, str(script), phase], stdin=text)
+                label = '%s %s' % (phase, json.dumps(payload['tool_input'], ensure_ascii=False))
+                if r.returncode:
+                    issues.append(label + ' 結束碼 %d' % r.returncode)
+                    continue
+                if want is None:
+                    if r.stdout.strip():
+                        issues.append(label + ' 不該送卻送了')
+                    continue
+                try:
+                    out = json.loads(r.stdout)['hookSpecificOutput']
+                except Exception:
+                    issues.append(label + ' 輸出不是合法 JSON')
+                    continue
+                if out.get('hookEventName') != event or want not in out.get('additionalContext', ''):
+                    issues.append(label + ' 沒送對應要點')
+                if 'permissionDecision' in out or 'decision' in r.stdout:
+                    issues.append(label + ' 不該做任何放行／阻擋決定')
+
+    # 接線守門的負向測試：每一種錯接都要被 repo_wiring_problems 看出來。
+    good = {rel: (ROOT / rel).read_text(encoding='utf-8') for rel in REPO_ACTION_EVENTS}
+
+    def wiring(edit=None, drop=()):
+        base = tmp / ('action-wiring-%d' % len(list(tmp.glob('action-wiring-*'))))
+        for rel, text in good.items():
+            data = json.loads(text)
+            if edit and rel in edit:
+                edit[rel](data)
+            (base / rel).parent.mkdir(parents=True, exist_ok=True)
+            (base / rel).write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
+        for rel in (REPO_START_HOOK, REPO_ACTION_HOOK):
+            if rel not in drop:
+                (base / rel).parent.mkdir(parents=True, exist_ok=True)
+                (base / rel).write_text('#!/bin/sh\n', encoding='utf-8')
+        return repo_wiring_problems(base)[0]
+
+    def handler(cmd):
+        return [{'matcher': 'Bash', 'hooks': [{'type': 'command', 'command': cmd}]}]
+
+    action_cmd = 'bash "%s" pre' % REPO_ACTION_HOOK
+    if wiring():
+        issues.append('現行接線複本被判有問題：' + '；'.join(wiring()))
+    breakers = {
+        'Codex 也接 PreToolUse': {'.codex/hooks.json': lambda d: d['hooks'].update(PreToolUse=handler(action_cmd))},
+        'Claude Code 的 PreToolUse 指向別支': {'.claude/settings.json': lambda d: d['hooks'].update(PreToolUse=handler('bash other.sh'))},
+        'Claude Code 多接 Stop': {'.claude/settings.json': lambda d: d['hooks'].update(Stop=handler(action_cmd))},
+        'SessionStart 指向動作提醒': {'.claude/settings.json': lambda d: d['hooks'].update(SessionStart=handler(action_cmd))},
+        '拿掉 SessionStart': {'.claude/settings.json': lambda d: d['hooks'].pop('SessionStart')},
+    }
+    for name, edit in breakers.items():
+        if not wiring(edit):
+            issues.append('負向測試沒擋住：' + name)
+    if not wiring(drop=(REPO_ACTION_HOOK,)):
+        issues.append('負向測試沒擋住：動作提醒腳本不存在')
+
+    record('FAIL' if issues else 'OK', '動作當下送規則', '；'.join(issues) if issues else
+           '實跑 %d 個情境（兩種 JSON 排版）：push 前後、改部署包、改 hook 送對應要點，其餘安靜、永遠 exit 0、'
+           '不做放行／阻擋決定；接線守門 %d 個負向測試都擋住（不證明 Claude Code 放進 context 或模型照做）'
+           % (len(cases) * 2, len(breakers) + 1))
 
 
 def step_sync_self_guard():
@@ -4767,6 +4892,7 @@ def run_checks(dest, tmp):
         step_session_resume(dest)
     step_eol(dest)
     step_self()
+    step_action_rules(tmp)
     step_repo_handoff()
     step_reason_links()
     if seen:

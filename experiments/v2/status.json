@@ -646,8 +646,8 @@
           "scope": "當輪檔案字元、digest 與可選的既有驗證器耗時"
         }
       ],
-      "unknown": "常態入口超過 12000 字元（2026-11-10 skill 拆成六檔後，本分支部署包的入口＋mode-a.md 為 5,380；本 repo 加上 AGENTS 與 HANDOFF 實測約 16,100，仍超標；全域副本、main 與各專案尚未換成六檔版，實際 session 讀到的仍是 22,040 的單檔）；整體接棒時間與 token 尚未量測；條件式文件與理由檔是否在該讀時真的被讀，未驗證",
-      "next": "正常接棒 ≤12,000 字元／5 分鐘，超標報因；不刪必要門檻。skill 拆分草稿與實測見 project-bootstrap-skill-split-design.md 第 10 節（推出等決策書 Q11，本 repo 超標等 Q10）"
+      "unknown": "常態入口超過 12000 字元（2026-11-10 skill 拆成六檔後，本分支部署包的入口＋mode-a.md 為 5,380；本 repo 加上 AGENTS 與 HANDOFF 實測約 16,100，仍超標；2026-11-10 這台 Mac 的全域副本已換成六檔版試用，main、各專案與別台機器尚未換）；整體接棒時間與 token 尚未量測；條件式文件與理由檔是否在該讀時真的被讀，未驗證",
+      "next": "正常接棒 ≤12,000 字元／5 分鐘，超標報因；不刪必要門檻。skill 拆分草稿與實測見 project-bootstrap-skill-split-design.md 第 10 節（Q11 (a) 試用中，本 repo 超標等 Q10）；第 (2) 點 2026-11-10 在本 repo 試行 repo-action-rules.sh（Q6 (a)，只接 Claude Code）"
     },
     {
       "id": "F23",

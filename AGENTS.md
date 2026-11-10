@@ -1,6 +1,6 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-10（handoff skill 拆成目錄，鐵律 1、2 的版本規則跟著改）
+> 最後更新：2026-11-10（本 repo 加動作當下送規則的 hook；全域副本換成六檔版）
 > 本檔只放規則。每條規則的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)，由規則後面的「為什麼」指過去；**要改、要質疑或想繞過某條規則之前，先讀它的理由**。（2026-11-10／F22：理由原本夾在規則裡，常態必讀量超標；搬家不刪。）
 
 ## 開工第一件事（任何工具、任何模型都適用）
@@ -8,7 +8,7 @@
 **先走接棒程序的 A 模式，A 沒跑完之前不要改任何檔案**；收工走 B 模式，中途要拉最新或推一個安全點走 C 模式。
 
 - 程序檔在**全域**副本 `~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）；這個 repo 刻意沒有專案層的那一份。工具不會自動載入 skill 就直接開那個檔讀。**這台機器沒有全域副本時，程序在 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的「3.8」節**；不要從別台機器搬檔或憑記憶重刻。
-- 部署包 `2026-11-10` 起 skill 是一個目錄：`SKILL.md` 是入口，再照它讀同目錄的模式檔；**全域副本換成六檔版之前仍是單檔**，照單檔走。本 repo 的「全綠」行由 `.claude/hooks/repo-git-check.sh` 印（前綴 `[repo-check]`），要重跑就跑它。
+- 部署包 `2026-11-10` 起 skill 是一個目錄：`SKILL.md` 是入口，再照它讀同目錄的模式檔；這台 Mac 的全域副本 2026-11-10 已換成六檔版（決策書 Q11 (a) 試用）；**別台還沒換的仍是單檔**，照單檔走。本 repo 的「全綠」行由 `.claude/hooks/repo-git-check.sh` 印（前綴 `[repo-check]`），要重跑就跑它。
 - **A4 改跑 `python -X utf8 tools/verify_bootstrap.py`**（不是 `verify_state.py`），**exit 0 才算改完**。
 - 沒有 `check_docs.py`、沒有 pre-push 防呆，所以 B4 與擋 push 的關卡不存在；文件檢查由 `verify_bootstrap.py` 顧。
 - **B7 先明確 stage，再跑 `python -X utf8 tools/verify_bootstrap.py --staged`。**
@@ -58,7 +58,7 @@
 - **接線路徑一律相對，但不能假設 cwd 是 repo 根目錄**：3.9／3.17 的路徑前面掛 `$(git rev-parse --show-cdup)`，Windows 那一欄再用 PowerShell 的 `-replace '/','\'` 正規化斜線；Antigravity（3.20）刻意不跟。[為什麼](AGENTS-reasons.md#copy-4)
 - **`.agents/` 只放指標與接線**，不複製程序內容；那份 skill 指標的 `description` 必須寫滿觸發詞。[為什麼](AGENTS-reasons.md#copy-5)
 - **Codex Windows 啟動器也要同步**：`sync_project.py --codex-only` 只更新各專案的 Codex 接線與啟動器。接線改過要重新審核並驗收實際執行（skill B5），不能只看檔案存在。[為什麼](AGENTS-reasons.md#copy-6)
-- **本 repo 自己的 `HANDOFF.md`、`.claude/hooks/repo-git-check.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在副本拓撲裡**，`sync_project.py` 不要碰它們；它已明確拒絕把本 repo 當目標。[為什麼](AGENTS-reasons.md#copy-7)
+- **本 repo 自己的 `HANDOFF.md`、`.claude/hooks/repo-git-check.sh`、`.claude/hooks/repo-action-rules.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在副本拓撲裡**，`sync_project.py` 不要碰它們；它已明確拒絕把本 repo 當目標。[為什麼](AGENTS-reasons.md#copy-7)
 
 ## 本 repo 的交接快照
 
