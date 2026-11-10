@@ -285,7 +285,7 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "Mac 兩條獨立路徑：舊 host worker／共享 scratch 的逐 epoch 退場探針，及無共享 guest 的固定受管 shell 工具。後者在 guest 內載入前提、兩 epoch 經專用 console 發原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending 舊寫入拒絕、新 epoch 寫入有事件關聯。新路徑經 guest_runs 帳本持久記錄 run 身分與 host 停機證據，重開資料庫核對；父程序 SIGKILL 後重開仍阻擋。未接真實工具或可信 guest 身分"
+          "scope": "Mac 兩條獨立路徑：舊 host worker／共享 scratch 的逐 epoch 退場探針，及無共享 guest 的固定受管 shell 工具。後者在 guest 內載入前提、兩 epoch 經專用 console 發原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending 舊寫入拒絕、新 epoch 寫入有事件關聯。新路徑經 guest_runs 帳本持久記錄 run 身分與 host 停機證據，重開資料庫核對；父程序 SIGKILL 後重開仍阻擋，再以真 runner 停機紀錄加合成終端替身走崩潰解除，guest console 日誌被拒。未接真實工具或可信 guest 身分"
         },
         {
           "path": "experiments/v2/guest_runs.py",
@@ -294,6 +294,14 @@
         {
           "path": "experiments/v2/test_guest_runs.py",
           "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗"
+        },
+        {
+          "path": "experiments/v2/crash_release.py",
+          "scope": "父程序崩潰後的人工解除（Q1 (a)）：先讀開機前登記的 runner stderr 檔，必須逐行等於乾淨無共享停機的四行；有證據才在 /dev/tty（非 stdin）出新挑戰碼要人照打，SSH 或無控制終端拒絕；兩者都過才在帳本同交易退場並輪換 capability。同 UID 可偽造 host 檔與偽終端，不是真人證明"
+        },
+        {
+          "path": "experiments/v2/test_crash_release.py",
+          "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
           "path": "experiments/v2/vm_managed_worker.sh",
@@ -337,7 +345,7 @@
         }
       ],
       "unknown": "同 UID／現行執行介面反例可重現；固定合成 shell 工具已進無共享 guest，通用受管工具與完整覆寫歸因仍未成立",
-      "next": "無共享 guest 的 run 身分、退場與 channel 綁定已可重開核對；接下來設計崩潰後可信的人工解除、隔離已寫效果並驗其他 OS。當前 parent 管道綁定不是防同 UID host 偽造的身分證明，不外推完整歸因",
+      "next": "無共享 guest 的 run 身分、退場、channel 綁定與崩潰後人工解除（Q1 (a)）已有合成證據；接下來隔離已寫效果並驗其他 OS。解除與 parent 管道綁定都不是防同 UID host 偽造的證明，不外推完整歸因；日後改簽署金鑰（Q1 (b)）另登新編號",
       "parts": {
         "a": {
           "result": "未驗證",
@@ -746,7 +754,7 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
+          "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復，無共享路徑再以真 runner 停機紀錄加合成終端替身走崩潰解除、guest console 日誌被拒；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
         },
         {
           "path": "experiments/v2/vm_managed_worker.sh",
@@ -759,6 +767,14 @@
         {
           "path": "experiments/v2/test_guest_runs.py",
           "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗"
+        },
+        {
+          "path": "experiments/v2/crash_release.py",
+          "scope": "父程序崩潰後的人工解除（Q1 (a)）：先讀開機前登記的 runner stderr 檔，必須逐行等於乾淨無共享停機的四行；有證據才在 /dev/tty（非 stdin）出新挑戰碼要人照打，SSH 或無控制終端拒絕；兩者都過才在帳本同交易退場並輪換 capability。同 UID 可偽造 host 檔與偽終端，不是真人證明"
+        },
+        {
+          "path": "experiments/v2/test_crash_release.py",
+          "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
           "path": "experiments/v2/test_vm_probe.py",
@@ -781,8 +797,8 @@
           "scope": "VM runner，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
-      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑的 run 身分與 host 停機證據已持久保存，重開資料庫可核對，父程序 SIGKILL 後仍阻擋；runner stderr 與 guest console 已分成兩個檔，host 啟動／停機標記只從 host 檔讀；離線測試驗 guest console 偽造標記不被採用。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無安全自動恢復。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
-      "next": "無共享路徑的 run 身分、退場與 channel 綁定已持久化；下一步設計父程序崩潰後可信的人工解除，驗 host／hypervisor 異常；舊共享路徑仍須隔離或冪等化已寫效果，再驗 host／hypervisor 異常、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
+      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑的 run 身分與 host 停機證據已持久保存，重開資料庫可核對，父程序 SIGKILL 後仍阻擋；runner stderr 與 guest console 已分成兩個檔，host 啟動／停機標記只從 host 檔讀；離線測試驗 guest console 偽造標記不被採用。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無自動恢復；無共享路徑可用 crash_release 以開機前登記的 runner 停機紀錄加 host 本機終端確認人工解除（Q1 (a)），缺證據不解除；同 UID 可偽造 host 檔與偽終端，不是真人證明；舊共享路徑仍無解除。host／兩 VM 的 flock 對 virtiofs 不互通。真實工具、完整效果隔離、host／hypervisor 故障與跨機即時推送未驗收",
+      "next": "無共享路徑的 run 身分、退場與 channel 綁定已持久化；父程序崩潰後的人工解除已有合成證據（Q1 (a)）；下一步驗 host／hypervisor 異常；舊共享路徑仍須隔離或冪等化已寫效果，再驗 host／hypervisor 異常、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
     },
     {
       "id": "F29",
@@ -1095,9 +1111,17 @@
         {
           "path": "experiments/v2/test_broker_fixture.py",
           "scope": "broker_fixture 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
+        },
+        {
+          "path": "experiments/v2/crash_release.py",
+          "scope": "父程序崩潰後的人工解除（Q1 (a)）：先讀開機前登記的 runner stderr 檔，必須逐行等於乾淨無共享停機的四行；有證據才在 /dev/tty（非 stdin）出新挑戰碼要人照打，SSH 或無控制終端拒絕；兩者都過才在帳本同交易退場並輪換 capability。同 UID 可偽造 host 檔與偽終端，不是真人證明"
+        },
+        {
+          "path": "experiments/v2/test_crash_release.py",
+          "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         }
       ],
-      "unknown": "已驗合成動作簽核、票據續期與有證據時的重啟；票據續期仍由合成父程序授權，真人核准、任意後代及真實動作未驗收",
+      "unknown": "已驗合成動作簽核、票據續期與有證據時的重啟；票據續期仍由合成父程序授權；崩潰解除改由 host 本機終端打挑戰碼確認（Q1 (a)），只抬高 agent 代答門檻，同 UID 偽終端不排除，真人核准、任意後代及真實動作未驗收",
       "next": "接可信人類核准及簽署金鑰治理，再驗各真實破壞性入口與外部冪等"
     },
     {

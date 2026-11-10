@@ -646,6 +646,7 @@ def probe_managed_switch(work: Path, runner: Path, kernel: Path, ramdisk: Path) 
 
 
 GUEST_CRASH_PARENT = '''from pathlib import Path
+import os
 import sys
 from experiments.v2.contracts import Lab
 from experiments.v2.guest_runs import GuestRunLedger
@@ -655,7 +656,8 @@ lab = Lab(db)
 capability = lab.register('guest-crash-parent')
 ledger = GuestRunLedger(lab)
 gate = VMRetirementGate(runner, kernel, ramdisk, None, log, 'guest-crash', stop_after=12)
-run = ledger.open_run('guest-crash-parent', 0, gate.identity())
+run = ledger.open_run('guest-crash-parent', 0, gate.identity(),
+                     host_log=os.path.abspath(str(log) + '.host'))
 gate.start()
 ledger.mark_running(run, {'probe_id': gate.probe_id, 'shared_directory': False}, capability)
 gate.load_context(0, 2)
@@ -711,14 +713,63 @@ def probe_guest_parent_crash(work: Path, runner: Path, kernel: Path, ramdisk: Pa
                     raise RuntimeError("restart accepted a guest with no durable retirement")
         finally:
             lab.close()
+        release_after_crash(db, run_id, log)
         print("guest_parent_sigkill: unshared guest stopped on control EOF; reopened "
-              "ledger keeps the run unretired and blocks restart")
+              "ledger keeps the run unretired and blocks restart; crash release accepted "
+              "the real runner log only, guest console refused")
     finally:
         if parent.poll() is None:
             parent.kill()
             parent.wait(timeout=5)
         for stream in (parent.stdin, parent.stdout, parent.stderr):
             stream.close()
+
+
+class _ScriptedTerminal:
+    """Synthetic stand-in for the person at the host terminal (probe only)."""
+
+    name = "/dev/ttys-probe"
+
+    def __init__(self):
+        self.shown = ""
+
+    def discard_pending(self) -> None:
+        pass
+
+    def write(self, text: str) -> None:
+        self.shown += text
+
+    def read_line(self) -> str:
+        return self.shown.split("type exactly:\n  ", 1)[1].split("\n", 1)[0]
+
+    def close(self) -> None:
+        pass
+
+
+def release_after_crash(db: Path, run_id: str, log: Path) -> None:
+    """Crash release reads the real runner log; the guest console is no proof."""
+    from experiments.v2 import crash_release
+    from experiments.v2.contracts import Denied, Lab
+    from experiments.v2.guest_runs import GuestRunLedger
+
+    try:
+        crash_release.host_evidence(str(log.resolve()), "guest-crash")
+    except Denied:
+        pass
+    else:
+        raise RuntimeError("guest console log was accepted as host stop evidence")
+    evidence, _ = crash_release.release(db, run_id, _ScriptedTerminal)
+    if evidence["host_log"] != os.path.abspath(str(log) + ".host"):
+        raise RuntimeError(f"crash release read an unexpected log: {evidence}")
+    lab = Lab(db)
+    try:
+        ledger = GuestRunLedger(lab)
+        ledger.require_quiescent("guest-crash-parent")
+        runs = ledger.runs("guest-crash-parent")
+        if [(run["state"], run["evidence"]["kind"]) for run in runs] != [("retired", "crash-release")]:
+            raise RuntimeError(f"crash release was not durable: {runs}")
+    finally:
+        lab.close()
 
 
 def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:

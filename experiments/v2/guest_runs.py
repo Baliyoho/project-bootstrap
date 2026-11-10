@@ -10,9 +10,16 @@ them, and the run id is a parent-issued label, not a VM identity proof.
 Each running guest is bound to one broker channel capability (stored only as a
 digest). Retirement rotates that actor's capability in the same transaction,
 so the retired guest's channel is refused by the broker itself.
+
+A parent that dies before retirement leaves the run blocked. The only way out
+is release_crashed: host-side stop evidence read from the runner log path the
+parent recorded before boot, plus a confirmation typed at the host's local
+terminal (gathered by crash_release.py, never by this object). Without both
+the run stays blocked, which is decision Q1 (a) falling back to (c).
 """
 import hashlib
 import json
+import os
 import re
 import secrets
 
@@ -44,7 +51,10 @@ class GuestRunLedger:
         self.lab.db.execute('''CREATE TABLE IF NOT EXISTS guest_runs (
             run_id TEXT PRIMARY KEY, actor TEXT NOT NULL, epoch INTEGER NOT NULL,
             state TEXT NOT NULL CHECK(state IN ('starting', 'running', 'retired')),
-            identity TEXT NOT NULL, channel TEXT, evidence TEXT)''')
+            identity TEXT NOT NULL, channel TEXT, evidence TEXT, host_log TEXT)''')
+        columns = {row['name'] for row in self.lab.db.execute('PRAGMA table_info(guest_runs)')}
+        if 'host_log' not in columns:
+            self.lab.db.execute('ALTER TABLE guest_runs ADD COLUMN host_log TEXT')
 
     def _row(self, run_id):
         if not isinstance(run_id, str) or not re.fullmatch(r'[0-9a-f]{32}', run_id):
@@ -60,12 +70,18 @@ class GuestRunLedger:
             "SELECT 1 FROM guest_runs WHERE actor=? AND state!='retired' AND run_id IS NOT ? "
             'LIMIT 1', (actor, except_run)).fetchone() is not None
 
-    def open_run(self, actor, epoch, identity):
+    def open_run(self, actor, epoch, identity, host_log=None):
         """Record the run before boot so a crash during start is visible later.
 
         Only the active epoch (no change pending) or the pending epoch may get
         a guest, and only after every earlier guest of this actor is retired.
+        host_log is where the runner's stderr will go; without it a crashed
+        run can never be released.
         """
+        if host_log is not None and (not isinstance(host_log, str)
+                                     or not os.path.isabs(host_log)
+                                     or os.path.normpath(host_log) != host_log):
+            raise Denied('invalid-host-log')
         canonical = guest_identity(identity.get('probe_id') if isinstance(identity, dict)
                                    else None,
                                    {k: identity.get(k) for k in IDENTITY_DIGESTS}
@@ -87,8 +103,9 @@ class GuestRunLedger:
                                    (actor, epoch)).fetchone():
                 raise Denied('vm-run-already-recorded')
             self.lab.db.execute(
-                "INSERT INTO guest_runs VALUES (?, ?, ?, 'starting', ?, NULL, NULL)",
-                (run_id, actor, epoch, json.dumps(canonical, sort_keys=True)))
+                "INSERT INTO guest_runs (run_id, actor, epoch, state, identity, host_log) "
+                "VALUES (?, ?, ?, 'starting', ?, ?)",
+                (run_id, actor, epoch, json.dumps(canonical, sort_keys=True), host_log))
         return run_id
 
     @staticmethod
@@ -132,6 +149,50 @@ class GuestRunLedger:
                 raise Denied('vm-run-not-current')
             # The retired guest's channel must die with it, not only by convention.
             self.lab.resume(row['actor'])
+
+    def release_crashed(self, run_id, evidence, confirmation):
+        """Retire a run whose parent died, from host evidence plus a local confirmation.
+
+        evidence must name the host log recorded before boot; confirmation must
+        come from crash_release.local_confirmation. This object cannot tell a
+        real terminal from a forged dict, so only the release tool may call it.
+        """
+        with self.lab.transaction():
+            row = self._row(run_id)
+            identity = json.loads(row['identity'])
+            if row['host_log'] is None:
+                raise Denied('crash-release-unavailable')
+            if (not isinstance(evidence, dict)
+                    or set(evidence) != {'probe_id', 'stop_marker', 'host_log', 'host_log_sha256'}
+                    or evidence['probe_id'] != identity['probe_id']
+                    or evidence['stop_marker'] != STOP_MARKER
+                    or evidence['host_log'] != row['host_log']
+                    or not isinstance(evidence['host_log_sha256'], str)
+                    or not _HEX64.fullmatch(evidence['host_log_sha256'])):
+                raise Denied('crash-release-unconfirmed')
+            if (not isinstance(confirmation, dict)
+                    or set(confirmation) != {'method', 'run_id', 'tty', 'confirmed_at'}
+                    or confirmation['method'] != 'local-terminal'
+                    or confirmation['run_id'] != run_id
+                    or not isinstance(confirmation['tty'], str)
+                    or not confirmation['tty'].startswith('/dev/')
+                    or not isinstance(confirmation['confirmed_at'], str)):
+                raise Denied('crash-release-not-approved')
+            record = {'kind': 'crash-release', 'host': evidence, 'confirmation': confirmation}
+            updated = self.lab.db.execute(
+                "UPDATE guest_runs SET state='retired', evidence=? "
+                "WHERE run_id=? AND state IN ('starting', 'running')",
+                (json.dumps(record, sort_keys=True), run_id))
+            if updated.rowcount != 1:
+                raise Denied('vm-run-not-current')
+            self.lab.resume(row['actor'])
+
+    def host_log(self, run_id):
+        """The runner log path the parent recorded before boot, or None."""
+        return self._row(run_id)['host_log']
+
+    def unretired(self, actor):
+        return [run for run in self.runs(actor) if run['state'] != 'retired']
 
     def require_live(self, run_id, capability, epoch, pending=False):
         """A run may act only on its own channel and epoch while it is the sole live run."""

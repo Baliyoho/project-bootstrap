@@ -21,11 +21,12 @@
 - v2 各原型（P0 管道分權／票據／受管 worker／VM 帳本，M1–M4 偵測與合成阻擋，525 個 mutation 規格）都是合成 fixture 原型，索引結果仍是「未驗證」；逐模組與逐 ID 的內容看 [v2 現況索引](experiments/v2/status.json)與 [v2 說明](experiments/v2/README.md)，不在這裡重列。
 - 2026-11-10 使用者裁定（決策書第 6 節）：崩潰解除採本機終端確認＋host 證據，拿不到證據就不解除，日後希望改成簽署金鑰；v2 偵測原型不接進現行程序，等 P1；F46 模型探針暫不授權。
 - 2026-11-10 F22 第一階段（只動本 repo）：AGENTS.md 的事故與理由逐字搬到 [AGENTS-reasons.md](AGENTS-reasons.md)，入口每條規則留「為什麼」連結；`verify_bootstrap.py` 新增「規則理由連結」附 7 個負向測試；第二輪複審快照改成條件式必讀；`baseline.py` 的量測對象同步改成三份入口。必讀量 46,239 → 31,335 字元（當時實測），仍不通過（上限 12,000，skill 一份約 22,000）。
+- 2026-11-10 崩潰後解除（Q1 (a)）：新增 `crash_release.py`；`guest_runs` 開機前登記 runner `.host` 檔路徑，解除要那個檔逐行等於乾淨停機四行，再要 `/dev/tty` 照打挑戰碼（SSH／無終端拒絕），缺證據不問人、維持阻擋。真 VM `guest_parent_sigkill` 以真 runner 日誌走完解除、guest console 被拒；`mutants.json` 新群組 23 個全部 killed。同 UID 偽造 host 檔與偽終端不排除，不是真人證明。
 - 現行 22 檔部署包、skill／hook 副本及 `VERSION` 未改，無同步債；未呼叫額外模型或真實服務。
 
 ## 未完成／下一步
 
-1. **P0 未退出。** 依 Q1 (a) 實作崩潰後解除：host 本機終端互動確認＋host 端獨立停機證據，缺證據一律不解除（等同 (c)）；不得接受遠端或 agent 代按的確認。尚未動工。
+1. **P0 未退出。** 崩潰後解除（Q1 (a)）已做成合成原型，見已完成；P0 剩下 2、3 兩項。
 2. 已寫效果冪等／回滾與跨 epoch 原子歸因未驗。舊 `managed_vm_switch` 仍借 host worker 並掛可寫 scratch；兩 VM 的 virtiofs `flock` 不協調。無共享路徑只涵蓋固定 shell 工具與 `note` 寫入。
 3. 可信真人核准、簽署金鑰發行／撤銷與額度來源；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。
 4. 不需使用者決定、可續做：lifecycle／supervisor／guardian 的 mutation 轉進 `mutants.json`（lifecycle 測試約 3 分鐘，群組要挑測試；先試跑，存活多半代表缺逐代碼測試）；F45 宣告表再擴充（版本號跟誰走、prompt 名稱；寬鬆樣式會把引述舊說法的句子當主張，要限定同一子句）；ARCHITECT 其他節與各報告的決策轉成 `trail` 可讀格式；F16a 對部署出去的專案入口同樣檢查。F14／F15 需另一個工具或 OS 才能驗；F41 使用者已決定先不用雲端。
@@ -47,7 +48,7 @@
 - 2026-11-10 `python3 -X utf8 tools/verify_bootstrap.py --staged` exit 0，全部檢查通過（比上一輪多「規則理由連結」一項），含 352 個 v2 契約／索引測試（verify_v2 由它帶跑；F22 與三個預期反例照報不通過）。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
 - 2026-11-10 `python3 -X utf8 experiments/v2/mutants.py`：443 個全量實跑全部 killed（約 6 分鐘，不在 verify_v2 預設流程）；之後加入的 82 個（trail_sources／broker／launcher／materializer）以 `--spec` 試跑各自全部 killed，清單共 525 個，尚未再跑一次全量。
 - `python3 -X utf8 experiments/v2/contradictions.py` 對本 repo：未發現（只比對宣告表）。
-- VM 程式本輪未改（2026-11-09 `vm_probe.py` exit 0）。接線未改，Codex 信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
+- 2026-11-10 `python3 -X utf8 experiments/v2/vm_probe.py` exit 0（約 35 秒，含崩潰解除）；`mutants.py` 新群組 `--spec` 試跑 23 個全部 killed，全量 548 個尚未重跑。接線未改，Codex 信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
 
 ## 懸置事項（AI 勿自行處理）
 

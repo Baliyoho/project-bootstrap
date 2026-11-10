@@ -2850,6 +2850,129 @@
      "new": ""
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_crash_release",
+    "experiments.v2.test_guest_runs"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "    if lines != list(HOST_LINES):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "os.O_RDONLY | os.O_NOFOLLOW",
+     "new": "os.O_RDONLY"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "    if len(data) > MAX_LOG:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "    if any(env.get(name) for name in REMOTE_ENV):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "    if not os.isatty(fd):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "    terminal.discard_pending()\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "    if terminal.read_line() != expected:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
+     "old": "        if path is None:\n            raise Denied('crash-release-unavailable')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            if row['host_log'] is None:\n                raise Denied('crash-release-unavailable')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                    or evidence['host_log'] != row['host_log']\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                    or evidence['probe_id'] != identity['probe_id']\n                    or evidence['stop_marker'] != STOP_MARKER\n                    or evidence['host_log'] != row['host_log']\n",
+     "new": "                    or evidence['stop_marker'] != STOP_MARKER\n                    or evidence['host_log'] != row['host_log']\n"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                    or confirmation['method'] != 'local-terminal'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                    or confirmation['run_id'] != run_id\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                    or not confirmation['tty'].startswith('/dev/')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            self.lab.resume(row['actor'])\n\n    def host_log",
+     "new": "\n    def host_log"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        if host_log is not None and (not isinstance(host_log, str)",
+     "new": "        if False and (not isinstance(host_log, str)"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            self.lab.db.execute('ALTER TABLE guest_runs ADD COLUMN host_log TEXT')\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            if self.lab.actor(capability) != row['actor']:\n                raise Denied('guest-channel-mismatch')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            if self._unretired(actor):\n                raise Denied('vm-retirement-unconfirmed')\n            if self.lab.db.execute('SELECT 1 FROM guest_runs WHERE actor=? AND epoch>=?",
+     "new": "            if self.lab.db.execute('SELECT 1 FROM guest_runs WHERE actor=? AND epoch>=?"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                    or evidence['host_exit'] != 0 or type(evidence['host_exit']) is not int):",
+     "new": "                    ):"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            # The retired guest's channel must die with it, not only by convention.\n            self.lab.resume(row['actor'])\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                or row['channel'] != self._channel(capability)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "    def require_quiescent(self, actor):\n        \"\"\"Restart gate: refuse while any recorded guest lacks durable retirement.\"\"\"\n        if self._unretired(actor):\n",
+     "new": "    def require_quiescent(self, actor):\n        \"\"\"Restart gate: refuse while any recorded guest lacks durable retirement.\"\"\"\n        if False:\n"
+    }
+   ]
   }
  ]
 }
