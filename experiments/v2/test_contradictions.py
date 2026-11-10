@@ -107,6 +107,13 @@ class ContradictionTests(unittest.TestCase):
         result = check(docs(**{'AGENTS.md': '# A\n\n見 Q2 的結論。\n'}), CONFIG)
         self.assertEqual(result['overall'], '未發現')
 
+    def test_indented_detail_under_an_entry_is_not_an_entry(self):
+        # 2026-11-10 Q7 (b): decided items carry 採用理由／未選 sub-bullets.
+        registry = REGISTRY.replace('使用者）\n', '使用者）\n  - 未選 (b) 乙：太貴\n')
+        self.assertIn('  - 未選', registry)
+        self.assertNotIn('registry-entry-malformed',
+                         codes(check(docs(**{'decision.md': registry}), CONFIG)))
+
     def test_registry_problems_are_reported_not_ignored(self):
         broken = REGISTRY.replace('狀態：已決', '狀態：不明') + '\n'
         result = check(docs(**{'decision.md': broken}), CONFIG)

@@ -20,6 +20,10 @@ records out of them so ``trail`` can check them:
 - ``rules_from_agents``: each "why" link in AGENTS.md is a rule citing the
   AGENTS-reasons.md section it points to; each section is an accepted
   decision dated by the earliest date written in it.
+- ``questions_from_book``: each decided item of the decision book's section 6,
+  with its indented 採用理由／未選／暫緩 sub-bullets as rationale and alternatives;
+- ``nongoals_from_plan``: each non-goal of the efficiency plan's section 3.2 is
+  a rejected route, the text after ``理由：`` its reason.
 
 A document whose expected section is missing yields no records, which the
 checks then report (a decision without rationale, a roadmap with no open
@@ -138,3 +142,71 @@ def rules_from_agents(agents, reasons):
     rules = [{'id': 'agents#' + anchor, 'decision': 'reasons#' + anchor}
              for anchor in _WHY.findall(agents)]
     return rules, decisions
+
+
+_QUESTION = re.compile(r'^- \*\*(Q\d+)\*\*(.*)$')
+_TRADEOFF = re.compile(r'^  - (採用理由|未選|暫緩)(?: (.+?))?：(.+)$')
+_LETTER = re.compile(r'\(([a-z])\) ')
+_CHOSEN = re.compile(r'[採選](?: AI 建議)? \(([a-z])\)')
+
+
+def questions_from_book(text):
+    """Decided items of the decision book's section 6 (2026-11-10, Q7 (b)).
+
+    Each ``- **Qn**`` item whose ``狀態：`` starts with ``已決`` is an accepted
+    decision dated by the first date in its status. Its indented sub-bullets
+    hold the trade-off: ``採用理由：`` is the rationale, ``未選 <option>：`` a
+    rejected alternative and ``暫緩 <option>：`` a deferred one. A lettered
+    option that was neither chosen nor given a sub-bullet becomes an
+    alternative with an empty reason, which ``check_decisions`` reports, so a
+    route cannot drop out of the record by being left unmentioned.
+    """
+    body, _ = _section(text, r'6\. ')
+    items = []
+    for line in body.splitlines():
+        head = _QUESTION.match(line)
+        if head:
+            items.append([head.group(1), head.group(2), []])
+        elif items and line.startswith('  - '):
+            items[-1][2].append(line)
+    decisions = []
+    for qid, head, subs in items:
+        options, _, status = head.partition('狀態：')
+        if not status.startswith('已決'):
+            continue
+        day = _DAY.search(status)
+        title = re.search(r'）：(.+?？)', options)
+        rationale, alternatives = status.partition('理由：')[2].rstrip('）'), []
+        for sub in subs:
+            kind = _TRADEOFF.match(sub)
+            if not kind:
+                continue
+            if kind.group(1) == '採用理由':
+                rationale = kind.group(3)
+            else:
+                alternatives.append({'option': kind.group(2) or '',
+                                     'outcome': 'rejected' if kind.group(1) == '未選' else 'deferred',
+                                     'reason': kind.group(3)})
+        listed = options.partition('選項：')[2]
+        named = {a['option'][1] for a in alternatives if re.match(r'\([a-z]\)', a['option'])}
+        for letter in sorted(set(_LETTER.findall(listed)) - set(_CHOSEN.findall(status)) - named):
+            alternatives.append({'option': '(%s)' % letter, 'outcome': 'rejected', 'reason': ''})
+        decisions.append({'id': 'book-' + qid,
+                          'title': title.group(1) if title else options.strip(),
+                          'status': 'accepted', 'date': day.group(0) if day else '',
+                          'baseline': '決策書第 6 節', 'rationale': rationale.strip(),
+                          'alternatives': alternatives})
+    return decisions
+
+
+def nongoals_from_plan(text, date):
+    """Each bullet of the efficiency plan's section 3.2 is a route the plan
+    rejected; the text after ``理由：`` is why (2026-11-10, Q7 (b))."""
+    body, _ = _section(text, r'3\.2 ')
+    decisions = []
+    for item in re.findall(r'^- (.+)$', body, re.MULTILINE):
+        title, _, rationale = item.partition('理由：')
+        decisions.append({'id': 'plan-nongoal-%d' % (len(decisions) + 1),
+                          'title': title.strip(), 'status': 'rejected', 'date': date,
+                          'baseline': '效率計畫第 3.2 節', 'rationale': rationale.strip()})
+    return decisions

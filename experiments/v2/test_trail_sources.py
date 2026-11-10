@@ -5,6 +5,7 @@ import unittest
 from experiments.v2.trail import (check_decisions, check_roadmap, check_rules,
                                   rejected_routes, why)
 from experiments.v2.trail_sources import (absences_from_architect, decisions_from_book,
+                                          nongoals_from_plan, questions_from_book,
                                           roadmap_from_plan, routes_from_plan,
                                           rules_from_agents)
 
@@ -173,6 +174,59 @@ class AgentsRuleTests(unittest.TestCase):
         self.assertEqual(sorted(findings), [('reasons#bare', 'decision-date-invalid'),
                                             ('reasons#bare', 'decision-missing-rationale'),
                                             ('reasons#bare', 'decision-missing-title')])
+
+
+class QuestionTests(unittest.TestCase):
+    BOOK = (
+        '# 決策書\n\n## 6. 待決事項\n\n說明段落。\n\n'
+        '- **Q1**（2026-11-10 登記）：要選哪個？影響 F1。選項：(a) 甲；(b) 乙；(c) 丙。'
+        'AI 建議 (a)。狀態：已決（2026-11-11，使用者選 (a)）\n'
+        '  - 採用理由：甲最便宜（出處：本條）\n'
+        '  - 未選 (b) 乙：太貴\n'
+        '  - 暫緩 (c) 丙：等金鑰\n'
+        '- **Q2**（2026-11-10 登記）：要不要做？選項：(a) 做；(b) 不做。狀態：待決\n'
+        '  - 採用理由：待決項不讀\n'
+        '- **Q3**（2026-11-10 登記）：漏寫哪個？選項：(a) 一；(b) 二；(c) 三。'
+        '狀態：已決（2026-11-12，使用者採 AI 建議 (b)；理由：狀態裡的理由）\n'
+        '  - 未選 (a) 一：寫了\n'
+        '- **Q4**（2026-11-10 登記）：沒有理由？選項：(a) 一；(b) 二。狀態：已決（使用者選 (a)）\n'
+        '  - 未選 (b) 二：寫了\n\n'
+        '## 7. 之後\n\n- **Q9**（x）：別節？選項：(a) 一。狀態：已決（2026-11-13，選 (a)）\n')
+
+    def test_decided_items_carry_their_tradeoffs(self):
+        decisions = questions_from_book(self.BOOK)
+        self.assertEqual([d['id'] for d in decisions], ['book-Q1', 'book-Q3', 'book-Q4'])
+        self.assertEqual(decisions[0], {
+            'id': 'book-Q1', 'title': '要選哪個？', 'status': 'accepted', 'date': '2026-11-11',
+            'baseline': '決策書第 6 節', 'rationale': '甲最便宜（出處：本條）',
+            'alternatives': [{'option': '(b) 乙', 'outcome': 'rejected', 'reason': '太貴'},
+                             {'option': '(c) 丙', 'outcome': 'deferred', 'reason': '等金鑰'}]})
+        self.assertEqual(decisions[1]['rationale'], '狀態裡的理由')
+
+    def test_unmentioned_option_and_missing_date_or_reason_are_reported(self):
+        findings, _ = check_decisions(questions_from_book(self.BOOK))
+        self.assertEqual(sorted(findings), [('book-Q3', 'alternative-incomplete'),
+                                            ('book-Q4', 'decision-date-invalid'),
+                                            ('book-Q4', 'decision-missing-rationale')])
+
+    def test_missing_section_yields_nothing(self):
+        self.assertEqual(questions_from_book('# 沒有第六節\n'), [])
+
+
+class NongoalTests(unittest.TestCase):
+    PLAN = ('# 計畫\n\n### 3.2 非目標\n\n- 不做甲。理由：太貴（出處：7.2）。\n- 不做乙。\n\n'
+            '### 3.3 保護\n\n- 不屬於非目標。理由：別節。\n')
+
+    def test_each_nongoal_is_a_rejected_route_and_missing_reason_reported(self):
+        decisions = nongoals_from_plan(self.PLAN, '2026-11-03')
+        self.assertEqual(decisions[0], {'id': 'plan-nongoal-1', 'title': '不做甲。',
+                                        'status': 'rejected', 'date': '2026-11-03',
+                                        'baseline': '效率計畫第 3.2 節',
+                                        'rationale': '太貴（出處：7.2）。'})
+        self.assertEqual(len(decisions), 2)
+        findings, by_id = check_decisions(decisions)
+        self.assertEqual(findings, [('plan-nongoal-2', 'decision-missing-rationale')])
+        self.assertEqual([r['option'] for r in rejected_routes(by_id)], ['不做甲。', '不做乙。'])
 
 
 if __name__ == '__main__':

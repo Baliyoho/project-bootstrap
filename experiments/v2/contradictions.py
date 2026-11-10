@@ -110,13 +110,17 @@ _ENTRY = re.compile(r'^\s*[-*]\s+\*\*(?P<id>[A-Z][A-Za-z]*\d+)\*\*.*?狀態：(?
 
 
 def parse_registry(lines, doc, heading):
-    """Entries of the registry section; a malformed entry is reported, not dropped."""
+    """Entries of the registry section; a malformed entry is reported, not dropped.
+
+    Only top-level bullets are entries. Indented sub-bullets under an entry are
+    its detail (2026-11-10: the decided items' 採用理由／未選／暫緩 lines, Q7 (b)).
+    """
     entries, findings, found = {}, [], False
     for section, number, line in lines.get(doc, ()):
         if not re.search(heading, section):
             continue
         found = True
-        if not re.match(r'^\s*[-*]\s+', line):
+        if not re.match(r'^[-*]\s+', line):
             continue
         entry = _ENTRY.match(line)
         if not entry:

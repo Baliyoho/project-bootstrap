@@ -971,6 +971,11 @@
      "file": "experiments/v2/contradictions.py",
      "old": "'skill-only': [r'VERSION`? ?只跟著 ?`?SKILL\\.md',\n",
      "new": "'skill-only': [r'XX_NEVER',\n"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "        if not re.match(r'^[-*]\\s+', line):\n            continue\n        entry = _ENTRY.match(line)",
+     "new": "        if not re.match(r'^\\s*[-*]\\s+', line):\n            continue\n        entry = _ENTRY.match(line)"
     }
    ]
   },
@@ -1682,8 +1687,8 @@
     },
     {
      "file": "experiments/v2/trail_sources.py",
-     "old": "        title, _, rationale = item.partition('理由：')",
-     "new": "        title, _, rationale = item.partition('。')"
+     "old": "        title, _, rationale = item.partition('理由：')\n        decisions.append({'id': f'book-7.{number}'",
+     "new": "        title, _, rationale = item.partition('。')\n        decisions.append({'id': f'book-7.{number}'"
     },
     {
      "file": "experiments/v2/trail_sources.py",
@@ -1719,6 +1724,71 @@
      "file": "experiments/v2/trail_sources.py",
      "old": "        phase = re.match(r'(P\\d)\\s', row[0] + ' ')",
      "new": "        phase = re.match(r'(\\S+)\\s', row[0] + ' ')"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        if not status.startswith('已決'):\n            continue\n",
+     "new": "        if False:\n            continue\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    body, _ = _section(text, r'6\\. ')\n",
+     "new": "    body = text\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        elif items and line.startswith('  - '):",
+     "new": "        elif items and line.startswith('- '):"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "            if kind.group(1) == '採用理由':\n                rationale = kind.group(3)\n",
+     "new": "            if kind.group(1) == '採用理由':\n                pass\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "                                     'outcome': 'rejected' if kind.group(1) == '未選' else 'deferred',",
+     "new": "                                     'outcome': 'rejected',"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        for letter in sorted(set(_LETTER.findall(listed)) - set(_CHOSEN.findall(status)) - named):",
+     "new": "        for letter in []:"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        for letter in sorted(set(_LETTER.findall(listed)) - set(_CHOSEN.findall(status)) - named):",
+     "new": "        for letter in sorted(set(_LETTER.findall(listed)) - named):"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "_CHOSEN = re.compile(r'[採選](?: AI 建議)? \\(([a-z])\\)')",
+     "new": "_CHOSEN = re.compile(r'[採選] \\(([a-z])\\)')"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        day = _DAY.search(status)\n",
+     "new": "        day = _DAY.search(head)\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        rationale, alternatives = status.partition('理由：')[2].rstrip('）'), []\n",
+     "new": "        rationale, alternatives = '', []\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        title, _, rationale = item.partition('理由：')\n        decisions.append({'id': 'plan-nongoal-%d'",
+     "new": "        title, rationale = item, ''\n        decisions.append({'id': 'plan-nongoal-%d'"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "                          'title': title.strip(), 'status': 'rejected', 'date': date,",
+     "new": "                          'title': title.strip(), 'status': 'accepted', 'date': date,"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    body, _ = _section(text, r'3\\.2 ')\n",
+     "new": "    body = text\n"
     }
    ]
   },

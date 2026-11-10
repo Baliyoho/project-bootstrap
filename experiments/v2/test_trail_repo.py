@@ -9,6 +9,7 @@ import unittest
 
 from experiments.v2.trail import check_decisions, check_roadmap, check_rules, rejected_routes, why
 from experiments.v2.trail_sources import (absences_from_architect, decisions_from_book,
+                                          nongoals_from_plan, questions_from_book,
                                           roadmap_from_plan, routes_from_plan,
                                           rules_from_agents)
 
@@ -58,6 +59,20 @@ class RepoTrailTests(unittest.TestCase):
         self.assertEqual(sorted(set(by_id) - cited), [])
         self.assertTrue(all(why(r['id'], rules, by_id) for r in rules))
 
+
+    def test_decided_questions_record_every_option_with_a_reason(self):
+        # 2026-11-10 Q7 (b): reasons found in the documents, else "當時沒有記錄理由".
+        decisions = questions_from_book(read('project-bootstrap-requirements-decision.md'))
+        self.assertGreaterEqual(len(decisions), 10)
+        self.assertEqual(check_decisions(decisions)[0], [])
+        self.assertTrue(all(d['alternatives'] for d in decisions))
+
+    def test_efficiency_nongoals_are_rejected_routes_with_reasons(self):
+        decisions = nongoals_from_plan(read('project-bootstrap-efficiency-plan.md'), '2026-11-03')
+        self.assertEqual(len(decisions), 5)
+        findings, by_id = check_decisions(decisions)
+        self.assertEqual(findings, [])
+        self.assertEqual(len(rejected_routes(by_id)), 5)
 
 if __name__ == '__main__':
     unittest.main()
