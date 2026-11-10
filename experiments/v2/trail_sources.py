@@ -11,7 +11,12 @@ records out of them so ``trail`` can check them:
   are the alternatives, each with its cost as the reason;
 - ``roadmap_from_plan``: the plan's phase table (section 7) gives the
   milestones; their status comes from the caller, because the plan holds
-  estimates, not progress.
+  estimates, not progress;
+- ``absences_from_architect``: each bullet of ARCHITECT's "deliberately
+  absent" section whose bold lead says something is not installed is an
+  accepted decision; the rest of the bullet is its rationale and the last
+  date in the bold lead (else the first in the bullet) its date. A bullet
+  with no date yields an empty date, which ``check_decisions`` reports.
 
 A document whose expected section is missing yields no records, which the
 checks then report (a decision without rationale, a roadmap with no open
@@ -69,6 +74,26 @@ def routes_from_plan(text, date):
              'baseline': '實現規劃第 3.4 節', 'rationale': verdict,
              'alternatives': [{'option': r[0], 'outcome': 'rejected', 'reason': f'{r[2]}；{r[3]}'}
                               for r in rows if r is not chosen[0]]}]
+
+
+_ABSENT = re.compile(r'沒有|不裝|刻意不')
+_DAY = re.compile(r'\d{4}-\d{2}-\d{2}')
+
+
+def absences_from_architect(text):
+    body, _ = _section(text, r'這個 repo 刻意沒有的東西')
+    decisions = []
+    for item in re.findall(r'^- \*\*(.+)$', body, re.MULTILINE):
+        lead, _, rest = item.partition('**')
+        if not _ABSENT.search(lead):
+            continue
+        days = _DAY.findall(lead) or _DAY.findall(rest)[:1]
+        decisions.append({'id': f'architect-absent-{len(decisions) + 1}',
+                          'title': lead.strip(), 'status': 'accepted',
+                          'date': days[-1] if days else '',
+                          'baseline': 'ARCHITECT「這個 repo 刻意沒有的東西」',
+                          'rationale': rest.strip()})
+    return decisions
 
 
 def roadmap_from_plan(text, status):

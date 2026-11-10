@@ -208,6 +208,27 @@ REPO_CONFIG = {
                  'project-bootstrap-requirements-decision.md',
                  'project-bootstrap-implementation-plan.md'],
         'required_in': ['AGENTS.md', 'project-bootstrap-requirements-decision.md'],
+    }, {
+        # 2026-11-02／F12: the busy marker coordinates; it is not a mutual-exclusion lock.
+        'id': 'busy-marker-not-lock',
+        'canonical': 'signal',
+        'variants': {
+            'signal': [r'協調訊號，不是'],
+            'lock': [r'(?<![不非、])是(一把|個)?互斥鎖'],
+        },
+        'required_in': ['PROJECT-BOOTSTRAP.md'],
+    }, {
+        # 2026-11-02／F15: the source marker's serial can run ahead of the version line.
+        'id': 'serial-vs-version-line',
+        'canonical': 'not-same',
+        'variants': {
+            'not-same': [r'不保證同號'],
+            # One clause, no quote or bracket in between: quoting the old wording is not a claim.
+            'same': [r'序號[^。\n「」（）]{0,12}(跟|與)[^。\n「」（）]{0,10}版本」?行'
+                     r'[^。\n「」（）]{0,4}(?<!不保證)同(一個)?號'],
+        },
+        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md'],
+        'required_in': ['AGENTS.md', 'PROJECT-BOOTSTRAP.md'],
     }],
     'registry': {'doc': 'project-bootstrap-requirements-decision.md', 'heading': r'(^| > )6\. 待決事項$'},
     'pending_sections': [{'doc': 'HANDOFF.md', 'heading': r'懸置事項'}],

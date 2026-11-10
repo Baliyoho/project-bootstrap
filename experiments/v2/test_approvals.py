@@ -169,6 +169,64 @@ class SignedApprovalTests(TestCase):
             gate.approve(self.ticket, changed, self.sign(changed))
         self.assertEqual(self.effect(kind='delete', resource='data'), 'not-authorized')
 
+    def test_document_shape_is_rejected_before_any_signature_check(self):
+        parse = approvals.SignedEffectApprovals.parse
+        good = self.document() if self.supported else json.dumps(dict(
+            audience='a' * 64, id='1' * 32, actor='b' * 64, kind='extra-model', resource='budget',
+            uses=1, funding='subscription', issued=995, expires=1100, epoch=0)).encode()
+        self.assertEqual(parse(good)['uses'], 1)
+        fields = json.loads(good)
+        cases = [(b'', 'invalid-approval-document'), (good + b' ' * 4096, 'invalid-approval-document'),
+                 (json.dumps(dict(fields, note='x')).encode(), 'invalid-approval-document')]
+        for key, bad in (('audience', 'A' * 64), ('actor', 'b' * 63), ('id', 'g' * 32)):
+            cases.append((json.dumps(dict(fields, **{key: bad})).encode(), 'invalid-approval-document'))
+        for change in ({'resource': ''}, {'resource': 5}, {'uses': 0}, {'uses': 33},
+                       {'issued': -1}, {'expires': 2**53 + 1}, {'epoch': 1.0}):
+            cases.append((json.dumps(dict(fields, **change)).encode(), 'invalid-approval-scope'))
+        for document, code in cases:
+            with self.subTest(document=document[:60]), self.assertRaisesRegex(Denied, code):
+                parse(document)
+
+    def test_key_signature_policy_and_grant_records_are_checked(self):
+        if not self.supported:
+            return self.unsupported()
+        for key in (b'ssh-rsa ' + self.public.split()[1], self.public + b' x',
+                    b'ssh-ed25519 ' + b'A' * 68):
+            with self.subTest(key=key), self.assertRaisesRegex(Denied, 'invalid-approval-public-key'):
+                approvals.SignedEffectApprovals(self.authority, key)
+        document = self.document()
+        # Empty or oversized signatures never reach the verifier process.
+        with patch.object(approvals.subprocess, 'run', side_effect=AssertionError('ran')):
+            for signature in (b'', b'x' * 2049):
+                with self.assertRaisesRegex(Denied, 'invalid-approval-signature'):
+                    self.policy.approve(self.ticket, document, signature)
+        # The verifier binary recorded at first use is part of the persisted policy.
+        self.lab.db.execute("UPDATE signed_effect_policy SET verifier_digest='0'")
+        self.lab.db.commit()
+        with self.assertRaisesRegex(Denied, 'approval-policy-changed'):
+            approvals.SignedEffectApprovals(self.authority, self.public)
+        with self.assertRaisesRegex(Denied, 'approval-policy-changed'):
+            self.policy.approve(self.ticket, document, self.sign(document))
+        self.lab.db.execute('UPDATE signed_effect_policy SET verifier_digest=?',
+                            (self.policy.verifier_digest,))
+        self.lab.db.commit()
+        grant = self.policy.approve(self.ticket, document, self.sign(document))
+        self.lab.db.execute('DELETE FROM grants WHERE id=?', (grant,))
+        self.lab.db.commit()
+        with self.assertRaisesRegex(Denied, 'approval-grant-missing'):
+            self.policy.approve(self.ticket, document, self.sign(document))
+
+    def test_existing_unsigned_grants_block_installing_the_signed_policy(self):
+        if not self.supported:
+            return self.unsupported()
+        lab = Lab(self.root / 'legacy.sqlite', authority_clock=lambda: self.now)
+        self.addCleanup(lab.close)
+        authority = LaunchAuthority(Broker(lab))
+        ticket = authority.issue(('budget',), 'synthetic-parent', 1200)
+        authority.grant(ticket, 'extra-model', 'budget', 1, 'legacy-label', 1100)
+        with self.assertRaisesRegex(Denied, 'legacy-effect-grants-present'):
+            approvals.SignedEffectApprovals(authority, self.public)
+
     def test_confined_agent_uses_signed_grant_through_its_existing_broker_pipe(self):
         if not self.supported:
             return self.unsupported()

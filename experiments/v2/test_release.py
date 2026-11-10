@@ -1,5 +1,6 @@
 """M1 manifest and per-write freshness gate, with a disposable ssh-keygen signer."""
 
+import json
 from pathlib import Path
 import platform
 import subprocess
@@ -163,6 +164,29 @@ class ReleaseGateTests(TestCase):
         debug = dict(self.manifest, kind='debug')
         self.channel_manifest = manifest_digest(debug)
         self.denied('debug-release', self.gate(manifest=debug).confirm, OP)
+
+    def test_statement_shape_and_key_format_are_checked_even_when_signed(self):
+        if not self.supported:
+            return self.unsupported()
+        for key in (b'ssh-rsa ' + self.public.split()[1], self.public + b' extra', b'', 'text'):
+            with self.subTest(key=key):
+                with self.assertRaises(Denied) as caught:
+                    WriteGate(key, 'stable', self.installed, self.manifest, self.endpoint)
+                self.assertEqual(str(caught.exception), 'invalid-channel-key')
+
+        def signed_document(build):
+            def fetch(nonce):
+                doc = build(nonce)
+                return doc, self.sign(doc)
+            return fetch
+        base = lambda nonce: dict(channel='stable', epoch=5, manifest=self.channel_manifest,
+                                  nonce=nonce, issued=995, expires=1060)
+        extra = signed_document(lambda nonce: json.dumps(dict(base(nonce), note='x'),
+                                                         sort_keys=True).encode())
+        self.denied('invalid-channel-statement', self.gate(fetch=extra).confirm, OP)
+        # A valid, signed statement padded past the size limit is still refused.
+        oversized = signed_document(lambda nonce: statement(**base(nonce)) + b' ' * 1024)
+        self.denied('invalid-channel-statement', self.gate(fetch=oversized).confirm, OP)
 
     def test_manifest_inputs_are_validated(self):
         outside = self.root / 'outside.txt'

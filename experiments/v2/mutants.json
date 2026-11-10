@@ -1138,12 +1138,12 @@
     },
     {
      "file": "experiments/v2/confluence.py",
-     "old": "        whole = len(buckets) == 1 and not clashing",
+     "old": "        whole = len(buckets) == 1 and (not clashing or settled is not None)",
      "new": "        whole = len(buckets) == 1"
     },
     {
      "file": "experiments/v2/confluence.py",
-     "old": "        whole = len(buckets) == 1 and not clashing",
+     "old": "        whole = len(buckets) == 1 and (not clashing or settled is not None)",
      "new": "        whole = True"
     },
     {
@@ -1786,6 +1786,786 @@
      "file": "experiments/v2/resume.py",
      "old": "    subprocess.run(['git', 'clone', '-q', '--no-hardlinks', '--single-branch', '--branch',\n                    branch, str(repo), str(dest)], check=True, capture_output=True)\n",
      "new": "    import shutil\n    shutil.copytree(repo, dest)\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_gitclaim"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    return values[0] if len(values) == 1 and values[0] else None\n",
+     "new": "    return values[0] if values else None\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if not 2 <= len(parts) <= 3:\n        return None\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "        if (match is None or not match.group(1).strip()\n",
+     "new": "        if (match is None\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "                or (index < len(parts) - 1 and match.end() != len(part.strip()))):\n",
+     "new": "                ):\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if theirs is None:\n        return 'owner-unknown'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if len(theirs) == 2 and theirs[1] not in KNOWN_TOOLS:\n        return 'busy-unidentified-tool'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if theirs[0] != mine[0]:\n        return 'busy-other-machine'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if theirs[1] != mine[1]:\n        return 'busy-same-machine-other-tool'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if branch == 'HEAD':\n        raise GitGateDenied('detached-head')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if upstream.returncode != 0:\n        raise GitGateDenied('no-upstream')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if not remote or upstream != f'{remote}/{branch}':\n",
+     "new": "    if not remote:\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if _git(repo, env, 'fetch', '--quiet', remote, check=False).returncode != 0:\n        raise GitGateDenied('fetch-failed')\n",
+     "new": "    _git(repo, env, 'fetch', '--quiet', remote, check=False)\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    return bool(_out(repo, env, 'status', '--porcelain', '--untracked-files=all'))\n",
+     "new": "    return bool(_out(repo, env, 'status', '--porcelain', '--untracked-files=no'))\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if not isinstance(owner, str) or len(owner_parts(owner.strip()) or ()) != 3:\n        raise GitGateDenied('invalid-owner')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    _fetch(repo, env, remote)\n    if _dirty(repo, env):\n        raise GitGateDenied('dirty-unknown')\n",
+     "new": "    _fetch(repo, env, remote)\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if ahead and behind:\n        raise GitGateDenied('diverged')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if ahead:\n        raise GitGateDenied('ahead-only')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if behind:\n        raise GitGateDenied('behind-pull-required')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if remote_owner is None:\n        raise GitGateDenied('owner-unknown')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if remote_owner not in (IDLE, owner.strip()):\n",
+     "new": "    if remote_owner not in (IDLE, owner.strip()) and False:\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if not argv or not all(isinstance(item, str) and item for item in argv):\n        raise GitGateDenied('invalid-check')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if _dirty(repo, env) or _out(repo, env, 'rev-parse', 'HEAD^{tree}') != tree:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    skipped = len(re.findall(r'(?im)^\\s*\\[?\\s*skip\\b', text))\n",
+     "new": "    skipped = 0\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if not isinstance(receipts, (list, tuple)) or not receipts:\n",
+     "new": "    if not isinstance(receipts, (list, tuple)):\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "        if receipt['exit'] != 0 or receipt['skipped'] != 0:\n",
+     "new": "        if receipt['exit'] != 0:\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "        if receipt['tree'] != tree:\n            raise GitGateDenied('final-checks-stale')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "    if _remote_owner(repo, env, 'HEAD', marker_path) != IDLE:\n        raise GitGateDenied('marker-not-released')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "            check=False).returncode != 0:\n        raise GitGateDenied('remote-advanced')\n",
+     "new": "            check=False).returncode != 0 and False:\n        raise GitGateDenied('remote-advanced')\n"
+    },
+    {
+     "file": "experiments/v2/gitclaim.py",
+     "old": "            check=False).returncode != 0:\n        raise GitGateDenied('push-failed')\n",
+     "new": "            check=False).returncode != 0 and False:\n        raise GitGateDenied('push-failed')\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_release"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/release.py",
+     "old": "            or '\\\\' in relative or any(part in ('', '.', '..') for part in relative.split('/'))):\n",
+     "new": "            ):\n"
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if path.is_symlink() or not path.is_file():\n            raise Denied('invalid-component')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "    if kind not in KINDS or not isinstance(version, str) or not version:\n",
+     "new": "    if not isinstance(version, str) or not version:\n"
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "    if not paths:\n        raise Denied('invalid-manifest')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "                or not re.fullmatch(rb'ssh-ed25519 [A-Za-z0-9+/]{68}', public_key)):\n",
+     "new": "                ):\n"
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if result.returncode:\n            raise Denied('invalid-channel-signature')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if not isinstance(operation, str) or not re.fullmatch(r'[0-9a-f]{32}', operation):\n",
+     "new": "        if not isinstance(operation, str):\n"
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        except Exception:\n            raise Denied('channel-unreachable') from None\n",
+     "new": "        except ZeroDivisionError:\n            raise Denied('channel-unreachable') from None\n"
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if not isinstance(document, bytes) or not 1 <= len(document) <= 1024:\n",
+     "new": "        if not isinstance(document, bytes):\n"
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        self._verify(document, signature)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if (not isinstance(fields, dict) or set(fields) != STATEMENT_FIELDS\n",
+     "new": "        if (not isinstance(fields, dict)\n"
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if fields['channel'] != self.channel:\n            raise Denied('wrong-channel')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if fields['nonce'] != nonce:\n            raise Denied('stale-confirmation')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if not fields['issued'] <= now < fields['expires']:\n",
+     "new": "        if not now < fields['expires']:\n"
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if not fields['issued'] <= now < fields['expires']:\n",
+     "new": "        if not fields['issued'] <= now:\n"
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if fields['epoch'] < self.highest_epoch:\n            raise Denied('channel-rollback')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if fields['manifest'] != self.digest:\n            raise Denied('release-mismatch')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        if self.manifest.get('kind') != 'formal':\n            raise Denied('debug-release')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "            if _file_digest(self.root, path) != expected:\n                raise Denied('component-drift')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/release.py",
+     "old": "        self.highest_epoch = fields['epoch']\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_contracts",
+    "experiments.v2.test_recovery"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        return bool(self.event_id) and all(value is True for value in (\n",
+     "new": "        return all(value is True for value in (\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "            self.final_checks_passed, self.push_succeeded,\n            self.remote_released, self.upstream_aligned))\n",
+     "new": "            self.final_checks_passed, self.push_succeeded))\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if not re.fullmatch(r'\\d{8}', self.started):\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if not self.topic or len(self.topic) > 10 or any(\n",
+     "new": "        if not self.topic or any(\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "                ch in self.topic for ch in '\\n\\r｜'):\n",
+     "new": "                ch in self.topic for ch in '\\n'):\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if type(self.count) is not int or self.count < 0:\n",
+     "new": "        if type(self.count) is not int:\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if self.state not in ('working', 'waiting', 'handed_off'):\n            raise ValueError('invalid session state')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if len(set(self.completed)) != len(self.completed) or any(\n",
+     "new": "        if any(\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        count = ('≥' if self.at_least else '') + str(self.count)\n",
+     "new": "        count = str(self.count)\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if event in ('start', 'message'):\n",
+     "new": "        if event == 'start':\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if event == 'checkpoint':\n            return self\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if receipt is None or not receipt.valid():\n",
+     "new": "        if receipt is None:\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if receipt.event_id in self.completed:\n            return self\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if self.state == 'handed_off':\n            raise ValueError('resume before a new handoff')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "        if instance.title()[0] != symbol:\n            raise ValueError('symbol contradicts status')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "    if adapter is None:\n        return {'status': 'unavailable', 'requested': target, 'observed': None}\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "    except Exception:\n        return {'status': 'error', 'requested': target, 'observed': None}\n",
+     "new": "    except ZeroDivisionError:\n        return {'status': 'error', 'requested': target, 'observed': None}\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "    if observed not in (target, target.replace('　', ' ', 1)):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/session.py",
+     "old": "    if observed not in (target, target.replace('　', ' ', 1)):\n",
+     "new": "    if observed != target:\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_registry"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/registry.py",
+     "old": "    if len(ids) != len(set(ids)) or set(observed) != set(ids) or len(observed) != len(ids):\n",
+     "new": "    if set(observed) != set(ids):\n"
+    },
+    {
+     "file": "experiments/v2/registry.py",
+     "old": "            if not row.get(key):\n",
+     "new": "            if key not in row:\n"
+    },
+    {
+     "file": "experiments/v2/registry.py",
+     "old": "        if row.get('result') not in STATES:\n            errors.append(f'{row.get(\"id\")} 結果無效')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/registry.py",
+     "old": "        if set(row.get('parts', {})) != expected:\n",
+     "new": "        if not set(row.get('parts', {})) >= expected:\n"
+    },
+    {
+     "file": "experiments/v2/registry.py",
+     "old": "            if item.get('result') == '通過':\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "experiments/v2/registry.py",
+     "old": "                if not path or path.startswith('/') or '..' in path.split('/'):\n",
+     "new": "                if not path:\n"
+    },
+    {
+     "file": "experiments/v2/registry.py",
+     "old": "                elif not (root / path).is_file():\n",
+     "new": "                elif False:\n"
+    },
+    {
+     "file": "experiments/v2/registry.py",
+     "old": "                if not evidence.get('scope'):\n",
+     "new": "                if False:\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_approvals"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "        if not isinstance(public_key, bytes) or not re.fullmatch(rb'ssh-ed25519 [A-Za-z0-9+/]{68}', public_key):\n",
+     "new": "        if not isinstance(public_key, bytes):\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "        if not base64.b64decode(public_key.split()[1]).startswith(algorithm):\n            raise Denied('invalid-approval-public-key')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "                if self.lab.db.execute('SELECT 1 FROM grants LIMIT 1').fetchone():\n                    raise Denied('legacy-effect-grants-present')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "                self.check_policy(policy)\n",
+     "new": "                pass\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "                or policy['signer_digest'] != self.signer_digest or policy['verifier_digest'] != self.verifier_digest):\n",
+     "new": "                or policy['signer_digest'] != self.signer_digest):\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "                or policy['signer_digest'] != self.signer_digest or policy['verifier_digest'] != self.verifier_digest):\n",
+     "new": "                or policy['verifier_digest'] != self.verifier_digest):\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "        if self.verifier_fingerprint() != self.verifier_digest:\n            raise Denied('approval-verifier-changed')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "        if not isinstance(signature, bytes) or not 1 <= len(signature) <= 2048:\n",
+     "new": "        if not isinstance(signature, bytes):\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "        if result.returncode:\n            raise Denied('invalid-approval-signature')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "        if not isinstance(document, bytes) or not 1 <= len(document) <= 4096:\n",
+     "new": "        if not isinstance(document, bytes):\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "        if not isinstance(fields, dict) or set(fields) != FIELDS:\n",
+     "new": "        if not isinstance(fields, dict):\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "            if not isinstance(fields[key], str) or not re.fullmatch('[0-9a-f]{%d}' % length, fields[key]):\n",
+     "new": "            if not isinstance(fields[key], str):\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "        if (not isinstance(kind, str) or kind not in EFFECT_KINDS or fields['funding'] != FUNDING.get(kind)\n",
+     "new": "        if (not isinstance(kind, str) or kind not in EFFECT_KINDS\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "                or not isinstance(fields['resource'], str) or not fields['resource']\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "                or type(fields['uses']) is not int or not 1 <= fields['uses'] <= 32\n",
+     "new": "                or type(fields['uses']) is not int\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "                or any(type(fields[key]) is not int or not 0 <= fields[key] <= 2**53\n",
+     "new": "                or any(type(fields[key]) is not int\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "        self.verify(document, signature)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "            self.check_policy(self.lab.db.execute('SELECT * FROM signed_effect_policy').fetchone())\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "            if fields['audience'] != self.audience or fields['actor'] != permit['actor']:\n",
+     "new": "            if fields['actor'] != permit['actor']:\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "            if fields['audience'] != self.audience or fields['actor'] != permit['actor']:\n",
+     "new": "            if fields['audience'] != self.audience:\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "            if not fields['issued'] <= now < fields['expires']:\n",
+     "new": "            if not now < fields['expires']:\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "            if not fields['issued'] <= now < fields['expires']:\n",
+     "new": "            if not fields['issued'] <= now:\n"
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "            self.lab.require_epoch(fields['epoch'])\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "                if previous['document'] != document:\n                    raise Denied('approval-id-reused')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "                if previous['id'] is None:\n                    raise Denied('approval-grant-missing')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/approvals.py",
+     "old": "            if self.lab.db.execute('SELECT 1 FROM grants WHERE source=?', (source,)).fetchone():\n                raise Denied('approval-record-missing')\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_confluence"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "            _text(resolution.get(k)) for k in ('decided_by', 'reason')):\n",
+     "new": "            _text(resolution.get(k)) for k in ('decided_by',)):\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "            _text(resolution.get(k)) for k in ('decided_by', 'reason')):\n",
+     "new": "            _text(resolution.get(k)) for k in ('reason',)):\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "        datetime.datetime.fromisoformat(resolution.get('decided_at'))\n    except (TypeError, ValueError):\n        return 'resolution-incomplete'\n",
+     "new": "        pass\n    except (TypeError, ValueError):\n        return 'resolution-incomplete'\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    if not isinstance(resolution.get('scope'), dict) or not isinstance(cites, list) or not cites:\n",
+     "new": "    if not isinstance(cites, list) or not cites:\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    if not isinstance(resolution.get('scope'), dict) or not isinstance(cites, list) or not cites:\n",
+     "new": "    if not isinstance(resolution.get('scope'), dict) or not isinstance(cites, list):\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    if not all(isinstance(c, dict) for c in cites):\n        return 'resolution-incomplete'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    if None in cited:\n        return 'resolution-cites-unknown'\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "    if 'value' not in resolution or all(f.get('value') != resolution['value'] for f in cited):\n",
+     "new": "    if 'value' not in resolution:\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "            if clashing and {_ident(group[i]) for i in clashing} <= cited:\n",
+     "new": "            if clashing:\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "            kept = [group[i] for i in sorted(clashing) if group[i].get('value') == settled['value']]\n",
+     "new": "            kept = [group[i] for i in sorted(clashing)]\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "        whole = len(buckets) == 1 and (not clashing or settled is not None)\n",
+     "new": "        whole = len(buckets) == 1 and not clashing\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "                entry['decision'] = out['resolved'][-1]['decision']\n",
+     "new": "                pass\n"
+    },
+    {
+     "file": "experiments/v2/confluence.py",
+     "old": "            if settled is not None and (scope, value) == (\n",
+     "new": "            if settled is not None and (scope, value) != (\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_trail_sources"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        if not _ABSENT.search(lead):\n            continue\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        days = _DAY.findall(lead) or _DAY.findall(rest)[:1]\n",
+     "new": "        days = _DAY.findall(lead)\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        days = _DAY.findall(lead) or _DAY.findall(rest)[:1]\n",
+     "new": "        days = _DAY.findall(lead + rest)\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "                          'date': days[-1] if days else '',\n",
+     "new": "                          'date': days[0] if days else '',\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "                          'rationale': rest.strip()})\n",
+     "new": "                          'rationale': item.strip()})\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    for item in re.findall(r'^- \\*\\*(.+)$', body, re.MULTILINE):\n",
+     "new": "    for item in re.findall(r'^\\s*- \\*\\*(.+)$', body, re.MULTILINE):\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    body, _ = _section(text, r'這個 repo 刻意沒有的東西')\n",
+     "new": "    body = text\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_broker",
+    "experiments.v2.test_launcher",
+    "experiments.v2.test_recovery",
+    "experiments.v2.test_approvals"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            if channel in self.channels:\n                channel.closed = True\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            if channel not in self.channels or channel.closed:\n",
+     "new": "            if channel.closed:\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            if channel not in self.channels or channel.closed:\n",
+     "new": "            if channel not in self.channels:\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            if not isinstance(raw, bytes) or len(raw) > MAX_REQUEST_BYTES:\n",
+     "new": "            if not isinstance(raw, bytes):\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            if not isinstance(request, dict) or type(request.get('id')) is not int or request['id'] < 1:\n",
+     "new": "            if not isinstance(request, dict) or type(request.get('id')) is not int:\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "                    if channel.authorize is not None:\n                        channel.authorize(channel)\n                    previous",
+     "new": "                    previous"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "                        if previous['digest'] != fingerprint:\n                            return self.response(request_id, 'changed-retry')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "                        if request_id != last + 1:\n",
+     "new": "                        if request_id <= last:\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "                        except (TypeError, ValueError, UnicodeError):\n                            response = self.response(request_id, 'invalid-request')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            except Denied:\n                channel.closed = True\n                return self.response(request_id, 'session-no-longer-valid')\n",
+     "new": "            except Denied:\n                return self.response(request_id, 'session-no-longer-valid')\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            except Exception:\n                channel.closed = True\n                return self.response(request_id, 'broker-error-channel-closed')\n",
+     "new": "            except Exception:\n                return self.response(request_id, 'broker-error-channel-closed')\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "                if request.get('resource') not in channel.resources:\n                    return self.response(request_id, 'resource-not-authorized')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "                    if channel.authorize is not None:\n                        with self.lab.transaction():\n                            channel.authorize(channel)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            if key in result:\n                raise ValueError('duplicate-key')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "        if method not in schemas:\n            raise Denied('unknown-method')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "        if set(request) != schemas[method]:\n",
+     "new": "        if not set(request) >= schemas[method]:\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "        if not isinstance(resource, str) or resource not in channel.resources:\n",
+     "new": "        if not isinstance(resource, str):\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "        if type(request['epoch']) is not int or request['epoch'] < 0:\n",
+     "new": "        if type(request['epoch']) is not int:\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            if self.materializer is not None:\n                self.materializer.ensure_ready(resource)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            if base is not None and (not isinstance(base, str) or len(base) != 64\n",
+     "new": "            if base is not None and (not isinstance(base, str)\n"
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "            if not isinstance(request['text'], str):\n                raise Denied('invalid-content')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/broker.py",
+     "old": "        if not isinstance(request['kind'], str) or request['kind'] not in EFFECT_KINDS:\n",
+     "new": "        if not isinstance(request['kind'], str):\n"
     }
    ]
   }

@@ -17,6 +17,14 @@ anything become a shared basis by accident:
 - verified findings that disagree under the same or overlapping scope are a
   conflict and none of them is shared until someone resolves it.
 
+A conflict is handled by a resolution a person records: who decided, when,
+why, under which scope, and which conflicting findings (by line and source) it
+weighed. It must pick the value of one of the findings it cites, so a decision
+cannot invent a value without evidence. It settles the conflict only when it
+cites every finding in it; a conflicting finding that arrived afterwards
+reopens the conflict instead of being silently overruled. The overruled
+findings stay in the record with the decision.
+
 Scopes overlap when no condition they both name has different values; an
 empty scope means "everywhere" and overlaps every other. This only compares
 what lines declared; it cannot tell that two differently worded keys are the
@@ -47,8 +55,36 @@ def _cite(finding):
     return {k: finding.get(k) for k in ('line', 'source', 'obtained_at', 'scope', 'value')}
 
 
-def merge(findings):
-    out = {'shared': [], 'conditional': [], 'unconfirmed': [], 'incomplete': [], 'conflicts': []}
+def _ident(finding):
+    return (finding.get('line'), finding.get('source'))
+
+
+def _resolution_error(resolution, group):
+    """Why a resolution cannot be used, or None."""
+    if not isinstance(resolution, dict) or not all(
+            _text(resolution.get(k)) for k in ('decided_by', 'reason')):
+        return 'resolution-incomplete'
+    try:
+        datetime.datetime.fromisoformat(resolution.get('decided_at'))
+    except (TypeError, ValueError):
+        return 'resolution-incomplete'
+    cites = resolution.get('cites')
+    if not isinstance(resolution.get('scope'), dict) or not isinstance(cites, list) or not cites:
+        return 'resolution-incomplete'
+    if not all(isinstance(c, dict) for c in cites):
+        return 'resolution-incomplete'
+    known = {_ident(f): f for f in group}
+    cited = [known.get((c.get('line'), c.get('source'))) for c in cites]
+    if None in cited:
+        return 'resolution-cites-unknown'
+    if 'value' not in resolution or all(f.get('value') != resolution['value'] for f in cited):
+        return 'resolution-value-unsupported'
+    return None
+
+
+def merge(findings, resolutions=()):
+    out = {'shared': [], 'conditional': [], 'unconfirmed': [], 'incomplete': [], 'conflicts': [],
+           'resolved': [], 'invalid_resolutions': []}
     verified = {}
     for finding in findings:
         if not isinstance(finding, dict) or not _complete(finding):
@@ -64,18 +100,45 @@ def merge(findings):
                 b = group[j]
                 if a.get('value') != b.get('value') and _overlap(a['scope'], b['scope']):
                     clashing.update((i, j))
-        if clashing:
-            out['conflicts'].append({'key': key,
+        settled = None
+        for resolution in [r for r in resolutions if isinstance(r, dict) and r.get('key') == key]:
+            error = _resolution_error(resolution, group)
+            if error:
+                out['invalid_resolutions'].append({'key': key, 'code': error})
+                continue
+            cited = {(c['line'], c['source']) for c in resolution['cites']}
+            if clashing and {_ident(group[i]) for i in clashing} <= cited:
+                settled = resolution
+        if clashing and settled is None:
+            # A decision exists for this key but no longer covers every conflicting finding.
+            reopened = any(r.get('key') == key for r in resolutions if isinstance(r, dict))
+            out['conflicts'].append({'key': key, 'reopened': reopened,
                                      'findings': [_cite(group[i]) for i in sorted(clashing)]})
         rest = [f for i, f in enumerate(group) if i not in clashing]
         buckets = {}
+        if settled is not None:
+            kept = [group[i] for i in sorted(clashing) if group[i].get('value') == settled['value']]
+            overruled = [group[i] for i in sorted(clashing)
+                         if group[i].get('value') != settled['value']]
+            decision = {k: settled[k] for k in ('decided_by', 'decided_at', 'reason')}
+            out['resolved'].append({'key': key, 'value': settled['value'],
+                                    'scope': dict(settled['scope']), 'decision': decision,
+                                    'kept': [_cite(f) for f in kept],
+                                    'overruled': [_cite(f) for f in overruled]})
+            scope = tuple(sorted(settled['scope'].items()))
+            # Sources keep their own scope; the entry's scope is the decision's.
+            buckets[(scope, repr(settled['value']))] = kept
         for finding in rest:
             scope = tuple(sorted(finding['scope'].items()))
             buckets.setdefault((scope, repr(finding.get('value'))), []).append(finding)
-        whole = len(buckets) == 1 and not clashing
-        for (scope, _), same in sorted(buckets.items()):
+        whole = len(buckets) == 1 and (not clashing or settled is not None)
+        for (scope, value), same in sorted(buckets.items()):
             entry = {'key': key, 'value': same[0].get('value'), 'scope': dict(scope),
                      'sources': [_cite(f) for f in same]}
+            if settled is not None and (scope, value) == (
+                    tuple(sorted(settled['scope'].items())), repr(settled['value'])):
+                # Whoever relies on it can see it rests on a decision, not on agreement.
+                entry['decision'] = out['resolved'][-1]['decision']
             out['shared' if whole else 'conditional'].append(entry)
     return out
 

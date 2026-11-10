@@ -3,7 +3,8 @@
 import unittest
 
 from experiments.v2.trail import check_decisions, check_roadmap, rejected_routes
-from experiments.v2.trail_sources import decisions_from_book, roadmap_from_plan, routes_from_plan
+from experiments.v2.trail_sources import (absences_from_architect, decisions_from_book,
+                                          roadmap_from_plan, routes_from_plan)
 
 BOOK = '''# 決策書
 
@@ -93,6 +94,44 @@ class SourceTests(unittest.TestCase):
         self.assertEqual(check_roadmap(milestones, []), [])
         self.assertEqual(check_roadmap(roadmap_from_plan('# 空\n', {}), []),
                          [('roadmap', 'no-open-milestone')])
+
+
+ARCHITECT = '''# ARCHITECT
+
+## 這個 repo 刻意沒有的東西
+
+> 宣告（2026-11-06）：不裝下面三項。
+
+- **沒有 skill（2026-10-29 評估）。** 它是來源；2026-10-30 再確認。
+- **跨機器標記：2026-10-30 補上了。** 不是減項。
+- **`hook.sh`：2026-10-30 決定不裝，2026-11-01 重新評估仍不裝。** 攔不住已知故障。
+- **沒有 CI。** 驗證是一個指令。
+  - **沒有巢狀項。** 不是頂層。
+- **沒有理由的一條（2026-11-02）。**
+
+## 下一節
+
+- **沒有別節的東西（2026-11-03）。** 不屬於這節。
+'''
+
+
+class ArchitectAbsenceTests(unittest.TestCase):
+    def test_absence_bullets_become_decisions_and_gaps_are_reported(self):
+        decisions = absences_from_architect(ARCHITECT)
+        self.assertEqual([(d['title'][:6], d['date']) for d in decisions],
+                         [('沒有 ski', '2026-10-29'), ('`hook.', '2026-11-01'),
+                          ('沒有 CI。', ''), ('沒有理由的一', '2026-11-02')])
+        self.assertEqual(decisions[0]['rationale'], '它是來源；2026-10-30 再確認。')
+        self.assertEqual({d['baseline'] for d in decisions}, {'ARCHITECT「這個 repo 刻意沒有的東西」'})
+        findings, _ = check_decisions(decisions)
+        self.assertEqual(sorted(findings), [('architect-absent-3', 'decision-date-invalid'),
+                                            ('architect-absent-4', 'decision-missing-rationale')])
+
+    def test_date_falls_back_to_the_first_in_the_bullet_and_missing_section_yields_nothing(self):
+        decisions = absences_from_architect(ARCHITECT.replace('**沒有 CI。** 驗證',
+                                                              '**沒有 CI。** 2026-09-13 起驗證'))
+        self.assertEqual(decisions[2]['date'], '2026-09-13')
+        self.assertEqual(absences_from_architect('# 無\n\n- **沒有 x（2026-01-01）。** y\n'), [])
 
 
 if __name__ == '__main__':

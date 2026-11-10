@@ -83,6 +83,63 @@ class BrokerTests(unittest.TestCase):
         self.assertEqual(self.lab.db.execute('SELECT count(*) FROM writes').fetchone()[0], 0)
         self.assertEqual(self.dispatch(self.a, **self.write_request())['code'], 'ok')
 
+    def test_each_malformed_input_gets_its_own_code_without_effect(self):
+        for raw, code in ((b'x' * (MAX_REQUEST_BYTES + 1), 'request-too-large-or-invalid'),
+                          ('{"id":1}', 'request-too-large-or-invalid'),
+                          (b'{"id":0,"method":"write"}', 'invalid-sequence'),
+                          (b'{"id":-3}', 'invalid-sequence'),
+                          (b'{"id":1,"id":1}', 'invalid-json')):
+            with self.subTest(raw=raw[:30]):
+                self.assertEqual(json.loads(self.broker.dispatch(self.a, raw))['code'], code)
+        cases = [(dict(epoch=-1), 'invalid-epoch'), (dict(epoch='0'), 'invalid-epoch'),
+                 (dict(base='a' * 63), 'invalid-base'), (dict(base='g' * 64), 'invalid-base'),
+                 (dict(text=5), 'invalid-content'), (dict(text='\ud800'), 'invalid-request')]
+        for request_id, (extra, code) in enumerate(cases, 1):
+            with self.subTest(extra=extra):
+                self.assertEqual(self.dispatch(self.a, **self.write_request(request_id, **extra))['code'],
+                                 code)
+        effect = dict(id=len(cases) + 1, method='effect', resource='budget', kind='launch', epoch=0)
+        self.assertEqual(self.dispatch(self.a, **effect)['code'], 'unknown-action')
+        self.assertFalse(self.a.closed)
+        self.assertEqual(self.lab.db.execute('SELECT count(*) FROM writes').fetchone()[0], 0)
+
+    def test_revoked_authority_closes_the_channel(self):
+        from experiments.v2.contracts import Denied
+
+        def revoked(channel):
+            raise Denied('ticket-expired')
+        self.a.authorize = revoked
+        result = self.dispatch(self.a, **self.write_request())
+        self.assertEqual(result['code'], 'session-no-longer-valid')
+        self.assertTrue(self.a.closed)
+        self.assertEqual(self.lab.db.execute('SELECT count(*) FROM writes').fetchone()[0], 0)
+
+    def test_authority_is_rechecked_before_applying_to_disk(self):
+        from experiments.v2.contracts import Denied
+
+        class Disk:
+            applied = []
+
+            def ensure_ready(self, resource):
+                pass
+
+            def apply(self, event):
+                self.applied.append(event)
+        disk = Disk()
+        broker = Broker(self.lab, materializer=disk)
+        channel = broker.attach('line-c', ('note-c',))
+        calls = []
+
+        def expires_after_acceptance(_):
+            calls.append(1)
+            if len(calls) > 1:
+                raise Denied('ticket-expired')
+        channel.authorize = expires_after_acceptance
+        request = dict(id=1, method='write', resource='note-c', base=None, text='x', epoch=0)
+        result = json.loads(broker.dispatch(channel, json.dumps(request).encode()))
+        self.assertEqual((result['code'], result['reason'], disk.applied),
+                         ('materialization-pending', 'ticket-expired', []))
+
     def test_exception_does_not_leak_payload_and_closes_channel(self):
         def fail(*args, **kwargs):
             raise RuntimeError('SYNTHETIC_PRIVATE_EXCEPTION')

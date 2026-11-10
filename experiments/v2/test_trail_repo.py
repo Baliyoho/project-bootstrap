@@ -8,7 +8,8 @@ from pathlib import Path
 import unittest
 
 from experiments.v2.trail import check_decisions, check_roadmap, rejected_routes
-from experiments.v2.trail_sources import decisions_from_book, roadmap_from_plan, routes_from_plan
+from experiments.v2.trail_sources import (absences_from_architect, decisions_from_book,
+                                          roadmap_from_plan, routes_from_plan)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -37,6 +38,12 @@ class RepoTrailTests(unittest.TestCase):
                                        {'P0': 'active'})
         self.assertEqual([m['id'] for m in milestones], ['P0', 'P1', 'P2', 'P3', 'P4', 'P5'])
         self.assertEqual(check_roadmap(milestones, []), [])
+
+    def test_architect_declared_absences_each_have_reason_and_date(self):
+        # 2026-11-10 first run: the CI bullet had no date; the git first-appearance date was added.
+        decisions = absences_from_architect(read('ARCHITECT.md'))
+        self.assertGreaterEqual(len(decisions), 3)
+        self.assertEqual(check_decisions(decisions)[0], [])
 
 
 if __name__ == '__main__':

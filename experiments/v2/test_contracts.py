@@ -31,6 +31,22 @@ class SessionTests(unittest.TestCase):
                 self.session.transition('handoff', replace(self.receipt, **{field: False}))
         with self.assertRaises(ValueError):
             self.session.transition('handoff')
+        with self.assertRaises(ValueError):
+            self.session.transition('handoff', replace(self.receipt, event_id=''))
+        # Callers other than Session (gitclaim) rely on the receipt itself.
+        self.assertFalse(replace(self.receipt, event_id='').valid())
+        self.assertFalse(replace(self.receipt, push_succeeded=1).valid())
+
+    def test_invalid_session_fields_are_rejected_not_repaired(self):
+        for kwargs in ({'started': '2611062'}, {'started': '2611062x'}, {'topic': ''},
+                       {'topic': '一二三四五六七八九十十'}, {'topic': '主題｜分隔'},
+                       {'topic': '換\n行'}, {'topic': '換\r行'}, {'count': -1}, {'count': '1'},
+                       {'state': 'done'}, {'completed': ('a', 'a')}, {'completed': ('',)}):
+            values = dict(started='26110621', topic='重建骨架v2')
+            values.update(kwargs)
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                Session(**values)
+        self.assertEqual(Session('26110621', '一二三四五六七八九十').topic, '一二三四五六七八九十')
 
     def test_checkpoint_and_title_retry_do_not_increment(self):
         self.assertEqual(self.session.transition('checkpoint').count, 0)
