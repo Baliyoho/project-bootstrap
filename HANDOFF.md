@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-10 17:42（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（寫 handoff skill 拆分設計稿；Q8 已決，登記 Q9、Q10）
+- **交接時間**：2026-11-10 17:59（+08）
+- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（寫 handoff skill 拆分設計稿並由 Fable 5.2 重看改成第二版；Q8 已決，登記 Q9、Q10）
 
 ## 任務目標
 
@@ -12,7 +12,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111017｜設計技能拆分｜工作中｜交棒1次`，2026-11-10 17:55 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
 - 本機能力：macOS 27.2／Apple silicon、Python 3.15.2、Swift 6.4.2、bash 3.2、Git 2.54；ad hoc virtualization entitlement 可啟 VM。Windows／Linux 未驗。現行部署包及程序未切換。
 
@@ -24,7 +24,7 @@
 - 2026-11-10 mutation 轉進：supervisor 11、guardian 10（新增 `test_guardian.py`）、lifecycle 26（補 `LifecycleCodeTests` 7 個逐代碼測試）、崩潰解除 23、F45 版本規則 3。lifecycle 整個模組實測約 5 秒（舊記 3 分鐘有誤）。
 - 2026-11-10 F45 加「VERSION 只跟著 SKILL.md」規則（本 repo 未發現，反向句注入會報）；prompt 名稱已由 verify 的結構摘要一致性守，未重複加。F16a 對部署包生成的骨架以空家目錄跑通過，刪掉部署的 SKILL.md 即不通過。
 - 2026-11-10（Mac 這輪）VM 探針相關 Python 檔轉成 mutation 規格：`vm_probe` 38、`managed_fixture` 37 個（首跑 26、30 個存活，補 10、9 個逐代碼測試）；`trail_sources.rules_from_agents` 讓 `why` 從 AGENTS 規則走到 AGENTS-reasons 段落（補 4 段 git 首次出現日期），7 個刪改。各組 `--spec` 單獨跑全部 killed。真 VM 新增 `guest_unread_request`：guest 已產生、parent 沒讀進 outbox 就被 SIGKILL 的請求，解除後不留任何效果（遺失、要重做）；parent 死後到 VM 停下之間的輸出未另量。
-- 2026-11-10（Mac 第二輪）Q8 使用者選 (a)：寫 [skill 拆分設計](project-bootstrap-skill-split-design.md)。實測 skill 22,040 字元，正常接棒會用到的部分約 13,100，只拆模式不夠；建議一支 skill、入口＋`mode-a.md` ≤5,000、理由移 `reasons.md`、開場 hook 只在全部條件成立時印全綠行。只寫文件，程式與守門未改。
+- 2026-11-10（Mac 第二輪）Q8 使用者選 (a)：寫 [skill 拆分設計](project-bootstrap-skill-split-design.md)。實測 skill 22,040 字元，正常接棒會用到的部分約 13,100，只拆模式不夠；建議一支 skill、只新寫入口＋`mode-a.md`（合計 ≤6,000，估計值）、其餘逐字搬並用覆蓋率腳本驗、開場 hook 全部條件成立才印全綠行且可重跑。第二版另補版本規則與「部署包先上 main 才同步專案」。只寫文件，程式與守門未改。
 - 現行 22 檔部署包、skill／hook 副本及 `VERSION` 未改，無同步債；未呼叫額外模型或真實服務。
 
 ## 未完成／下一步
@@ -33,7 +33,7 @@
 2. 跨 epoch 原子歸因與舊路徑（`managed_vm_switch` 借 host worker、掛可寫 scratch）已寫效果回滾仍未驗；兩 VM 的 virtiofs `flock` 不協調；無共享路徑只涵蓋固定 shell 工具與 `note` 寫入。下一步是「隔離已寫效果」與擴到通用工具，屬 P0 下一階段範圍，跟 Q5 一起定。
 3. 可信真人核准、簽署金鑰發行／撤銷（Q1 (b) 日後另登）與額度來源；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。
 4. trail 來源：AGENTS 規則已轉；決策書第 6 節已決 Q 與效率計畫「非目標」沒有逐條否決理由，等 Q7；查核進度是修正紀錄、不是決策，不轉。Swift runner 與 guest 腳本沒有離線測試，未轉 mutation 規格。F14／F15 需另一個工具或 OS；F41 使用者已決定先不用雲端。
-5. **F22 第二階段**：(1)(3) 的設計稿已寫好：[skill 拆分設計](project-bootstrap-skill-split-design.md)（建議一支 skill、短入口＋同目錄模式檔＋開場 hook 全綠行），等 Q9 才動部署包；本 repo 拆完仍超標，見 Q10。(2) hook 在動作當下送規則仍等 Q6。動部署包要跳 `VERSION`、逐專案同步與全域副本、Codex 重新審核。
+5. **F22 第二階段**：(1)(3) 的設計稿已寫好：[skill 拆分設計](project-bootstrap-skill-split-design.md)（建議一支 skill、短入口＋同目錄模式檔＋開場 hook 全綠行），等 Q9 才動部署包；拆完後專案文件額度約 5,500、本 repo 仍超標，見 Q10；同步專案前部署包要先上 `main`（本分支領先 101 個 commit，做法待定）。(2) hook 在動作當下送規則仍等 Q6。動部署包要跳 `VERSION`、逐專案同步與全域副本、Codex 重新審核。
 6. 需要先有決定才能做：Q5、Q6、Q7、Q9、Q10。Windows hook 同步、Mac Codex 真實注入（要額外模型呼叫）、R01–R09 邊界獨立複審仍待做。
 
 ## 地雷與注意事項
