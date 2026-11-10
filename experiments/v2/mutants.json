@@ -2461,6 +2461,41 @@
      "file": "experiments/v2/trail_sources.py",
      "old": "    body, _ = _section(text, r'這個 repo 刻意沒有的東西')\n",
      "new": "    body = text\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "_ANCHOR = re.compile(r'^<a id=\"([a-z0-9-]+)\"></a>\\n', re.MULTILINE)",
+     "new": "_ANCHOR = re.compile(r'<a id=\"([a-z0-9-]+)\"></a>', re.MULTILINE)"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "_WHY = re.compile(r'\\[為什麼\\]\\(AGENTS-reasons\\.md#([a-z0-9-]+)\\)')",
+     "new": "_WHY = re.compile(r'\\]\\([A-Za-z.-]*#([a-z0-9-]+)\\)')"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        rationale = body[heading.end():].strip() if heading else body.strip()\n",
+     "new": "        rationale = body.strip()\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "        days = sorted(_DAY.findall(rationale))\n",
+     "new": "        days = _DAY.findall(rationale)\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "                          'status': 'accepted', 'date': days[0] if days else '',\n",
+     "new": "                          'status': 'accepted', 'date': days[0] if days else '2026-11-10',\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "                          'title': heading.group(1).strip() if heading else '',\n",
+     "new": "                          'title': heading.group(1).strip() if heading else anchor,\n"
+    },
+    {
+     "file": "experiments/v2/trail_sources.py",
+     "old": "    rules = [{'id': 'agents#' + anchor, 'decision': 'reasons#' + anchor}\n             for anchor in _WHY.findall(agents)]\n",
+     "new": "    rules = [{'id': 'agents#' + anchor, 'decision': 'reasons#' + anchor}\n             for anchor in _WHY.findall(agents) if 'reasons#' + anchor in {d['id'] for d in decisions}]\n"
     }
    ]
   },
@@ -3242,6 +3277,395 @@
      "file": "experiments/v2/lifecycle.py",
      "old": "                or record['vault'] != f'{directory.st_dev}:{directory.st_ino}'):\n",
      "new": "                ):\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_vm_probe"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "    return STOP_MARKER in host_text(log).splitlines()\n",
+     "new": "    return STOP_MARKER in host_text(log)\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "            if (\"HOST_NO_SHARED_DIRECTORY\" in host_text(log).splitlines()\n",
+     "new": "            if (\"HOST_NO_SHARED_DIRECTORY\" in output + host_text(log)\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "                    and \"GUEST_NO_SHARED_DIRECTORY\" in output\n",
+     "new": "                    and True\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "                    and \"GUEST_CHANNEL_READY\" in output\n                    and f\"GUEST_PROBE_ID={probe_id}\" in output\n                    and \"GUEST_MOUNTED\" not in output\n",
+     "new": "                    and True\n                    and f\"GUEST_PROBE_ID={probe_id}\" in output\n                    and \"GUEST_MOUNTED\" not in output\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "                    and f\"GUEST_PROBE_ID={probe_id}\" in output\n                    and \"GUEST_MOUNTED\" not in output\n",
+     "new": "                    and True\n                    and \"GUEST_MOUNTED\" not in output\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "                    and \"GUEST_MOUNTED\" not in output\n",
+     "new": "                    and True\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "                    and \"GUEST_UNEXPECTED_SHARED_DIRECTORY\" not in output):\n",
+     "new": "                    and True):\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if (\"GUEST_LOCK_HELD\" in output and \"GUEST_CHANNEL_READY\" in output\n",
+     "new": "        if (True and \"GUEST_CHANNEL_READY\" in output\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if (\"GUEST_LOCK_HELD\" in output and \"GUEST_CHANNEL_READY\" in output\n",
+     "new": "        if (\"GUEST_LOCK_HELD\" in output and True\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "                and f\"GUEST_PROBE_ID={probe_id}\" in output\n                and pid and session",
+     "new": "                and True\n                and pid and session"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "heartbeat_count(share, probe_id) >= 3):",
+     "new": "heartbeat_count(share, probe_id) >= 0):"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "            if pid.group(1) != session.group(1):\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "            if second <= first:\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "    if second != first:\n        raise RuntimeError(f\"guest effect",
+     "new": "    if False:\n        raise RuntimeError(f\"guest effect"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if process.poll() is not None:\n            raise RuntimeError(\"VM exited during computation\")\n",
+     "new": "        if False:\n            raise RuntimeError(\"VM exited during computation\")\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if remaining <= 0:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if not chunk:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if len(raw) > limit:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "    if not re.fullmatch(rb\"[0-9a-f]{32} [0-9]+ -?[0-9]+\\n\", raw):\n",
+     "new": "    if not re.match(rb\"[0-9a-f]{32} [0-9]+ -?[0-9]+\", raw):\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "    if observed_id != request_id or int(observed_epoch) != epoch:\n",
+     "new": "    if int(observed_epoch) != epoch:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "    if observed_id != request_id or int(observed_epoch) != epoch:\n",
+     "new": "    if observed_id != request_id:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "    if match is None or match[1].decode('ascii') != request_id:\n",
+     "new": "    if match is None:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "    if (request['id'] != sequence or request['epoch'] != epoch\n",
+     "new": "    if (False or request['epoch'] != epoch\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "    if (request['id'] != sequence or request['epoch'] != epoch\n",
+     "new": "    if (request['id'] != sequence or False\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "            or request['base'] != expected_base):\n",
+     "new": "            or False):\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "    if raw != expected:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if self.process is None or self.process.poll() is not None:\n            raise RuntimeError(\"VM is not live for computation\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or any(",
+     "new": "        if False:\n            raise RuntimeError(\"VM is not live for computation\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or any("
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or any(type(item) is not int or abs(item) > 1000 for item in (factor, value))):\n            raise ValueError(\"invalid guest operation\")\n        request_id = secrets.token_hex(16)\n        try:\n            self.process.guest_request.write(\n                f\"{request_id}",
+     "new": "        if False:\n            raise ValueError(\"invalid guest operation\")\n        request_id = secrets.token_hex(16)\n        try:\n            self.process.guest_request.write(\n                f\"{request_id}"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if (type(sequence) is not int or not 1 <= sequence <= 1000\n                or type(epoch)",
+     "new": "        if (False\n                or type(epoch)"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if self.share is not None or self.process is None or self.process.poll() is not None:\n            raise RuntimeError(\"unshared guest tool is not live\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or type(factor)",
+     "new": "        if False:\n            raise RuntimeError(\"unshared guest tool is not live\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or type(factor)"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "                or type(factor) is not int or abs(factor) > 1000):\n",
+     "new": "                or False):\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if self.share is not None or self.process is None or self.process.poll() is not None:\n            raise RuntimeError(\"unshared guest tool is not live\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or type(value)",
+     "new": "        if False:\n            raise RuntimeError(\"unshared guest tool is not live\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or type(value)"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "                or type(value) is not int or abs(value) > 1000\n                or type(sequence) is not int or not 1 <= sequence <= 1000):\n",
+     "new": "                or False):\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if base is not None and (not isinstance(base, str) or\n",
+     "new": "        if False and (not isinstance(base, str) or\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if self.process is None or self.process.poll() is not None:\n            raise RuntimeError(\"VM was not live at retirement\")\n",
+     "new": "        if False:\n            raise RuntimeError(\"VM was not live at retirement\")\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if result != 0 or not host_stopped(self.log):\n",
+     "new": "        if not host_stopped(self.log):\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if result != 0 or not host_stopped(self.log):\n",
+     "new": "        if result != 0:\n"
+    },
+    {
+     "file": "experiments/v2/vm_probe.py",
+     "old": "        if self.share is not None:\n            evidence[\"final_heartbeat\"]",
+     "new": "        if False:\n            evidence[\"final_heartbeat\"]"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_managed_fixture"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if child.reader.is_alive():\n            raise Denied('previous-reader-still-running')",
+     "new": "        if False:\n            raise Denied('previous-reader-still-running')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "                if time.monotonic() >= deadline:\n                    raise Denied('worker-timeout')",
+     "new": "                if False:\n                    raise Denied('worker-timeout')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not raw.endswith(b'\\n') or len(raw) > 1024:\n            raise Denied('invalid-worker-message')",
+     "new": "        if False:\n            raise Denied('invalid-worker-message')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if reply != {'type': 'ready', 'epoch': epoch,\n                     'context_digest': hashlib.sha256(context.encode()).hexdigest()}:\n            raise Denied('worker-context-not-confirmed')",
+     "new": "        if False:\n            raise Denied('worker-context-not-confirmed')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "            if self.lab.db.execute('SELECT 1 FROM managed_initial_context UNION ALL '\n                                   'SELECT 1 FROM managed_launches LIMIT 1').fetchone():\n                raise Denied('already-started')",
+     "new": "            if False:\n                raise Denied('already-started')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if type(factor) is not int or abs(factor) > 1000:\n            raise Denied('invalid-fixture-factor')",
+     "new": "        if False:\n            raise Denied('invalid-fixture-factor')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not self.ready or self.vm_gate is not None or self.pending is not None:\n            raise Denied('managed-fixture-not-ready')",
+     "new": "        if False:\n            raise Denied('managed-fixture-not-ready')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "            if previous is not None and previous['state'] != 'retired':\n                raise Denied('vm-retirement-unconfirmed')",
+     "new": "            if False:\n                raise Denied('vm-retirement-unconfirmed')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "            if previous is not None and previous['epoch'] >= self.epoch:\n                raise Denied('vm-run-already-recorded')",
+     "new": "            if False:\n                raise Denied('vm-run-already-recorded')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "                if updated.rowcount != 1:\n                    raise Denied('vm-run-not-current')",
+     "new": "                if False:\n                    raise Denied('vm-run-not-current')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "                    if updated.rowcount != 1:\n                        raise Denied('vm-retirement-unconfirmed')",
+     "new": "                    if False:\n                        raise Denied('vm-retirement-unconfirmed')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if self.child is not None:\n            raise Denied('already-started')",
+     "new": "        if False:\n            raise Denied('already-started')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "                if vm is not None:\n                    raise Denied('vm-retirement-unconfirmed')",
+     "new": "                if False:\n                    raise Denied('vm-retirement-unconfirmed')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if pending and (type(epoch) is not int or epoch != state['epoch'] + 1):\n            raise Denied('invalid-pending-epoch')",
+     "new": "        if False:\n            raise Denied('invalid-pending-epoch')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if row is not None and epoch != 0:\n            row = self.lab.db.execute('SELECT change FROM notices WHERE actor=? AND epoch=? AND acknowledged=?',\n                                      (actor, epoch, int(not pending))).fetchone()\n        if row is None or (pending and row[0] != state['change']):\n            raise Denied('missing-or-inconsistent-context')",
+     "new": "        if False:\n            raise Denied('missing-or-inconsistent-context')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is not None:\n            raise Denied('managed-fixture-not-ready')",
+     "new": "        if False:\n            raise Denied('managed-fixture-not-ready')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if type(value) is not int or abs(value) > 1000:\n            raise Denied('invalid-fixture-value')",
+     "new": "        if False:\n            raise Denied('invalid-fixture-value')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "                if self.exchange({'type': 'begin', 'value': value}) != {'type': 'started', 'epoch': self.epoch}:\n                    raise Denied('work-not-started')",
+     "new": "                if False:\n                    raise Denied('work-not-started')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is None:\n            raise Denied('no-current-work')",
+     "new": "        if False:\n            raise Denied('no-current-work')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "                if type(value) is not int:\n                    raise Denied('wrong-guest-result')",
+     "new": "                if False:\n                    raise Denied('wrong-guest-result')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "                if (not isinstance(result, dict) or result.get('type') != 'result'\n                        or result.get('epoch') != self.epoch or type(result.get('value')) is not int):\n                    raise Denied('wrong-worker-result')",
+     "new": "                if False:\n                    raise Denied('wrong-worker-result')"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "            raise Denied('worker-timeout') from None\n",
+     "new": "            continue\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not raw.endswith(b'\\n') or len(raw) > 1024:\n",
+     "new": "        if len(raw) > 1024:\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not raw.endswith(b'\\n') or len(raw) > 1024:\n",
+     "new": "        if not raw.endswith(b'\\n'):\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not self.ready or self.vm_gate is not None or self.pending is not None:\n",
+     "new": "        if not self.ready or self.pending is not None:\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not self.ready or self.vm_gate is not None or self.pending is not None:\n",
+     "new": "        if not self.ready or self.vm_gate is not None:\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is not None:\n            raise Denied('managed-fixture-not-ready')\n        if type(value)",
+     "new": "        if self.pending is not None:\n            raise Denied('managed-fixture-not-ready')\n        if type(value)"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is not None:\n            raise Denied('managed-fixture-not-ready')\n        if type(value)",
+     "new": "        if not self.ready:\n            raise Denied('managed-fixture-not-ready')\n        if type(value)"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is None:\n",
+     "new": "        if self.pending is None:\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is None:\n",
+     "new": "        if not self.ready:\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if row is None or (pending and row[0] != state['change']):\n",
+     "new": "        if row is None:\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "            if self.context(fields['factor']) != context:\n                raise ValueError\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "                        or result.get('epoch') != self.epoch or type(result.get('value')) is not int):\n",
+     "new": "                        or type(result.get('value')) is not int):\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        self.launcher.check()\n        actor = self.lab.actor(self.child.channel.capability)\n        with self.lab.transaction():\n            previous",
+     "new": "        actor = self.lab.actor(self.child.channel.capability)\n        with self.lab.transaction():\n            previous"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if type(factor) is not int or abs(factor) > 1000:\n",
+     "new": "        if type(factor) is not int:\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "        if type(value) is not int or abs(value) > 1000:\n",
+     "new": "        if type(value) is not int:\n"
+    },
+    {
+     "file": "experiments/v2/managed_fixture.py",
+     "old": "                self.lab.db.execute(\"UPDATE operations SET status='invalid' WHERE actor=? AND status='running'\",\n                                    (actor,))\n",
+     "new": ""
     }
    ]
   }

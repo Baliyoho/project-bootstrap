@@ -4,11 +4,13 @@ from pathlib import Path
 import io
 import os
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
-from experiments.v2.vm_probe import (VMRetirementGate, check_guest, host_log,
-                                     read_guest_context_ack, read_guest_write_request,
+from experiments.v2.vm_probe import (VMRetirementGate, check_guest, host_log, host_stopped,
+                                     read_guest_context_ack, read_guest_line,
+                                     read_guest_result, read_guest_write_request,
                                      stable_after_exit)
 
 
@@ -88,7 +90,8 @@ class VMProbeEvidenceTests(unittest.TestCase):
         process = _Running(b"c" * 32 + b" {\"id\":1")
         try:
             with self.assertRaisesRegex(RuntimeError, "capability channel closed"):
-                read_guest_write_request(process, "c" * 32, 0, 1, 10**20)
+                # A finite deadline: a reader that ignored EOF would time out, not hang.
+                read_guest_write_request(process, "c" * 32, 0, 1, time.monotonic() + 5)
         finally:
             process.close()
 
@@ -260,6 +263,217 @@ class VMProbeEvidenceTests(unittest.TestCase):
             with patch("experiments.v2.vm_probe.time.sleep", side_effect=late_write):
                 with self.assertRaisesRegex(RuntimeError, "continued after host exit"):
                     stable_after_exit(root, "case")
+
+
+class _Sink:
+    def write(self, data):
+        pass
+
+    def close(self):
+        pass
+
+
+class _Waited(_Running):
+    """A live guest whose runner exits with ``code`` once asked to stop."""
+
+    def __init__(self, code):
+        super().__init__()
+        self.code = code
+
+    def wait(self, timeout=None):
+        return self.code
+
+
+def _gate(root, share=None, process=None):
+    gate = VMRetirementGate(root / "runner", root / "kernel", root / "ramdisk",
+                            share, root / "guest.log", "case")
+    gate.process = process
+    return gate
+
+
+class VMProbeCodeTests(unittest.TestCase):
+    """One check per guard, so removing any single guard fails a test."""
+
+    def test_host_stop_marker_must_be_a_whole_line(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "guest.log"
+            host_log(log).write_text("noise HOST_STOPPED state=0 tail\n")
+            self.assertFalse(host_stopped(log))
+            host_log(log).write_text("HOST_STOPPED state=0\n")
+            self.assertTrue(host_stopped(log))
+
+    def test_unshared_guest_needs_channel_and_probe_id(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "guest.log"
+            host_log(log).write_text("HOST_NO_SHARED_DIRECTORY\n")
+            process = _Exited()
+            try:
+                for output in ("GUEST_NO_SHARED_DIRECTORY\nGUEST_PROBE_ID=case\n",
+                               "GUEST_NO_SHARED_DIRECTORY\nGUEST_CHANNEL_READY\n"
+                               "GUEST_PROBE_ID=other\n"):
+                    with self.subTest(output=output):
+                        log.write_text(output)
+                        with self.assertRaisesRegex(RuntimeError, "unshared guest was ready"):
+                            check_guest(log, None, process, "case")
+            finally:
+                process.close()
+
+    def test_shared_guest_needs_every_readiness_signal(self):
+        ready = {"GUEST_PROBE_ID=case", "GUEST_CHILD_PID=7", "GUEST_CHILD_SESSION=7",
+                 "GUEST_LOCK_HELD", "GUEST_CHANNEL_READY"}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log = root / "guest.log"
+            process = _Exited()
+            try:
+                for missing, ticks in (("GUEST_LOCK_HELD", 3), ("GUEST_CHANNEL_READY", 3),
+                                       ("GUEST_PROBE_ID=case", 3), (None, 2)):
+                    with self.subTest(missing=missing, ticks=ticks):
+                        (root / "heartbeat-case").write_text("tick\n" * ticks)
+                        log.write_text("\n".join(sorted(ready - {missing})) + "\n")
+                        with self.assertRaisesRegex(RuntimeError, "exited before guest was ready"):
+                            check_guest(log, root, process, "case")
+            finally:
+                process.close()
+
+    def test_shared_guest_heartbeat_must_advance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            heartbeat = root / "heartbeat-case"
+            log = root / "guest.log"
+            log.write_text("GUEST_PROBE_ID=case\nGUEST_CHILD_PID=7\nGUEST_CHILD_SESSION=7\n"
+                           "GUEST_LOCK_HELD\nGUEST_CHANNEL_READY\n")
+            process = _Running()
+
+            def tick(_seconds):
+                with heartbeat.open("a") as output:
+                    output.write("tick\n")
+
+            try:
+                heartbeat.write_text("tick\n" * 3)
+                with patch("experiments.v2.vm_probe.time.sleep"):
+                    with self.assertRaisesRegex(RuntimeError, "did not advance"):
+                        check_guest(log, root, process, "case")
+                with patch("experiments.v2.vm_probe.time.sleep", side_effect=tick):
+                    self.assertEqual(check_guest(log, root, process, "case"), 4)
+            finally:
+                process.close()
+
+    def test_guest_line_reader_codes(self):
+        process = _Exited(b"x\n")
+        try:
+            with self.assertRaisesRegex(RuntimeError, "exited during computation"):
+                read_guest_line(process, 128, 10**20)
+        finally:
+            process.close()
+        process = _Running(b"x")
+        try:
+            with self.assertRaisesRegex(RuntimeError, "timed out"):
+                read_guest_line(process, 128, 0)
+        finally:
+            process.close()
+        process = _Running(b"f" * 200)
+        try:
+            with self.assertRaisesRegex(RuntimeError, "invalid guest result"):
+                read_guest_line(process, 128, 10**20)
+        finally:
+            process.close()
+
+    def test_guest_result_shape_and_identity(self):
+        nonce = "a" * 32
+        for reply, message in ((f"{nonce} 0 10 9\n", "invalid guest result"),
+                               (f"{'b' * 32} 0 10\n", "wrong guest result identity")):
+            with self.subTest(reply=reply):
+                process = _Running(reply.encode())
+                try:
+                    with self.assertRaisesRegex(RuntimeError, message):
+                        read_guest_result(process, nonce, 0, 10**20)
+                finally:
+                    process.close()
+
+    def test_guest_broker_request_nonce_and_sequence(self):
+        payload = b'{"id":1,"method":"write","resource":"note","base":null,"text":"10","epoch":0}'
+        for nonce, sequence, message in (("f" * 32, 1, "invalid guest broker request"),
+                                         ("a" * 32, 2, "identity or epoch")):
+            with self.subTest(nonce=nonce, sequence=sequence):
+                process = _Running(b"a" * 32 + b" " + payload + b"\n")
+                try:
+                    with self.assertRaisesRegex(RuntimeError, message):
+                        read_guest_write_request(process, nonce, 0, sequence, 10**20)
+                finally:
+                    process.close()
+
+    def test_gate_operations_need_a_live_guest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for share, call in ((root, lambda g: g.compute(0, 1, 1)),
+                                (root, lambda g: g.write_request(0, 1, 1, 1)),
+                                (None, lambda g: g.load_context(0, 1)),
+                                (None, lambda g: g.managed_write_request(0, 1, 1)),
+                                (None, lambda g: g.retire())):
+                for process in (None, _Exited()):
+                    with self.subTest(share=share, process=process):
+                        with self.assertRaisesRegex(RuntimeError, "not live"):
+                            call(_gate(root, share, process))
+                        if process is not None:
+                            process.close()
+            for call in (lambda g: g.load_context(0, 1),
+                         lambda g: g.managed_write_request(0, 1, 1)):
+                process = _Running()
+                try:
+                    with self.assertRaisesRegex(RuntimeError, "unshared guest tool is not live"):
+                        call(_gate(root, root, process))
+                    self.assertEqual(process.guest_request.getvalue(), b"")
+                finally:
+                    process.close()
+
+    def test_gate_rejects_out_of_range_input_before_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for share, call, message in (
+                (root, lambda g: g.compute(1001, 1, 1), "invalid guest operation"),
+                (root, lambda g: g.compute(0, 1001, 1), "invalid guest operation"),
+                (root, lambda g: g.write_request(0, 1, 1, 0), "invalid guest operation"),
+                (root, lambda g: g.write_request(1001, 1, 1, 1), "invalid guest operation"),
+                (None, lambda g: g.load_context(1001, 1), "invalid guest context"),
+                (None, lambda g: g.load_context(0, 1001), "invalid guest context"),
+                (None, lambda g: g.managed_write_request(1001, 1, 1), "invalid guest operation"),
+                (None, lambda g: g.managed_write_request(0, 1001, 1), "invalid guest operation"),
+                (None, lambda g: g.managed_write_request(0, 1, 0), "invalid guest operation"),
+                (None, lambda g: g.managed_write_request(0, 1, 1, "x" * 64), "invalid guest base"),
+            ):
+                process = _Running()
+                with self.subTest(message=message):
+                    try:
+                        with self.assertRaisesRegex(ValueError, message):
+                            call(_gate(root, share, process))
+                        self.assertEqual(process.guest_request.getvalue(), b"")
+                    finally:
+                        process.close()
+
+    def test_retirement_needs_clean_exit_and_records_heartbeat(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log = root / "guest.log"
+            log.write_text("")
+            host_log(log).write_text("HOST_STARTED\nHOST_STOPPED state=0\n")
+            gate = _gate(root, None, _Waited(1))
+            gate.output, gate.control = _Sink(), _Sink()
+            try:
+                with self.assertRaisesRegex(RuntimeError, "not confirmed"):
+                    gate.retire()
+            finally:
+                gate.process.close()
+            share = root / "share"
+            share.mkdir()
+            (share / "heartbeat-case").write_text("tick\n" * 5)
+            gate = _gate(root, share, _Waited(0))
+            gate.output, gate.control = _Sink(), _Sink()
+            try:
+                with patch("experiments.v2.vm_probe.time.sleep"):
+                    self.assertEqual(gate.retire()["final_heartbeat"], 5)
+            finally:
+                gate.process.close()
 
 
 if __name__ == "__main__":

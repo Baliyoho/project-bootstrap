@@ -7,9 +7,10 @@ experiments/, never depend on the repo's documents.
 from pathlib import Path
 import unittest
 
-from experiments.v2.trail import check_decisions, check_roadmap, rejected_routes
+from experiments.v2.trail import check_decisions, check_roadmap, check_rules, rejected_routes, why
 from experiments.v2.trail_sources import (absences_from_architect, decisions_from_book,
-                                          roadmap_from_plan, routes_from_plan)
+                                          roadmap_from_plan, routes_from_plan,
+                                          rules_from_agents)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -44,6 +45,18 @@ class RepoTrailTests(unittest.TestCase):
         decisions = absences_from_architect(read('ARCHITECT.md'))
         self.assertGreaterEqual(len(decisions), 3)
         self.assertEqual(check_decisions(decisions)[0], [])
+
+
+    def test_every_agents_rule_walks_to_a_dated_reason(self):
+        # 2026-11-10 first run: four sections had no date; git first-appearance dates were added.
+        rules, decisions = rules_from_agents(read('AGENTS.md'), read('AGENTS-reasons.md'))
+        self.assertGreaterEqual(len(rules), 20)
+        findings, by_id = check_decisions(decisions)
+        self.assertEqual(findings, [])
+        self.assertEqual(check_rules(rules, by_id), [])
+        cited = {r['decision'] for r in rules}
+        self.assertEqual(sorted(set(by_id) - cited), [])
+        self.assertTrue(all(why(r['id'], rules, by_id) for r in rules))
 
 
 if __name__ == '__main__':

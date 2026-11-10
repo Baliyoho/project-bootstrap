@@ -2,9 +2,11 @@
 
 import unittest
 
-from experiments.v2.trail import check_decisions, check_roadmap, rejected_routes
+from experiments.v2.trail import (check_decisions, check_roadmap, check_rules,
+                                  rejected_routes, why)
 from experiments.v2.trail_sources import (absences_from_architect, decisions_from_book,
-                                          roadmap_from_plan, routes_from_plan)
+                                          roadmap_from_plan, routes_from_plan,
+                                          rules_from_agents)
 
 BOOK = '''# 決策書
 
@@ -132,6 +134,45 @@ class ArchitectAbsenceTests(unittest.TestCase):
                                                               '**沒有 CI。** 2026-09-13 起驗證'))
         self.assertEqual(decisions[2]['date'], '2026-09-13')
         self.assertEqual(absences_from_architect('# 無\n\n- **沒有 x（2026-01-01）。** y\n'), [])
+
+
+class AgentsRuleTests(unittest.TestCase):
+    AGENTS = (
+        '- **規則一。** [為什麼](AGENTS-reasons.md#one)\n'
+        '- **規則二。** [為什麼](AGENTS-reasons.md#two)\n'
+        '- **連到不存在的段落。** [為什麼](AGENTS-reasons.md#gone)\n'
+        '- 一般連結不算 [說明](README.md#one)\n')
+    REASONS = (
+        '# 理由\n\n> 最後更新：2026-11-10\n\n'
+        '<a id="one"></a>\n\n## 規則一\n\n2026-11-02 改；最早 2026-10-30 踩到。\n\n'
+        '<a id="two"></a>\n\n## 規則二\n\n沒有寫日期的理由；行內寫 `<a id="inline"></a>` 不算新段落。\n')
+
+    def test_each_why_link_is_a_rule_and_each_section_a_decision(self):
+        rules, decisions = rules_from_agents(self.AGENTS, self.REASONS)
+        self.assertEqual(rules, [{'id': 'agents#one', 'decision': 'reasons#one'},
+                                 {'id': 'agents#two', 'decision': 'reasons#two'},
+                                 {'id': 'agents#gone', 'decision': 'reasons#gone'}])
+        self.assertEqual(decisions[0], {
+            'id': 'reasons#one', 'title': '規則一', 'status': 'accepted',
+            'date': '2026-10-30', 'baseline': 'AGENTS-reasons.md',
+            'rationale': '2026-11-02 改；最早 2026-10-30 踩到。'})
+        self.assertEqual([d['id'] for d in decisions], ['reasons#one', 'reasons#two'])
+
+    def test_missing_date_and_missing_section_are_reported(self):
+        rules, decisions = rules_from_agents(self.AGENTS, self.REASONS)
+        findings, by_id = check_decisions(decisions)
+        self.assertEqual(findings, [('reasons#two', 'decision-date-invalid')])
+        self.assertEqual(check_rules(rules, by_id), [('agents#gone', 'rule-without-decision')])
+        self.assertEqual(why('agents#one', rules, by_id)[0]['rationale'],
+                         '2026-11-02 改；最早 2026-10-30 踩到。')
+
+    def test_section_without_heading_or_body_is_reported(self):
+        rules, decisions = rules_from_agents('', '<a id="bare"></a>\n\n')
+        self.assertEqual(rules, [])
+        findings, _ = check_decisions(decisions)
+        self.assertEqual(sorted(findings), [('reasons#bare', 'decision-date-invalid'),
+                                            ('reasons#bare', 'decision-missing-rationale'),
+                                            ('reasons#bare', 'decision-missing-title')])
 
 
 if __name__ == '__main__':

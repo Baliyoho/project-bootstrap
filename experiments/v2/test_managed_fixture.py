@@ -315,6 +315,9 @@ class ManagedFixtureTests(TestCase):
                     self.assertEqual(fixture.epoch, epoch)
                     with self.assertRaisesRegex(Denied, 'invalid-operation'):
                         fixture.lab.complete(fixture.child.channel.capability, interrupted)
+                    self.assertEqual(fixture.lab.db.execute(
+                        'SELECT status FROM operations WHERE ticket=?', (interrupted,)).fetchone()[0],
+                        'invalid')
                     first = fixture.send()
                     self.assertEqual(first['code'], 'ok')
                     self.assertEqual((repo / 'managed.txt').read_text(), str(7 * factor))
@@ -350,3 +353,178 @@ class ManagedFixtureTests(TestCase):
                 self.assertEqual(fixture.epoch, 1)
                 self.assertEqual(fixture.send()['code'], 'ok')
                 self.assertEqual((repo / 'managed.txt').read_bytes(), b'21')
+
+
+class _Gate:
+    """Synthetic VM gate; ``on_start``／``on_retire`` run inside the real calls."""
+
+    def __init__(self, probe_id='synthetic', on_start=None, on_retire=None, value=None):
+        self.probe_id = probe_id
+        self.on_start, self.on_retire, self.value = on_start, on_retire, value
+
+    def start(self):
+        if self.on_start:
+            self.on_start()
+
+    def compute(self, epoch, factor, value):
+        return self.value
+
+    def retire(self):
+        if self.on_retire:
+            self.on_retire()
+        return {'probe_id': self.probe_id, 'stop_marker': 'synthetic-stop'}
+
+    def close(self):
+        pass
+
+
+class _Stdout:
+    """Replaces the worker's stdout so one reply can be shaped exactly."""
+
+    def __init__(self, reply, delay=0.0):
+        self.reply, self.delay = reply, delay
+
+    def readline(self, limit=-1):
+        time.sleep(self.delay)
+        return self.reply
+
+    def close(self):
+        pass
+
+
+class _AliveReader:
+    def join(self, timeout=None):
+        pass
+
+    def is_alive(self):
+        return True
+
+
+class ManagedFixtureCodeTests(TestCase):
+    """One check per guard: each removed guard fails with a different code."""
+
+    def setUp(self):
+        if not managed.supported():
+            self.skipTest('macOS confined worker required')
+
+    def denied(self, code, call, *args):
+        with self.assertRaises(Denied) as caught:
+            call(*args)
+        self.assertEqual(str(caught.exception), code)
+
+    def actor(self, fixture):
+        return fixture.lab.actor(fixture.child.channel.capability)
+
+    def test_input_ranges_and_readiness(self):
+        with managed.managed_environment() as (fixture, _):
+            self.denied('invalid-fixture-factor', fixture.start, 1001)
+            self.denied('managed-fixture-not-ready', fixture.begin, 7)
+            fixture.start(2)
+            self.denied('already-started', fixture.start, 2)
+            self.denied('already-started', fixture.resume)
+            self.denied('no-current-work', fixture.stage_result)
+            self.denied('invalid-fixture-value', fixture.begin, 1001)
+            self.denied('invalid-fixture-factor', fixture.change, 1001)
+            fixture.begin(7)
+            self.denied('managed-fixture-not-ready', fixture.begin, 8)
+            self.denied('managed-fixture-not-ready', fixture.attach_vm_gate, _Gate())
+            fixture.ready = False
+            self.denied('no-current-work', fixture.stage_result)
+            self.denied('managed-fixture-not-ready', fixture.attach_vm_gate, _Gate())
+
+    def test_one_gate_per_epoch(self):
+        with managed.managed_environment() as (fixture, _):
+            fixture.start(2)
+            fixture.attach_vm_gate(_Gate('first'))
+            self.denied('managed-fixture-not-ready', fixture.attach_vm_gate, _Gate('second'))
+
+    def test_attach_rejects_unretired_or_recorded_runs(self):
+        for state, code in (('running', 'vm-retirement-unconfirmed'),
+                            ('retired', 'vm-run-already-recorded')):
+            with self.subTest(state=state), managed.managed_environment() as (fixture, _):
+                fixture.start(2)
+                fixture.lab.db.execute('INSERT INTO managed_vm_runs VALUES (?, 0, ?, ?, NULL)',
+                                       (self.actor(fixture), state, 'earlier'))
+                self.denied(code, fixture.attach_vm_gate, _Gate())
+
+    def test_attach_checks_the_worker_first(self):
+        with managed.managed_environment() as (fixture, _):
+            fixture.start(2)
+            with patch.object(fixture.launcher, 'check', side_effect=Denied('child-ended')):
+                self.denied('child-ended', fixture.attach_vm_gate, _Gate())
+            self.assertIsNone(fixture.lab.db.execute('SELECT 1 FROM managed_vm_runs').fetchone())
+
+    def test_run_row_changed_during_start_or_retire_is_rejected(self):
+        with managed.managed_environment() as (fixture, _):
+            fixture.start(2)
+            db = fixture.lab.db
+            gate = _Gate(on_start=lambda: db.execute("UPDATE managed_vm_runs SET state='retired'"))
+            self.denied('vm-run-not-current', fixture.attach_vm_gate, gate)
+        with managed.managed_environment() as (fixture, repo):
+            fixture.start(2)
+            db = fixture.lab.db
+            fixture.attach_vm_gate(_Gate(on_retire=lambda: db.execute(
+                "UPDATE managed_vm_runs SET state='retired'")))
+            self.denied('vm-retirement-unconfirmed', fixture.change, 3)
+            self.assertEqual(tuple(db.execute('SELECT epoch, pending FROM state').fetchone()), (0, 1))
+
+    def test_guest_and_worker_results_must_match(self):
+        with managed.managed_environment() as (fixture, _):
+            fixture.start(2)
+            fixture.attach_vm_gate(_Gate(value='14'))
+            fixture.begin(7)
+            self.denied('wrong-guest-result', fixture.stage_result)
+        with managed.managed_environment() as (fixture, _):
+            fixture.start(2)
+            fixture.begin(7)
+            with patch.object(fixture, 'exchange',
+                              return_value={'type': 'result', 'epoch': 5, 'value': 14}):
+                self.denied('wrong-worker-result', fixture.stage_result)
+
+    def test_worker_reply_shape(self):
+        for reply, code in ((b'{"type":"ready"}', 'invalid-worker-message'),
+                            (b'{"pad":"' + b'x' * 1100 + b'"}\n', 'invalid-worker-message')):
+            with self.subTest(reply=reply[:20]), managed.managed_environment() as (fixture, _):
+                fixture.start(2)
+                real = fixture.child.process.stdout
+                fixture.child.process.stdout = _Stdout(reply)
+                try:
+                    self.denied(code, fixture.receive)
+                finally:
+                    fixture.child.process.stdout = real
+
+    def test_worker_timeout_and_stuck_reader(self):
+        with managed.managed_environment() as (fixture, _):
+            fixture.start(2)
+            real = fixture.child.process.stdout
+            fixture.child.process.stdout = _Stdout(b'{"late":1}\n', delay=1.0)
+            try:
+                with patch.object(fixture.launcher, 'timeout', 0.2):
+                    self.denied('worker-timeout', fixture.receive)
+            finally:
+                fixture.child.process.stdout = real
+        with managed.managed_environment() as (fixture, _):
+            fixture.start(2)
+            real = fixture.child.reader
+            fixture.child.reader = _AliveReader()
+            try:
+                self.denied('previous-reader-still-running', fixture.receive)
+            finally:
+                fixture.child.reader = real
+
+    def test_recovery_context_checks_pending_notice(self):
+        with managed.managed_environment() as (fixture, _):
+            fixture.lab.register('synthetic-offline')
+            fixture.start(2)
+            actor = self.actor(fixture)
+            with self.assertRaises(Denied):
+                fixture.change(3)
+            db = fixture.lab.db
+            self.assertEqual(fixture.recovery_context(actor), (1, '{"factor":3}', True))
+            db.execute('UPDATE state SET pending=2')
+            self.denied('invalid-pending-epoch', fixture.recovery_context, actor)
+            db.execute('UPDATE state SET pending=1, change=?', ('{"factor":4}',))
+            self.denied('missing-or-inconsistent-context', fixture.recovery_context, actor)
+            db.execute('UPDATE state SET change=?', ('{"factor": 3}',))
+            db.execute('UPDATE notices SET change=?', ('{"factor": 3}',))
+            self.denied('invalid-durable-context', fixture.recovery_context, actor)

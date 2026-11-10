@@ -17,6 +17,9 @@ records out of them so ``trail`` can check them:
   accepted decision; the rest of the bullet is its rationale and the last
   date in the bold lead (else the first in the bullet) its date. A bullet
   with no date yields an empty date, which ``check_decisions`` reports.
+- ``rules_from_agents``: each "why" link in AGENTS.md is a rule citing the
+  AGENTS-reasons.md section it points to; each section is an accepted
+  decision dated by the earliest date written in it.
 
 A document whose expected section is missing yields no records, which the
 checks then report (a decision without rationale, a roadmap with no open
@@ -105,3 +108,33 @@ def roadmap_from_plan(text, status):
             milestones.append({'id': phase.group(1), 'goal': row[1], 'exit': row[2],
                                'status': status.get(phase.group(1), 'planned')})
     return milestones
+
+
+_ANCHOR = re.compile(r'^<a id="([a-z0-9-]+)"></a>\n', re.MULTILINE)
+_WHY = re.compile(r'\[為什麼\]\(AGENTS-reasons\.md#([a-z0-9-]+)\)')
+
+
+def rules_from_agents(agents, reasons):
+    """AGENTS.md rules and the AGENTS-reasons.md sections their "why" links name.
+
+    Every ``[為什麼](AGENTS-reasons.md#x)`` link in AGENTS is one rule citing
+    decision ``reasons#x``. Every ``<a id="x">`` section of the reasons file is
+    one accepted decision: its heading is the title, the rest its rationale,
+    and its date the earliest one written in it (the first time the reason
+    was recorded). A section with no date yields an empty date, which
+    ``check_decisions`` reports; a link to a missing section is reported by
+    ``check_rules``.
+    """
+    parts = _ANCHOR.split(reasons)
+    decisions = []
+    for anchor, body in zip(parts[1::2], parts[2::2]):
+        heading = re.match(r'\s*## (.+)\n', body)
+        rationale = body[heading.end():].strip() if heading else body.strip()
+        days = sorted(_DAY.findall(rationale))
+        decisions.append({'id': 'reasons#' + anchor,
+                          'title': heading.group(1).strip() if heading else '',
+                          'status': 'accepted', 'date': days[0] if days else '',
+                          'baseline': 'AGENTS-reasons.md', 'rationale': rationale})
+    rules = [{'id': 'agents#' + anchor, 'decision': 'reasons#' + anchor}
+             for anchor in _WHY.findall(agents)]
+    return rules, decisions
