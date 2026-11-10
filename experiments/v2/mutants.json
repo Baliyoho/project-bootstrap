@@ -2979,6 +2979,11 @@
    "mutants": [
     {
      "file": "experiments/v2/crash_release.py",
+     "old": "    if not os.path.isfile(db):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "experiments/v2/crash_release.py",
      "old": "    if lines != list(HOST_LINES):\n",
      "new": "    if False:\n"
     },

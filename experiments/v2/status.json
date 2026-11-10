@@ -304,6 +304,10 @@
           "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
+          "path": "experiments/v2/test_host_crash.py",
+          "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋且沒有解除途徑（決策書 Q15）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：帳本檔遺失或變空檔時讀起來跟第一次啟動一樣"
+        },
+        {
           "path": "experiments/v2/vm_managed_worker.sh",
           "scope": "封入無共享 guest initramfs 的固定合成工具；一次載入前提，後續由 guest 產生受限 broker 請求。非通用工具或正式身分證明"
         },
@@ -781,6 +785,10 @@
           "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
+          "path": "experiments/v2/test_host_crash.py",
+          "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋且沒有解除途徑（決策書 Q15）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：帳本檔遺失或變空檔時讀起來跟第一次啟動一樣"
+        },
+        {
           "path": "experiments/v2/test_vm_probe.py",
           "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch／context ACK／base、截斷回覆、無共享路徑缺啟動標記／虛報 mount，及 guest console 偽造 host 啟動／停機標記的離線負向控制；不代替 VM 實跑"
         },
@@ -801,8 +809,8 @@
           "scope": "VM runner，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
-      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑的 run 身分與 host 停機證據已持久保存，重開資料庫可核對，父程序 SIGKILL 後仍阻擋；runner stderr 與 guest console 已分成兩個檔，host 啟動／停機標記只從 host 檔讀；離線測試驗 guest console 偽造標記不被採用。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無自動恢復；無共享路徑可用 crash_release 以開機前登記的 runner 停機紀錄加 host 本機終端確認人工解除（Q1 (a)），缺證據不解除；同 UID 可偽造 host 檔與偽終端，不是真人證明；舊共享路徑仍無解除。host／兩 VM 的 flock 對 virtiofs 不互通。hypervisor 程序被殺只驗了 runner SIGKILL（2026-11-10），host 整機崩潰／斷電未驗；真實工具、完整效果隔離與跨機即時推送未驗收",
-      "next": "無共享路徑的 run 身分、退場與 channel 綁定已持久化；父程序崩潰後的人工解除已有合成證據（Q1 (a)）；2026-11-10 真 VM guest_runner_sigkill 已驗 hypervisor 程序被殺時維持阻擋、解除拒絕；舊共享路徑定位為已被取代的退場閘門實驗，不修、不作寫入證據（理由見 v2 README）；下一步驗 host 整機崩潰、跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
+      "unknown": "原始不受控介面仍不通過；已驗 macOS 單 worker 與獨立合成 VM 的順序切換。固定合成 shell 工具已在無共享 guest 內載入前提，兩個 epoch 經專用 console 發寫入請求；新路徑的 run 身分與 host 停機證據已持久保存，重開資料庫可核對，父程序 SIGKILL 後仍阻擋；runner stderr 與 guest console 已分成兩個檔，host 啟動／停機標記只從 host 檔讀；離線測試驗 guest console 偽造標記不被採用。其餘 VM 反例仍掛可寫 scratch；舊路徑共享效果不回滾，同 UID host 偽造未排除。父程序中斷而 VM 退場證據未保存時仍阻擋且無自動恢復；無共享路徑可用 crash_release 以開機前登記的 runner 停機紀錄加 host 本機終端確認人工解除（Q1 (a)），缺證據不解除；同 UID 可偽造 host 檔與偽終端，不是真人證明；舊共享路徑仍無解除。host／兩 VM 的 flock 對 virtiofs 不互通。hypervisor 程序被殺只驗了 runner SIGKILL（2026-11-10）；host 整機崩潰只離線盤點了可能留下的磁碟狀態（test_host_crash，2026-11-10）：run 中途崩潰後永遠阻擋、沒有解除途徑（Q15），帳本檔遺失會讀成第一次啟動（已知缺口），真的斷電與檔案系統耐久性未驗；真實工具、完整效果隔離與跨機即時推送未驗收",
+      "next": "無共享路徑的 run 身分、退場與 channel 綁定已持久化；父程序崩潰後的人工解除已有合成證據（Q1 (a)）；2026-11-10 真 VM guest_runner_sigkill 已驗 hypervisor 程序被殺時維持阻擋、解除拒絕；舊共享路徑定位為已被取代的退場閘門實驗，不修、不作寫入證據（理由見 v2 README）；host 整機崩潰後的磁碟狀態已離線盤點，要不要用開機階段識別當解除證據等 Q15；下一步驗跨機與真實可控介面。做不到則維持多程序阻擋；模型探針需先授權"
     },
     {
       "id": "F29",

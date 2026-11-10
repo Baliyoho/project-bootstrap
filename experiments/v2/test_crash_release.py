@@ -257,6 +257,13 @@ class CrashReleaseTests(unittest.TestCase):
         columns = [row[1] for row in sqlite3.connect(path).execute('PRAGMA table_info(guest_runs)')]
         self.assertIn('host_log', columns)
 
+    def test_missing_database_is_refused_without_creating_one(self):
+        missing = self.root / 'typo.sqlite'
+        self.denied('unknown-guest-run', crash_release.release, missing, self.run,
+                    self.opener(FakeTerminal()))
+        self.assertFalse(missing.exists())
+        self.assertEqual(self.opened, [])
+
     def test_cli_refuses_without_a_terminal_or_with_bad_arguments(self):
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(crash_release.main([]), 2)

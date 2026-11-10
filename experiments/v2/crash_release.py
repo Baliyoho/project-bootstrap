@@ -131,6 +131,9 @@ def local_confirmation(terminal, run, evidence, actor, challenge=None, now=None)
 
 def release(db, run_id, terminal_opener=open_local_terminal):
     """Evidence first: with no host proof the person is never even asked."""
+    if not os.path.isfile(db):
+        # Lab() would quietly create an empty ledger at a mistyped or lost path.
+        raise Denied('unknown-guest-run')
     lab = Lab(db)
     try:
         ledger = GuestRunLedger(lab)

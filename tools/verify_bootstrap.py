@@ -2066,6 +2066,11 @@ def step_self():
     return ok
 
 
+# 指令本身沒有 push，只有輸出裡換行後出現 git push（git 自己的 hint 就長這樣）。
+OUTPUT_ONLY_PUSH = {'tool_name': 'Bash', 'tool_input': {'command': 'git status -sb'},
+                    'tool_response': {'stdout': 'hint:\n    git push --set-upstream origin x\n'}}
+
+
 def step_action_rules(tmp):
     """動作當下送規則（決策書 Q6 (a)，2026-11-10）：實跑 repo-action-rules.sh，並對接線守門做負向測試。
 
@@ -2089,6 +2094,19 @@ def step_action_rules(tmp):
         ('pre', {'tool_name': 'Read', 'tool_input': {'file_path': '/r/PROJECT-BOOTSTRAP.md'}}, None),
         ('post', {'tool_name': 'Bash', 'tool_input': {'command': 'git push'}}, 'push 指令剛執行完'),
         ('post', {'tool_name': 'Bash', 'tool_input': {'command': 'git fetch origin'}}, None),
+        # 2026-11-10 第二版：只看 tool_input、照 shell 切詞。下面每一條第一版都判錯或沒測。
+        ('post', OUTPUT_ONLY_PUSH, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo "a && git push"'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': "printf 'x\\ngit push\\n'"}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': "printf 'x\ngit push\n'"}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git log --grep push'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git stash push'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'cat <<X && git push\n內文\nX'}}, '準備 push'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': '(cd x && git push)'}}, '準備 push'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'if true; then git push; fi'}}, '準備 push'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'FOO=1 git -c a.b=c push origin x'}}, '準備 push'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo "沒關的引號 && git status'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo "沒關的引號\ngit push'}}, '準備 push'),
     ]
     if not bash:
         issues.append('缺少可用 bash，腳本沒有實跑')
@@ -2119,6 +2137,24 @@ def step_action_rules(tmp):
                     issues.append(label + ' 沒送對應要點')
                 if 'permissionDecision' in out or 'decision' in r.stdout:
                     issues.append(label + ' 不該做任何放行／阻擋決定')
+
+        # 負向測試：關掉 JSON 解析、退回第一版的原始字串比對，「只有輸出提到 git push」那個情境
+        # 必須誤報——證明上面那條情境真的分得出兩版；同時確認退路仍送得出提醒、仍 exit 0。
+        text = script.read_text(encoding='utf-8')
+        if text.count('parser=auto\n') != 1:
+            issues.append('腳本沒有唯一的 parser=auto，退路負向測試做不了')
+        else:
+            legacy = tmp / 'action-rules-legacy.sh'
+            legacy.write_text(text.replace('parser=auto\n', 'parser=off\n'), encoding='utf-8', newline='')
+            for payload, want in ((OUTPUT_ONLY_PUSH, True),
+                                  ({'tool_name': 'Bash', 'tool_input': {'command': 'git push'}}, True),
+                                  ({'tool_name': 'Bash', 'tool_input': {'command': 'git push --dry-run'},
+                                    'tool_response': {'stdout': 'x'}}, True),
+                                  ({'tool_name': 'Bash', 'tool_input': {'command': 'echo push'}}, False)):
+                r = run([bash, str(legacy), 'post'], stdin=json.dumps(payload, ensure_ascii=False))
+                if r.returncode or bool(r.stdout.strip()) != want:
+                    issues.append('退路（原始字串比對）對 %s 的結果不符預期'
+                                  % json.dumps(payload['tool_input'], ensure_ascii=False))
 
     # 接線守門的負向測試：每一種錯接都要被 repo_wiring_problems 看出來。
     good = {rel: (ROOT / rel).read_text(encoding='utf-8') for rel in REPO_ACTION_EVENTS}
@@ -2158,7 +2194,7 @@ def step_action_rules(tmp):
 
     record('FAIL' if issues else 'OK', '動作當下送規則', '；'.join(issues) if issues else
            '實跑 %d 個情境（兩種 JSON 排版）：push 前後、改部署包、改 hook 送對應要點，其餘安靜、永遠 exit 0、'
-           '不做放行／阻擋決定；接線守門 %d 個負向測試都擋住（不證明 Claude Code 放進 context 或模型照做）'
+           '不做放行／阻擋決定；只看 tool_input、不被指令輸出或引號內文字誤觸發，退回原始比對的負向測試確實誤報；接線守門 %d 個負向測試都擋住（不證明 Claude Code 放進 context 或模型照做）'
            % (len(cases) * 2, len(breakers) + 1))
 
 
