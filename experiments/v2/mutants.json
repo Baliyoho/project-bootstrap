@@ -2717,6 +2717,139 @@
      "new": "                if True:\n"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_recovery",
+    "experiments.v2.test_launcher"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if (not parts or any(not part or part in ('.', '..') or part.casefold() == '.git' or '\\\\' in part\n",
+     "new": "            if (not parts or any(not part or part in ('.', '..') or '\\\\' in part\n"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if (not parts or any(not part or part in ('.', '..') or part.casefold() == '.git' or '\\\\' in part\n",
+     "new": "            if (not parts or any(not part or part.casefold() == '.git' or '\\\\' in part\n"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "                                 or '\\0' in part or part.casefold().startswith('.bootstrap-') for part in parts)):\n",
+     "new": "                                 or '\\0' in part for part in parts)):\n"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "        if len(normalized) != len(self.resources):\n            raise Denied('aliased-resources')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "        if any(not isinstance(resource, str) or not resource for resource in self.resources):\n            raise Denied('invalid-resource-id')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "                if self.lab.db.execute('SELECT 1 FROM writes LIMIT 1').fetchone():\n                    raise Denied('missing-materializer-binding')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            elif previous[0] != binding:\n                raise Denied('materializer-binding-conflict')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "        if resource not in self.resources:\n            raise Denied('unmapped-resource')\n        flags",
+     "new": "        flags"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if (metadata.st_dev, metadata.st_ino) != self.root_identity:\n                raise Denied('materializer-binding-conflict')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:\n                raise Denied('not-an-exclusive-regular-file')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if metadata.st_size > MAX_CONTENT or stat.S_IMODE(metadata.st_mode) & 0o7000:\n",
+     "new": "            if metadata.st_size > MAX_CONTENT:\n"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if (self.lab.db.execute('SELECT 1 FROM files WHERE path=?', (resource,)).fetchone()\n",
+     "new": "            if (False\n"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "        if pending:\n            raise Denied('previous-materialization-pending')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "        if not re.fullmatch('[0-9a-f]{32}', event_id):\n            raise Denied('invalid-event')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if event is None or epoch is None:\n",
+     "new": "            if event is None:\n"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if state is not None and (state['phase'] not in ('prepared', 'applied') or state['resource'] != event['path']):\n",
+     "new": "            if state is not None and state['phase'] not in ('prepared', 'applied'):\n"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if state is not None and state['phase'] == 'applied':\n                return 'applied'  # A receipt for past work, never a reapply of old content.\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            self.lab.require_epoch(epoch[0])\n            if len(event['after'])",
+     "new": "            if len(event['after'])"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            if len(event['after']) > MAX_CONTENT:\n                raise Denied('content-too-large')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "                if content != event['before']:\n                    raise Denied('disk-base-conflict')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "            self.lab.require_epoch(epoch[0])\n            state = self.lab.db.execute",
+     "new": "            state = self.lab.db.execute"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "                elif current != event['before'] or mode != state['mode']:\n",
+     "new": "                elif current != event['before']:\n"
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "                        if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:\n                            raise Denied('unsafe-stage-file')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "                    if self.read(descriptor, name) != (event['before'], state['mode']):\n                        raise Denied('disk-base-conflict')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/materializer.py",
+     "old": "                os.fsync(descriptor)\n",
+     "new": ""
+    }
+   ]
   }
  ]
 }

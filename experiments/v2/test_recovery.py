@@ -345,5 +345,115 @@ broker.dispatch(channel, sys.stdin.buffer.read())
         self.assertEqual(self.file.read_bytes(), b'before')
 
 
+class MaterializerGuardTests(unittest.TestCase):
+    """Each materializer guard on its own, with the exact refusal code."""
+    setUp, tearDown, setup_broker = (RecoveryTests.setUp, RecoveryTests.tearDown,
+                                     RecoveryTests.setup_broker)
+
+    def denied(self, code, call, *args):
+        with self.assertRaises(Denied) as caught:
+            call(*args)
+        self.assertEqual(str(caught.exception), code)
+
+    def accepted(self, fault=None):
+        """A write the broker accepted but whose disk application is still pending."""
+        def stop(stage, event):
+            if stage == 'after_prepare' and not self.stopped:
+                self.stopped = True
+                raise OSError('synthetic pause')
+            if fault:
+                fault(stage, event)
+        self.stopped = False
+        broker, channel, materializer = self.setup_broker(fault=stop)
+        response = json.loads(broker.dispatch(channel, REQUEST))
+        self.assertEqual(response['code'], 'materialization-pending')
+        return materializer, response['event']
+
+    def test_mapping_inputs(self):
+        if not supported():
+            return
+        for mapping in ({'a': 'nested/./note.txt'}, {'a': 'nested/../note.txt'}, {'a': '.git/x'},
+                        {'a': 'nested/.bootstrap-x.tmp'}, {'a': ''}):
+            with self.subTest(mapping=mapping):
+                self.denied('unsafe-resource-mapping', Materializer, self.lab, self.tree, mapping)
+        for mapping in ({'': 'nested/note.txt'}, {5: 'nested/note.txt'}):
+            with self.subTest(mapping=mapping):
+                self.denied('invalid-resource-id', Materializer, self.lab, self.tree, mapping)
+
+    def test_seed_reads_once_and_refuses_unmapped_or_special_files(self):
+        if not supported():
+            return
+        materializer = Materializer(self.lab, self.tree, {'note': 'nested/note.txt'})
+        self.denied('unmapped-resource', materializer.seed, 'other')
+        self.file.chmod(0o4755)
+        self.denied('unsupported-file-size-or-mode', materializer.seed, 'note')
+        self.file.chmod(0o751)
+        materializer.seed('note')
+        self.denied('resource-already-initialized', materializer.seed, 'note')
+
+    def test_event_identity_evidence_and_state_are_checked(self):
+        if not supported():
+            return
+        materializer, event = self.accepted()
+        self.denied('invalid-event', materializer.apply, 'not-an-event')
+        with self.lab.transaction():
+            self.lab.db.execute('DELETE FROM write_epochs')
+        self.denied('missing-materialization-evidence', materializer.apply, event)
+        self.assertEqual(self.file.read_bytes(), b'before')
+
+    def test_state_for_another_resource_is_not_applied(self):
+        if not supported():
+            return
+        materializer, event = self.accepted()
+        with self.lab.transaction():
+            self.lab.db.execute("UPDATE materializations SET resource='elsewhere'")
+        self.denied('invalid-materialization-state', materializer.apply, event)
+        self.assertEqual(self.file.read_bytes(), b'before')
+
+    def test_prepare_checks_epoch_size_and_disk_base_before_recording_intent(self):
+        if not supported():
+            return
+        materializer, event = self.accepted()
+        with self.lab.transaction():
+            self.lab.db.execute('DELETE FROM materializations')
+        self.lab.propose('changed')
+        self.denied('premise-not-current', materializer.apply, event)
+        self.assertIsNone(self.lab.db.execute('SELECT 1 FROM materializations').fetchone())
+
+    def test_oversized_event_and_changed_base_record_no_intent(self):
+        if not supported():
+            return
+        materializer, event = self.accepted()
+        with self.lab.transaction():
+            self.lab.db.execute('DELETE FROM materializations')
+        self.file.write_bytes(b'changed outside')
+        self.denied('disk-base-conflict', materializer.apply, event)
+        self.assertIsNone(self.lab.db.execute('SELECT 1 FROM materializations').fetchone())
+        self.file.write_bytes(b'before')
+        with patch('experiments.v2.materializer.MAX_CONTENT', 2):
+            self.denied('content-too-large', materializer.apply, event)
+        self.assertIsNone(self.lab.db.execute('SELECT 1 FROM materializations').fetchone())
+
+    def test_mode_change_unsafe_stage_and_late_edit_are_conflicts(self):
+        if not supported():
+            return
+        materializer, event = self.accepted()
+        self.file.chmod(0o700)
+        self.denied('disk-base-conflict', materializer.apply, event)
+        stage = self.tree / 'nested' / ('.bootstrap-' + event + '.tmp')
+        self.assertFalse(stage.exists())  # refused before any staging write
+        self.file.chmod(0o751)
+        stage.write_bytes(b'')
+        os.link(stage, self.root / 'second-name')
+        self.denied('unsafe-stage-file', materializer.apply, event)
+        stage.unlink()
+        def late_edit(name, ev):
+            if name == 'after_stage_sync':
+                self.file.write_bytes(b'late edit')
+        materializer.fault = late_edit
+        self.denied('disk-base-conflict', materializer.apply, event)
+        self.assertEqual(self.file.read_bytes(), b'late edit')
+
+
 if __name__ == '__main__':
     unittest.main()

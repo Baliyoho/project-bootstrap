@@ -796,14 +796,14 @@
         },
         {
           "path": "experiments/v2/mutants.json",
-          "scope": "2026-11-09 本輪新增九個模組（preflight、batch、lines、readonly、state、evidence、facts、decisions、policy、impact）與 doctor 共 152 個守門刪改；同日在 macOS 實跑全部 killed，約 90 秒；2026-11-10 加入 resume 15、confluence 處置 13、trail_sources 7 個，並把較早的 gitclaim 29、release 20、session＋registry 27、approvals 26、broker 22 個轉進規格（先補存活對應的測試）；全量 443 個 macOS 實跑全部 killed（約 6 分鐘），其後 trail_sources 7、broker 22、launcher 28 個（launcher 先補 6 個測試）單獨跑全部 killed，共 500 個"
+          "scope": "2026-11-09 本輪新增九個模組（preflight、batch、lines、readonly、state、evidence、facts、decisions、policy、impact）與 doctor 共 152 個守門刪改；同日在 macOS 實跑全部 killed，約 90 秒；2026-11-10 加入 resume 15、confluence 處置 13、trail_sources 7 個，並把較早的 gitclaim 29、release 20、session＋registry 27、approvals 26、broker 22 個轉進規格（先補存活對應的測試）；全量 443 個 macOS 實跑全部 killed（約 6 分鐘），其後 trail_sources 7、broker 22、launcher 28、materializer 25 個（兩者先補 6、7 個測試）單獨跑全部 killed，共 525 個"
         },
         {
           "path": "experiments/v2/test_mutants.py",
           "scope": "合成套件實測執行器分得出被測到的守門（killed）、沒被測到的守門（survived）、原文不存在與出現兩次（stale）、檔案不存在（stale）；空規格不算通過；只跑指定測試模組；原始檔不被改動"
         }
       ],
-      "unknown": "lifecycle、supervisor、materializer、guardian 與 VM 相關檔的 mutation 仍只記在 README 敘述，尚未轉成規格；刪改由人挑選，不是自動產生；未納入 verify_v2 預設流程（太慢）；跨工具與跨 OS 尚未驗收",
+      "unknown": "lifecycle、supervisor、guardian 與 VM 相關檔的 mutation 仍只記在 README 敘述，尚未轉成規格；刪改由人挑選，不是自動產生；未納入 verify_v2 預設流程（太慢）；跨工具與跨 OS 尚未驗收",
       "next": "移除判斷後測試真的失敗；不只比規則字串"
     },
     {
