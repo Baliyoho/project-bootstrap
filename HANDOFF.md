@@ -25,7 +25,7 @@
 - 2026-11-10 F45 加「VERSION 只跟著 SKILL.md」規則（本 repo 未發現，反向句注入會報）；prompt 名稱已由 verify 的結構摘要一致性守，未重複加。F16a 對部署包生成的骨架以空家目錄跑通過，刪掉部署的 SKILL.md 即不通過。
 - 2026-11-10（Mac 這輪）VM 探針相關 Python 檔轉成 mutation 規格：`vm_probe` 38、`managed_fixture` 37 個（首跑 26、30 個存活，補 10、9 個逐代碼測試）；`trail_sources.rules_from_agents` 讓 `why` 從 AGENTS 規則走到 AGENTS-reasons 段落（補 4 段 git 首次出現日期），7 個刪改。各組 `--spec` 單獨跑全部 killed。真 VM 新增 `guest_unread_request`：guest 已產生、parent 沒讀進 outbox 就被 SIGKILL 的請求，解除後不留任何效果（遺失、要重做）；parent 死後到 VM 停下之間的輸出未另量。
 - 2026-11-10 skill 拆分（Q8、Q9 已決）：設計稿與實測在 [skill 拆分設計](project-bootstrap-skill-split-design.md)。部署包 3.8 現在產出六個檔（入口 `SKILL.md`＋`mode-a`／`mode-a-stop`／`mode-b`／`mode-0`／`reasons`），入口＋`mode-a.md` 5,380 字元（單檔 22,040）；拆分前 311 行有 300 行逐字留存、11 行列為已改寫。3.10 與本 repo 的開場 hook 全部條件成立才印「全綠」行。`VERSION` `2026-11-10`，骨架 27 檔。`sync_project.py` 會替舊專案補五個新檔；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」。
-- **同步債**：全域副本（`~/.claude/skills/handoff/`、`~/.codex/skills/handoff/`）仍是拆分前的單檔，所以本 repo 的 session 讀到的還是舊程序；`main` 沒有這一版；沒有同步任何專案；Codex 未重新審核。都等 Q11。未呼叫額外模型或真實服務。
+- 2026-11-10 Q5 (a)、Q6 (a)、Q7 (b)、Q11 (a) 已決。Q11 (a)：這台 Mac 的 `~/.claude/skills/handoff/` 與 `~/.codex/skills/handoff/` 已換成六檔版（與部署包產出逐位元相同）。**同步債**：`main` 沒有這一版、沒有同步任何專案、別台機器的全域副本未換；上 `main` 與同步專案等試用後另登新編號。
 
 ## 未完成／下一步
 
@@ -33,8 +33,8 @@
 2. 跨 epoch 原子歸因與舊路徑（`managed_vm_switch` 借 host worker、掛可寫 scratch）已寫效果回滾仍未驗；兩 VM 的 virtiofs `flock` 不協調；無共享路徑只涵蓋固定 shell 工具與 `note` 寫入。下一步是「隔離已寫效果」與擴到通用工具，屬 P0 下一階段範圍，跟 Q5 一起定。
 3. 可信真人核准、簽署金鑰發行／撤銷（Q1 (b) 日後另登）與額度來源；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。
 4. trail 來源：AGENTS 規則已轉；決策書第 6 節已決 Q 與效率計畫「非目標」沒有逐條否決理由，等 Q7；查核進度是修正紀錄、不是決策，不轉。Swift runner 與 guest 腳本沒有離線測試，未轉 mutation 規格。F14／F15 需另一個工具或 OS；F41 使用者已決定先不用雲端。
-5. **F22 第二階段**：(1)(3) 草稿已在本分支部署包，推出等 Q11（建議先只換本機全域副本試用）。換全域副本時整個目錄六個檔一起覆蓋。設計稿第 10 節列了沒做的：規則逐條連到 `reasons.md` 的錨點、任何工具上的實跑、Codex 重新審核。本 repo 合計約 16,100 仍超標，見 Q10。(2) hook 在動作當下送規則仍等 Q6。
-6. 需要先有決定才能做：Q5、Q6、Q7、Q10、Q11。Windows hook 同步、Mac Codex 真實注入（要額外模型呼叫）、R01–R09 邊界獨立複審仍待做。
+5. **F22 第二階段**：(1)(3) 已在本分支部署包，這台 Mac 的全域副本已換（Q11 (a) 試用中）。設計稿第 10 節列了沒做的：規則逐條連到 `reasons.md` 的錨點、任何工具上的實跑、Codex 重新審核。本 repo 合計約 16,100 仍超標，見 Q10。(2) hook 在動作當下送規則仍等 Q6。
+6. 需要先有決定才能做：Q10。Windows hook 同步、Mac Codex 真實注入（要額外模型呼叫）、R01–R09 邊界獨立複審仍待做。
 
 ## 地雷與注意事項
 
@@ -56,8 +56,4 @@
 
 ## 懸置事項（AI 勿自行處理）
 
-- 決策書第 6 節 Q5：P1 進場時機（AI 建議 (a)；崩潰解除已完成，P0 仍剩下一步 2、3）。
-- 決策書第 6 節 Q6：要不要在本 repo 的 hook 試行 F22 第二階段第 (2) 點（AI 建議 (a)：只接 Claude Code、放寬守門並附負向測試）。
-- 決策書第 6 節 Q7：trail 轉入缺否決理由的紀錄時怎麼補（AI 建議 (b)：找出處補、找不到標明未記錄）。
-- 決策書第 6 節 Q11：skill 拆分草稿要不要往下推出、怎麼推（AI 建議 (a)：先只換本機全域副本試用，再決定上 `main` 與同步專案）。
-- 決策書第 6 節 Q10：本 repo 拆完 skill 仍超標（約 16,100）怎麼處理（AI 建議：試用後再決定要不要壓 `AGENTS` 與 `HANDOFF`）。
+- 決策書第 6 節 Q10：本 repo 拆完 skill 仍超標（約 16,100）怎麼處理；使用者已同意等全域副本的六檔版試用幾輪後再定。

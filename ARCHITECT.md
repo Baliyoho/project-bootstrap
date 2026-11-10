@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-10。**部署包 3.8 從一個檔變成六個檔**（決策書 Q9／F22）：handoff skill 是一個目錄，入口 `SKILL.md` 加 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`；骨架 22 → 27 檔，`VERSION` `2026-11-10`。`tools/` 新增 `skill_split_baseline.json`；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」三項；兩支開場 hook 多印全綠行。全域副本與各專案尚未同步，`main` 也還沒有這一版。同日稍早：根目錄新增 [skill 拆分設計稿](project-bootstrap-skill-split-design.md)（決策書 Q8 (a)，等 Q9 審閱，未實施）。同日稍早：根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+> 最後更新：2026-11-10。**部署包 3.8 從一個檔變成六個檔**（決策書 Q9／F22）：handoff skill 是一個目錄，入口 `SKILL.md` 加 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`；骨架 22 → 27 檔，`VERSION` `2026-11-10`。`tools/` 新增 `skill_split_baseline.json`；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」三項；兩支開場 hook 多印全綠行。同日 Q11 (a)：只有這台 Mac 的兩個全域副本換成六檔版；各專案尚未同步，`main` 也還沒有這一版。同日稍早：根目錄新增 [skill 拆分設計稿](project-bootstrap-skill-split-design.md)（決策書 Q8 (a)，等 Q9 審閱，未實施）。同日稍早：根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
 > 2026-11-10 新增 `experiments/v2/crash_release.py` 與 `test_crash_release.py`：無共享 guest 的父程序崩潰後，依決策書 Q1 (a) 讀開機前登記在 `guest_runs` 帳本的 runner `.host` 停機紀錄，再要 host 本機終端（`/dev/tty`）照打挑戰碼，兩者都過才退場；缺證據維持阻擋。合成原型，同 UID 偽造不排除。
 
