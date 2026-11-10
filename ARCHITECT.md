@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-10。根目錄新增 [skill 拆分設計稿](project-bootstrap-skill-split-design.md)（決策書 Q8 (a)，等 Q9 審閱，未實施）。同日稍早：根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+> 最後更新：2026-11-10。**部署包 3.8 從一個檔變成六個檔**（決策書 Q9／F22）：handoff skill 是一個目錄，入口 `SKILL.md` 加 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`；骨架 22 → 27 檔，`VERSION` `2026-11-10`。`tools/` 新增 `skill_split_baseline.json`；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」三項；兩支開場 hook 多印全綠行。全域副本與各專案尚未同步，`main` 也還沒有這一版。同日稍早：根目錄新增 [skill 拆分設計稿](project-bootstrap-skill-split-design.md)（決策書 Q8 (a)，等 Q9 審閱，未實施）。同日稍早：根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
 > 2026-11-10 新增 `experiments/v2/crash_release.py` 與 `test_crash_release.py`：無共享 guest 的父程序崩潰後，依決策書 Q1 (a) 讀開機前登記在 `guest_runs` 帳本的 runner `.host` 停機紀錄，再要 host 本機終端（`/dev/tty`）照打挑戰碼，兩者都過才退場；缺證據維持阻擋。合成原型，同 UID 偽造不排除。
 
@@ -117,6 +117,7 @@
 | 本檔 | 結構 | 只有結構變動 |
 | [LICENSE](LICENSE) | MIT（2026-09-07 起公開） | 授權改變 |
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
+| [tools/skill_split_baseline.json](tools/skill_split_baseline.json) | 拆分前單檔 `SKILL.md`（`VERSION` `2026-11-03`）每一行的雜湊，加上 11 行刻意改寫的去處。`verify_bootstrap.py`「skill 拆分」用它確認沒有行被弄丟。不部署、不同步 | 只有刻意改寫或刪掉舊文本的某一行時，並寫明去處 |
 | [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案。`check_docs.py` 的專案設定區塊、兩份 hook 接線裡專案自己加的設定都會原樣保留。只改檔案，不 commit | 骨架多一個要同步的檔時（而且要同時歸類進 `WHOLE`／`WIRING`／`PARTIAL`／`INSTANCE`，否則驗證會 FAIL） |
 | [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
 | `.claude/settings.json`＋`.codex/hooks.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart 檢查：git 新鮮度＋`HANDOFF.md` 的「工作中」判讀＋開工改名提示。兩份接線掛的都是**同一支** `repo-git-check.sh`（2026-11-01 補 Codex 這一面），所以它們**不是部署包 3.9／3.17 的副本**，那支 hook 也不是 3.10 的副本——都不在副本拓撲裡、不要用 `sync_project.py` 同步（檔頭寫了為什麼不抄 3.10；2026-11-01 起那支腳本會直接拒絕） | 幾乎不動 |
@@ -153,7 +154,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 3.5 | `ARCHITECT.md` | 結構的唯一權威（2026-09-07 加入） |
 | 3.6 | `docs/ai-notes/handover-protocol.md` | 交接的規則與理由 |
 | 3.7 | `docs/ai-notes/roadmap.md` | 持久待辦與決策記錄 |
-| 3.8 | `.claude/skills/handoff/SKILL.md` | **本骨架的核心**：0 建制／A 接棒／B 交棒／C 同步 |
+| 3.8 | `.claude/skills/handoff/` 六個檔：`SKILL.md`、`mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` | **本骨架的核心**，**一節產六檔**（2026-11-10 拆分）：入口每次讀；`mode-a.md` 是正常接棒摘要；其餘四個逐字搬自單檔，依模式或異常才讀 |
 | 3.9 | `.claude/settings.json` | 兩個 hook 的接線 |
 | 3.10 | `.claude/hooks/git-freshness.sh` | SessionStart：git 新鮮度 |
 | 3.11 | `.claude/hooks/pre-push-handoff.sh` | PreToolUse：AI push 提醒（有限覆蓋，見部署包 3.11） |
@@ -231,6 +232,9 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 協作狀態契約／Git 異常提示 | 六狀態與步驟契約、20 個負向測試，含 R07 先 stage 再驗證；兩支 hook 實跑領先／分岔／fetch 失敗 | 程序順序矛盾或工具提示教人自行 rebase（2026-11-02／F11） |
 | 核心與實例優先序 | skill／協定／README 宣告一致、override 範圍明確、11 個負向測試；同步列版本與 MIGRATE，保留舊實例 | 不同步的舊協定會推翻新程序（F10） |
 | 接力協調邊界 | A2.5／A5／協定明列協調訊號非鎖、SHA 比對與禁止自動奪權，8 個文字負向測試 | 不宣稱並行互斥；原子 claim 留待另案（F12） |
+| skill 拆分 | 六個 skill 檔齊全、同版本、都在 `WHOLE`；入口＋`mode-a.md` ≤6,000 字元；入口 17 條、`mode-a.md` 12 條必備句；拆分前每一行逐字留存或列入已改寫清單；38 個負向測試 | 入口指向不存在的檔、同步只寫一半、濃縮時丟了停止條件或理由。不證明模型會去讀模式檔 |
+| 同步補齊模式檔 | 只有單檔的舊專案會補上五個新檔、入口最後寫、不認得的檔列為 EXTRA；1 個負向測試 | 同步後新入口指向不存在的模式檔 |
+| 全綠行 | 兩支開場 hook 在真 Git fixture 上：正常才印含分支與 SHA 的全綠行，10 種不正常狀態都不印；拿掉條件的腳本會被看出來 | 不該綠的時候印了全綠，正常路徑會跳過完整判讀表 |
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
 | 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，mode 100755 與 wrapper 直接執行；7 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit；不測外部 GitHub 或模型行為（F16） |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
@@ -240,9 +244,9 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 ## 副本拓撲（同一份東西存在於多個地方的，只有這些）
 
 ```text
-handoff SKILL.md
+handoff skill 目錄（2026-11-10 起六個檔，同版本、整個目錄一起覆蓋）
   部署包 3.8（權威）
-    └─→ 各專案 .claude/skills/handoff/SKILL.md
+    └─→ 各專案 .claude/skills/handoff/
           ├─→ （選用）~/.claude/skills/handoff/   ← 模式 0 建制真正會被載入的地方
           ├─→ （選用）~/.codex/skills/handoff/    ← Codex CLI 與桌面 App（2026-10-30 實測
           │                                          CLI 0.164.0 仍讀這個路徑，雖然官方

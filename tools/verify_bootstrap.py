@@ -115,6 +115,7 @@ FAIL，而不是在別人的舊 python 上才炸（查核報告 F14）。
 import argparse
 import atexit
 import datetime
+import hashlib
 import json
 import os
 import pathlib
@@ -148,7 +149,10 @@ KIT = ROOT / 'PROJECT-BOOTSTRAP.md'
 EXPECTED = {
     'AGENTS.md', 'ARCHITECT.md', 'CLAUDE.md', 'GEMINI.md', 'HANDOFF.md', 'README.md',
     'docs/ai-notes/handover-protocol.md', 'docs/ai-notes/roadmap.md',
-    '.claude/skills/handoff/SKILL.md', '.claude/settings.json',
+    '.claude/skills/handoff/SKILL.md', '.claude/skills/handoff/mode-a.md',
+    '.claude/skills/handoff/mode-a-stop.md', '.claude/skills/handoff/mode-b.md',
+    '.claude/skills/handoff/mode-0.md', '.claude/skills/handoff/reasons.md',
+    '.claude/settings.json',
     '.claude/hooks/git-freshness.sh', '.claude/hooks/pre-push-handoff.sh',
     '.codex/hooks.json', '.agents/skills/handoff/SKILL.md',
     '.claude/hooks/ag-wrap.sh', '.agents/ag-hook.cmd', '.agents/hooks.json',
@@ -288,6 +292,19 @@ def write_lf(path, text, encoding='utf-8'):
 
 
 # ── 1. 重生骨架 ────────────────────────────────────────────────
+SKILL_DIR = '.claude/skills/handoff/'
+# 入口排最前、新寫的正常路徑摘要排最後：下面依標題找段落的檢查（「### A5 」之類）要先碰到
+# 逐字搬來的原文，摘要另外由「skill 入口與常態必讀量」那一項守。
+SKILL_FILES = ('SKILL.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md', 'reasons.md', 'mode-a.md')
+SKILL_ROUTINE = ('SKILL.md', 'mode-a.md')       # 正常接棒要讀的兩個檔
+SKILL_ROUTINE_LIMIT = 6000                       # 設計稿第 3 節；F22 的 12,000 還要留給專案文件
+
+
+def skill_text(dest):
+    """整個 handoff skill 目錄的文字。2026-11-10 拆成六個檔之後，內容檢查看的是目錄而不是入口。"""
+    return '\n'.join(read_lf(dest / (SKILL_DIR + name)) for name in SKILL_FILES)
+
+
 def extract(dest, text=None):
     lines = (read_lf(KIT) if text is None else text).split('\n')
     heads = [i for i, ln in enumerate(lines) if HEAD_RE.match(ln)]
@@ -1032,7 +1049,7 @@ def step_rename_line(dest):
     2026-11-01 量到：六個收尾 session（全 Sonnet）裡只有四個改了 session 名稱，六個的 git
     結果全部正確。**為什麼漏沒有量過**，所以加硬的方向不是猜原因，而是讓「有沒有做」露出來。
     """
-    skill = (dest / '.claude/skills/handoff/SKILL.md').read_text(encoding='utf-8')
+    skill = skill_text(dest)
     problems = rename_line_problems(skill)
     if problems:
         record('FAIL', '改名寫進回報模板', '；'.join(problems))
@@ -1068,8 +1085,9 @@ def session_resume_problems(skill, pointer):
         description = re.search(r'^description: (.+)$', text, re.M)
         if not description or 'every new user message after a handoff' not in description[1]:
             problems.append(name + ' description 缺續聊觸發')
-    naming = re.search(r'^## session 命名.*?(?=^## 0\.)', skill, re.M | re.S)
-    naming = naming[0] if naming else ''
+    # 2026-11-10：命名規則拆到入口（摘要）、mode-b.md（計數）與 reasons.md（細則原文），
+    # 所以這裡看整個 skill 目錄；入口自己該有哪些句子由「skill 入口與常態必讀量」守。
+    naming = skill
     required = (
         '每則使用者新訊息都先檢查 session 狀態',
         '包含只問問題、補充、更正與致謝',
@@ -1099,7 +1117,7 @@ def session_resume_problems(skill, pointer):
 
 
 def step_session_resume(dest):
-    skill = (dest / '.claude/skills/handoff/SKILL.md').read_text(encoding='utf-8')
+    skill = skill_text(dest)
     pointer = (dest / '.agents/skills/handoff/SKILL.md').read_text(encoding='utf-8')
     problems = session_resume_problems(skill, pointer)
     # 每個守門條件都故意拿掉一次；沒有改到字串也必須失敗，不能空測。
@@ -3832,7 +3850,7 @@ def flow_contract_problems(skill):
 
 
 def step_flow_contract(dest, tmp):
-    skill = read_lf(dest / '.claude/skills/handoff/SKILL.md')
+    skill = skill_text(dest)
     bad = flow_contract_problems(skill)
     # 每種契約都故意拿掉一次，避免檢查器永遠回成功。
     mutations = ('| 待接棒 |', '| 已定位 |', '| 開工中 |', '| 工作中 |', '| 待交棒 |', '| 已交棒 |',
@@ -3920,7 +3938,7 @@ def core_priority_problems(skill, protocol, readme=None):
 
 def step_core_priority(dest, tmp):
     import sync_project as syncer
-    skill = read_lf(dest / '.claude/skills/handoff/SKILL.md')
+    skill = skill_text(dest)
     protocol = read_lf(dest / 'docs/ai-notes/handover-protocol.md')
     bad = core_priority_problems(skill, protocol)
     readme = read_lf(ROOT / 'README.md')
@@ -3971,7 +3989,7 @@ def coordination_problems(skill, protocol):
 
 
 def step_coordination(dest):
-    skill = read_lf(dest / '.claude/skills/handoff/SKILL.md')
+    skill = skill_text(dest)
     protocol = read_lf(dest / 'docs/ai-notes/handover-protocol.md')
     bad = coordination_problems(skill, protocol)
     probes = ('協調訊號，不是互斥鎖', '不得自動奪取 writer', '原子 claim 尚未實作', '未做並行實驗')
@@ -4239,7 +4257,7 @@ def step_deployment_lifecycle(tmp):
     must(['git', 'init', '-q', '-b', 'main', str(work)])
     must(['git', 'add', '.'], work)
     kit = read_lf(KIT)
-    skill = read_lf(work / '.claude/skills/handoff/SKILL.md')
+    skill = skill_text(work)
     bad = deployment_order_problems(kit, skill, ZIP_README, read_lf(ROOT / 'README.md'))
     for invalid in (' !fixture', '` !fixture`'):
         try:
@@ -4458,6 +4476,274 @@ def step_v2():
     record('OK' if valid else 'FAIL', 'v2 P0 原型回歸（非需求達標）', detail)
 
 
+SPLIT_BASELINE = ROOT / 'tools/skill_split_baseline.json'
+# 入口必須自己帶著的句子：停止條件、禁令與每則訊息都適用的命名規則。這些不能只留在
+# 模式檔或理由檔——模型沒去讀模式檔時，入口是最後一道。
+ENTRY_MUST = (
+    '不要憑空建立交接檔案', '`reset --hard`', '`push --force`', '自行 `stash`',
+    '接棒時 ahead-only', 'fetch 失敗', 'A2.5 偵測到別台機器的「工作中」標記',
+    '功能分支要併進 `main`', '憑證缺失', 'HANDOFF 沒授權的破壞性操作', '建 GitHub repo 與第一次 push',
+    'A1–A4 不修改專案檔案', '~/.claude/skills/handoff/', '找不到模式檔就停下回報',
+    '每則使用者新訊息都先看 session 狀態', '續聊要改檔前重新走 A1–A5', '必須有 `session：` 一行',
+)
+MODE_A_MUST = (
+    '] 全綠 ', 'bash .claude/hooks/git-freshness.sh', '不要自己判斷「大概沒事」', '`mode-a-stop.md`',
+    '切換後重做 A1', '都不能寫成通過',
+    'session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次',
+    '只讀、只問問題的 session 不寫開工標記', '**工具欄不能省**', '遠端 SHA 跟 A1 記下的不同就停',
+    'push 失敗就不是「已標記」', '不是互斥鎖',
+)
+
+
+def line_key(line):
+    return hashlib.sha256(line.strip().encode('utf-8')).hexdigest()[:16]
+
+
+def skill_split_problems(files, version, whole, baseline):
+    """2026-11-10（決策書 F22／Q9）：handoff skill 拆成六個檔之後要守的東西。
+
+    files 是 {檔名: 內容}。拆檔最怕三件事，而且都沒有徵兆：入口指向不存在的檔、六個檔
+    版本不一（同步只寫了一半）、濃縮時把停止條件或理由弄丟。
+    """
+    missing = [name for name in SKILL_FILES if name not in files]
+    if missing:
+        return ['缺 skill 檔：' + '、'.join(missing)]
+    bad = []
+    entry = files['SKILL.md']
+    for name in SKILL_FILES[1:]:
+        if '`%s`' % name not in entry:
+            bad.append('入口沒有指到 ' + name)
+    for name in SKILL_FILES:
+        if SKILL_DIR + name not in whole:
+            bad.append(name + ' 不在 sync_project 的 WHOLE')
+        mark = re.search(r'source: PROJECT-BOOTSTRAP\.md v([0-9][0-9.-]*)', files[name])
+        if not mark:
+            bad.append(name + ' 缺 source 版本標記')
+        elif mark[1] != version:
+            bad.append('%s 的版本標記 v%s 與 VERSION %s 不同' % (name, mark[1], version))
+    size = sum(len(files[name]) for name in SKILL_ROUTINE)
+    if size > SKILL_ROUTINE_LIMIT:
+        bad.append('常態必讀（入口＋mode-a.md）%d 字元，超過 %d' % (size, SKILL_ROUTINE_LIMIT))
+    bad.extend('入口缺：' + token for token in ENTRY_MUST if token not in entry)
+    bad.extend('mode-a.md 缺：' + token for token in MODE_A_MUST if token not in files['mode-a.md'])
+    have = {line_key(line) for text in files.values() for line in text.split('\n') if line.strip()}
+    rewritten = baseline['rewritten']
+    lost = [key for key in baseline['lines'] if key not in have and key not in rewritten]
+    if lost:
+        bad.append('拆分前的 SKILL.md 有 %d 行不在任何一個檔、也不在已改寫清單（%s…）' % (len(lost), lost[0]))
+    if any(key not in baseline['lines'] or not str(note).strip() for key, note in rewritten.items()):
+        bad.append('已改寫清單有不屬於舊文本的行，或沒寫去處')
+    return bad
+
+
+def step_skill_split(dest):
+    import sync_project as syncer
+    files = {name: read_lf(dest / (SKILL_DIR + name)) for name in SKILL_FILES
+             if (dest / (SKILL_DIR + name)).is_file()}
+    version = read_lf(ROOT / 'VERSION').strip()
+    baseline = json.loads(read_lf(SPLIT_BASELINE))
+    bad = skill_split_problems(files, version, syncer.WHOLE, baseline)
+    size = sum(len(files.get(name, '')) for name in SKILL_ROUTINE)
+
+    def mutated(name, text):
+        copy = dict(files)
+        copy[name] = text
+        return copy
+    cases = []
+    if not bad:
+        cases.append(('少一個模式檔', {k: v for k, v in files.items() if k != 'mode-b.md'}, version, syncer.WHOLE, baseline))
+        cases.append(('入口不再指到 reasons.md', mutated('SKILL.md', files['SKILL.md'].replace('`reasons.md`', '理由檔')),
+                      version, syncer.WHOLE, baseline))
+        cases.append(('模式檔不在 WHOLE', files, version,
+                      tuple(rel for rel in syncer.WHOLE if not rel.endswith('mode-a-stop.md')), baseline))
+        cases.append(('只有一個檔的版本標記不同',
+                      mutated('mode-0.md', files['mode-0.md'].replace('md v' + version, 'md v2000-01-01', 1)),
+                      version, syncer.WHOLE, baseline))
+        cases.append(('模式檔沒有版本標記',
+                      mutated('reasons.md', files['reasons.md'].replace('source: PROJECT-BOOTSTRAP.md v', 'from v', 1)),
+                      version, syncer.WHOLE, baseline))
+        cases.append(('入口灌到超過上限', mutated('SKILL.md', files['SKILL.md'] + '字' * (SKILL_ROUTINE_LIMIT - size + 1)),
+                      version, syncer.WHOLE, baseline))
+        for token in ENTRY_MUST:
+            cases.append(('入口拿掉 ' + token, mutated('SKILL.md', files['SKILL.md'].replace(token, '')),
+                          version, syncer.WHOLE, baseline))
+        for token in MODE_A_MUST:
+            cases.append(('mode-a.md 拿掉 ' + token, mutated('mode-a.md', files['mode-a.md'].replace(token, '')),
+                          version, syncer.WHOLE, baseline))
+        # 理由檔少一行（任挑「反例」裡的一條）：覆蓋率必須擋下，理由可以搬不能消失。
+        victim = next((line for line in files['reasons.md'].split('\n') if line.startswith('- ❌ 開工沒 fetch')), '')
+        cases.append(('理由檔刪掉一條反例', mutated('reasons.md', files['reasons.md'].replace(victim + '\n', '', 1) if victim else files['reasons.md']),
+                      version, syncer.WHOLE, baseline))
+        ghost = dict(baseline, rewritten=dict(baseline['rewritten'], **{'0' * 16: '憑空多一筆'}))
+        cases.append(('已改寫清單混進不存在的行', files, version, syncer.WHOLE, ghost))
+        unexplained = dict(baseline, rewritten={key: '' for key in baseline['rewritten']})
+        cases.append(('已改寫清單沒寫去處', files, version, syncer.WHOLE, unexplained))
+    for name, *args in cases:
+        if not skill_split_problems(*args):
+            bad.append('負向測試未擋：' + name)
+    record('FAIL' if bad else 'OK', 'skill 拆分', '；'.join(bad) if bad else
+           '六個檔齊全、同版本、都在同步清單；常態必讀（入口＋mode-a.md）%d／%d 字元；入口 %d 條、mode-a %d 條必備句；'
+           '拆分前 %d 行逐字留存、%d 行列為已改寫；%d 個負向測試（不代表模型會去讀模式檔）'
+           % (size, SKILL_ROUTINE_LIMIT, len(ENTRY_MUST), len(MODE_A_MUST),
+              len(baseline['lines']) - len(baseline['rewritten']), len(baseline['rewritten']), len(cases)))
+
+
+def step_sync_skill_parts(dest, tmp):
+    """舊專案只有單檔 SKILL.md：同步要補上五個新檔，而且入口最後才寫（2026-11-10）。
+
+    只看 sync() 算出來的計畫，不寫入、不碰同步資格檢查（那由「同步資格」等項目守）。
+    """
+    import sync_project as syncer
+    parts = [SKILL_DIR + name for name in SKILL_FILES if name != 'SKILL.md']
+    entry = SKILL_DIR + 'SKILL.md'
+
+    def planned(project, **kw):
+        plan = syncer.sync(project, dest, **kw)
+        return [rel for _, _, rel in plan.writes], '\n'.join(plan.msgs)
+    old = tmp / 'parts-old'
+    (old / SKILL_DIR).mkdir(parents=True)
+    write_lf(old / entry, '---\nname: handoff\ndescription: old\n---\n\n單檔舊版\n')
+    write_lf(old / (SKILL_DIR + 'notes-local.md'), '專案就地加的檔\n')
+    writes, msgs = planned(old)
+    bad = []
+    if any(rel not in writes for rel in parts):
+        bad.append('有入口的舊專案沒有補齊五個新檔')
+    if entry not in writes or any(writes.index(rel) > writes.index(entry) for rel in parts if rel in writes):
+        bad.append('入口不是 skill 檔裡最後寫的')
+    if 'EXTRA' not in msgs or 'notes-local.md' not in msgs:
+        bad.append('skill 目錄裡不認得的檔沒有被列出來')
+    # 沒有這套 skill 的專案不能被補裝；Codex 限定同步也不能動 skill。
+    bare = tmp / 'parts-bare'
+    bare.mkdir()
+    write_lf(bare / 'README.md', 'x\n')
+    writes, _ = planned(bare)
+    if any(rel.startswith(SKILL_DIR) for rel in writes):
+        bad.append('沒有 handoff skill 的專案被補裝了模式檔')
+    writes, _ = planned(old, codex_only=True)
+    if any(rel.startswith(SKILL_DIR) for rel in writes):
+        bad.append('Codex 限定同步動了 skill 目錄')
+    # 負向：WHOLE 裡沒有模式檔時，這項檢查必須看得出「沒補齊」。
+    with patch.object(syncer, 'WHOLE', tuple(rel for rel in syncer.WHOLE if rel not in syncer.SKILL_PARTS)):
+        writes, _ = planned(old)
+    if all(rel in writes for rel in parts):
+        bad.append('負向測試未重現：WHOLE 拿掉模式檔後仍顯示補齊')
+    record('FAIL' if bad else 'OK', '同步補齊模式檔', '；'.join(bad) if bad else
+           '只有單檔的舊專案會補上五個新檔、入口最後寫、不認得的檔列為 EXTRA；沒有 skill 的專案與 Codex 限定同步不動；1 個負向測試')
+
+
+def step_all_green(dest, tmp):
+    """開場 hook 的「全綠」行（2026-11-10，F22）：全部條件成立才印，少一項就不能印。
+
+    這一行讓正常接棒可以不讀完整判讀表，所以它印錯的方向只有一個是危險的——不該綠的時候綠了。
+    每個條件各用一個真 Git fixture 打破一次；兩支 hook（部署範本與本 repo 自己的）都跑。
+    """
+    bash = find_bash()
+    if not bash:
+        record('SKIP', '全綠行', '缺少可用 bash')
+        return
+    scripts = [('部署 hook', read_lf(dest / '.claude/hooks/git-freshness.sh')),
+               ('本 repo hook', read_lf(ROOT / '.claude/hooks/repo-git-check.sh'))]
+    free = '# HANDOFF\n\n- **工作中**：無（已交棒）\n'
+    counter = [0]
+
+    def git(args, cwd=None):
+        r = run(['git', *args], cwd=cwd)
+        if r.returncode:
+            raise RuntimeError('Git fixture 失敗：' + ' '.join(args) + ' ' + r.stderr)
+        return r.stdout.strip()
+
+    def fixture(handoff=free):
+        counter[0] += 1
+        base = tmp / ('green-%d' % counter[0])
+        origin, work = base / 'origin.git', base / 'work'
+        base.mkdir()
+        git(['init', '-q', '--bare', str(origin)])
+        git(['init', '-q', '-b', 'main', str(work)])
+        write_lf(work / 'HANDOFF.md', handoff)
+        git(['add', 'HANDOFF.md'], work)
+        git(['commit', '-qm', 'init'], work)
+        git(['remote', 'add', 'origin', str(origin)], work)
+        git(['push', '-qu', 'origin', 'main'], work)
+        return origin, work
+
+    def green_line(source, work):
+        path = tmp / 'green-probe.sh'
+        write_lf(path, source)
+        out = run([bash, str(path)], cwd=work, env=tool_env(BOOTSTRAP_VERSION_CHECK='off')).stdout
+        return next((line for line in out.splitlines() if '] 全綠 ' in line), '')
+
+    def dirty(origin, work):
+        write_lf(work / 'untracked.txt', 'x\n')
+
+    def ahead(origin, work):
+        write_lf(work / 'HANDOFF.md', free + '\n本機多一個 commit\n')
+        git(['commit', '-qam', 'local'], work)
+
+    def behind(origin, work):
+        peer = work.parent / 'peer'
+        git(['clone', '-q', '-b', 'main', str(origin), str(peer)])
+        write_lf(peer / 'other.txt', 'x\n')
+        git(['add', 'other.txt'], peer)
+        git(['commit', '-qm', 'remote'], peer)
+        git(['push', '-q', 'origin', 'main'], peer)
+
+    def wrong_upstream(origin, work):
+        git(['push', '-q', 'origin', 'main:other'], work)
+        git(['fetch', '-q', 'origin'], work)
+        git(['branch', '-q', '-u', 'origin/other'], work)
+
+    def detached(origin, work):
+        git(['checkout', '-q', '--detach'], work)
+
+    def fetch_fails(origin, work):
+        git(['remote', 'set-url', 'origin', str(work.parent / 'missing.git')], work)
+
+    def remote_handoff(text):
+        def change(origin, work):
+            write_lf(work / 'HANDOFF.md', text)
+            git(['commit', '-qam', 'handoff'], work)
+            git(['push', '-q', 'origin', 'main'], work)
+        return change
+
+    breakers = (
+        ('未提交變更', dirty), ('ahead', ahead), ('behind', behind),
+        ('upstream 不是 origin/<分支>', wrong_upstream), ('detached HEAD', detached), ('fetch 失敗', fetch_fails),
+        ('有人佔用', remote_handoff('# HANDOFF\n\n- **工作中**：`other-box` ／ `Codex CLI`，2026-11-10 09:00 (+08) 開工\n')),
+        ('兩列工作中', remote_handoff(free + '- **工作中**：無（已交棒）\n')),
+        ('沒有工作中欄位', remote_handoff('# HANDOFF\n\n沒有欄位\n')),
+        ('任務名含「無」但有人佔用', remote_handoff('# HANDOFF\n\n- **工作中**：`box` ／ `Claude Code` ／ `㊣　26111009｜修無效連結｜工作中｜交棒0次`\n')),
+    )
+    issues = []
+    try:
+        for name, source in scripts:
+            origin, work = fixture()
+            line = green_line(source, work)
+            sha = git(['rev-parse', 'origin/main'], work)
+            if not line or 'branch=main' not in line or 'origin=' + sha not in line:
+                issues.append(name + ' 正常狀態沒有印全綠行或缺分支／SHA')
+            for label, breaker in breakers:
+                origin, work = fixture()
+                breaker(origin, work)
+                if green_line(source, work):
+                    issues.append('%s 在「%s」時仍印全綠' % (name, label))
+            # 儀器自檢：把 dirty 條件從腳本拿掉，dirty fixture 就必須看得到全綠行。
+            weakened = source.replace(' || [ "$dirty" -gt 0 ]; then green=0; fi', '; then green=0; fi')
+            origin, work = fixture()
+            dirty(origin, work)
+            if weakened == source or not green_line(weakened, work):
+                issues.append(name + ' 負向測試未重現：拿掉 dirty 條件後應該印出全綠')
+            unfree = source.replace('free=0\n', 'free=1\n', 1)
+            origin, work = fixture()
+            remote_handoff('# HANDOFF\n\n- **工作中**：`other-box` ／ `Codex CLI`\n')(origin, work)
+            if unfree == source or not green_line(unfree, work):
+                issues.append(name + ' 負向測試未重現：占用判定失效後應該印出全綠')
+    except RuntimeError as e:
+        issues.append(str(e))
+    record('FAIL' if issues else 'OK', '全綠行', '；'.join(issues) if issues else
+           '兩支 hook 實跑：正常狀態印出含分支與 origin SHA 的全綠行；%d 種不正常狀態都不印；'
+           '拿掉 dirty 或占用條件的腳本會被看出來（只證明 hook 的判定，不證明模型照它走）' % len(breakers))
+
+
 def run_checks(dest, tmp):
     work = None
     seen = step_regenerate(dest) and step_fill(dest)
@@ -4498,6 +4784,9 @@ def run_checks(dest, tmp):
     step_flow_contract(dest, tmp)
     step_core_priority(dest, tmp)
     step_coordination(dest)
+    step_skill_split(dest)
+    step_sync_skill_parts(dest, tmp)
+    step_all_green(dest, tmp)
     step_sync_scope(dest, tmp)
     step_sync_mode(dest, tmp)
     step_architecture_summary(dest)

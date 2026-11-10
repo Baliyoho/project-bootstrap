@@ -34,13 +34,17 @@ def measure(root, run_verifier=False):
         # the incident text moved to AGENTS-reasons.md; neither is a per-session read any more.
         texts = {name: (root / name).read_text(encoding='utf-8') for name in (
             'AGENTS.md', 'HANDOFF.md')}
-        texts['handoff-skill-from-authority'] = (
-            target / '.claude/skills/handoff/SKILL.md').read_text(encoding='utf-8')
+        # 2026-11-10 (decision Q9): the skill is a directory; a normal pickup reads the entry and
+        # mode-a.md only. A missing file must raise here rather than count as zero characters.
+        for part in ('SKILL.md', 'mode-a.md'):
+            texts['handoff-skill-from-authority/' + part] = (
+                target / '.claude/skills/handoff' / part).read_text(encoding='utf-8')
     rows = [{'input': name, 'unicode_characters': len(text),
              'sha256': hashlib.sha256(text.encode('utf-8')).hexdigest()} for name, text in texts.items()]
     total = sum(row['unicode_characters'] for row in rows)
-    report = {'scope': '常態三份入口（AGENTS、HANDOFF、skill）；skill 取部署包權威範本，非任意全域副本；'
-                  '不含任務專屬資料、條件式才讀的複審快照與 AGENTS 理由檔',
+    report = {'scope': '常態入口（AGENTS、HANDOFF、skill 入口與 mode-a.md）；skill 取部署包權威範本，非任意全域副本；'
+                  '不含任務專屬資料、條件式才讀的複審快照、AGENTS 理由檔、異常才讀的模式檔，'
+                  '也不含開場 hook 輸出（2026-11-10 手動量本 repo 約 700 字元）',
         'inputs': rows, 'unicode_characters': total, 'limit': 12000,
         'reading_result': '通過' if total <= 12000 else '不通過',
         'tokens': '未量測，不以字元冒充 token',

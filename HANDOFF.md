@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-10 17:59（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（寫 handoff skill 拆分設計稿並由 Fable 5.2 重看改成第二版；Q8 已決，登記 Q9、Q10）
+- **交接時間**：2026-11-10 18:35（+08）
+- **交棒者**：Claude Code（Fable 5.2）／ `Mac`（handoff skill 拆成六檔的草稿寫進本分支部署包；Q9 已決，登記 Q11）
 
 ## 任務目標
 
@@ -12,8 +12,8 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111017｜設計技能拆分｜工作中｜交棒2次`，2026-11-10 18:13 (+08) 開工
-- **骨架版本**：`2026-11-03`
+- **工作中**：無（已交棒）
+- **骨架版本**：`2026-11-10`
 - 本機能力：macOS 27.2／Apple silicon、Python 3.15.2、Swift 6.4.2、bash 3.2、Git 2.54；ad hoc virtualization entitlement 可啟 VM。Windows／Linux 未驗。現行部署包及程序未切換。
 
 ## 已完成
@@ -24,8 +24,8 @@
 - 2026-11-10 mutation 轉進：supervisor 11、guardian 10（新增 `test_guardian.py`）、lifecycle 26（補 `LifecycleCodeTests` 7 個逐代碼測試）、崩潰解除 23、F45 版本規則 3。lifecycle 整個模組實測約 5 秒（舊記 3 分鐘有誤）。
 - 2026-11-10 F45 加「VERSION 只跟著 SKILL.md」規則（本 repo 未發現，反向句注入會報）；prompt 名稱已由 verify 的結構摘要一致性守，未重複加。F16a 對部署包生成的骨架以空家目錄跑通過，刪掉部署的 SKILL.md 即不通過。
 - 2026-11-10（Mac 這輪）VM 探針相關 Python 檔轉成 mutation 規格：`vm_probe` 38、`managed_fixture` 37 個（首跑 26、30 個存活，補 10、9 個逐代碼測試）；`trail_sources.rules_from_agents` 讓 `why` 從 AGENTS 規則走到 AGENTS-reasons 段落（補 4 段 git 首次出現日期），7 個刪改。各組 `--spec` 單獨跑全部 killed。真 VM 新增 `guest_unread_request`：guest 已產生、parent 沒讀進 outbox 就被 SIGKILL 的請求，解除後不留任何效果（遺失、要重做）；parent 死後到 VM 停下之間的輸出未另量。
-- 2026-11-10（Mac 第二輪）Q8 使用者選 (a)：寫 [skill 拆分設計](project-bootstrap-skill-split-design.md)。實測 skill 22,040 字元，正常接棒會用到的部分約 13,100，只拆模式不夠；建議一支 skill、只新寫入口＋`mode-a.md`（合計 ≤6,000，估計值）、其餘逐字搬並用覆蓋率腳本驗、開場 hook 全部條件成立才印全綠行且可重跑。第二版另補版本規則與「部署包先上 main 才同步專案」。只寫文件，程式與守門未改。
-- 現行 22 檔部署包、skill／hook 副本及 `VERSION` 未改，無同步債；未呼叫額外模型或真實服務。
+- 2026-11-10 skill 拆分（Q8、Q9 已決）：設計稿與實測在 [skill 拆分設計](project-bootstrap-skill-split-design.md)。部署包 3.8 現在產出六個檔（入口 `SKILL.md`＋`mode-a`／`mode-a-stop`／`mode-b`／`mode-0`／`reasons`），入口＋`mode-a.md` 5,380 字元（單檔 22,040）；拆分前 311 行有 300 行逐字留存、11 行列為已改寫。3.10 與本 repo 的開場 hook 全部條件成立才印「全綠」行。`VERSION` `2026-11-10`，骨架 27 檔。`sync_project.py` 會替舊專案補五個新檔；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」。
+- **同步債**：全域副本（`~/.claude/skills/handoff/`、`~/.codex/skills/handoff/`）仍是拆分前的單檔，所以本 repo 的 session 讀到的還是舊程序；`main` 沒有這一版；沒有同步任何專案；Codex 未重新審核。都等 Q11。未呼叫額外模型或真實服務。
 
 ## 未完成／下一步
 
@@ -33,11 +33,12 @@
 2. 跨 epoch 原子歸因與舊路徑（`managed_vm_switch` 借 host worker、掛可寫 scratch）已寫效果回滾仍未驗；兩 VM 的 virtiofs `flock` 不協調；無共享路徑只涵蓋固定 shell 工具與 `note` 寫入。下一步是「隔離已寫效果」與擴到通用工具，屬 P0 下一階段範圍，跟 Q5 一起定。
 3. 可信真人核准、簽署金鑰發行／撤銷（Q1 (b) 日後另登）與額度來源；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。
 4. trail 來源：AGENTS 規則已轉；決策書第 6 節已決 Q 與效率計畫「非目標」沒有逐條否決理由，等 Q7；查核進度是修正紀錄、不是決策，不轉。Swift runner 與 guest 腳本沒有離線測試，未轉 mutation 規格。F14／F15 需另一個工具或 OS；F41 使用者已決定先不用雲端。
-5. **F22 第二階段**：(1)(3) 的設計稿已寫好：[skill 拆分設計](project-bootstrap-skill-split-design.md)（建議一支 skill、短入口＋同目錄模式檔＋開場 hook 全綠行），等 Q9 才動部署包；拆完後專案文件額度約 5,500、本 repo 仍超標，見 Q10；同步專案前部署包要先上 `main`（本分支領先 101 個 commit，做法待定）。(2) hook 在動作當下送規則仍等 Q6。動部署包要跳 `VERSION`、逐專案同步與全域副本、Codex 重新審核。
-6. 需要先有決定才能做：Q5、Q6、Q7、Q9、Q10。Windows hook 同步、Mac Codex 真實注入（要額外模型呼叫）、R01–R09 邊界獨立複審仍待做。
+5. **F22 第二階段**：(1)(3) 草稿已在本分支部署包，推出等 Q11（建議先只換本機全域副本試用）。換全域副本時整個目錄六個檔一起覆蓋。設計稿第 10 節列了沒做的：規則逐條連到 `reasons.md` 的錨點、任何工具上的實跑、Codex 重新審核。本 repo 合計約 16,100 仍超標，見 Q10。(2) hook 在動作當下送規則仍等 Q6。
+6. 需要先有決定才能做：Q5、Q6、Q7、Q10、Q11。Windows hook 同步、Mac Codex 真實注入（要額外模型呼叫）、R01–R09 邊界獨立複審仍待做。
 
 ## 地雷與注意事項
 
+- handoff skill 的六個檔只在部署包 3.8 改（六個區塊依序對應標題上的檔名），六個 `source:` 標記與 `VERSION` 要同版本。改到逐字搬來的行，「skill 拆分」會擋：要嘛還原，要嘛在 `tools/skill_split_baseline.json` 的 `rewritten` 寫明去處。
 - 各原型都是**偵測**或合成阻擋，沒有接進任何工具：`publish`／`bypass.guard_commit` 未掛到實際發布或提交入口。不要寫成保障。崩潰解除的終端確認只抬高 agent 代答門檻。
 - `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件，失敗會讓 verify 失敗。HANDOFF 懸置每條要引用決策書第 6 節的 `Q` 編號（或 `- 無。`）；描述舊需求數時不要寫出那個數字。決策書第 7 節每條要有 `理由：`。
 - 提交指令要用 `&&` 綁住 verify 的結束碼，不要用 `;`。
@@ -48,8 +49,8 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-10 `python3 -X utf8 tools/verify_bootstrap.py --staged` exit 0，全部檢查通過（含 v2 契約／索引測試，F22 與三個預期反例照報不通過）。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
-- 2026-11-10 `python3 -X utf8 experiments/v2/mutants.py`：全量 673 個 macOS 實跑全部 killed（約 14 分鐘，不在 verify_v2 預設流程）；其後加入的 `rules_from_agents` 7 個以 `--spec` 單獨跑全部 killed，清單共 680 個。
+- 2026-11-10 `python3 -X utf8 tools/verify_bootstrap.py --staged` exit 0，62 項全部通過（含 v2 的 407 個契約／索引測試；F22 與三個預期反例照報不通過）。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
+- `python3 -X utf8 experiments/v2/mutants.py`：2026-11-10 稍早全量 673 個全部 killed、其後 7 個以 `--spec` 單獨跑全部 killed，清單共 680 個。**本輪改了 `contradictions.py`（加兩條樣式）與 `baseline.py`，沒有重跑 mutation**；既有規格的原文行沒動。
 - `python3 -X utf8 experiments/v2/contradictions.py` 對本 repo：未發現（只比對宣告表）。
 - 2026-11-10 `python3 -X utf8 experiments/v2/vm_probe.py` exit 0（約 35 秒，含崩潰解除、崩潰後重送與未讀請求）。接線未改，Codex 信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
 
@@ -58,5 +59,5 @@
 - 決策書第 6 節 Q5：P1 進場時機（AI 建議 (a)；崩潰解除已完成，P0 仍剩下一步 2、3）。
 - 決策書第 6 節 Q6：要不要在本 repo 的 hook 試行 F22 第二階段第 (2) 點（AI 建議 (a)：只接 Claude Code、放寬守門並附負向測試）。
 - 決策書第 6 節 Q7：trail 轉入缺否決理由的紀錄時怎麼補（AI 建議 (b)：找出處補、找不到標明未記錄）。
-- 決策書第 6 節 Q9：skill 拆分採哪個方案、要不要開始寫部署包草稿（AI 建議 (a)：乙方案，草稿實測後再給你看）。
-- 決策書第 6 節 Q10：本 repo 拆完 skill 仍超標怎麼處理（AI 建議 (c)：等 Q9 草稿實測後再決定）。
+- 決策書第 6 節 Q11：skill 拆分草稿要不要往下推出、怎麼推（AI 建議 (a)：先只換本機全域副本試用，再決定上 `main` 與同步專案）。
+- 決策書第 6 節 Q10：本 repo 拆完 skill 仍超標（約 16,100）怎麼處理（AI 建議：試用後再決定要不要壓 `AGENTS` 與 `HANDOFF`）。

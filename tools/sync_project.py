@@ -59,8 +59,15 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 ROOTS = (pathlib.Path.home() / 'Desktop',)
 
 # 整份覆蓋就對的檔：純制度內容，沒有任何專案專屬的值。
-WHOLE = (
-    '.claude/skills/handoff/SKILL.md',
+# handoff skill 2026-11-10 起是一個目錄（決策書 F22）：入口 SKILL.md 加五個模式／理由檔。
+# 模式檔排在入口前面寫：寫到一半失敗時，舊入口還在而且不會提到模式檔，多出來的檔不會被讀到；
+# 反過來先換入口，就會留下一個指向不存在檔案的新入口。
+SKILL_DIR = '.claude/skills/handoff/'
+SKILL_ENTRY = SKILL_DIR + 'SKILL.md'
+SKILL_PARTS = tuple(SKILL_DIR + name for name in (
+    'mode-a.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md', 'reasons.md'))
+WHOLE = SKILL_PARTS + (
+    SKILL_ENTRY,
     '.claude/hooks/git-freshness.sh',
     '.claude/hooks/pre-push-handoff.sh',
     '.claude/hooks/ag-wrap.sh',
@@ -456,7 +463,11 @@ def sync(project, gen, codex_only=False):
         dst, src = project / rel, gen / rel
         cur = read(dst)
         if cur is None:
-            if rel != CODEX_LAUNCHER or not (project / CODEX_WIRING).exists():
+            # 模式檔是 2026-11-10 才有的：專案有入口就補上，不能因為「原本沒有」而跳過，
+            # 否則新入口會指向五個不存在的檔。
+            adds_part = rel in SKILL_PARTS and (project / SKILL_ENTRY).is_file()
+            adds_launcher = rel == CODEX_LAUNCHER and (project / CODEX_WIRING).exists()
+            if not (adds_part or adds_launcher):
                 plan.skip(rel, '這個專案沒有這個檔')
                 continue
         new = read(src)
@@ -464,6 +475,13 @@ def sync(project, gen, codex_only=False):
             plan.ok(rel)
         else:
             plan.update(dst, rel, new)
+
+    if not codex_only and (project / SKILL_DIR).is_dir():
+        known = {pathlib.PurePosixPath(rel).name for rel in SKILL_PARTS + (SKILL_ENTRY,)}
+        for extra in sorted(p.name for p in (project / SKILL_DIR).iterdir()
+                            if p.name not in known and not p.name.endswith('.sync-tmp')):
+            plan.msgs.append('  EXTRA  %s%s（骨架不認得的檔，同步不會動它；確認是不是舊版留下或專案就地加的）'
+                             % (SKILL_DIR, extra))
 
     if codex_only:
         sync_wiring(project, gen, (CODEX_WIRING,), plan)

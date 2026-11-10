@@ -1,6 +1,6 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-10
+> 最後更新：2026-11-10（handoff skill 拆成目錄，鐵律 1、2 的版本規則跟著改）
 > 本檔只放規則。每條規則的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)，由規則後面的「為什麼」指過去；**要改、要質疑或想繞過某條規則之前，先讀它的理由**。（2026-11-10／F22：理由原本夾在規則裡，常態必讀量超標；搬家不刪。）
 
 ## 開工第一件事（任何工具、任何模型都適用）
@@ -8,6 +8,7 @@
 **先走接棒程序的 A 模式，A 沒跑完之前不要改任何檔案**；收工走 B 模式，中途要拉最新或推一個安全點走 C 模式。
 
 - 程序檔在**全域**副本 `~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）；這個 repo 刻意沒有專案層的那一份。工具不會自動載入 skill 就直接開那個檔讀。**這台機器沒有全域副本時，程序在 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的「3.8」節**；不要從別台機器搬檔或憑記憶重刻。
+- 部署包 `2026-11-10` 起 skill 是一個目錄：`SKILL.md` 是入口，再照它讀同目錄的模式檔；**全域副本換成六檔版之前仍是單檔**，照單檔走。本 repo 的「全綠」行由 `.claude/hooks/repo-git-check.sh` 印（前綴 `[repo-check]`），要重跑就跑它。
 - **A4 改跑 `python -X utf8 tools/verify_bootstrap.py`**（不是 `verify_state.py`），**exit 0 才算改完**。
 - 沒有 `check_docs.py`、沒有 pre-push 防呆，所以 B4 與擋 push 的關卡不存在；文件檢查由 `verify_bootstrap.py` 顧。
 - **B7 先明確 stage，再跑 `python -X utf8 tools/verify_bootstrap.py --staged`。**
@@ -40,8 +41,8 @@
 
 ## 鐵律
 
-1. **`PROJECT-BOOTSTRAP.md` 是權威版。** 制度要改就改它，再用 `python -X utf8 tools/sync_project.py <專案路徑> --owner '<本 session 工作中欄位完整值>' --write` 覆蓋到各專案（先在目標完成 A1–A5；`--all` 只能批次預演，寫入逐專案；它只改檔、不 commit）。**不要**在單一專案就地改 skill 或 hook。**只有 `.claude/skills/handoff/SKILL.md` 真的改了內容才跳 `VERSION`**；跳版後要某專案下一次開場就提示，刪掉它的 `.claude/.bootstrap-version`。[為什麼](AGENTS-reasons.md#rule-1)
-2. **改 skill／hook 內容時，同步更新檔頭的 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->` 標記。** 同一天改第二次起在日期後面加序號（`.2`、`.3`）；序號算的是**當天第幾個帶 `source:` 標記的改動**。序號跟部署包開頭的「版本」行**不保證同號**：版本行與 `VERSION` 只跟著 `SKILL.md` 走。[為什麼](AGENTS-reasons.md#rule-2)
+1. **`PROJECT-BOOTSTRAP.md` 是權威版。** 制度要改就改它，再用 `python -X utf8 tools/sync_project.py <專案路徑> --owner '<本 session 工作中欄位完整值>' --write` 覆蓋到各專案（先在目標完成 A1–A5；`--all` 只能批次預演，寫入逐專案；它只改檔、不 commit）。**不要**在單一專案就地改 skill 或 hook。**只有 `.claude/skills/handoff/` 目錄裡的檔（入口 `SKILL.md` 與五個模式／理由檔）真的改了內容才跳 `VERSION`**，而且六個檔的 `source:` 標記要同一個版本；跳版後要某專案下一次開場就提示，刪掉它的 `.claude/.bootstrap-version`。[為什麼](AGENTS-reasons.md#rule-1)
+2. **改 skill／hook 內容時，同步更新檔頭的 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->` 標記。** 同一天改第二次起在日期後面加序號（`.2`、`.3`）；序號算的是**當天第幾個帶 `source:` 標記的改動**。序號跟部署包開頭的「版本」行**不保證同號**：版本行與 `VERSION` 只跟著 handoff skill 目錄走。[為什麼](AGENTS-reasons.md#rule-2)
 3. **保留每條規則的「為什麼」。** 理由可以搬到理由檔，不能刪；`verify_bootstrap.py` 的「規則理由連結」會擋沒有理由的規則。[為什麼](AGENTS-reasons.md#rule-3)
 4. **改完要驗證**：跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**。印 `skip` 的項目會回傳 1，回報時照實寫。[為什麼](AGENTS-reasons.md#rule-4)
 5. **不要塞專案專屬內容**（網址、docId、憑證檔名、業務規則）。部署包只放通用制度與佔位符。[為什麼](AGENTS-reasons.md#rule-5)

@@ -34,6 +34,14 @@ fi
 behind=$(echo "$counts" | awk '{print $1}')
 ahead=$(echo "$counts" | awk '{print $2}')
 dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+# 全綠判定（2026-11-10，F22）：下面每個不正常的分支都把 green 清掉，最後全部成立才印一行
+# 「全綠」，讓正常接棒不必重讀整張判讀表。少一項就不印——寧可多讀，不往放行的方向猜。
+# detached HEAD、upstream 不是 origin/<當前分支> 也算不正常：比較對象不對，計數再漂亮都不能信。
+green=1
+free=0
+up=$(git rev-parse --abbrev-ref --symbolic-full-name "@{upstream}" 2>/dev/null)
+if [ "$branch" = HEAD ] || [ "$up" != "origin/$branch" ]; then green=0; fi
+if [ "$behind" -gt 0 ] || [ "$ahead" -gt 0 ] || [ "$dirty" -gt 0 ]; then green=0; fi
 
 if [ "$behind" -gt 0 ] && [ "$ahead" -gt 0 ]; then
   echo "[repo-check] 🔴 已分岔：落後 origin ${behind}、領先 ${ahead}（branch=${branch}）。停下回報並等待使用者指示；不得自行 rebase 或 merge，禁止 push --force 或 reset --hard。"
@@ -98,6 +106,7 @@ if [ -n "$remote_handoff" ]; then
     echo "[repo-check] 🔴 origin 的 HANDOFF.md 有 $busy_n 列「工作中」欄位，判讀不出來誰握著 ${branch}。"
     echo "[repo-check]    不猜——照 A2.5 停下來問使用者。這一欄只能有一列（B6 是覆寫，不要往下疊）。"
   elif [ "$value" = '無（已交棒）' ]; then
+    free=1
     echo "[repo-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 ${branch}。"
   else
     who=${busy#*：}
@@ -166,6 +175,13 @@ if [ -n "$remote_handoff" ]; then
   fi
 fi
 
+# 全綠行（2026-11-10，F22）。它是這一刻的快照：續聊後要改檔、切過分支時，agent 要重跑本腳本。
+if [ "$green" = 1 ] && [ "$free" = 1 ]; then
+  echo "[repo-check] 全綠 $(date '+%Y-%m-%d %H:%M')：A1 與 A2.5 可直接通過（branch=${branch}，origin=$(git rev-parse "origin/$branch" 2>/dev/null)）"
+elif [ -f "$HOME/.claude/skills/handoff/mode-a-stop.md" ] || [ -f "$HOME/.codex/skills/handoff/mode-a-stop.md" ]; then
+  # 全域副本還是拆分前的單檔時不印：指向一個不存在的檔比不提示更糟。
+  echo "[repo-check] 不是全綠：接棒時讀全域 handoff skill 的 mode-a-stop.md，照完整判讀表走。"
+fi
 echo "[repo-check] 本 repo 刻意沒有 handoff skill、沒有 pre-push 防呆、沒有 check_docs.py（理由見 ARCHITECT.md「這個 repo 刻意沒有的東西」）：接棒程序讀全域 ~/.claude/skills/handoff/。HANDOFF.md 是當下交接快照與工作標記；B6 核對整份現況、移除已完成待辦（見 AGENTS.md「本 repo 的交接快照」）。改制度就改 PROJECT-BOOTSTRAP.md，改完跑 python -X utf8 tools/verify_bootstrap.py。"
 # 開工改名用的 YYMMDDHH 在這裡算好（2026-11-01 加）。改名規則在 skill 的「session 命名」
 # 那一節，但時間戳一直是要 agent 自己去取的——而它取錯的時候是靜默的：拿系統提示裡的日期

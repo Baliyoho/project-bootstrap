@@ -36,7 +36,7 @@
 │   ├─ hooks/pre-push-handoff.sh    PreToolUse：AI push 提醒（有限覆蓋）
 │   ├─ hooks/ag-wrap.sh             Antigravity 轉接層：只做管線，把 stdout 包成 JSON
 │   ├─ hooks/codex-hook.cmd         Codex 的 Windows 啟動器（Git Bash、純文字標頭、結束碼）
-│   └─ skills/handoff/SKILL.md      交接與同步的可執行程序（0 建制／A 接棒／B 交棒／C 同步）＝權威版
+│   └─ skills/handoff/              交接與同步的可執行程序＝權威版：入口 SKILL.md＋mode-a／mode-a-stop／mode-b／mode-0／reasons 五個檔
 ├─ .codex/hooks.json                Codex：掛上面同樣那兩個腳本（同格式、同語意）
 ├─ .agents/hooks.json              Antigravity：經轉接層掛同一支 git-freshness.sh（只接 SessionStart）
 ├─ .agents/ag-hook.cmd              Windows shim：找 Git Bash 再交給 ag-wrap.sh
@@ -70,10 +70,10 @@ override 只可加嚴或填補專案設定，使用者明確指示仍優先。�
 **要讓它自動觸發，把 skill 裝成全域的**（一次就好，之後每個新專案都吃得到）：
 
 ```bash
-mkdir -p ~/.claude/skills/handoff && cp <某個已部署專案>/.claude/skills/handoff/SKILL.md ~/.claude/skills/handoff/
+mkdir -p ~/.claude/skills/handoff && cp <某個已部署專案>/.claude/skills/handoff/*.md ~/.claude/skills/handoff/
 ```
 
-Codex 桌面 App 放 `~/.codex/skills/handoff/SKILL.md`，同一份內容。沒裝全域副本也可以——把 `PROJECT-BOOTSTRAP.md`
+Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那六個檔（2026-11-10 起 skill 是一個目錄，少複製一個，入口就會指向不存在的檔）。沒裝全域副本也可以——把 `PROJECT-BOOTSTRAP.md`
 複製進資料夾，用最上面那段 prompt 手動指路，結果一樣。
 
 模式 0 有兩條硬規定，都對應會實際發生的事：
@@ -170,7 +170,7 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 `--all`／inventory 僅供批次預演；`--write` 必須指定單一專案與 owner，空閒標記不能寫入。同步後留在該專案完成 B7 最終檔案檢查、B8 發布與清標記；若要中途安全點則走 C，保留占用。這修正了舊工具「正常 A5 writer 被拒絕、陳舊空閒 checkout 卻能寫」的矛盾。
 
-`SKILL.md` 會同時存在於：**本 repo 的部署包內**（權威版）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
+handoff skill 目錄（六個檔）會同時存在於：**本 repo 的部署包內**（權威版）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
 
 - 要改就**改本 repo 的 `PROJECT-BOOTSTRAP.md`**，再覆蓋下去；不要在單一專案裡就地改。
 - 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，用它辨識落後的副本（同一天改第二次起加序號，如 `v2026-10-24.2`）。

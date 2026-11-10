@@ -235,7 +235,10 @@ REPO_CONFIG = {
         'canonical': 'skill-only',
         'variants': {
             'skill-only': [r'VERSION`? ?只跟著 ?`?SKILL\.md',
-                           r'SKILL\.md`? ?真的改了內容才跳 ?`?VERSION'],
+                           r'SKILL\.md`? ?真的改了內容才跳 ?`?VERSION',
+                           # 2026-11-10: the skill became a directory of six files; same rule, new subject.
+                           r'VERSION`? ?只跟著 ?handoff skill 目錄',
+                           r'handoff/` 目錄裡的檔[^。\n]{0,40}真的改了內容才跳 ?`?VERSION'],
             # One clause again; "不跟著動" and quoted old wording stay out.
             'any-change': [r'(改|動)到?[^。\n「」（）]{0,8}(範本|hook|部署包)'
                            r'[^。\n「」（）]{0,8}(就|都)要?跳 ?`?VERSION(?!`?」)',
