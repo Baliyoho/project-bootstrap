@@ -27,7 +27,7 @@
 ## 未完成／下一步
 
 1. **P0 未退出。** 崩潰後解除（Q1 (a)）已做成合成原型，見已完成；P0 剩下 2、3 兩項。
-2. 已寫效果冪等／回滾與跨 epoch 原子歸因未驗。舊 `managed_vm_switch` 仍借 host worker 並掛可寫 scratch；兩 VM 的 virtiofs `flock` 不協調。無共享路徑只涵蓋固定 shell 工具與 `note` 寫入。
+2. 無共享路徑：outbox 已存未送時崩潰，解除後重送只套用一次（真 VM `guest_crash_replay`）；guest 在 parent 死後才產生的效果、跨 epoch 原子歸因與舊路徑已寫效果回滾仍未驗。舊 `managed_vm_switch` 仍借 host worker 並掛可寫 scratch；兩 VM 的 virtiofs `flock` 不協調。無共享路徑只涵蓋固定 shell 工具與 `note` 寫入。
 3. 可信真人核准、簽署金鑰發行／撤銷與額度來源；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。
 4. 不需使用者決定、可續做：lifecycle／supervisor／guardian 的 mutation 轉進 `mutants.json`（lifecycle 測試約 3 分鐘，群組要挑測試；先試跑，存活多半代表缺逐代碼測試）；F45 宣告表再擴充（版本號跟誰走、prompt 名稱；寬鬆樣式會把引述舊說法的句子當主張，要限定同一子句）；ARCHITECT 其他節與各報告的決策轉成 `trail` 可讀格式；F16a 對部署出去的專案入口同樣檢查。F14／F15 需另一個工具或 OS 才能驗；F41 使用者已決定先不用雲端。
 5. **F22 第二階段（2026-11-10 使用者指示列入待辦，尚未動工）**：(1) handoff skill 依模式拆成三支獨立 skill（接棒與續聊／交棒與中途同步／建制，建制那支只放全域）；(2) hook 在動作當下送規則（準備 push 時送交棒要點、push 成功後提醒改名與回報、編輯 hook 或部署包時送對應注意事項），沒有 hook 的工具退回「交棒前必須載入交棒 skill」一句；(3) 開場 hook 已判定正常時不必重讀判讀表。**這是改現行程序**：動部署包要跳 `VERSION`、同步各專案與全域副本、Codex 重新審核，大量守門測試要跟著改。建議先在本 repo 自己的 hook 試行第 (2) 點（不在同步範圍），確認有效再動部署包；動部署包前向使用者確認範圍。做完重量 F22 並補量 5 分鐘時限；預估落在 12,000–13,500 字元，是估計不是實測。
@@ -48,7 +48,7 @@
 - 2026-11-10 `python3 -X utf8 tools/verify_bootstrap.py --staged` exit 0，全部檢查通過（比上一輪多「規則理由連結」一項），含 352 個 v2 契約／索引測試（verify_v2 由它帶跑；F22 與三個預期反例照報不通過）。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
 - 2026-11-10 `python3 -X utf8 experiments/v2/mutants.py`：443 個全量實跑全部 killed（約 6 分鐘，不在 verify_v2 預設流程）；之後加入的 82 個（trail_sources／broker／launcher／materializer）以 `--spec` 試跑各自全部 killed，清單共 525 個，尚未再跑一次全量。
 - `python3 -X utf8 experiments/v2/contradictions.py` 對本 repo：未發現（只比對宣告表）。
-- 2026-11-10 `python3 -X utf8 experiments/v2/vm_probe.py` exit 0（約 35 秒，含崩潰解除）；`mutants.py` 新群組 `--spec` 試跑 23 個全部 killed，全量 548 個尚未重跑。接線未改，Codex 信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
+- 2026-11-10 `python3 -X utf8 experiments/v2/vm_probe.py` exit 0（約 40 秒，含崩潰解除與崩潰後重送）；`mutants.py` 新群組 `--spec` 試跑 23 個全部 killed，全量 548 個尚未重跑。接線未改，Codex 信任重審不適用；無額外模型呼叫、候選安裝或真實部署。
 
 ## 懸置事項（AI 勿自行處理）
 

@@ -285,7 +285,7 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "Mac 兩條獨立路徑：舊 host worker／共享 scratch 的逐 epoch 退場探針，及無共享 guest 的固定受管 shell 工具。後者在 guest 內載入前提、兩 epoch 經專用 console 發原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending 舊寫入拒絕、新 epoch 寫入有事件關聯。新路徑經 guest_runs 帳本持久記錄 run 身分與 host 停機證據，重開資料庫核對；父程序 SIGKILL 後重開仍阻擋，再以真 runner 停機紀錄加合成終端替身走崩潰解除，guest console 日誌被拒。未接真實工具或可信 guest 身分"
+          "scope": "Mac 兩條獨立路徑：舊 host worker／共享 scratch 的逐 epoch 退場探針，及無共享 guest 的固定受管 shell 工具。後者在 guest 內載入前提、兩 epoch 經專用 console 發原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending 舊寫入拒絕、新 epoch 寫入有事件關聯。新路徑經 guest_runs 帳本持久記錄 run 身分與 host 停機證據，重開資料庫核對；父程序 SIGKILL 後重開仍阻擋，再以真 runner 停機紀錄加合成終端替身走崩潰解除，guest console 日誌被拒；outbox 已存未送時崩潰，解除後重送只套用一次。未接真實工具或可信 guest 身分"
         },
         {
           "path": "experiments/v2/guest_runs.py",
@@ -754,7 +754,7 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復，無共享路徑再以真 runner 停機紀錄加合成終端替身走崩潰解除、guest console 日誌被拒；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
+          "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復，無共享路徑再以真 runner 停機紀錄加合成終端替身走崩潰解除、guest console 日誌被拒；另一台在 outbox 已存、未送出時 SIGKILL 父程序，解除後替代 parent 重送原 bytes 只套用一次；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
         },
         {
           "path": "experiments/v2/vm_managed_worker.sh",

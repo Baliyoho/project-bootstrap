@@ -772,6 +772,129 @@ def release_after_crash(db: Path, run_id: str, log: Path) -> None:
         lab.close()
 
 
+GUEST_CRASH_OUTBOX = '''from pathlib import Path
+import json
+import os
+import sys
+import time
+from experiments.v2.broker import Broker
+from experiments.v2.contracts import Lab
+from experiments.v2.guest_runs import GuestRunLedger
+from experiments.v2.launcher import LaunchAuthority, RequestJournal
+from experiments.v2.materializer import Materializer
+from experiments.v2.vm_probe import VMRetirementGate
+db, repo, runner, kernel, ramdisk, log = map(Path, sys.argv[1:])
+lab = Lab(db)
+authority = LaunchAuthority(Broker(lab, Materializer(lab, repo, {'note': 'managed.txt'})))
+ledger = GuestRunLedger(lab)
+ticket = authority.issue(('note',), 'synthetic-vm-parent', time.time() + 600)
+channel = authority.connect(ticket)
+actor = lab.actor(channel.capability)
+gate = VMRetirementGate(runner, kernel, ramdisk, None, log, 'guest-outbox', stop_after=12)
+run = ledger.open_run(actor, 0, gate.identity(), host_log=os.path.abspath(str(log) + '.host'))
+gate.start()
+ledger.mark_running(run, {'probe_id': gate.probe_id, 'shared_directory': False},
+                    channel.capability)
+gate.load_context(0, 2)
+operation = lab.begin(channel.capability, 0)
+raw = gate.managed_write_request(0, 5, 1)
+lab.complete(channel.capability, operation)
+ledger.require_live(run, channel.capability, 0)
+RequestJournal(authority, channel).prepare_raw(raw)
+print(json.dumps({'run': run, 'ticket': ticket, 'actor': actor, 'raw': raw.decode()}), flush=True)
+sys.stdin.read()
+'''
+
+
+def probe_guest_crash_replay(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
+    """Parent dies after saving a guest request but before sending it.
+
+    The run stays blocked until crash release; then the replacement parent
+    resends the saved bytes, which apply exactly once.
+    """
+    if str(HERE.parents[1]) not in sys.path:
+        sys.path.insert(0, str(HERE.parents[1]))
+    from experiments.v2 import crash_release
+    from experiments.v2.broker import Broker
+    from experiments.v2.contracts import Denied, Lab
+    from experiments.v2.guest_runs import GuestRunLedger
+    from experiments.v2.launcher import LaunchAuthority, RequestJournal
+    from experiments.v2.materializer import Materializer
+
+    root = work / "guest-outbox"
+    root.mkdir()
+    repo = root / "repo"
+    repo.mkdir()
+    db = root / "private.sqlite"
+    log = work / "guest-outbox.log"
+    parent = subprocess.Popen(
+        [sys.executable, "-B", "-u", "-c", GUEST_CRASH_OUTBOX, str(db), str(repo),
+         str(runner), str(kernel), str(ramdisk), str(log)],
+        cwd=HERE.parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        if not select.select([parent.stdout], [], [], 30)[0]:
+            raise RuntimeError("guest outbox fixture did not start: "
+                               + parent.stderr.read1(4000).decode(errors="replace"))
+        saved = json.loads(parent.stdout.readline().decode())
+        parent.kill()
+        parent.wait(timeout=5)
+        deadline = time.monotonic() + 8
+        while not host_stopped(log):
+            if time.monotonic() >= deadline:
+                raise RuntimeError("unshared VM did not stop after parent SIGKILL")
+            time.sleep(0.05)
+        if (repo / "managed.txt").exists():
+            raise RuntimeError("a request that was never sent changed the work tree")
+        lab = Lab(db)
+        try:
+            ledger = GuestRunLedger(lab)
+            try:
+                ledger.require_quiescent(saved["actor"])
+            except Denied as error:
+                if str(error) != "vm-retirement-unconfirmed":
+                    raise RuntimeError(f"unexpected restart result: {error}") from error
+            else:
+                raise RuntimeError("restart accepted a guest with no durable retirement")
+        finally:
+            lab.close()
+        crash_release.release(db, saved["run"], _ScriptedTerminal)
+        lab = Lab(db)
+        try:
+            authority = LaunchAuthority(Broker(lab, Materializer(lab, repo, {'note': 'managed.txt'})))
+            GuestRunLedger(lab).require_quiescent(saved["actor"])
+            journal = RequestJournal(authority, authority.connect(saved["ticket"]))
+            response = json.loads(journal.send())
+            try:
+                journal.send()
+            except Denied as error:
+                if str(error) != "no-pending-request":
+                    raise RuntimeError(f"second send gave {error}") from error
+            else:
+                raise RuntimeError("the saved request was sent twice")
+            events = [tuple(row) for row in lab.db.execute(
+                "SELECT w.actor, w.after, e.epoch FROM writes w "
+                "JOIN write_epochs e USING(event) ORDER BY w.seq")]
+            requests = [tuple(row) for row in lab.db.execute(
+                "SELECT raw, completed FROM client_requests WHERE actor=?", (saved["actor"],))]
+            if (response.get("code") != "ok" or (repo / "managed.txt").read_bytes() != b"10"
+                    or events != [(saved["actor"], b"10", 0)]
+                    or requests != [(saved["raw"].encode(), 1)]):
+                raise RuntimeError(f"replay after crash release failed: {response} {events}")
+        finally:
+            lab.close()
+        print("guest_crash_replay: parent SIGKILL after saving a guest request; blocked until "
+              "crash release; replacement parent sent the saved bytes once, write attributed "
+              "to epoch 0")
+    finally:
+        if parent.poll() is None:
+            parent.kill()
+            parent.wait(timeout=5)
+        for stream in (parent.stdin, parent.stdout, parent.stderr):
+            stream.close()
+
+
 def probe_guest_broker(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
     """Run the synthetic tool inside two unshared guests, not a host worker."""
     if str(HERE.parents[1]) not in sys.path:
@@ -932,6 +1055,7 @@ def main() -> int:
             probe_guest_broker(work, runner, raw_kernel, guest_ramdisk)
             probe_parent_crash_fail_closed(work, runner, raw_kernel, guest_ramdisk)
             probe_guest_parent_crash(work, runner, raw_kernel, guest_ramdisk)
+            probe_guest_crash_replay(work, runner, raw_kernel, guest_ramdisk)
         print("VM_PROBE_OK: synthetic guest only; P0 remains unverified")
         return 0
     except (OSError, RuntimeError, subprocess.SubprocessError, zlib.error) as error:
