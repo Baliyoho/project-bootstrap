@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-10 08:30（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `baliyohodeMini`（v2 第三、四批：F16a 乾淨第二機、較早模組 mutation 轉規格、F26 衝突處置、F45 兩條規則、ARCHITECT 留痕）
+- **交接時間**：2026-11-10 13:40（+08）
+- **交棒者**：Claude Code（Opus 5.5）／ `baliyohodeMini`（使用者裁定決策書第 6 節三項並新登記兩項；F22 方案討論中）
 
 ## 任務目標
 
@@ -12,7 +12,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：`baliyohodeMini` ／ `Claude Code` ／ `㊣　26111010｜整理待決事項｜工作中｜交棒0次`，2026-11-10 13:11 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-03`
 - 本機能力：macOS 27.2／Apple silicon、Python 3.15.2、Swift 6.4.2、bash 3.2、Git 2.54；ad hoc virtualization entitlement 可啟 VM。Windows／Linux 未驗。現行部署包及程序未切換。
 
@@ -28,15 +28,16 @@
   - 較早 14 個 v2 檔對應到 ID；測試守住新增檔必須被某 ID 認領（只剩 `__init__.py`、`status.json` 刻意回全驗）。
 - 2026-11-10 第三批：F16a `resume.py`（乾淨 clone＋空家目錄照 AGENTS 開工段落找程序）。首跑不通過：AGENTS 只指向全域 skill，新機上不存在；已補部署包 3.8 節指標（ARCHITECT 例外宣告的替代保障同步補），`test_resume_repo.py` 守住。F41 索引對照歷史觀測①③（僅本機原型，非雲端重驗）。
 - 2026-11-10 第四批：較早模組 mutation 轉進規格（gitclaim／release／session＋registry／approvals／broker／launcher／materializer 共 177 個，先補 68 個存活對應的測試）；F45 加「工作中標記不是互斥鎖」「序號跟版本行不保證同號」兩條規則並對每條注入反向句驗證；F26 加衝突處置（裁決須引用全部衝突發現、只能選被引用的值、後到發現重開）；trail 讀 ARCHITECT「刻意沒有」節（首跑抓到「沒有 CI」無日期，補 git 首次出現日）。`mutants.json` 共 525 個全部 killed（443 個全量實跑＋其後 82 個單獨跑）。
+- 2026-11-10 使用者決定（決策書第 6 節）：Q1 崩潰解除採 (a) 本機終端確認＋host 證據，拿不到證據退回 (c)，日後希望改走 (b)；Q2 v2 偵測原型不接進現行程序，等 P1；Q3 F46 模型探針暫不授權。
 - 現行 22 檔部署包、skill／hook 副本及 `VERSION` 未改，無同步債；未呼叫額外模型或真實服務。
 
 ## 未完成／下一步
 
-1. **P0 未退出。** guest 父程序崩潰後帳本正確阻擋，但沒有可信解除路徑，等決策書 Q1（見懸置）。
+1. **P0 未退出。** 依 Q1 (a) 實作崩潰後解除：host 本機終端互動確認＋host 端獨立停機證據，缺證據一律不解除（等同 (c)）；不得接受遠端或 agent 代按的確認。尚未動工。
 2. 已寫效果冪等／回滾與跨 epoch 原子歸因未驗。舊 `managed_vm_switch` 仍借 host worker 並掛可寫 scratch；兩 VM 的 virtiofs `flock` 不協調。無共享路徑只涵蓋固定 shell 工具與 `note` 寫入。
 3. 可信真人核准、簽署金鑰發行／撤銷與額度來源；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪。
 4. 不需使用者決定、可續做：lifecycle／supervisor／guardian 的 mutation 轉進 `mutants.json`（lifecycle 測試約 3 分鐘，群組要挑測試；先試跑，存活多半代表缺逐代碼測試）；F45 宣告表再擴充（版本號跟誰走、prompt 名稱；寬鬆樣式會把引述舊說法的句子當主張，要限定同一子句）；ARCHITECT 其他節與各報告的決策轉成 `trail` 可讀格式；F16a 對部署出去的專案入口同樣檢查。F14／F15 需另一個工具或 OS 才能驗；F41 使用者已決定先不用雲端。
-5. 需要先有決定或授權才能做：把 `ingest`／`bypass`／`contradictions` 接進現行 A4／B7 或 hook（＝切換現行程序）；F46 模型實際遵循探針（額外模型呼叫）；鎖定 runtime／候選版本／LICENSE／digest 後做 P1。F22 常態必讀 46,239 字元（上限 12,000），不通過照報。Windows hook 同步、Mac Codex 真實注入、R01–R09 邊界獨立複審仍待做。
+5. 需要先有決定才能做：P1 進場時機（Q5）；F22 處理方式（Q4，使用者要求先仔細討論，聊天中已列方案）。依 Q2／Q3，偵測原型不接進現行程序、F46 探針不做。F22 不通過照報。Windows hook 同步、Mac Codex 真實注入、R01–R09 邊界獨立複審仍待做。
 
 ## 地雷與注意事項
 
@@ -56,4 +57,5 @@
 
 ## 懸置事項（AI 勿自行處理）
 
-- 決策書第 6 節 Q1：崩潰後人工解除的可信真人核准來源（下一步 1／3）。下一步 4 不需決定，可直接續做。既有 v2 實作授權仍有效，P0 未驗收退出。
+- 決策書第 6 節 Q4：F22 必讀量超標的處理方式（使用者要求先討論，不要自行選方案動手）。
+- 決策書第 6 節 Q5：P1 進場時機（AI 建議先做完崩潰解除讓 P0 收尾）。下一步 1、4 不需決定，可直接續做。
