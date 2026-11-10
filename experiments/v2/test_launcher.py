@@ -260,5 +260,91 @@ os._exit(73)
         self.assertEqual(self.count('effects'), 1)
 
 
+class LauncherInputTests(unittest.TestCase):
+    """Each launcher and journal guard on its own, with the exact refusal code."""
+    setUp, tearDown = LauncherTests.setUp, LauncherTests.tearDown
+    write, count = LauncherTests.write, LauncherTests.count
+
+    def denied(self, code, call, *args):
+        with self.assertRaises(Denied) as caught:
+            call(*args)
+        self.assertEqual(str(caught.exception), code)
+
+    def test_ticket_scope_and_deadline_inputs(self):
+        for bad in ('a' * 63, 'a' * 65, 5):
+            with self.subTest(ticket=bad):
+                self.denied('invalid-launch-ticket', self.authority.connect, bad)
+        for resources in ((), ('',), (1,), 'note'):
+            with self.subTest(resources=resources):
+                self.denied('invalid-launch-scope', self.authority.issue, resources, 'parent', 1100)
+        self.denied('invalid-launch-deadline', self.authority.issue, ('note',), 'parent', self.now)
+
+    def test_renewal_needs_live_permit_source_later_deadline_and_transaction(self):
+        key = self.authority.ticket_hash(self.ticket)
+        new = 'b' * 64
+        self.denied('renewal-transaction-required', self.authority.rotate, key, new, 'parent', 1200)
+        for source, deadline in ((' ', 1200), ('parent', 1100), ('parent', 1050)):
+            with self.subTest(source=source, deadline=deadline), self.lab.transaction():
+                self.denied('invalid-launch-renewal', self.authority.rotate, key, new, source, deadline)
+        with self.lab.transaction():
+            self.authority.rotate(key, new, 'parent', 1200)
+        self.assertEqual(self.authority.permit(self.authority.ticket_hash(new))['expires'], 1200)
+        self.authority.revoke(new)
+        with self.lab.transaction():
+            self.denied('launch-not-renewable', self.authority.rotate,
+                        self.authority.ticket_hash(new), 'c' * 64, 'parent', 1300)
+
+    def test_pipe_authority_checks_actor_and_scope(self):
+        from experiments.v2.broker import Channel
+        other = self.authority.connect(self.authority.issue(('note', 'budget'), 'parent', 1100))
+        for candidate in (Channel(other.capability, self.channel.resources),
+                          Channel(self.channel.capability, frozenset(('note',)))):
+            with self.lab.transaction():
+                self.denied('launch-scope-mismatch', self.channel.authorize, candidate)
+
+    def test_journal_refuses_closed_or_revoked_channels(self):
+        self.broker.detach(self.channel)
+        self.denied('closed-channel', self.client.prepare, self.write())
+        channel = self.authority.connect(self.ticket)
+        client = RequestJournal(self.authority, channel)
+        self.authority.revoke(self.ticket)
+        self.denied('launch-not-authorized', client.prepare, self.write())
+        self.assertEqual(self.count('client_requests'), 0)
+
+    def test_journal_request_shape_and_pending_state(self):
+        self.denied('client-sequence-is-managed', self.client.prepare, dict(self.write(), id=1))
+        self.denied('request-too-large-or-invalid', self.client.prepare,
+                    dict(self.write(), text='x' * 9000))
+        self.denied('no-pending-request', self.client.send)
+        self.assertEqual(self.count('client_requests'), 0)
+
+    def test_journal_and_receipts_must_agree(self):
+        actor = self.lab.actor(self.channel.capability)
+
+        def tamper(sql, *args):
+            self.lab.db.execute(sql, args)
+            self.lab.db.commit()
+        tamper('INSERT INTO receipts VALUES (?, 1, ?, ?)', actor, 'x', b'{}')
+        self.denied('request-journal-incomplete', self.client.prepare, self.write())
+        tamper('DELETE FROM receipts')
+        for text in ('one', 'two'):
+            self.client.prepare(dict(self.write(), text=text, base=None if text == 'one' else
+                                     self.lab.db.execute('SELECT digest FROM receipts').fetchone()[0]))
+            self.client.send()
+        for broken, restore in (
+                ("UPDATE receipts SET digest='x' WHERE request_id=1",
+                 "UPDATE receipts SET digest=(SELECT digest FROM client_requests WHERE request_id=1) WHERE request_id=1"),
+                ('UPDATE client_requests SET completed=0 WHERE request_id=1',
+                 'UPDATE client_requests SET completed=1 WHERE request_id=1')):
+            with self.subTest(broken=broken):
+                tamper(broken)
+                self.denied('request-journal-inconsistent', self.client.prepare, self.write())
+                tamper(restore)
+        saved = self.lab.db.execute('SELECT * FROM receipts WHERE request_id=2').fetchone()
+        tamper('DELETE FROM receipts WHERE request_id=2')
+        self.denied('request-journal-inconsistent', self.client.prepare, self.write())
+        tamper('INSERT INTO receipts VALUES (?, ?, ?, ?)', *saved)
+
+
 if __name__ == '__main__':
     unittest.main()

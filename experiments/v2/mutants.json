@@ -2568,6 +2568,155 @@
      "new": "        if not isinstance(request['kind'], str):\n"
     }
    ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_launcher",
+    "experiments.v2.test_recovery",
+    "experiments.v2.test_approvals"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if not isinstance(ticket, str) or len(ticket) != 64:\n",
+     "new": "        if not isinstance(ticket, str):\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if row is None or row['revoked'] or now >= row['expires']:\n",
+     "new": "        if row is None or now >= row['expires']:\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if row is None or row['revoked'] or now >= row['expires']:\n",
+     "new": "        if row is None or row['revoked']:\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if row is None or row['revoked']:\n            raise Denied('launch-not-renewable')\n",
+     "new": "        if row is None:\n            raise Denied('launch-not-renewable')\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if (not isinstance(source, str) or not source.strip()\n",
+     "new": "        if (not isinstance(source, str)\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                or expires_at <= max(now, row['expires'])):\n",
+     "new": "                or expires_at <= now):\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if not self.lab.db.in_transaction:\n            raise Denied('renewal-transaction-required')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if (not isinstance(resources, (tuple, list, set, frozenset)) or not resources\n",
+     "new": "        if (not isinstance(resources, (tuple, list, set, frozenset))\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                or any(not isinstance(r, str) or not r for r in resources)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                    or expires_at <= now):\n                raise Denied('invalid-launch-deadline')\n",
+     "new": "                    ):\n                raise Denied('invalid-launch-deadline')\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                if (self.lab.actor(candidate.capability) != current['actor']\n",
+     "new": "                if (False\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                        or candidate.resources != frozenset(json.loads(current['resources']))):\n",
+     "new": "                        ):\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "            if self.lab.db.execute('SELECT 1 FROM signed_effect_policy').fetchone():\n                raise Denied('signed-effect-approval-required')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if resource not in json.loads(permit['resources']):\n            raise Denied('resource-not-authorized')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                or expires_at > permit['expires']):\n",
+     "new": "                ):\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if self.channel not in self.broker.channels or self.channel.closed or self.channel.authorize is None:\n",
+     "new": "        if self.channel.authorize is None:\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        self.channel.authorize(self.channel)\n        actor = self.lab.actor",
+     "new": "        actor = self.lab.actor"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if cursor is None or [r['request_id'] for r in rows] != list(range(1, cursor[0])):\n",
+     "new": "        if cursor is None:\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "        if set(receipts) - {r['request_id'] for r in rows}:\n            raise Denied('request-journal-incomplete')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "            if (hashlib.sha256(row['raw']).hexdigest() != row['digest']\n",
+     "new": "            if (False\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                    or (receipt is not None and receipt['digest'] != row['digest'])\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                    or (row['completed'] and receipt is None)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                    or (not row['completed'] and index != len(rows) - 1)):\n",
+     "new": "                    ):\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "            if not isinstance(fields, dict) or 'id' in fields:\n",
+     "new": "            if not isinstance(fields, dict):\n"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "            if len(raw) > MAX_REQUEST_BYTES:\n                raise Denied('request-too-large-or-invalid')\n            self.lab",
+     "new": "            self.lab"
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "            if request['id'] != next_id:\n                raise Denied('client-sequence-is-managed')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                if not rows or rows[-1]['completed']:\n                    raise Denied('no-pending-request')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/launcher.py",
+     "old": "                if receipt is not None and receipt['response'] == response:\n",
+     "new": "                if True:\n"
+    }
+   ]
   }
  ]
 }
