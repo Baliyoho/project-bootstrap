@@ -758,7 +758,7 @@
         },
         {
           "path": "experiments/v2/vm_probe.py",
-          "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復，無共享路徑再以真 runner 停機紀錄加合成終端替身走崩潰解除、guest console 日誌被拒；另一台在 outbox 已存、未送出時 SIGKILL 父程序，解除後替代 parent 重送原 bytes 只套用一次；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
+          "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復，無共享路徑再以真 runner 停機紀錄加合成終端替身走崩潰解除、guest console 日誌被拒；另一台在 outbox 已存、未送出時 SIGKILL 父程序，解除後替代 parent 重送原 bytes 只套用一次；2026-11-10 再加 guest_unread_request：guest 已產生寫入請求（console 有標記）、parent 還沒讀就被 SIGKILL，解除後沒有可重送的請求，帳本與工作樹都沒有效果；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收"
         },
         {
           "path": "experiments/v2/vm_managed_worker.sh",
@@ -823,7 +823,7 @@
           "scope": "合成套件實測執行器分得出被測到的守門（killed）、沒被測到的守門（survived）、原文不存在與出現兩次（stale）、檔案不存在（stale）；空規格不算通過；只跑指定測試模組；原始檔不被改動"
         }
       ],
-      "unknown": "VM 探針的 Swift runner 與 guest 殼層腳本沒有離線測試，未轉成規格（只有真 VM 探針覆蓋）；673 個尚未一次全量重跑；刪改由人挑選，不是自動產生；未納入 verify_v2 預設流程（太慢）；跨工具與跨 OS 尚未驗收",
+      "unknown": "VM 探針的 Swift runner 與 guest 殼層腳本沒有離線測試，未轉成規格（只有真 VM 探針覆蓋）；全量 673 個 macOS 實跑全部 killed（約 14 分鐘），其後 7 個單獨跑；刪改由人挑選，不是自動產生；未納入 verify_v2 預設流程（太慢）；跨工具與跨 OS 尚未驗收",
       "next": "移除判斷後測試真的失敗；不只比規則字串"
     },
     {

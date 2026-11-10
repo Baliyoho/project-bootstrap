@@ -783,7 +783,8 @@ from experiments.v2.guest_runs import GuestRunLedger
 from experiments.v2.launcher import LaunchAuthority, RequestJournal
 from experiments.v2.materializer import Materializer
 from experiments.v2.vm_probe import VMRetirementGate
-db, repo, runner, kernel, ramdisk, log = map(Path, sys.argv[1:])
+db, repo, runner, kernel, ramdisk, log = map(Path, sys.argv[1:7])
+mode = sys.argv[7]
 lab = Lab(db)
 authority = LaunchAuthority(Broker(lab, Materializer(lab, repo, {'note': 'managed.txt'})))
 ledger = GuestRunLedger(lab)
@@ -797,6 +798,13 @@ ledger.mark_running(run, {'probe_id': gate.probe_id, 'shared_directory': False},
                     channel.capability)
 gate.load_context(0, 2)
 operation = lab.begin(channel.capability, 0)
+if mode == 'unread':
+    # The guest answers, but this parent dies before reading or saving it.
+    nonce = 'f' * 32
+    gate.process.guest_request.write(f'W {nonce} 5 1 null\\n'.encode('ascii'))
+    print(json.dumps({'run': run, 'ticket': ticket, 'actor': actor, 'nonce': nonce}), flush=True)
+    sys.stdin.read()
+    raise SystemExit
 raw = gate.managed_write_request(0, 5, 1)
 lab.complete(channel.capability, operation)
 ledger.require_live(run, channel.capability, 0)
@@ -829,7 +837,7 @@ def probe_guest_crash_replay(work: Path, runner: Path, kernel: Path, ramdisk: Pa
     log = work / "guest-outbox.log"
     parent = subprocess.Popen(
         [sys.executable, "-B", "-u", "-c", GUEST_CRASH_OUTBOX, str(db), str(repo),
-         str(runner), str(kernel), str(ramdisk), str(log)],
+         str(runner), str(kernel), str(ramdisk), str(log), "saved"],
         cwd=HERE.parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -887,6 +895,80 @@ def probe_guest_crash_replay(work: Path, runner: Path, kernel: Path, ramdisk: Pa
         print("guest_crash_replay: parent SIGKILL after saving a guest request; blocked until "
               "crash release; replacement parent sent the saved bytes once, write attributed "
               "to epoch 0")
+    finally:
+        if parent.poll() is None:
+            parent.kill()
+            parent.wait(timeout=5)
+        for stream in (parent.stdin, parent.stdout, parent.stderr):
+            stream.close()
+
+
+def probe_guest_unread_request(work: Path, runner: Path, kernel: Path, ramdisk: Path) -> None:
+    """The guest emits a write request the parent never read before SIGKILL.
+
+    Without a shared directory the only way out is the parent's serial pipe,
+    whose read end died with the parent, so nothing can be replayed or applied.
+    """
+    if str(HERE.parents[1]) not in sys.path:
+        sys.path.insert(0, str(HERE.parents[1]))
+    from experiments.v2 import crash_release
+    from experiments.v2.broker import Broker
+    from experiments.v2.contracts import Denied, Lab
+    from experiments.v2.guest_runs import GuestRunLedger
+    from experiments.v2.launcher import LaunchAuthority, RequestJournal
+    from experiments.v2.materializer import Materializer
+
+    root = work / "guest-unread"
+    root.mkdir()
+    repo = root / "repo"
+    repo.mkdir()
+    db = root / "private.sqlite"
+    log = work / "guest-unread.log"
+    parent = subprocess.Popen(
+        [sys.executable, "-B", "-u", "-c", GUEST_CRASH_OUTBOX, str(db), str(repo),
+         str(runner), str(kernel), str(ramdisk), str(log), "unread"],
+        cwd=HERE.parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        if not select.select([parent.stdout], [], [], 30)[0]:
+            raise RuntimeError("guest unread fixture did not start: "
+                               + parent.stderr.read1(4000).decode(errors="replace"))
+        saved = json.loads(parent.stdout.readline().decode())
+        marker = "GUEST_TOOL_WRITE_REQUEST=" + saved["nonce"]
+        deadline = time.monotonic() + 8
+        while marker not in log.read_text(errors="replace").splitlines():
+            if time.monotonic() >= deadline:
+                raise RuntimeError("guest never produced the unread request")
+            time.sleep(0.05)
+        parent.kill()
+        parent.wait(timeout=5)
+        deadline = time.monotonic() + 8
+        while not host_stopped(log):
+            if time.monotonic() >= deadline:
+                raise RuntimeError("unshared VM did not stop after parent SIGKILL")
+            time.sleep(0.05)
+        crash_release.release(db, saved["run"], _ScriptedTerminal)
+        lab = Lab(db)
+        try:
+            authority = LaunchAuthority(Broker(lab, Materializer(lab, repo, {'note': 'managed.txt'})))
+            GuestRunLedger(lab).require_quiescent(saved["actor"])
+            journal = RequestJournal(authority, authority.connect(saved["ticket"]))
+            try:
+                journal.send()
+            except Denied as error:
+                if str(error) != "no-pending-request":
+                    raise RuntimeError(f"send after release gave {error}") from error
+            else:
+                raise RuntimeError("an unread guest request was sent after release")
+            stored = [lab.db.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
+                      for table in ("client_requests", "writes")]
+            if stored != [0, 0] or (repo / "managed.txt").exists():
+                raise RuntimeError(f"an unread guest request left an effect: {stored}")
+        finally:
+            lab.close()
+        print("guest_unread_request: guest produced a write request the parent never read; "
+              "after parent SIGKILL and crash release nothing was stored, sent or written")
     finally:
         if parent.poll() is None:
             parent.kill()
@@ -1056,6 +1138,7 @@ def main() -> int:
             probe_parent_crash_fail_closed(work, runner, raw_kernel, guest_ramdisk)
             probe_guest_parent_crash(work, runner, raw_kernel, guest_ramdisk)
             probe_guest_crash_replay(work, runner, raw_kernel, guest_ramdisk)
+            probe_guest_unread_request(work, runner, raw_kernel, guest_ramdisk)
         print("VM_PROBE_OK: synthetic guest only; P0 remains unverified")
         return 0
     except (OSError, RuntimeError, subprocess.SubprocessError, zlib.error) as error:
