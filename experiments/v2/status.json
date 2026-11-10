@@ -320,6 +320,10 @@
           "scope": "直接子程序監護與生命週期管道，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
+          "path": "experiments/v2/test_guardian.py",
+          "scope": "直接驅動 guardian.py 子程序的 9 個測試：父端先死或期限已過不啟動 worker、父端 EOF／意外資料／期限到都停並回收、忽略 SIGTERM 的子程序寬限後 SIGKILL、guardian 被 terminate 仍回收、worker 不繼承控制描述元；mutants.json 10 個刪改全部 killed。不涵蓋 guardian 自己被 SIGKILL"
+        },
+        {
           "path": "experiments/v2/launcher.py",
           "scope": "受信父程序啟動權與耐久請求 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
@@ -513,7 +517,7 @@
         },
         {
           "path": "experiments/v2/test_resume_repo.py",
-          "scope": "對本 repo 以空家目錄跑須通過且程序來自 PROJECT-BOOTSTRAP.md；2026-11-10 首跑（乾淨 clone＋空家目錄）不通過：AGENTS 開工段落只指向全域 skill 路徑，舊句要人「直接開那個檔讀」而新機上它不存在；已在 AGENTS 補部署包 3.8 節指標"
+          "scope": "對本 repo 以空家目錄跑須通過且程序來自 PROJECT-BOOTSTRAP.md；2026-11-10 首跑（乾淨 clone＋空家目錄）不通過：AGENTS 開工段落只指向全域 skill 路徑，舊句要人「直接開那個檔讀」而新機上它不存在；已在 AGENTS 補部署包 3.8 節指標；同日加生成骨架：部署包 extract 出的專案以空家目錄跑通過，刪掉部署的 SKILL.md 即不通過（生成骨架，非已部署真實專案）"
         }
       ],
       "unknown": "只模擬同一台機器上的乾淨 clone 加空家目錄，沒有真的第二台機器或其他 OS；只看入口段落連結得到的檔含不含程序標記，不核對指定節號、不判斷讀者能否照做；hook、憑證與工具設定在新機的狀態未查；未接進現行 A 程序；跨工具與跨 OS 尚未驗收",
@@ -812,14 +816,14 @@
         },
         {
           "path": "experiments/v2/mutants.json",
-          "scope": "2026-11-09 本輪新增九個模組（preflight、batch、lines、readonly、state、evidence、facts、decisions、policy、impact）與 doctor 共 152 個守門刪改；同日在 macOS 實跑全部 killed，約 90 秒；2026-11-10 加入 resume 15、confluence 處置 13、trail_sources 7 個，並把較早的 gitclaim 29、release 20、session＋registry 27、approvals 26、broker 22 個轉進規格（先補存活對應的測試）；全量 443 個 macOS 實跑全部 killed（約 6 分鐘），其後 trail_sources 7、broker 22、launcher 28、materializer 25 個（兩者先補 6、7 個測試）單獨跑全部 killed，共 525 個"
+          "scope": "2026-11-09 本輪新增九個模組（preflight、batch、lines、readonly、state、evidence、facts、decisions、policy、impact）與 doctor 共 152 個守門刪改；同日在 macOS 實跑全部 killed，約 90 秒；2026-11-10 加入 resume 15、confluence 處置 13、trail_sources 7 個，並把較早的 gitclaim 29、release 20、session＋registry 27、approvals 26、broker 22 個轉進規格（先補存活對應的測試）；全量 443 個 macOS 實跑全部 killed（約 6 分鐘），其後 trail_sources 7、broker 22、launcher 28、materializer 25 個（兩者先補 6、7 個測試）單獨跑全部 killed，共 525 個；同日再加崩潰解除＋guest_runs 23、supervisor 11、guardian 10（新增 test_guardian）、lifecycle 26（先補 7 個逐代碼測試）、F45 版本規則 3 個，共 598 個；全量 595 個（不含其後加入的 F45 版本規則 3 個）macOS 實跑全部 killed，版本規則 3 個以 --spec 單獨跑全部 killed。"
         },
         {
           "path": "experiments/v2/test_mutants.py",
           "scope": "合成套件實測執行器分得出被測到的守門（killed）、沒被測到的守門（survived）、原文不存在與出現兩次（stale）、檔案不存在（stale）；空規格不算通過；只跑指定測試模組；原始檔不被改動"
         }
       ],
-      "unknown": "lifecycle、supervisor、guardian 與 VM 相關檔的 mutation 仍只記在 README 敘述，尚未轉成規格；刪改由人挑選，不是自動產生；未納入 verify_v2 預設流程（太慢）；跨工具與跨 OS 尚未驗收",
+      "unknown": "VM 探針相關檔的 mutation 仍只記在 README 敘述，尚未轉成規格；刪改由人挑選，不是自動產生；未納入 verify_v2 預設流程（太慢）；跨工具與跨 OS 尚未驗收",
       "next": "移除判斷後測試真的失敗；不只比規則字串"
     },
     {
@@ -1203,7 +1207,7 @@
         },
         {
           "path": "experiments/v2/test_contradictions_repo.py",
-          "scope": "對本 repo 的 README、AGENTS、部署包、HANDOFF、決策書跑宣告表須未發現；2026-11-10 首跑抓到 HANDOFF 懸置未登記，已補登決策書第 6 節 Q1；同日加需求數規則抓到 ARCHITECT 根目錄表寫 50 條需求，已更正為 51；同日加入互斥鎖與序號兩條規則，並對每條規則把反向句注入真文件副本確認會報"
+          "scope": "對本 repo 的 README、AGENTS、部署包、HANDOFF、決策書跑宣告表須未發現；2026-11-10 首跑抓到 HANDOFF 懸置未登記，已補登決策書第 6 節 Q1；同日加需求數規則抓到 ARCHITECT 根目錄表寫 50 條需求，已更正為 51；同日加入互斥鎖與序號兩條規則，並對每條規則把反向句注入真文件副本確認會報；同日加「VERSION 只跟著 SKILL.md」規則，本 repo 未發現，反向句注入會報"
         },
         {
           "path": "experiments/v2/registry.py",

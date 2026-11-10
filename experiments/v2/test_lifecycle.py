@@ -536,5 +536,151 @@ sys.stdin.read()
             first.process.stdout.close()
 
 
+class _Alive:
+    """A reader thread that never finishes."""
+
+    def join(self, timeout=None):
+        pass
+
+    def is_alive(self):
+        return True
+
+
+class _NeverPolls:
+    """Wraps a real child whose exit is never observed by poll()."""
+
+    def __init__(self, real):
+        self.real, self.stdin, self.stdout = real, real.stdin, real.stdout
+
+    def wait(self, timeout=None):
+        return self.real.wait(timeout=timeout)
+
+    def poll(self):
+        return None
+
+
+@unittest.skipUnless(os.name == 'posix', 'POSIX ticket custody; Windows adapter is unverified')
+class LifecycleCodeTests(unittest.TestCase):
+    """One refusal per test, checked by its code (each guard has a mutant)."""
+
+    setUp = LifecycleTests.setUp
+    tearDown = LifecycleTests.tearDown
+    actor = LifecycleTests.actor
+    state = LifecycleTests.state
+
+    def denied(self, code, call, *args, **kwargs):
+        with self.assertRaises(Denied) as caught:
+            call(*args, **kwargs)
+        self.assertEqual(str(caught.exception), code)
+
+    def private_file(self, name, data):
+        path = self.private / name
+        path.write_bytes(data)
+        path.chmod(0o600)
+        return path
+
+    def test_vault_refuses_unverified_platform_and_bad_values(self):
+        with patch.object(lifecycle.os, 'name', 'nt'):
+            self.denied('ticket-vault-platform-unverified', TicketVault, self.private)
+        self.denied('invalid-launch-ticket', self.vault.save, 'not-a-ticket')
+        self.denied('invalid-ticket-handle', self.vault.load, '../escape')
+        self.private_file('c' * 64, b'z' * 64)
+        self.denied('invalid-ticket-file', self.vault.load, 'c' * 64)
+        self.private_file('d' * 64, b'\xff' * 64)
+        self.denied('invalid-ticket-file', self.vault.load, 'd' * 64)
+
+    def test_reap_record_must_be_exact_and_unaliased(self):
+        self.denied('worker-reap-unconfirmed', self.vault.confirm_reap, None)
+        cases = {'canonical': (b'reaped:3\n', None), 'not started': (b'not-started\n', None),
+                 'padded': (b'reaped: 3\n', 'worker-reap-unconfirmed'),
+                 'empty': (b'', 'worker-reap-unconfirmed')}
+        for name, (proof, code) in cases.items():
+            with self.subTest(proof=name):
+                fd, (record_name, vault, identity) = self.vault.new_reap_record()
+                os.write(fd, proof)
+                os.close(fd)
+                record = {'name': record_name, 'vault': vault, 'identity': identity}
+                if code is None:
+                    self.vault.confirm_reap(record)
+                else:
+                    self.denied(code, self.vault.confirm_reap, record)
+        fd, (record_name, vault, identity) = self.vault.new_reap_record()
+        os.write(fd, b'reaped:0\n')
+        os.close(fd)
+        record = {'name': record_name, 'vault': vault, 'identity': identity}
+        self.denied('worker-reap-unconfirmed', self.vault.confirm_reap,
+                    {**record, 'vault': '0:0'})
+        (self.private / record_name).chmod(0o644)
+        self.denied('worker-reap-unconfirmed', self.vault.confirm_reap, record)
+        (self.private / record_name).chmod(0o600)
+        os.link(self.private / record_name, self.private / 'alias')
+        self.denied('worker-reap-unconfirmed', self.vault.confirm_reap, record)
+
+    def test_launch_plan_needs_a_real_directory_and_file(self):
+        file = self.root / 'plain'
+        file.write_text('x')
+        self.denied('invalid-launch-plan', LaunchPlan((sys.executable,), str(file)).fingerprint)
+        self.denied('invalid-launch-plan', LaunchPlan((str(self.root),), str(self.root)).fingerprint)
+
+    def test_unknown_or_rebound_ticket_never_launches(self):
+        stray = self.vault.save('e' * 64)
+        self.denied('launch-not-authorized', self.launcher.start, stray, self.plan)
+        self.launcher.start(self.handle, self.plan)
+        self.launcher.renew(self.handle, self.plan, 'synthetic-parent-renewal', 1200)
+        self.lab.db.execute("UPDATE renewed_tickets SET actor='someone-else'")
+        self.denied('renewed-ticket-binding-mismatch', self.launcher.ticket, self.handle)
+        self.assertFalse(self.launcher.children)
+
+    def test_reconcile_refuses_owned_or_unknown_state(self):
+        self.launcher.start(self.handle, self.plan)
+        self.denied('process-still-owned', self.launcher.reconcile, self.handle, self.plan)
+        actor = self.actor()
+        self.launcher.stop(actor)
+        expected = self.lab.db.execute('SELECT name FROM managed_reap_records').fetchone()[0]
+        self.launcher.confirm_reap(actor, expected)
+        self.denied('worker-reap-unconfirmed', self.launcher.confirm_reap,
+                    actor, 'reap-' + '0' * 64)
+        self.lab.db.execute("UPDATE managed_launches SET state='weird'")
+        self.denied('invalid-managed-state', self.launcher.reconcile, self.handle, self.plan)
+        self.assertEqual(self.state(), 'weird')
+        self.lab.db.execute("UPDATE managed_launches SET state='stopped'")
+
+    def test_stop_is_not_recorded_until_reader_and_process_are_seen_gone(self):
+        child = self.launcher.start(self.handle, self.plan)
+        actor = self.actor()
+        reader = child.reader
+        child.reader = _Alive()
+        self.denied('child-reader-not-stopped', self.launcher.stop, actor)
+        self.assertEqual(self.state(), 'stopping')
+        child.reader = reader
+        real = child.process
+        child.process = _NeverPolls(real)
+        self.denied('child-not-stopped', self.launcher.stop, actor)
+        self.assertEqual(self.state(), 'stopping')
+        child.process = real
+        self.launcher.stop(actor)
+        self.assertEqual(self.state(), 'stopped')
+
+    def test_check_stops_a_child_past_its_deadline_or_already_gone(self):
+        short = self.authority.issue(('note',), 'synthetic-parent', 1001)
+        handle = self.vault.save(short)
+        launcher = ProcessLauncher(self.authority, self.vault, timeout=0.5)
+        try:
+            launcher.start(handle, self.plan)
+            time.sleep(1.2)
+            # The authority clock never moved: only the monotonic deadline fires.
+            self.denied('process-deadline-expired', launcher.check)
+            self.assertFalse(launcher.children)
+        finally:
+            launcher.close()
+        quitter = LaunchPlan((sys.executable, '-B', '-u', '-c',
+                              "import sys; print('bootstrap-v2-ready', flush=True); "
+                              "sys.stdin.readline()"), str(self.root))
+        child = self.launcher.start(self.handle, quitter)
+        child.process.wait(timeout=5)
+        self.denied('child-ended', self.launcher.check)
+        self.assertEqual(self.state(), 'stopped')
+
+
 if __name__ == '__main__':
     unittest.main()

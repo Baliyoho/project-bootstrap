@@ -2,7 +2,7 @@
 
 import unittest
 
-from experiments.v2.contradictions import check, sections
+from experiments.v2.contradictions import REPO_CONFIG, check, sections
 
 RULE = {
     'id': 'core-priority',
@@ -162,6 +162,26 @@ class ContradictionTests(unittest.TestCase):
                          [('A > B', 'x'), ('A > B > C', 'y'), ('A > D', 'z')])
         self.assertEqual(skipped, 0)
 
+
+    def test_version_rule_flags_claims_but_not_negations_or_quotes(self):
+        rule = next(r for r in REPO_CONFIG['rules'] if r['id'] == 'version-follows-skill')
+        config = {'rules': [dict(rule, required_in=[], docs=None)]}
+        base = '# P\n\n版本行與 `VERSION` 只跟著 `SKILL.md` 走。\n'
+        # The canonical wording alone counts as present, not as an absent rule.
+        present = check({'P.md': base}, {'rules': [dict(rule, docs=None, required_in=['P.md'])]})
+        self.assertEqual((present['findings'], present['unknown']), ([], []))
+        quiet = ['`VERSION` 不跟著動，落後偵測不會替你講。',
+                 '舊稿寫過「改到範本就要跳 VERSION」，已更正。',
+                 '沒動到 hook 就不要跳 VERSION。']
+        for line in quiet:
+            with self.subTest(line=line):
+                result = check({'P.md': base + line + '\n'}, config)
+                self.assertEqual(result['findings'], [])
+        for line in ('改到範本就要跳 VERSION。', '動了 hook 都要跳 `VERSION`。',
+                     '`VERSION` 跟著 `source:` 標記走。'):
+            with self.subTest(line=line):
+                result = check({'P.md': base + line + '\n'}, config)
+                self.assertIn('reverse-rule', codes(result))
 
 if __name__ == '__main__':
     unittest.main()

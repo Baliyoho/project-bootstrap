@@ -200,6 +200,8 @@ python3 -X utf8 experiments/v2/mutants.py
 
 2026-11-10 把較早五個模組轉進清單：`gitclaim` 29、`release` 20、`session`＋`registry` 27、`approvals` 26、`broker` 22 個。第一次試跑就有 33 個存活，多數是沒測到的輸入檢查：`broker` 的逐項錯誤代碼（原測試只驗「不是 ok」）、授權撤銷關閉 channel、落盤前重查授權；`release` 的金鑰格式、超長與多欄位聲明；`session` 的建構檢查（起始時間、主題長度與分隔字元、次數、狀態、重複事件）與空 event_id 的收據；`approvals` 的文件形狀（長度、多欄位、十六進位欄位、resource、uses、時間範圍）、金鑰格式、空或超長簽章不得叫起驗證程式、持久化的驗證程式 digest、核准時重查 policy、核准紀錄在而 grant 遺失、已有未簽 grant 時拒裝 policy。已補測試，全部 killed。兩個存活是等價變異未列入：缺檔時 `owner_field('')` 本來就回 None；推送成功後遠端不等於 HEAD 在合成環境造不出來（程式已註明）。同日全量 443 個 macOS 實跑全部 killed（約 6 分鐘），之後加入的 `trail_sources` 7、`broker` 22 個單獨跑也全部 killed，清單共 472 個。launcher 試跑 28 個有 19 個存活（票據長度、範圍與期限輸入、續期條件與 transaction 要求、pipe 授權比對 actor 與範圍、journal 對關閉／撤銷 channel、請求形狀、journal 與收據一致性），`test_launcher.py` 補 6 個逐代碼測試後全部 killed，清單共 500 個（2 個續期守門原本只有 3 分鐘的 lifecycle 測試殺得到，改由新測試直接打）。`materializer` 試跑 25 個有 16 個存活（映射輸入、seed 的特殊權限與重複、事件 id、缺 epoch 證據、狀態指向別的資源、準備階段的 epoch／大小／磁碟基準、模式改變、不安全暫存檔、暫存後晚到的修改），`test_recovery.py` 補 7 個逐代碼測試後全部 killed，清單共 525 個；其中模式衝突原本被後面的二次檢查兜住，差別只在會留下暫存檔，所以測試改斷言「拒絕前不建暫存檔」。lifecycle、supervisor、guardian 與 VM 相關檔仍只有上文敘述。
 
+2026-11-10 再轉進三個生命週期模組並補測試：`supervisor` 11 個（首跑 12 個裡 9 個存活：原測試只驗「有拒絕」不驗代碼，補 4 個逐代碼測試，含謊報 epoch 的真 worker 與停不掉的程序替身；`old-context-still-running` 被 `stop()` 先擋、屬冗餘，不列）、`guardian` 10 個（原本只經 lifecycle 間接測到，新增 `test_guardian.py` 9 個直接驅動 `guardian.py` 子程序的測試：父端先死不啟動、期限已過、EOF 與意外資料都停、忽略 SIGTERM 的子程序在寬限後 SIGKILL、guardian 被 terminate 仍回收、worker 不繼承控制描述元）、`lifecycle` 26 個（首跑 27 個裡 20 個存活，補 `LifecycleCodeTests` 7 個逐代碼測試；`launcher.ticket` 的 handle 檢查與 vault 重複、屬冗餘，不列）。HANDOFF 原記 lifecycle 測試約 3 分鐘，實測整個模組約 5 秒。另加崩潰解除 23 個與 F45 版本規則 3 個。全量 595 個（不含其後加入的 F45 版本規則 3 個）macOS 實跑全部 killed，版本規則 3 個以 --spec 單獨跑全部 killed。
+
 ## 本機能力診斷（2026-11-09）
 
 `doctor.py` 是 F16b 的原型。`diagnose` 把三種缺口分開報：缺工具（PATH 上找不到）、缺設定（環境變數沒設或只有空白）、連線失敗（工具與設定都在，probe 卻沒回 `True` 或拋例外）。缺前提的連線不呼叫，記 `not-attempted` 並列出缺什麼，所以沒設金鑰不會被誤報成服務掛掉。設定只看名稱有沒有值，值本身與例外訊息都不進報告。`test_doctor.py` 2 個測試；`mutants.json` 8 個刪改全部 killed。邊界：清單由呼叫端提供，還沒列骨架實際需要的工具與設定；只看環境變數，不查設定檔。
@@ -208,7 +210,7 @@ python3 -X utf8 experiments/v2/mutants.py
 
 `contradictions.py` 是 F45 的原型，只比對宣告過的規則表與待決登記，不判斷任意散文。每條規則列出各說法的正規式與正確說法：寫成反向說法的位置報 `reverse-rule`（文件、節、行號），同一檔不同節說法不同報 `section-conflict`，不同檔說法不同報 `cross-doc-conflict`。待決部分讀決策書第 6 節的登記列（`- **Q1** … 狀態：待決／已決`）：HANDOFF 懸置節每一條都要引用仍待決的編號，否則 `pending-unregistered`；已決編號在懸置節或任何文件與「待決／待使用者決定」同行出現就報 `decided-still-pending`。讀不到的文件、必須出現卻沒出現的規則、缺登記節都是未知，不算通過；程式碼區塊與呼叫端標為歷史的節會跳過，但跳過的行數照列。部署包的範本放在程式碼區塊裡，所以對它設為照掃。
 
-`REPO_CONFIG` 是本 repo 的宣告表（核心優先序、需求數、工作中標記不是互斥鎖、序號跟版本行不保證同號四條規則、決策書第 6 節、HANDOFF 懸置節；ARCHITECT 開頭的日期紀錄行與決策書第 7 節當時的決定標為歷史，照列跳過行數），`python3 -X utf8 experiments/v2/contradictions.py` 直接對本 repo 跑。2026-11-10 第一次跑就抓到一處：HANDOFF 懸置的「崩潰後人工解除的可信核准來源」沒登記，決策書第 6 節卻寫「無」；已補登為 Q1，HANDOFF 改成指向它。同日加入需求數規則，抓到 ARCHITECT 根目錄表仍寫決策書「50 條需求」（決策書是 51），已更正。`test_contradictions.py` 16 個合成測試、`test_contradictions_repo.py` 對本 repo 文件要求未發現，並把每條規則的反向句注入真文件副本確認會報（2026-11-10 加後兩條時，序號規則初版把部署包兩處引述舊說法的括號句當成主張，改成同一子句、中間不跨引號或括號才算）；`mutants.json` 24 個刪改全部 killed。邊界：只認宣告過的說法，換個寫法就看不到；登記列格式固定；HANDOFF 懸置每條都要引用編號，之後交棒寫懸置節要照這個格式；未接進現行 A／B 程序。
+`REPO_CONFIG` 是本 repo 的宣告表（核心優先序、需求數、工作中標記不是互斥鎖、序號跟版本行不保證同號四條規則、決策書第 6 節、HANDOFF 懸置節；ARCHITECT 開頭的日期紀錄行與決策書第 7 節當時的決定標為歷史，照列跳過行數），`python3 -X utf8 experiments/v2/contradictions.py` 直接對本 repo 跑。2026-11-10 第一次跑就抓到一處：HANDOFF 懸置的「崩潰後人工解除的可信核准來源」沒登記，決策書第 6 節卻寫「無」；已補登為 Q1，HANDOFF 改成指向它。同日加入需求數規則，抓到 ARCHITECT 根目錄表仍寫決策書「50 條需求」（決策書是 51），已更正。`test_contradictions.py` 16 個合成測試、`test_contradictions_repo.py` 對本 repo 文件要求未發現，並把每條規則的反向句注入真文件副本確認會報（2026-11-10 加後兩條時，序號規則初版把部署包兩處引述舊說法的括號句當成主張，改成同一子句、中間不跨引號或括號才算）；`mutants.json` 24 個刪改全部 killed。2026-11-10 再加「版本行與 `VERSION` 只跟著 `SKILL.md` 走」：反向說法是「改到範本／hook／部署包就要跳 VERSION」或「VERSION 跟著 source 標記」，同一子句才算，緊接 」 結尾的引述與「不跟著動」不算；本 repo 未發現，注入反向句會報，新增 3 個刪改全部 killed。prompt 名稱已由 `verify_bootstrap.py` 的「結構摘要一致性」守，未重複加進宣告表。邊界：只認宣告過的說法，換個寫法就看不到；登記列格式固定；HANDOFF 懸置每條都要引用編號，之後交棒寫懸置節要照這個格式；未接進現行 A／B 程序。
 
 ## 規則理由、否決路線與路線圖（2026-11-10）
 
@@ -262,7 +264,7 @@ python3 -X utf8 experiments/v2/mutants.py
 
 `resume.py` 是 F16a 的偵測原型。`clone` 用單分支 `git clone` 建第二機的 checkout，只帶已提交的檔；`check` 拿一個家目錄（乾淨機就是空資料夾）照入口文件的開工段落走：段落裡的 `~/` 路徑與 repo 內連結是候選，含程序標記行（預設 `name: handoff`）的才算程序。程序必須在 repo 內找得到——家目錄副本新機上還沒有；段落點名的 repo 連結在 checkout 裡缺席是缺漏，只在第一機工作樹存在是私有附件；可達副本的 `source:` 標記不同列為漂移。
 
-首跑本 repo 就不通過：AGENTS 開工段落只指向全域 skill，沒有全域副本時叫人「直接開那個檔讀」，而新機上那個檔不存在。已在 AGENTS 補「讀部署包 3.8 節」的指標，`test_resume_repo.py` 以空家目錄守住。
+首跑本 repo 就不通過：AGENTS 開工段落只指向全域 skill，沒有全域副本時叫人「直接開那個檔讀」，而新機上那個檔不存在。已在 AGENTS 補「讀部署包 3.8 節」的指標，`test_resume_repo.py` 以空家目錄守住。2026-11-10 對部署出去的專案也跑一次：用 `verify_bootstrap.extract` 從部署包生成骨架，空家目錄下 AGENTS 開工段落指到 repo 內的 `.claude/skills/handoff/SKILL.md`，通過；刪掉那份就 `procedure-not-in-repo`。這是生成骨架，不是逐一檢查已部署的真實專案。
 
 `test_resume.py` 9 個測試（含真 `git clone`）；`mutants.json` 15 個刪改全部 killed。邊界：只在同一台機器模擬乾淨 clone 加空家目錄，不是真的第二台機器或其他 OS；只看連結得到的檔含不含程序標記，不核對節號、不判斷讀者照不照得做；hook、憑證、工具設定在新機的狀態沒查；未接進現行 A 程序。
 

@@ -229,6 +229,20 @@ REPO_CONFIG = {
         },
         'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md'],
         'required_in': ['AGENTS.md', 'PROJECT-BOOTSTRAP.md'],
+    }, {
+        # Iron rule 1: only a real SKILL.md change bumps VERSION and the version line.
+        'id': 'version-follows-skill',
+        'canonical': 'skill-only',
+        'variants': {
+            'skill-only': [r'VERSION`? ?只跟著 ?`?SKILL\.md',
+                           r'SKILL\.md`? ?真的改了內容才跳 ?`?VERSION'],
+            # One clause again; "不跟著動" and quoted old wording stay out.
+            'any-change': [r'(改|動)到?[^。\n「」（）]{0,8}(範本|hook|部署包)'
+                           r'[^。\n「」（）]{0,8}(就|都)要?跳 ?`?VERSION(?!`?」)',
+                           r'(?<!「)`?VERSION`? ?跟著 ?`?source'],
+        },
+        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md'],
+        'required_in': ['AGENTS.md', 'PROJECT-BOOTSTRAP.md'],
     }],
     'registry': {'doc': 'project-bootstrap-requirements-decision.md', 'heading': r'(^| > )6\. 待決事項$'},
     'pending_sections': [{'doc': 'HANDOFF.md', 'heading': r'懸置事項'}],

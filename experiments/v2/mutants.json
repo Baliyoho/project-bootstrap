@@ -956,6 +956,21 @@
      "file": "experiments/v2/contradictions.py",
      "old": "                                       else re.search(item['line'], line))",
      "new": "                                       else False)"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "(就|都)要?跳 ?`?VERSION(?!`?」)',",
+     "new": "(就|都)要?跳 ?`?VERSION',"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "r'(?<!「)`?VERSION`? ?跟著 ?`?source'],",
+     "new": "],"
+    },
+    {
+     "file": "experiments/v2/contradictions.py",
+     "old": "'skill-only': [r'VERSION`? ?只跟著 ?`?SKILL\\.md',\n",
+     "new": "'skill-only': [r'XX_NEVER',\n"
     }
    ]
   },
@@ -2971,6 +2986,262 @@
      "file": "experiments/v2/guest_runs.py",
      "old": "    def require_quiescent(self, actor):\n        \"\"\"Restart gate: refuse while any recorded guest lacks durable retirement.\"\"\"\n        if self._unretired(actor):\n",
      "new": "    def require_quiescent(self, actor):\n        \"\"\"Restart gate: refuse while any recorded guest lacks durable retirement.\"\"\"\n        if False:\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_supervisor"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "            if ready != {'type': 'ready', 'epoch': epoch,\n",
+     "new": "            if False and ready != {'type': 'ready', 'epoch': epoch,\n"
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "        if message is None:\n            raise Denied('worker-ended')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "        if self.process.poll() is None or self.reader.is_alive():\n            raise Denied('worker-not-stopped')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "        if not self.ready or name in self.pending_work:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "            if message != {'type': 'started', 'epoch': self.epoch}:\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "        if not self.ready or name not in self.pending_work:\n",
+     "new": "        if name not in self.pending_work:\n"
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "            if result.get('type') != 'result' or result.get('epoch') != self.epoch:\n",
+     "new": "            if result.get('type') != 'result':\n"
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "        for worker in self.workers.values():\n            worker.stop()\n        old_stopped",
+     "new": "        old_stopped"
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "                self.lab.acknowledge(capability, epoch, change, application=True)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "        self.pending_work.clear()\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/supervisor.py",
+     "old": "        self.ready = False\n        change = json.dumps",
+     "new": "        change = json.dumps"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_guardian"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "    if time.monotonic() >= deadline or select.select([watch], [], [], 0)[0]:\n",
+     "new": "    if select.select([watch], [], [], 0)[0]:\n"
+    },
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "    if time.monotonic() >= deadline or select.select([watch], [], [], 0)[0]:\n",
+     "new": "    if time.monotonic() >= deadline:\n"
+    },
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "            if remaining <= 0:\n                break\n",
+     "new": "            if remaining <= 0:\n                remaining = 0.05\n"
+    },
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "                os.read(watch, 1)\n                break\n",
+     "new": "                os.read(watch, 1)\n"
+    },
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "            child.terminate()\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "                child.kill()\n",
+     "new": "                pass\n"
+    },
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "    signal.signal(signal.SIGTERM, stop)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "stderr=subprocess.DEVNULL, close_fds=True)",
+     "new": "stderr=subprocess.DEVNULL, close_fds=False)"
+    },
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "        record_reap(report, ('reaped:%d\\n' % code).encode('ascii'))\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guardian.py",
+     "old": "    return code if code >= 0 else 128 - code\n",
+     "new": "    return code\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "experiments.v2.test_lifecycle"
+   ],
+   "mutants": [
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if os.name != 'posix' or not hasattr(os, 'O_NOFOLLOW'):\n            raise Denied('ticket-vault-platform-unverified')\n",
+     "new": "        if False:\n            raise Denied('ticket-vault-platform-unverified')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700:\n            raise Denied('ticket-vault-permissions')\n",
+     "new": "        if False:\n            raise Denied('ticket-vault-permissions')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if not self.valid(ticket):\n            raise Denied('invalid-launch-ticket')\n",
+     "new": "        if False:\n            raise Denied('invalid-launch-ticket')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if not self.valid(handle):\n            raise Denied('invalid-ticket-handle')\n",
+     "new": "        if False:\n            raise Denied('invalid-ticket-handle')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if not self.valid(ticket):\n            raise Denied('invalid-ticket-file')\n",
+     "new": "        if False:\n            raise Denied('invalid-ticket-file')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if record is None:\n            raise Denied('worker-reap-unconfirmed')\n",
+     "new": "        if False:\n            raise Denied('worker-reap-unconfirmed')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                if self.file_identity(fd) != record['identity']:\n                    raise Denied('worker-reap-unconfirmed')\n",
+     "new": "                if False:\n                    raise Denied('worker-reap-unconfirmed')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                    if proof != ('reaped:%d\\n' % code).encode('ascii'):\n                        raise Denied('worker-reap-unconfirmed')\n",
+     "new": "                    if False:\n                        raise Denied('worker-reap-unconfirmed')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if not cwd.is_dir():\n            raise Denied('invalid-launch-plan')\n",
+     "new": "        if False:\n            raise Denied('invalid-launch-plan')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "            if not resolved.is_file():\n                raise Denied('invalid-launch-plan')\n",
+     "new": "            if False:\n                raise Denied('invalid-launch-plan')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if permit is None or permit['actor'] != row['actor']:\n            raise Denied('renewed-ticket-binding-mismatch')\n",
+     "new": "        if False:\n            raise Denied('renewed-ticket-binding-mismatch')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if expected is not None and (record is None or record['name'] != expected):\n            raise Denied('worker-reap-unconfirmed')\n",
+     "new": "        if False:\n            raise Denied('worker-reap-unconfirmed')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "            if actor in self.children:\n                raise Denied('process-still-owned')\n",
+     "new": "            if False:\n                raise Denied('process-still-owned')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if row is None or row['plan'] != plan.fingerprint():\n            raise Denied('launch-plan-changed')\n",
+     "new": "        if False:\n            raise Denied('launch-plan-changed')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if row['state'] not in ('starting', 'running', 'stopping', 'unresolved'):\n            raise Denied('invalid-managed-state')\n",
+     "new": "        if False:\n            raise Denied('invalid-managed-state')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                if row is not None and row['state'] != 'stopped':\n                    raise Denied('unresolved-previous-process')\n",
+     "new": "                if False:\n                    raise Denied('unresolved-previous-process')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                    if child.reader.is_alive():\n                        raise Denied('child-reader-not-stopped')\n",
+     "new": "                    if False:\n                        raise Denied('child-reader-not-stopped')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                if child.process.poll() is None:\n                    raise Denied('child-not-stopped')\n",
+     "new": "                if False:\n                    raise Denied('child-not-stopped')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "            if row is None:\n                raise Denied('launch-not-authorized')\n",
+     "new": "            if False:\n                raise Denied('launch-not-authorized')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                    if previous is not None and previous['plan'] != fingerprint:\n                        raise Denied('launch-plan-changed')\n",
+     "new": "                    if False:\n                        raise Denied('launch-plan-changed')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                if message != self.READY or process.poll() is not None:\n                    raise Denied('child-not-ready')\n",
+     "new": "                if False:\n                    raise Denied('child-not-ready')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                    if time.monotonic() >= deadline:\n                        raise Denied('process-deadline-expired')\n",
+     "new": "                    if False:\n                        raise Denied('process-deadline-expired')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                    if child.process.poll() is not None:\n                        raise Denied('child-ended')\n",
+     "new": "                    if False:\n                        raise Denied('child-ended')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "            if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()\n                    or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1):\n                raise Denied('ticket-file-permissions-or-alias')\n",
+     "new": "            if False:\n                raise Denied('ticket-file-permissions-or-alias')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()\n                or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1):\n            raise Denied('private-file-permissions-or-alias')\n",
+     "new": "        if False:\n            raise Denied('private-file-permissions-or-alias')\n"
+    },
+    {
+     "file": "experiments/v2/lifecycle.py",
+     "old": "                or record['vault'] != f'{directory.st_dev}:{directory.st_ino}'):\n",
+     "new": "                ):\n"
     }
    ]
   }

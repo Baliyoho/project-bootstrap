@@ -22,7 +22,8 @@ class RepoDocumentTests(unittest.TestCase):
         reverse = {'core-priority': ('README.md', '兩者衝突以協定為準。'),
                    'requirement-count': ('AGENTS.md', '決策書列出 50 個穩定需求 ID。'),
                    'busy-marker-not-lock': ('README.md', '「工作中」標記是一把互斥鎖。'),
-                   'serial-vs-version-line': ('AGENTS.md', '序號跟版本行同一個號。')}
+                   'serial-vs-version-line': ('AGENTS.md', '序號跟版本行同一個號。'),
+                   'version-follows-skill': ('PROJECT-BOOTSTRAP.md', '改到範本就要跳 VERSION。')}
         self.assertEqual(set(reverse), {rule['id'] for rule in REPO_CONFIG['rules']})
         for rule, (doc, sentence) in reverse.items():
             docs = read_docs(ROOT, REPO_DOCS)
