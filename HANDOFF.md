@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：無（已交棒）
+- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111113｜待指派｜工作中｜交棒0次`，2026-11-11 13:22 (+08) 開工
 - **骨架版本**：`2026-11-10.2`
 - 本機：macOS 27.2、Python 3.15.2、bash 3.2、uv 0.13.7；Windows／Linux 未驗。
 
