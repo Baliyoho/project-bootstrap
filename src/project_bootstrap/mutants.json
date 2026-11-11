@@ -4214,18 +4214,14 @@
   },
   {
    "tests": [
-    "tests.test_pointer"
+    "tests.test_pointer",
+    "tests.test_channel"
    ],
    "mutants": [
     {
      "file": "src/project_bootstrap/pointer.py",
      "old": "            or any(part in ('', '.', '..') for part in path.split('/'))):\n        return False",
      "new": "            ):\n        return False"
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
-     "old": "    if not isinstance(data, dict) or set(data) != FIELDS or data['schema'] != 1:\n        raise Denied('invalid-pointer')",
-     "new": "    if not isinstance(data, dict):\n        raise Denied('invalid-pointer')"
     },
     {
      "file": "src/project_bootstrap/pointer.py",
@@ -4339,53 +4335,8 @@
     },
     {
      "file": "src/project_bootstrap/pointer.py",
-     "old": "        if not isinstance(operation, str) or not re.fullmatch(r'[0-9a-f]{32}', operation):\n            raise Denied('invalid-operation')",
-     "new": "        if False:\n            raise Denied('invalid-operation')"
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
-     "old": "        if not _relative(target):\n            raise Denied('invalid-target')",
-     "new": "        if False:\n            raise Denied('invalid-target')"
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
      "old": "        if manifest.get('kind') != 'formal':\n            raise Denied('debug-release')",
      "new": "        if False:\n            raise Denied('debug-release')"
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
-     "old": "            if exception is None:\n                raise Denied('release-mismatch')",
-     "new": "            if False:\n                raise Denied('release-mismatch')"
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
-     "old": "            if _today(now) > exception['review_by']:\n                raise Denied('exception-expired')",
-     "new": "            if False:\n                raise Denied('exception-expired')"
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
-     "old": "            if _today(now) > exception['review_by']:\n                raise Denied('exception-expired')",
-     "new": "            if _today(now) >= exception['review_by']:\n                raise Denied('exception-expired')"
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
-     "old": "            if not _covers(exception['paths'], target):\n                raise Denied('exception-out-of-scope')",
-     "new": "            if False:\n                raise Denied('exception-out-of-scope')"
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
-     "old": "            pinned = True\n",
-     "new": ""
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
-     "old": "            except FileNotFoundError:\n                raise Denied('component-missing:' + path) from None\n",
-     "new": ""
-    },
-    {
-     "file": "src/project_bootstrap/pointer.py",
-     "old": "            if hashlib.sha256(data).hexdigest() != manifest['components'][path]:\n                raise Denied('component-drift:' + path)",
-     "new": "            if False:\n                raise Denied('component-drift:' + path)"
     },
     {
      "file": "src/project_bootstrap/pointer.py",
@@ -4411,6 +4362,278 @@
      "file": "src/project_bootstrap/pointer.py",
      "old": "    if package.check(folder) or package.digest(manifest) != pointer['installed']:",
      "new": "    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if (not isinstance(data, dict) or not FIELDS <= set(data) <= FIELDS | OPTIONAL\n            or data['schema'] != 1):",
+     "new": "    if (not isinstance(data, dict)):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if (not isinstance(data, dict) or not FIELDS <= set(data) <= FIELDS | OPTIONAL\n            or data['schema'] != 1):",
+     "new": "    if (not isinstance(data, dict) or not FIELDS <= set(data)\n            or data['schema'] != 1):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if 'source' in data and (not isinstance(data['source'], str)\n                             or not SOURCE_RE.fullmatch(data['source'])):",
+     "new": "    if 'source' in data and (not isinstance(data['source'], str)):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if not isinstance(operation, str) or not re.fullmatch(r'[0-9a-f]{32}', operation):\n        raise Denied('invalid-operation')",
+     "new": "    if False:\n        raise Denied('invalid-operation')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if not _relative(target):\n        raise Denied('invalid-target')",
+     "new": "    if False:\n        raise Denied('invalid-target')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if exception is None:\n        raise Denied('release-mismatch')",
+     "new": "    if False:\n        raise Denied('release-mismatch')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if _today(now) > exception['review_by']:\n        raise Denied('exception-expired')",
+     "new": "    if False:\n        raise Denied('exception-expired')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if _today(now) > exception['review_by']:\n        raise Denied('exception-expired')",
+     "new": "    if _today(now) >= exception['review_by']:\n        raise Denied('exception-expired')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if not _covers(exception['paths'], target):\n        raise Denied('exception-out-of-scope')",
+     "new": "    if False:\n        raise Denied('exception-out-of-scope')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        raise Denied('exception-out-of-scope')\n    return True",
+     "new": "        raise Denied('exception-out-of-scope')\n    return False"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        except FileNotFoundError:\n            raise Denied('component-missing:' + path) from None\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if hashlib.sha256(data).hexdigest() != manifest['components'][path]:\n            raise Denied('component-drift:' + path)",
+     "new": "        if False:\n            raise Denied('component-drift:' + path)"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_channel"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if not TAG_RE.fullmatch(name):\n        raise Denied('invalid-tag')",
+     "new": "    if False:\n        raise Denied('invalid-tag')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "            or not all(isinstance(k, str) and KEY_RE.fullmatch(k) for k in keys)):",
+     "new": "            ):"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if (not isinstance(keys, list) or not keys\n",
+     "new": "    if (not isinstance(keys, list)\n"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if not isinstance(channel, str) or not pointer.CHANNEL_RE.fullmatch(channel):\n        raise Denied('invalid-channel')",
+     "new": "    if False:\n        raise Denied('invalid-channel')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if type(epoch) is not int or not 1 <= epoch <= 999_999_999:",
+     "new": "    if not 1 <= epoch <= 999_999_999:"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if type(epoch) is not int or not 1 <= epoch <= 999_999_999:",
+     "new": "    if type(epoch) is not int or not 1 <= epoch:"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if type(epoch) is not int or not 1 <= epoch <= 999_999_999:",
+     "new": "    if type(epoch) is not int or not epoch <= 999_999_999:"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    problems = package.check(folder)\n    if problems:\n        raise Denied('bad-package:' + ','.join(problems))\n    manifest = json.loads((Path(folder) / package.MANIFEST).read_text(encoding='utf-8'))\n    if manifest.get('kind') != 'debug':",
+     "new": "    problems = package.check(folder)\n    manifest = json.loads((Path(folder) / package.MANIFEST).read_text(encoding='utf-8'))\n    if manifest.get('kind') != 'debug':"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if manifest.get('kind') != 'debug':\n        raise Denied('not-a-debug-build')",
+     "new": "    if False:\n        raise Denied('not-a-debug-build')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if not _verified_this_round(report):\n        raise Denied('unverified-source')",
+     "new": "    if False:\n        raise Denied('unverified-source')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        manifest['kind'] = 'formal'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if not isinstance(signature, bytes) or not 1 <= len(signature) <= 2048:\n        raise Denied('invalid-release-signature')",
+     "new": "    if not isinstance(signature, bytes):\n        raise Denied('invalid-release-signature')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "                [str(VERIFIER), '-Y', 'verify', '-f', str(signers), '-I', SIGNER,\n                 '-n', NAMESPACE, '-s', str(proof)],",
+     "new": "                [str(VERIFIER), '-Y', 'verify', '-f', str(signers), '-I', SIGNER,\n                 '-n', 'other', '-s', str(proof)],"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if result.returncode:\n        raise Denied('not-signed-by-trusted-key')",
+     "new": "    if False:\n        raise Denied('not-signed-by-trusted-key')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if not isinstance(document, bytes) or not 1 <= len(document) <= 4096:\n        raise Denied('invalid-release-record')",
+     "new": "    if False:\n        raise Denied('invalid-release-record')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if (not isinstance(fields, dict) or set(fields) != RECORD_FIELDS\n            or type(fields['epoch']) is not int or fields['epoch'] < 1\n",
+     "new": "    if (not isinstance(fields, dict) or set(fields) != RECORD_FIELDS\n            or type(fields['epoch']) is not int\n"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if (not isinstance(fields, dict) or set(fields) != RECORD_FIELDS\n            or type(fields['epoch']) is not int or fields['epoch'] < 1\n",
+     "new": "    if (not isinstance(fields, dict) or set(fields) != RECORD_FIELDS\n            or fields['epoch'] < 1\n"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "            or not isinstance(fields['channel'], str) or not pointer.CHANNEL_RE.fullmatch(fields['channel'])\n",
+     "new": "            or not isinstance(fields['channel'], str)\n"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "            or not isinstance(fields['manifest'], str) or not pointer.DIGEST_RE.fullmatch(fields['manifest'])):",
+     "new": "            or not isinstance(fields['manifest'], str)):"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if document != record_bytes(fields['channel'], fields['epoch'], fields['manifest'],\n                                fields['report'], fields['next_keys']):\n        raise Denied('invalid-release-record')",
+     "new": "    if False:\n        raise Denied('invalid-release-record')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    _verify(document, signature, trusted_keys)\n    fields = parse_record(document)",
+     "new": "    fields = parse_record(document)"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if manifest.get('kind') != 'formal':\n        raise Denied('debug-release')\n    digest = package.digest(manifest)",
+     "new": "    digest = package.digest(manifest)"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if digest != fields['manifest']:\n        raise Denied('release-mismatch')",
+     "new": "    if False:\n        raise Denied('release-mismatch')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    except FileNotFoundError:\n        raise Denied('release-record-missing') from None\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if fields['manifest'] != digest:\n        raise Denied('invalid-release-record')\n    return fields, document, signature",
+     "new": "    return fields, document, signature"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if result.returncode:\n        raise Denied('channel-unreachable')",
+     "new": "    if False:\n        raise Denied('channel-unreachable')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    except (OSError, subprocess.TimeoutExpired):\n        raise Denied('channel-unreachable') from None\n    if result.returncode:",
+     "new": "    except (OSError,):\n        raise Denied('channel-unreachable') from None\n    if result.returncode:"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        if not ref.startswith(prefix):\n            continue",
+     "new": "        if not ref.startswith(TAG_PREFIX):\n            continue"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        if not match or match.group(1) != channel:\n            raise Denied('invalid-channel-tag')",
+     "new": "        if not match:\n            continue"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if not tags:\n        raise Denied('channel-empty')",
+     "new": "    if False:\n        raise Denied('channel-empty')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    if len(digests) != 1:\n        raise Denied('channel-conflict')",
+     "new": "    if False:\n        raise Denied('channel-conflict')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "    top = max(epoch for epoch, _ in tags)",
+     "new": "    top = min(epoch for epoch, _ in tags)"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        if 'source' not in current:\n            raise Denied('no-source')",
+     "new": "        if False:\n            raise Denied('no-source')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        if manifest.get('kind') != 'formal':\n            raise Denied('debug-release')\n        record",
+     "new": "        record"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        if record['channel'] != current['channel']:\n            raise Denied('wrong-channel')",
+     "new": "        if False:\n            raise Denied('wrong-channel')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        pointer.check_components(self.project, manifest)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        if epoch < record['epoch']:\n            raise Denied('channel-rollback')",
+     "new": "        if False:\n            raise Denied('channel-rollback')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        if epoch == record['epoch'] and latest != installed:\n            raise Denied('channel-conflict')",
+     "new": "        if False:\n            raise Denied('channel-conflict')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "            if latest == installed:\n                raise Denied('channel-epoch-mismatch')",
+     "new": "            if False:\n                raise Denied('channel-epoch-mismatch')"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "            pinned = pointer.exception_allows(current['exception'], now, target)",
+     "new": "            pinned = True"
+    },
+    {
+     "file": "src/project_bootstrap/channel.py",
+     "old": "        pointer.check_request(operation, target)\n",
+     "new": ""
     }
    ]
   }

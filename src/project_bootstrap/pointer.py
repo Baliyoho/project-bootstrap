@@ -1,7 +1,9 @@
 """P2 slice 2: the project pointer and the per-write check over a package (D3／D4／D5, F18／F32／F33).
 
 A project keeps a pointer, not a copy of the system. ``.bootstrap/pointer.json``
-names the channel and the digest of the installed package; the package itself
+names the channel and the digest of the installed package, and may name the
+source repository whose tags carry the channel (``channel.py``, P2 slice 3a);
+the package itself
 lives in a cache folder outside the project, one folder per manifest digest,
 as built by ``package.py``.
 
@@ -42,10 +44,13 @@ from project_bootstrap.release import STATEMENT_FIELDS, WriteGate
 
 POINTER = '.bootstrap/pointer.json'
 FIELDS = {'schema', 'channel', 'installed', 'exception'}
+OPTIONAL = {'source'}
 EXCEPTION_FIELDS = {'pin', 'paths', 'reason', 'declared_by', 'review_by'}
 DIGEST_RE = re.compile(r'[0-9a-f]{64}')
 CHANNEL_RE = re.compile(r'[a-z][a-z0-9-]{0,31}')
 DATE_RE = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}')
+# A remote Git URL or a local path; never starts with '-', so git cannot read it as an option.
+SOURCE_RE = re.compile(r'(?:https://|file:///|/)[^\s\x00-\x1f\x7f]{1,500}')
 
 
 def _relative(path):
@@ -61,8 +66,12 @@ def parse(text):
         data = json.loads(text, object_pairs_hook=Broker.unique_keys)
     except (ValueError, RecursionError):
         raise Denied('invalid-pointer') from None
-    if not isinstance(data, dict) or set(data) != FIELDS or data['schema'] != 1:
+    if (not isinstance(data, dict) or not FIELDS <= set(data) <= FIELDS | OPTIONAL
+            or data['schema'] != 1):
         raise Denied('invalid-pointer')
+    if 'source' in data and (not isinstance(data['source'], str)
+                             or not SOURCE_RE.fullmatch(data['source'])):
+        raise Denied('invalid-pointer:source')
     if not isinstance(data['channel'], str) or not CHANNEL_RE.fullmatch(data['channel']):
         raise Denied('invalid-pointer:channel')
     if not isinstance(data['installed'], str) or not DIGEST_RE.fullmatch(data['installed']):
@@ -90,6 +99,37 @@ def _covers(paths, target):
 
 def _today(now):
     return time.strftime('%Y-%m-%d', time.gmtime(now))
+
+
+def check_request(operation, target):
+    if not isinstance(operation, str) or not re.fullmatch(r'[0-9a-f]{32}', operation):
+        raise Denied('invalid-operation')
+    if not _relative(target):
+        raise Denied('invalid-target')
+
+
+def exception_allows(exception, now, target):
+    """The channel moved past the installed package: only a declared, live, covering exception lets the write on."""
+    if exception is None:
+        raise Denied('release-mismatch')
+    if _today(now) > exception['review_by']:
+        raise Denied('exception-expired')
+    if not _covers(exception['paths'], target):
+        raise Denied('exception-out-of-scope')
+    return True
+
+
+def check_components(project, manifest):
+    """Whole core／adapter files in the project must equal the installed package."""
+    for path in sorted(package.whole_owned(manifest)):
+        try:
+            data = (Path(project) / path).read_bytes()
+        except FileNotFoundError:
+            raise Denied('component-missing:' + path) from None
+        except OSError:
+            raise Denied('component-unreadable:' + path) from None
+        if hashlib.sha256(data).hexdigest() != manifest['components'][path]:
+            raise Denied('component-drift:' + path)
 
 
 class WriteCheck:
@@ -153,10 +193,7 @@ class WriteCheck:
 
     def confirm(self, operation, target):
         """Fresh check for writing ``target`` (a project-relative path); Denied otherwise."""
-        if not isinstance(operation, str) or not re.fullmatch(r'[0-9a-f]{32}', operation):
-            raise Denied('invalid-operation')
-        if not _relative(target):
-            raise Denied('invalid-target')
+        check_request(operation, target)
         pointer = self._pointer()
         installed = pointer['installed']
         manifest = self._installed(installed)
@@ -166,23 +203,8 @@ class WriteCheck:
         latest = fields['manifest']
         pinned = False
         if latest != installed:
-            exception = pointer['exception']
-            if exception is None:
-                raise Denied('release-mismatch')
-            if _today(now) > exception['review_by']:
-                raise Denied('exception-expired')
-            if not _covers(exception['paths'], target):
-                raise Denied('exception-out-of-scope')
-            pinned = True
-        for path in sorted(package.whole_owned(manifest)):
-            try:
-                data = (self.project / path).read_bytes()
-            except FileNotFoundError:
-                raise Denied('component-missing:' + path) from None
-            except OSError:
-                raise Denied('component-unreadable:' + path) from None
-            if hashlib.sha256(data).hexdigest() != manifest['components'][path]:
-                raise Denied('component-drift:' + path)
+            pinned = exception_allows(pointer['exception'], now, target)
+        check_components(self.project, manifest)
         self.highest_epoch = fields['epoch']
         return {'operation': operation, 'target': target, 'epoch': fields['epoch'],
                 'version': manifest['version'], 'installed': installed, 'latest': latest,

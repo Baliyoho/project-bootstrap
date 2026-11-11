@@ -370,3 +370,18 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 `test_pointer.py` 15 個寫入／狀態測試加 3 個指標格式測試；`mutants.json` 新群組 39 個刪改全部 killed（首跑存活兩個：簽名合法但 epoch 是字串、簽發時間在未來，已補測試）。沒有 `ssh-keygen` 的平台不跳過，改驗驗證程式不在時拒絕寫入，跟 `test_release.py` 同一做法。
 
 沒做的：簽章金鑰與 channel 是測試替身（第 3 片）；指標檔還不在部署包裡，也沒有工具會寫它；`preflight.ManagedWrite` 還在用舊的 `WriteGate`，沒改用這個檢查；`check_docs.py` 的共用區段與三種接線檔沒比；最高 epoch 只記在記憶體，換一個程序就能接受較舊的聲明；例外的宣告人是記下的名字，不是驗過的身分。
+
+## P2 第三片前半（3a）：正式發布、金鑰鏈與 Git tag channel（2026-11-11）
+
+依決策書 Q20 三題都選 (a)。`channel.py` 取代第二片「每次寫入對亂數簽章」的做法：CI 是跑完就結束的工作，沒辦法回應每一次寫入，而 Q20 決定不架常駐簽章服務。
+
+- **channel**：來源 repo 裡的 tag `refs/tags/channel/<名稱>/<epoch>-<digest>`。`git ls-remote` 不用 clone、也不寫任何東西就能列出來，所以每次寫入都直接連來源 repo 問一次。新鮮度靠這次直接連線，重播靠 GitHub 的 TLS 擋；誰能建這些 tag，由伺服器端的保護規則限制（3b）。
+- **發布（CI 端）**：`release` 收第一片的 debug 包和驗證報告，報告要整體通過、每一列都是本輪實查（沿用 `publish.py` 的判斷），才把包標成正式。CI 簽的是 channel、epoch、正式包 digest、報告 digest，加上 `next_keys`：下一版可以用哪些金鑰簽。
+- **安裝（客戶端）**：`install` 只接受上一版 `next_keys` 裡的金鑰簽的紀錄，第一次安裝用使用者給的根金鑰。換金鑰要先用舊金鑰發一版、在 `next_keys` 列出新金鑰。包和簽過的紀錄一起放進快取。
+- **每次寫入**：`GitWriteCheck` 先做本機檢查（指標、快取裡的包與紀錄、共用檔比對），被擋的寫入不會白跑一趟網路；再列 channel tag。只有最新的 tag 恰好等於已安裝紀錄的 (epoch, digest) 才放行。epoch 比較新而 digest 不同，照第二片的 D4 例外處理；epoch 比較舊是 `channel-rollback`；同一個 digest 卻換了 epoch 是 `channel-epoch-mismatch`；同一個 epoch 兩個 digest 是 `channel-conflict`。已安裝的 epoch 記在快取裡簽過的紀錄，換一個程序也不會接受較舊的 channel，第二片「只記在記憶體」的缺口因此補上。
+
+偽造的 tag 只能讓寫入停下，不能讓舊版繼續寫：指向舊版、epoch 很大的 tag，和舊版簽過的 epoch 對不上。`pointer.py` 為此抽出 `check_request`、`exception_allows`、`check_components` 三個共用步驟，指標可以多一個 `source` 欄位（https、`file:///` 或絕對路徑，不能以 `-` 開頭，避免被 git 當成選項）。
+
+`test_channel.py` 21 個測試，用本機 bare repo 模擬來源、拋棄式 ed25519 金鑰模擬 CI；沒有 `ssh-keygen` 的平台不跳過，改驗驗證程式不在時拒絕安裝。`mutants.json` 的 `channel` 群組 41 個刪改全部 killed；另一個刪改（安裝時不先檢查包）存活，但 `package.install` 會再檢查一次、結果相同，屬等價變異，未列入。`pointer` 群組因重構改寫 10 條、加 2 條 `source` 守門，共 41 個全部 killed。
+
+沒做的（3b，要另行授權）：GitHub Actions workflow、CI 金鑰放進 secret、用保護規則限制 `channel/*` tag 只能由 CI 建立、第一次正式發布與乾淨機器驗收。另外還沒設計：第一次安裝的根金鑰怎麼交給使用者；發布用的命令列入口（目前只有函式）；快取仍可被同一個使用者改（P3）。

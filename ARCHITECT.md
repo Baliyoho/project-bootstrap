@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11（P2 第二片：專案指標與每次寫入的檢查）：`src/project_bootstrap/` 新增 `pointer.py`、`tests/` 新增 `test_pointer.py`。專案指標 `.bootstrap/pointer.json` 只是原型裡的路徑，還沒進部署包；部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+> 最後更新：2026-11-11（P2 第三片前半 3a，決策書 Q20）：`src/project_bootstrap/` 新增 `channel.py`（CI 端發布、沿金鑰鏈安裝、從來源 repo 的 `channel/*` tag 做每次寫入的檢查），`tests/` 新增 `test_channel.py`；`pointer.py` 抽出三個共用步驟並允許指標多一個 `source` 欄位。全部在本機驗，沒有建 workflow、secret 或保護規則；部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+
+> 2026-11-11 稍早（P2 第二片：專案指標與每次寫入的檢查）：`src/project_bootstrap/` 新增 `pointer.py`、`tests/` 新增 `test_pointer.py`。專案指標 `.bootstrap/pointer.json` 只是原型裡的路徑，還沒進部署包；部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
 > 2026-11-11 稍早（P2 第一片：正式包格式）：`src/kit/` 新增 `owners.json`（每個範本的歸屬：core／adapter／project 與更新方式）；新增 `tools/build_package.py`，由 `src/kit` 生成 `dist/package/`（每個部署檔一份加 `manifest.json`，Git 不追蹤）；`src/project_bootstrap/package.py` 與 `tests/test_package.py`、`tests/test_package_repo.py`。部署包內容、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 

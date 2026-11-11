@@ -588,6 +588,14 @@
         {
           "path": "tests/test_pointer.py",
           "scope": "只改一支 hook 的新版發布後，舊專案寫入得到 release-mismatch；本機改 hook 是 component-drift、刪 skill 是 component-missing；改 AGENTS／HANDOFF／settings.json 不擋；mutants.json 39 個刪改全部 killed"
+        },
+        {
+          "path": "src/project_bootstrap/channel.py",
+          "scope": "P2 第 3a 片（Q20）：channel 是來源 repo 的 tag channel/<名稱>/<epoch>-<digest>，GitWriteCheck 每次寫入 git ls-remote 讀最新 tag，只有恰好等於已安裝、CI 簽過的 (epoch, digest) 才放行"
+        },
+        {
+          "path": "tests/test_channel.py",
+          "scope": "本機 bare repo：新版 tag 出現後舊專案 release-mismatch；偽造更大 epoch 指向已安裝版是 channel-epoch-mismatch；同 epoch 兩個 digest 是 channel-conflict；格式錯的 tag 拒絕，其他 tag 忽略；本機改 hook 先擋、不連網；mutants.json 41 個刪改全部 killed（另一個等價刪改未列入）"
         }
       ],
       "unknown": "Windows 部署專案尚未同步 bash 3.2 hook 修正；M1 原型與 P2 指標檢查都未接進現行部署包、sync_project 或任何工具，無遷移流程；指標檢查只比整份的 core／adapter 檔，check_docs.py 的共用區段與接線還沒比；最高 epoch 只記在記憶體；跨工具與跨 OS 尚未驗收",
@@ -965,6 +973,14 @@
         {
           "path": "tests/test_pointer.py",
           "scope": "先成功寫一次再斷線仍拒絕；重播、過期、未來簽發、錯 channel、他人金鑰、空聲明、欄位型別錯、epoch 倒退都拒絕；被拒的寫入不推高 epoch；有例外時離線同樣拒絕；沒有 ssh-keygen 的平台改驗 channel-verifier-unavailable，不跳過"
+        },
+        {
+          "path": "src/project_bootstrap/channel.py",
+          "scope": "每次寫入都跑 git ls-remote 連來源 repo，沒有快取；已安裝的 epoch 記在快取裡簽過的紀錄，新程序也不會接受較舊的 channel（補上第 2 片只記在記憶體的缺口）"
+        },
+        {
+          "path": "tests/test_channel.py",
+          "scope": "來源刪掉或 git 逾時、找不到 git、非零結束碼都是 channel-unreachable；只有 epoch 1 的 tag 而已安裝 epoch 2 時是 channel-rollback，換新的檢查物件仍然拒絕；每次寫入都重新列一次 tag"
         }
       ],
       "unknown": "可信端與簽章金鑰是測試替身，沒有 CI 身分、金鑰治理或真實網路；原型未接進現行寫入入口；跨工具與跨 OS 尚未驗收；preflight 組合檢查同樣未接進任何工具的寫入入口",
@@ -1009,9 +1025,17 @@
         {
           "path": "tests/test_publish.py",
           "scope": "ssh-keygen 拋棄式金鑰實測：正式與調試包驗證通過才發布；九種未驗證報告（含整體與列不一致、空列、非 dict）對正式與調試包都拒絕；簽後改報告、換套件、簽別的內容、空簽章、壞證明拒絕；開發者金鑰、錯 namespace、非 ed25519 金鑰拒絕；壞 manifest 與跳目錄版本拒絕；每次拒絕後發布目錄為空；mutants.json 18 個刪改全部 killed"
+        },
+        {
+          "path": "src/project_bootstrap/channel.py",
+          "scope": "CI 端 release 只收本輪全部實查通過的報告（沿用 publish 的判斷），把 debug 包轉成正式包並簽住 channel、epoch、包 digest、報告 digest 與 next_keys；客戶端 install 只接受上一版 next_keys 裡的金鑰（第一次用使用者給的根金鑰）簽的紀錄"
+        },
+        {
+          "path": "tests/test_channel.py",
+          "scope": "未通過、沿用、空報告都拒絕發布；已是正式包、包被改過、錯 channel／epoch／金鑰格式拒絕；他人金鑰、錯 namespace、竄改紀錄、空簽章、紀錄與包不符、debug 包、非正規 JSON 與重複欄位都拒絕安裝；舊金鑰在輪替後簽的新版與鏈外金鑰都拒絕"
         }
       ],
-      "unknown": "CI 金鑰是測試替身，握有金鑰即可發布；無真 CI 身分、傳輸與原子安裝；未接進現行發布流程（現行阻擋仍是 verify_bootstrap 的 ZIP 門檻）；跨工具與跨 OS 尚未驗收",
+      "unknown": "CI 金鑰是測試替身，握有金鑰即可發布；真 CI 身分、GitHub 保護規則與第一次正式發布是 P2 第 3b 片，尚未授權；第一次安裝的根金鑰怎麼交給使用者還沒設計；未接進現行發布流程（現行阻擋仍是 verify_bootstrap 的 ZIP 門檻）；跨工具與跨 OS 尚未驗收",
       "next": "接真 CI 身分與金鑰治理；接進實際發布入口"
     },
     {
