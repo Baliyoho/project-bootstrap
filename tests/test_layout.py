@@ -57,7 +57,10 @@ class LayoutTests(unittest.TestCase):
         sources = {p.relative_to(ROOT).as_posix(): p.read_text(encoding='utf-8')
                    for folder in verify_bootstrap.P1_STDLIB_ONLY
                    for p in sorted((ROOT / folder).glob('*.py')) if not p.name.startswith('test_')}
-        self.assertEqual(verify_bootstrap.p1_layout_problems(text('pyproject.toml'), text('uv.lock'), sources), [])
+        tests = {p.relative_to(ROOT).as_posix(): p.read_text(encoding='utf-8')
+                 for p in sorted((ROOT / 'tests').glob('test_*.py'))}
+        self.assertEqual(verify_bootstrap.p1_layout_problems(
+            text('pyproject.toml'), text('uv.lock'), sources, tests), [])
 
 
 if __name__ == '__main__':

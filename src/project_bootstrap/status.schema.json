@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "project-bootstrap/status.schema.json",
+  "title": "v2 現況索引（experiments/v2/status.json）",
+  "description": "只驗結構。ID 是否與決策書一致、證據路徑是否存在、P0 不接受通過，仍由 registry.validate 檢查；schema 合格不代表內容正確。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "updated", "authority", "transfer", "evidence_policy", "requirements"],
+  "properties": {
+    "schema": {"const": 1},
+    "updated": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "authority": {"type": "string", "minLength": 1},
+    "transfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "date", "boundary"],
+      "properties": {
+        "from": {"type": "string", "minLength": 1},
+        "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "boundary": {"type": "string", "minLength": 1}
+      }
+    },
+    "evidence_policy": {"type": "string", "minLength": 1},
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/requirement"}
+    }
+  },
+  "$defs": {
+    "result": {"enum": ["通過", "不通過", "未驗證", "不適用"]},
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "scope"],
+        "properties": {
+          "path": {"type": "string", "pattern": "^[^/\\\\][^\\\\]*$"},
+          "scope": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "part": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "scope"],
+      "properties": {
+        "result": {"$ref": "#/$defs/result"},
+        "scope": {"type": "string", "minLength": 1},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "unknown": {"type": "string"}
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "result", "scope", "origin", "unknown", "next"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^F\\d+[a-z]?$"},
+        "result": {"$ref": "#/$defs/result"},
+        "scope": {"type": "string", "minLength": 1},
+        "origin": {"type": "string", "minLength": 1},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "unknown": {"type": "string", "minLength": 1},
+        "next": {"type": "string", "minLength": 1},
+        "parts": {"type": "object", "additionalProperties": {"$ref": "#/$defs/part"}}
+      }
+    }
+  }
+}

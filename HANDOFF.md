@@ -19,17 +19,17 @@
 ## 已完成
 
 - v2 各原型（P0 管道分權／票據／受管 worker／VM 帳本與崩潰解除，M1–M4 偵測與合成阻擋，mutation 規格）都是合成 fixture 原型，索引結果仍是「未驗證」或「不通過」；逐模組與逐 ID 看 [v2 現況索引](experiments/v2/status.json)與 [v2 說明](experiments/v2/README.md)。
-- 決策書第 6 節 Q1–Q19 都有使用者裁定；六檔版 handoff skill 在本分支部署包與這台 Mac 的兩個全域副本，不上 `main`、不同步專案（Q14）。
-- 2026-11-11 本輪（Q19 採 (b)，使用者原話「先補缺口，然後p0就可以先收尾了」）：
-  - **帳本錨點**：`GuestRunLedger(lab, anchor=...)` 第一次開啟先把隨機帳本 id 寫進資料庫以外的錨點檔（fsync 檔與目錄、不覆蓋），再存進資料庫；之後帳本被刪、清空或換掉而錨點還在就拒絕（`ledger-lost`／`ledger-replaced`），錨點不見是 `ledger-anchor-missing`。不給 `anchor=` 行為不變。`test_guest_runs.py` 加 9 個、`test_host_crash.py` 加 1 個離線測試；新增 15 個 mutation。真 VM `guest_parent_sigkill` 的 parent 帶錨點，探針移走帳本檔後重開得到 `ledger-lost`。
-  - **P0 Mac 這半邊收尾**：已知缺口清單寫在 v2 說明（錨點那段之後）；實現規劃第 7 節加一段說明 Mac 部分依 Q19 收尾，Windows 照 Q12 留到之後。
-- 2026-11-11 **P1 第一片（開發骨架）**：使用者說「Start P1」，選了四片切法的第一片並授權 `brew install uv` 與下載依賴。新增 `pyproject.toml`（最低 3.12、`package = false`、授權表）、`uv.lock`（14 個外部套件含 sha256）、`src/project_bootstrap/`（空套件）、`tests/test_layout.py`；`verify_bootstrap.py` 新增「P1 開發骨架」附 7 個負向測試。`broker_fixture.sandbox_plan` 改啟動解析後的基底 Python（venv 的連結會被 sandbox 擋）。
-- 2026-11-11 **P1 第二片（搬家）**：使用者說「Do slice 2」。`experiments/v2` 的程式 `git mv` 到 `src/project_bootstrap/`、測試到 `tests/`，模組名改 `project_bootstrap.x`／`tests.test_x`；`status.json` 證據路徑、`mutants.json` 檔案與測試名一起改；`experiments/v2/` 只留說明與索引。邏輯沒動，只改 import、路徑、`-c` 子程序的 `cwd`（改成 `src`）與 `mutants.py` 的複製範圍。歷史文件（決策書 Q 條目、設計稿、ARCHITECT 舊登記）的舊路徑照原樣留著。
-- 2026-11-11 **P1 第三片（來源權威切換）**：使用者說「Start slice 3」。部署包拆成 `src/kit/kit.md`＋27 個 `src/kit/files/<部署路徑>.tmpl`，`tools/build_kit.py` 生成 `PROJECT-BOOTSTRAP.md`（仍提交），逐位元組重建、`extract()` 27 檔相同。AGENTS 鐵律 1 改寫並在理由檔補日期理由；README、ARCHITECT、本 repo 兩支 hook 的提醒改指 `src/kit`；`verify_bootstrap.py` 新增「部署包由來源生成」附 9 個負向測試。部署內容沒變，`VERSION` 不跳、不同步。
+- 決策書第 6 節 Q1–Q19 都有使用者裁定；六檔版 handoff skill 在本分支部署包與這台 Mac 的兩個全域副本，不上 `main`、不同步專案（Q14）。P0 的 Mac 這半邊依 Q19 收尾（帳本錨點已補，已知缺口清單在 v2 說明）。
+- 2026-11-11 **P1 四片做完**（使用者逐片說 Start P1／Do slice 2／Start slice 3／Do slice 4，並授權 `brew install uv` 與下載依賴）：
+  1. 開發骨架：`pyproject.toml`（最低 3.12、`package = false`、授權表）、`uv.lock`（14 個外部套件含 sha256）、pytest。
+  2. 原型 `git mv` 到 `src/project_bootstrap/`、測試到 `tests/`；`experiments/v2/` 只留說明與索引。邏輯沒動。
+  3. 來源權威切換：`src/kit/kit.md`＋27 個 `.tmpl` 由 `tools/build_kit.py` 生成 `PROJECT-BOOTSTRAP.md`（逐位元組相同，仍提交）；AGENTS 鐵律 1 同批改寫。部署內容沒變，`VERSION` 不跳、不同步。
+  4. `status_card.py`（只讀狀態卡）、`schema_check.py`＋兩份 schema（jsonschema）、`mdlinks.py`（markdown-it-py）；後兩支列在 `verify_bootstrap.py` 的 `P1_EXTRAS`，A4 不 import；它們的 3 個測試檔 A4 不跑、在 v2 項列出，要 `uv run pytest`。F22 實測常態必讀 16,608 字元＋開場 hook 819，約 17,400，仍不通過。
+  細節與各片守門見 ARCHITECT 開頭與 v2 說明末兩節；實現規劃第 7 節有 P1 退出條件對照。
 
 ## 未完成／下一步
 
-1. P1 切成四片（1 開發骨架 → 2 把 `experiments/v2` 模組與測試搬進 `src`／`tests` → 3 來源權威切換：部署包由來源生成、骨架檔等價重建、同批改 AGENTS 鐵律 1 → 4 JSON Schema、Markdown parser、快速只讀入口與 F22 實測）。第一到三片已做完；第四片等使用者說再開工。模組分組（目前 50 個模組平放在一個套件）沒做，留到真的要用時。
+1. P1 做完；下一階段（P2 正式包與遷移，或先處理 F22 超標）等使用者指示，不要自己開始。沒做的：A4 改用 jsonschema／markdown-it-py（等於要求每台機器裝 uv，屬改現行程序）；模組分組（48 個模組平放在一個套件）；Windows／Linux 上跑 pytest。
 2. P0 Mac 的已知缺口（不再在 P0 補）：真的斷電與檔案系統耐久性、真的重開機、錨點只擋意外遺失、通用工具進無共享 guest（屬 P3）；清單在 v2 說明。
 3. 簽署金鑰發行／撤銷與額度來源沒做；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪（要先選定真實工具）。
 4. 六檔版 skill：本 repo 必讀約 15,300 仍超標，使用者說之後回頭修（Q10）。
@@ -52,11 +52,11 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-11 `python3 -X utf8 tools/verify_bootstrap.py --staged`：exit 0，66 項全部通過（含「部署包由來源生成」；`verify_v2` 跑 `tests/` 的 461 個；F22 與三個預期反例照報不通過）。`python3 -X utf8 tools/build_kit.py --check` 一致。
-- 2026-11-11 `uv run --locked pytest`：搬家後 Python 3.15 與 uv 下載的 CPython 3.12.16（scratch venv）都是 461 個通過；`PYTHONPATH=src python3 -m unittest discover -s tests -t .` 也是 461 個。`uv lock --check` 一致。Windows／Linux 未跑。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
-- 2026-11-11 `python3 -X utf8 src/project_bootstrap/mutants.py`：搬家後全量 748 個全部 killed，沒有 stale。
+- 2026-11-11 `python3 -X utf8 tools/verify_bootstrap.py --staged`：exit 0，66 項全部通過（`verify_v2` 跑 469 個，另列出 3 個要 uv 的測試檔；F22 與三個預期反例照報不通過）。`python3 -X utf8 tools/build_kit.py --check` 一致。
+- 2026-11-11 `uv run --locked pytest`：Python 3.15 與 uv 下載的 CPython 3.12.16（scratch venv）都是 476 個通過；`PYTHONPATH=src python3 -m unittest discover -s tests -t .` 是 OK（3 個要套件的檔 skipped）；`verify_v2` 跑 469 個、0 skipped。`uv lock --check` 一致。Windows／Linux 未跑。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
+- 2026-11-11 `python3 -X utf8 src/project_bootstrap/mutants.py`：全量 756 個全部 killed（新增 8 個狀態卡），沒有 stale。
 - 2026-11-11 `python3 -X utf8 src/project_bootstrap/vm_probe.py` exit 0（搬家後重跑，`VM_PROBE_OK`，含錨點那一步）。
-- 本 repo 的 hook 與接線、handoff skill 本輪沒改；Codex 接線未改，Codex 信任重審不適用。無額外模型呼叫或真實部署；本機用 Homebrew 裝了 uv 0.13.7，依賴只進專案 `.venv` 與 uv 快取；沒有同步任何專案。
+- handoff skill 與部署出去的 hook 沒改；本 repo 自己的兩支 hook 只改了提醒文字（指向 `src/kit`），接線未改，Codex 信任重審不適用。無額外模型呼叫或真實部署；本機用 Homebrew 裝了 uv 0.13.7，依賴只進專案 `.venv` 與 uv 快取；沒有同步任何專案。
 
 ## 懸置事項（AI 勿自行處理）
 

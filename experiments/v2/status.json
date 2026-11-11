@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-11-10",
+  "updated": "2026-11-11",
   "authority": "全部 51 ID 與 F11／F13／F43 子項的持續實作狀態；需求仍以決策書為準",
   "transfer": {
     "from": "fdc0bbd:HANDOFF.md",
@@ -616,6 +616,14 @@
         {
           "path": "tests/test_facts.py",
           "scope": "真 Git 實測：與實況相符為一致；VERSION 與分支被改時逐條列出文件、命題、預期、實際；未授權、未知 adapter、repo 外路徑（檔案存在且內容相符仍拒絕）、檔案不存在、缺參數、非 UTF-8、detached 都是未知；不一致優先於未知；stat 過期時查詢不改寫 index；移除各守門後測試失敗"
+        },
+        {
+          "path": "src/project_bootstrap/mdlinks.py",
+          "scope": "markdown-it-py（CommonMark＋表格）讀連結：參照式連結、目標含括號、跳脫、程式碼與 HTML 內的不算；本機相對路徑從文件所在目錄解析。需要 uv 環境，A4 不 import"
+        },
+        {
+          "path": "tests/test_mdlinks.py",
+          "scope": "合成文件：解析器讀得到參照式與括號目標、略過程式碼／HTML／跳脫；外部與頁內錨點不算檔案；死連結從文件目錄解析"
         }
       ],
       "unknown": "只有四個本機 adapter，服務、憑證與遠端狀態未涵蓋；只從 HANDOFF 取兩個欄位，其他文件命題要人工寫成宣稱；未接進任何工具；跨工具與跨 OS 尚未驗收",
@@ -652,9 +660,13 @@
         {
           "path": "src/project_bootstrap/baseline.py",
           "scope": "當輪檔案字元、digest 與可選的既有驗證器耗時"
+        },
+        {
+          "path": "src/project_bootstrap/status_card.py",
+          "scope": "短入口候選：本 repo 實測輸出約 600 字元；目前程序仍要求讀 AGENTS、HANDOFF 與 skill，卡片沒有取代任何必讀，所以不算進降量"
         }
       ],
-      "unknown": "常態入口超過 12000 字元（2026-11-10 skill 拆成六檔後，本分支部署包的入口＋mode-a.md 為 5,380；本 repo 加上 AGENTS 與 HANDOFF 實測約 16,100，仍超標；2026-11-10 這台 Mac 的全域副本已換成六檔版試用，main、各專案與別台機器尚未換）；整體接棒時間與 token 尚未量測；條件式文件與理由檔是否在該讀時真的被讀，未驗證",
+      "unknown": "常態入口超過 12000 字元：2026-11-11 baseline.py 實測 17,373（AGENTS 6,244、HANDOFF 5,745、部署包 skill 入口 3,430＋mode-a.md 1,954）；HANDOFF 已完成節縮短後 16,608（HANDOFF 4,980），另有本 repo 開場 hook 輸出 819，合計約 17,400。只讀狀態卡輸出約 600 字元，但現行程序沒有用它取代任何必讀。2026-11-11 量 verify_bootstrap.py 單跑約 70 秒（本機），整體接棒時間與 token 尚未量測；條件式文件與理由檔是否在該讀時真的被讀，未驗證。六檔版全域副本只在這台 Mac，main、各專案與別台機器尚未換",
       "next": "正常接棒 ≤12,000 字元／5 分鐘，超標報因；不刪必要門檻。skill 拆分草稿與實測見 project-bootstrap-skill-split-design.md 第 10 節（六檔版只留在本分支與這台 Mac 的全域副本，不上 main、不同步專案：Q14 (b)；本 repo 超標先維持不通過、之後回頭修：Q10）；第 (2) 點 2026-11-10 在本 repo 試行 repo-action-rules.sh（Q6 (a)，只接 Claude Code）"
     },
     {
@@ -670,6 +682,14 @@
         {
           "path": "tests/test_readonly.py",
           "scope": "真 Git 實測：讀檔、log、fetch 為乾淨；stat 過期時不因 status 自刷 index 誤報；寫標記、對已改檔再改、stage、commit、push、新增檔、開分支、只建 ref、只 detach 各被指出；離線與無 upstream 記 unverified；非 repo 兩項皆 unverified；移除各守門後測試失敗"
+        },
+        {
+          "path": "src/project_bootstrap/status_card.py",
+          "scope": "只讀狀態卡原型（效率計畫 4.2）：一次列出分支、upstream、fetch 成敗、未提交檔、領先／落後、本機與遠端 SHA、本機與 origin 的「工作中」、HANDOFF 記的最近驗證；異常逐條列原因與程序指向；除了 fetch 更新遠端追蹤分支外不寫任何東西，不判斷別的 session 是否已結束。現行 A1–A5 不變"
+        },
+        {
+          "path": "tests/test_status_card.py",
+          "scope": "真 Git 與本機 bare origin：乾淨同步為全綠；未提交、領先、分岔、落後、遠端占用、遠端標記格式壞或重複、fetch 失敗、--no-fetch、無 upstream、detached、非 repo 各被點名；用 readonly.read_only 證明跑卡片不改 ref、index 或檔案"
         }
       ],
       "unknown": "只偵測不阻擋；未接進任何工具的問答入口，現行程序仍靠 skill 文字；session 改名、設定檔與 Git config 變動不在比對範圍；遠端變動無法分辨是本輪推送或他人並行推送；只在 macOS 本機 Git 驗證；跨工具與跨 OS 尚未驗收",
@@ -1240,6 +1260,22 @@
         {
           "path": "tests/test_registry.py",
           "scope": "registry 的缺漏、重複、子項遺失、證據不存在與憑空成功測試；目前只核對 ID 集合，不核對各列內容"
+        },
+        {
+          "path": "src/project_bootstrap/schema_check.py",
+          "scope": "JSON Schema（Draft 2020-12，jsonschema）驗現況索引與 mutation 規格的結構；只驗形狀，ID 對決策書、證據路徑存在、P0 不接受通過仍由 registry.validate 查；不啟用 format。需要 uv 環境，A4 不 import"
+        },
+        {
+          "path": "src/project_bootstrap/status.schema.json",
+          "scope": "現況索引的 schema：頂層與每列欄位、結果四種值、ID 形狀、證據相對路徑、子項需要範圍；多出欄位拒絕"
+        },
+        {
+          "path": "src/project_bootstrap/mutants.schema.json",
+          "scope": "mutation 規格的 schema：測試模組必須是 tests.test_x 且不能是 *_repo、檔案必須在 src/project_bootstrap、原文不可空"
+        },
+        {
+          "path": "tests/test_schema_check.py",
+          "scope": "真檔案通過；索引九種、規格六種壞形狀各被拒絕；A4 的 verify_v2 不跑這個檔、在報告列出，要 uv run pytest"
         }
       ],
       "unknown": "只認宣告過的說法正規式，換個寫法或未列的事實看不到；不判斷任意語意；登記列格式固定；現行宣告表有核心優先序、需求數、工作中標記不是互斥鎖、序號跟版本行不保證同號四條規則及待決登記，各報告未列；未接進現行 A／B 程序；跨工具與跨 OS 尚未驗收",
@@ -1254,6 +1290,10 @@
         {
           "path": "tools/verify_bootstrap.py",
           "scope": "每輪列印三項已宣告來源減項並核對來源缺、產物有；漏宣告、來源增項、產物缺項各有負向變異。同一組十一種交接快照、二十種連結／日期等文件情境及九種文件設定情境在來源與產物各跑一次；後者包含非 Markdown 已知佔位符、自訂過期字串、連結路徑豁免的正反例。來源 --staged 與產物提交候選檢查跑完整／部分 stage 同組情境。兩端再以本機 bare origin 跑占用、陳舊接手、遠端 SHA 變更、開工與交棒，改讀本機快照的負向變異須重現錯誤放行；不證明模型遵循或 F46 整項驗收"
+        },
+        {
+          "path": "tests/test_mdlinks_repo.py",
+          "scope": "對本 repo 全部受版控 Markdown（src/kit 除外，部署包的範本連結照 A4 同一豁免）用解析器再查一次死連結，與 A4 的正規式檢查互為第二意見；2026-11-11 兩者都是 0"
         }
       ],
       "unknown": "三項來源例外仍保留並已顯示；交接快照十一種、文件二十種、文件設定九種、提交候選兩種及本機 bare origin 接力已成對驗。來源沒有專案自訂過期字串設定；同組情境以合成設定驗能力，不能推論任意專案設定已同步。hook 只提醒，未驗模型實際遵循、跨工具／OS 接手與其他文件設定組合",

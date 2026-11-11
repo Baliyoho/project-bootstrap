@@ -42,7 +42,7 @@ class RegistryTests(unittest.TestCase):
         legacy = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(legacy)
         report = {'harness_passed': True, 'strict_ready': False,
-                  'tests': {'run': 1, 'failed': 0, 'errors': 0, 'skipped': 0},
+                  'tests': {'run': 1, 'failed': 0, 'errors': 0, 'skipped': 0, 'needs_uv': []},
                   'findings': [{'id': name, 'counterexample_observed': True, 'requirement_result': '不通過'}
                                for name in ('same-uid-journal-bypass', 'direct-git-object-bypass',
                                             'running-context-still-uses-old-premise')],
@@ -50,7 +50,7 @@ class RegistryTests(unittest.TestCase):
                   'broker_probe': {'result': '通過'}, 'managed_probe': {'result': '通過'}}
         self.assertEqual(legacy.v2_report_problem(report), '')
         for change in ('empty', 'skip', 'ready', 'missing', 'false-pass', 'no-reproduction',
-                       'supervisor', 'broker', 'managed-missing', 'managed-failed'):
+                       'supervisor', 'broker', 'managed-missing', 'managed-failed', 'needs-uv-missing'):
             mutant = copy.deepcopy(report)
             if change == 'empty':
                 mutant['tests']['run'] = 0
@@ -70,6 +70,8 @@ class RegistryTests(unittest.TestCase):
                 mutant.pop('managed_probe')
             elif change == 'managed-failed':
                 mutant['managed_probe']['result'] = '不通過'
+            elif change == 'needs-uv-missing':
+                mutant['tests'].pop('needs_uv')
             else:
                 mutant['findings'][0]['counterexample_observed'] = False
             with self.subTest(change=change):

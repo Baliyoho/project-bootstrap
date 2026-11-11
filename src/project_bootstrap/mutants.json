@@ -4022,6 +4022,53 @@
      "new": "value == 'signed valid'"
     }
    ]
+  },
+  {
+   "tests": [
+    "tests.test_status_card"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/status_card.py",
+     "old": "    elif facts['dirty']:\n        facts['problems'].append('dirty')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/status_card.py",
+     "old": "        if ahead and behind:\n            facts['problems'].append('diverged')\n        elif ahead:",
+     "new": "        if False:\n            pass\n        elif ahead:"
+    },
+    {
+     "file": "src/project_bootstrap/status_card.py",
+     "old": "    if state == 'busy':\n        facts['problems'].append('remote-busy')\n",
+     "new": "    if state == 'busy':\n        pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/status_card.py",
+     "old": "    elif state != 'idle':\n        facts['problems'].append('remote-marker-' + state)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/status_card.py",
+     "old": "    if facts['fetch'] != 'ok':\n        facts['problems'].append('fetch-' + facts['fetch'])\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/status_card.py",
+     "old": "        facts['problems'].append('no-upstream')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/status_card.py",
+     "old": "    if value == IDLE:\n",
+     "new": "    if value == IDLE or True:\n"
+    },
+    {
+     "file": "src/project_bootstrap/status_card.py",
+     "old": "    return 0 if not facts['problems'] else 1\n",
+     "new": "    return 0\n"
+    }
+   ]
   }
  ]
 }

@@ -32,6 +32,9 @@ from project_bootstrap.supervisor import run_supervisor_probe
 from project_bootstrap.tree_probe import probe_descendant_api, probe_tree
 
 
+NEEDS_UV_MARKER = "raise unittest.SkipTest('needs "
+
+
 def runtime_artifacts():
     interpreter, guardian = guardian_inputs()
     result = {}
@@ -54,8 +57,15 @@ def main():
     data = json.loads((ROOT / 'experiments/v2/status.json').read_text(encoding='utf-8'))
     errors = validate(data, (ROOT / 'project-bootstrap-requirements-decision.md').read_text(encoding='utf-8'), ROOT)
     stream = io.StringIO()
-    suite = unittest.defaultTestLoader.discover(str(ROOT / 'tests'), pattern='test_*.py',
-                                               top_level_dir=str(ROOT))
+    # P1 slice 4: test files that need a locked third-party package start with
+    # NEEDS_UV_MARKER (verify_bootstrap.py enforces it). A4 runs on plain Python, so
+    # they are left out here and listed in the report, not counted as skipped.
+    needs_uv, suite = [], unittest.TestSuite()
+    for path in sorted((ROOT / 'tests').glob('test_*.py')):
+        if NEEDS_UV_MARKER in path.read_text(encoding='utf-8'):
+            needs_uv.append('tests/' + path.name)
+        else:
+            suite.addTests(unittest.defaultTestLoader.loadTestsFromName('tests.' + path.stem))
     result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
     findings = run_probes()
     isolation = probe_isolation()
@@ -76,7 +86,8 @@ def main():
         'scope': 'P0 合成原型；不是現行程序切換或真實 surface 驗收',
         'harness_passed': passed, 'strict_ready': False,
         'registry_errors': errors, 'tests': {'run': result.testsRun,
-            'failed': len(result.failures), 'errors': len(result.errors), 'skipped': len(result.skipped)},
+            'failed': len(result.failures), 'errors': len(result.errors), 'skipped': len(result.skipped),
+            'needs_uv': needs_uv},
         'findings': findings, 'isolation_probe': isolation, 'supervisor_probe': supervisor,
         'broker_probe': broker, 'managed_probe': managed, 'tree_probe': tree,
         'descendant_api_probe': descendant_api,

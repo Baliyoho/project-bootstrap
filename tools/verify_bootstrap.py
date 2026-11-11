@@ -4607,6 +4607,8 @@ def v2_report_problem(report):
             return 'P0 回歸失敗或不當宣稱 strict ready'
         if tests['run'] < 1 or any(tests[key] != 0 for key in ('failed', 'errors', 'skipped')):
             return '測試為空、失敗或有未驗證項'
+        if not isinstance(tests.get('needs_uv'), list):
+            return '報告沒列出 A4 不跑的測試檔'
         expected = {'same-uid-journal-bypass', 'direct-git-object-bypass',
                     'running-context-still-uses-old-premise'}
         if len(findings) != len(expected) or {row['id'] for row in findings} != expected:
@@ -4634,9 +4636,13 @@ def step_v2():
         report = json.loads(result.stdout)
         problem = v2_report_problem(report)
         valid = result.returncode == 0 and not problem
-        detail = problem or ('%s 個契約／索引測試；三個預期反例重現；strict_ready=%s；'
+        needs_uv = report['tests'].get('needs_uv', [])
+        detail = problem or ('%s 個契約／索引測試%s；三個預期反例重現；strict_ready=%s；'
                   'OS 子程序探針=%s、管道分權=%s、受管前提切換／outbox=%s（非桌面工具驗收）' % (
-                      report['tests']['run'], report['strict_ready'], report['isolation_probe']['result'],
+                      report['tests']['run'],
+                      '（另有 %d 個測試檔要外部套件，A4 不跑、要 uv run pytest：%s）' % (
+                          len(needs_uv), '、'.join(needs_uv)) if needs_uv else '',
+                      report['strict_ready'], report['isolation_probe']['result'],
                       report['broker_probe']['result'], report['managed_probe']['result']))
     except (ValueError, KeyError, TypeError):
         valid, detail = False, 'v2 報告缺失或無效'
@@ -5067,6 +5073,10 @@ P1_IMPORT_NAMES = {'attrs': ('attr', 'attrs'), 'markdown-it-py': ('markdown_it',
                    'pytest': ('pytest', '_pytest'), 'rpds-py': ('rpds',)}
 # A4 會跑到的程式：只能用標準函式庫，沒裝 uv 的機器也要能驗
 P1_STDLIB_ONLY = ('tools', 'src/project_bootstrap')
+# 2026-11-11 P1 第四片：只有這幾支可以用鎖檔裡的套件。其他程式不能 import 它們（A4 才碰不到），
+# import 它們的測試要以 raise unittest.SkipTest('needs …') 開頭：verify_v2 憑這個標記不跑它們並在報告列出。
+# 要多一支就加在這裡，這是刻意留的關卡。
+P1_EXTRAS = ('src/project_bootstrap/mdlinks.py', 'src/project_bootstrap/schema_check.py')
 
 
 def p1_section(text, header):
@@ -5084,12 +5094,28 @@ def p1_section(text, header):
     return rows
 
 
-def p1_layout_problems(pyproject, lock, sources):
+def p1_imports(text):
+    """頂層 import 的完整模組名；相對 import 不算。"""
+    ast = __import__('ast')
+    names = []
+    for node in ast.walk(ast.parse(text)):
+        if isinstance(node, ast.Import):
+            names += [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and not node.level:
+            module = node.module or ''
+            names.append(module)
+            names += ['%s.%s' % (module, alias.name) for alias in node.names]
+    return names
+
+
+def p1_layout_problems(pyproject, lock, sources, tests=None, extras=P1_EXTRAS):
     """2026-11-11 P1 第一片：開發骨架的鎖定與 A4 免安裝。
 
     只查：最低版本是 3.12、還不是可安裝的包；pyproject 宣告的每個依賴都在 uv.lock；
     鎖檔每個外部套件都有 sha256；每個鎖住的套件都登記了授權；A4 會跑到的程式不 import
     鎖檔裡的套件。授權字串對不對、鎖檔是不是 uv 最新解出來的，這裡看不出來（後者用 uv lock --check）。
+    第四片起：`extras` 列的模組可以用鎖檔套件，但別的程式不能 import 它們，import 它們的測試
+    要在缺套件時 SkipTest。只看靜態 import，`importlib` 動態載入看不到。
     """
     bad = []
     project = p1_section(pyproject, 'project') or {}
@@ -5123,19 +5149,26 @@ def p1_layout_problems(pyproject, lock, sources):
     for name in packages:
         forbidden.update(P1_IMPORT_NAMES.get(name, (name.replace('-', '_'),)))
     forbidden.discard('project_bootstrap')
-    for path, text in sorted(sources.items()):
-        try:
-            tree = __import__('ast').parse(text)
-        except SyntaxError:
-            bad.append('解析失敗：' + path)
-            continue
-        for node in __import__('ast').walk(tree):
-            names = [alias.name for alias in getattr(node, 'names', [])] \
-                if type(node).__name__ == 'Import' else \
-                [node.module or ''] if type(node).__name__ == 'ImportFrom' and not node.level else []
-            for name in names:
-                if name.split('.')[0] in forbidden:
-                    bad.append('A4 會跑到的程式 import 了外部套件：%s（%s）' % (path, name))
+    extra_modules = {path[len('src/'):-len('.py')].replace('/', '.') for path in extras}
+    for path in extras:
+        if path not in sources:
+            bad.append('P1_EXTRAS 列的模組不存在：' + path)
+    for kind, files in (('程式', sources), ('測試', tests or {})):
+        for path, text in sorted(files.items()):
+            try:
+                names = p1_imports(text)
+            except SyntaxError:
+                bad.append('解析失敗：' + path)
+                continue
+            reaches = sorted({n for n in names if n in extra_modules or n.rsplit('.', 1)[0] in extra_modules})
+            if kind == '程式' and path not in extras:
+                for name in names:
+                    if name.split('.')[0] in forbidden:
+                        bad.append('A4 會跑到的程式 import 了外部套件：%s（%s）' % (path, name))
+                if reaches:
+                    bad.append('A4 會跑到的程式 import 了用外部套件的模組：%s（%s）' % (path, '、'.join(reaches)))
+            if kind == '測試' and reaches and "raise unittest.SkipTest('needs " not in text:
+                bad.append('測試 import 用外部套件的模組卻沒有缺套件時 SkipTest：' + path)
     return bad
 
 
@@ -5151,10 +5184,12 @@ def step_p1_layout():
         for path in sorted((ROOT / folder).glob('*.py')):
             if not path.name.startswith('test_'):
                 sources[path.relative_to(ROOT).as_posix()] = read_lf(path)
-    bad = p1_layout_problems(pyproject, lock, sources)
+    tests = {path.relative_to(ROOT).as_posix(): read_lf(path) for path in sorted((ROOT / 'tests').glob('test_*.py'))}
+    bad = p1_layout_problems(pyproject, lock, sources, tests)
     cases = []
     if not bad:
-        first = sorted(sources)[0]
+        first = sorted(path for path in sources if path not in P1_EXTRAS)[0]
+        skip_test = next(path for path, text in tests.items() if 'project_bootstrap.mdlinks' in text)
 
         def lock_block(name, change):
             start = lock.index('\n[[package]]\nname = "%s"\n' % name)
@@ -5172,14 +5207,21 @@ def step_p1_layout():
                 sources, **{first: sources[first] + '\nimport jsonschema\n'}))),
             ('驗證器 from markdown_it import', p1_layout_problems(pyproject, lock, dict(
                 sources, **{first: sources[first] + '\nfrom markdown_it.token import Token\n'}))),
+            ('一般模組 import 用外部套件的模組', p1_layout_problems(pyproject, lock, dict(
+                sources, **{first: sources[first] + '\nfrom project_bootstrap import mdlinks\n'}), tests)),
+            ('測試沒有缺套件時 SkipTest', p1_layout_problems(pyproject, lock, sources, dict(
+                tests, **{skip_test: tests[skip_test].replace("raise unittest.SkipTest('needs ", "raise unittest.SkipTest('x ")}))),
+            ('P1_EXTRAS 列了不存在的模組', p1_layout_problems(pyproject, lock, sources, tests,
+                                                         P1_EXTRAS + ('src/project_bootstrap/gone.py',))),
         ]
         for name, problems in cases:
             if not problems:
                 bad.append('負向測試未擋：' + name)
     record('FAIL' if bad else 'OK', 'P1 開發骨架', '；'.join(bad) if bad else
            'pyproject 依賴都在 uv.lock、%d 個外部套件都有 sha256 與授權、最低 Python 3.12；'
-           '%d 支 A4 會跑到的程式只用標準函式庫；%d 個負向測試（鎖檔是否最新要另跑 uv lock --check，'
-           '本項不需要 uv）' % (len(re.findall(r'source = \{ registry = ', lock)), len(sources), len(cases)))
+           '%d 支程式除 %d 支指定模組外只用標準函式庫，且不 import 那幾支；import 它們的測試缺套件時 SkipTest；'
+           '%d 個負向測試（鎖檔是否最新要另跑 uv lock --check，本項不需要 uv）' % (
+               len(re.findall(r'source = \{ registry = ', lock)), len(sources), len(P1_EXTRAS), len(cases)))
 
 
 def kit_source_problems(build_kit, prose, files, kit):

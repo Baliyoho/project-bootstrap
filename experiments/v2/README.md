@@ -1,6 +1,6 @@
 # v2 P0：可重跑的契約與架構門檻
 
-> 最後更新：2026-11-11
+> 最後更新：2026-11-11（P1 第四片）
 > 2026-11-11 P1 第二片：本目錄的程式已搬到 [src/project_bootstrap](../../src/project_bootstrap/__init__.py)、測試搬到 [tests](../../tests/__init__.py)；這裡只留本說明與 [現況索引](status.json)。下文提到的檔名是同一份程式，指令已改成新位置；各節日期的歷史敘述不改。
 > 範圍：v2 分支的合成實驗，沒有部署、模型呼叫、付費服務或正式制度切換。
 
@@ -319,3 +319,12 @@ P1 第一片加了 `pyproject.toml` 與 `uv.lock`（見 [ARCHITECT](../../ARCHIT
 pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個連結，sandbox 只放行基底 Python 的路徑，受隔離的合成 agent 因此起不來（`launcher-start-failed`）。`broker_fixture.sandbox_plan` 改成直接啟動解析後的基底直譯器；agent 只用標準函式庫，不需要虛擬環境。
 
 第二片搬家後，用 `-c` 起的子程序靠工作目錄 import：測試裡這類子程序的 `cwd` 改成 `src`，`vm_probe.py` 的 crash parent 也是。命令列模組要從 repo 根目錄跑 `PYTHONPATH=src python3 -X utf8 -m project_bootstrap.<模組>`；`mutants.py` 複製 `src` 與 `tests` 兩個目錄並設 `PYTHONPATH`。
+
+## P1 第四片：schema、Markdown 解析、只讀狀態卡、F22 實測（2026-11-11）
+
+- `status_card.py`：效率計畫 4.2 的只讀入口原型。`PYTHONPATH=src python3 -X utf8 -m project_bootstrap.status_card`（加 `--no-fetch` 不連遠端）印出分支、upstream、fetch 成敗、未提交檔、領先／落後、兩端 SHA、本機與 origin 的「工作中」與 HANDOFF 記的最近驗證；異常逐條列原因與程序指向，全綠 exit 0、否則 1。只有 fetch 會動到遠端追蹤分支；測試用 `readonly.read_only` 證明它不改 ref、index 或檔案。現行 A1–A5 不變，卡片不取代任何必讀。
+- `schema_check.py`＋`status.schema.json`／`mutants.schema.json`：jsonschema（Draft 2020-12）驗現況索引與 mutation 規格的形狀。schema 合格不等於內容對：ID、證據路徑與 P0 不接受通過仍由 `registry.validate` 查。
+- `mdlinks.py`：markdown-it-py 讀連結，`test_mdlinks_repo.py` 對本 repo 的 Markdown 再查一次死連結，當 A4 正規式檢查的第二意見；2026-11-11 兩者都是 0。
+- 後兩支要 uv 環境（`uv run pytest`）。`verify_bootstrap.py` 的 `P1_EXTRAS` 列出可以用鎖檔套件的模組；別的程式不能 import 它們；它們的測試開頭寫 `raise unittest.SkipTest('needs …')`；A4 的 `verify_v2` 不跑這些檔，報告與 v2 項會逐一列出（「跳過數必須是 0」的規則不變），不會悄悄少驗。它們沒有 mutation 規格：`mutants.py` 用系統 Python 跑，缺套件會被當成跳過而存活；負向案例寫在測試裡。
+- F22 實測：`baseline.py` 量常態必讀 17,373 字元（AGENTS 6,244、HANDOFF 5,745、skill 入口＋mode-a 5,384）；把 HANDOFF 已完成節縮短後是 16,608（HANDOFF 4,980），加開場 hook 輸出 819，約 17,400，仍超過 12,000。狀態卡約 600 字元，但程序沒有改，不算降量。
+- A4 仍然只用標準函式庫與正規式；要不要讓 A4 改用這兩個套件（等於要求每台機器都裝 uv），是現行程序的改變，沒有做。

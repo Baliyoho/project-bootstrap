@@ -265,6 +265,8 @@ Git commit author、mtime、檔案 watcher、工作中標記都不足以證明�
 
 P0 的 Mac 部分依決策書 Q19（2026-11-11）以「合成原型加已知缺口清單」收尾，Mac 這半邊不再要求上表 P0 欄的全部退出條件；已知缺口清單在 [v2 說明](experiments/v2/README.md)。Windows 那半邊照 Q12 留到之後，仍照上表。
 
+P1 在 2026-11-11 分四片做完（使用者逐片指示）：開發骨架（pyproject、uv.lock、src／tests、pytest）、原型搬進 `src/project_bootstrap`、來源權威切換（`src/kit` 生成部署包，同批改 AGENTS 鐵律 1）、JSON Schema／markdown-it-py／只讀狀態卡／F22 實測。對照退出條件：部署包由來源逐位元組重建（當時骨架 27 檔，不是表上寫的 22）、原反例與 748 個 mutation 不退化、文件同批改、F22 有實測但仍不通過（約 17,400 字元）。jsonschema 與 markdown-it-py 只在 uv 環境用，A4 仍只用標準函式庫；只在這台 macOS 跑過，Windows／Linux 與最低版本以外的 Python 未驗。
+
 總工程量約 **28–50 人日**，風險集中在 P3／P4。若只採 P1／P2，可顯著改善維護與版本傳播，但不能稱整套必要需求已完成。若成本過高，應重新討論需求與強度；本計畫不自行下調。
 
 ### 過渡期間的最低保障
