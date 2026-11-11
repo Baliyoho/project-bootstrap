@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-11 09:15（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（照 Q19 補帳本錨點，P0 Mac 這半邊收尾）
+- **交接時間**：2026-11-11 12:13（+08）
+- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（P1 四片做完：開發骨架、原型搬進 src、部署包由 src/kit 生成、schema／解析器／狀態卡與 F22 實測）
 
 ## 任務目標
 
@@ -12,9 +12,9 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111109｜開工P1｜工作中｜交棒0次`，2026-11-11 09:26 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-10.2`
-- 本機能力：macOS 27.2／Apple silicon、Python 3.15.2、Swift 6.4.2、bash 3.2、Git 2.54；ad hoc virtualization entitlement 可啟 VM；有 Secure Enclave 與 Touch ID。Windows／Linux 未驗。現行部署包及程序未切換。
+- 本機能力：macOS 27.2／Apple silicon、Python 3.15.2、Swift 6.4.2、bash 3.2、Git 2.54、uv 0.13.7（Homebrew；uv 另下載了 CPython 3.12.16）；ad hoc virtualization entitlement 可啟 VM；有 Secure Enclave 與 Touch ID。Windows／Linux 未驗。現行部署包及程序未切換。
 
 ## 已完成
 
@@ -32,7 +32,7 @@
 1. P1 做完；下一階段（P2 正式包與遷移，或先處理 F22 超標）等使用者指示，不要自己開始。沒做的：A4 改用 jsonschema／markdown-it-py（等於要求每台機器裝 uv，屬改現行程序）；模組分組（48 個模組平放在一個套件）；Windows／Linux 上跑 pytest。
 2. P0 Mac 的已知缺口（不再在 P0 補）：真的斷電與檔案系統耐久性、真的重開機、錨點只擋意外遺失、通用工具進無共享 guest（屬 P3）；清單在 v2 說明。
 3. 簽署金鑰發行／撤銷與額度來源沒做；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪（要先選定真實工具）。
-4. 六檔版 skill：本 repo 必讀約 15,300 仍超標，使用者說之後回頭修（Q10）。
+4. F22：本 repo 常態必讀 2026-11-11 實測約 17,400 字元（見 v2 現況索引 F22），仍超過 12,000，使用者說之後回頭修（Q10）。
 5. 動作提醒 hook 試行中。已知漏報：`bash -c "git push"` 這類包在引號裡的寫法；沒有 python 時退回舊的原始字串比對（會誤報）。去留看試用結果。
 6. Swift runner 沒有離線測試；guest 腳本的離線測試跑的是 host 的 dash／sh，不是 busybox ash；`guest_runner_sigkill` 與 `runner_refusals` 只在真 VM 跑，沒有 mutation 規格。trail 多數採用理由只能寫「當時沒有記錄理由」。F14／F15 需另一個工具或 OS；F41 使用者已決定先不用雲端。
 7. Windows hook 同步、R01–R09 獨立複審、Mac Codex 真實注入、F28 模型探針都先不做（使用者 2026-11-10 裁定）。
@@ -54,8 +54,8 @@
 
 - 2026-11-11 `python3 -X utf8 tools/verify_bootstrap.py --staged`：exit 0，66 項全部通過（`verify_v2` 跑 469 個，另列出 3 個要 uv 的測試檔；F22 與三個預期反例照報不通過）。`python3 -X utf8 tools/build_kit.py --check` 一致。
 - 2026-11-11 `uv run --locked pytest`：Python 3.15 與 uv 下載的 CPython 3.12.16（scratch venv）都是 476 個通過；`PYTHONPATH=src python3 -m unittest discover -s tests -t .` 是 OK（3 個要套件的檔 skipped）；`verify_v2` 跑 469 個、0 skipped。`uv lock --check` 一致。Windows／Linux 未跑。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
-- 2026-11-11 `python3 -X utf8 src/project_bootstrap/mutants.py`：全量 756 個全部 killed（新增 8 個狀態卡），沒有 stale。
-- 2026-11-11 `python3 -X utf8 src/project_bootstrap/vm_probe.py` exit 0（搬家後重跑，`VM_PROBE_OK`，含錨點那一步）。
+- 2026-11-11 `python3 -X utf8 src/project_bootstrap/mutants.py`：全量 756 個全部 killed（新增 8 個狀態卡），沒有 stale；之後改了 `test_registry.py`，該群組 8 個重跑也全部 killed。
+- 2026-11-11 `python3 -X utf8 src/project_bootstrap/vm_probe.py` exit 0（第二片搬家後重跑，`VM_PROBE_OK`，含錨點那一步；第三、四片沒動 VM 相關程式）。
 - handoff skill 與部署出去的 hook 沒改；本 repo 自己的兩支 hook 只改了提醒文字（指向 `src/kit`），接線未改，Codex 信任重審不適用。無額外模型呼叫或真實部署；本機用 Homebrew 裝了 uv 0.13.7，依賴只進專案 `.venv` 與 uv 快取；沒有同步任何專案。
 
 ## 懸置事項（AI 勿自行處理）
