@@ -21,11 +21,11 @@ P0 原型與 P1 四片（開發骨架、原型搬進 `src/`、部署包由 `src/
 
 2026-11-11 F22：常態必讀約 11,100 字元、Mac 接棒約 101 秒，細節在索引 F22。
 
-2026-11-11 P2（使用者逐片指示，Q20／Q21）：包格式與歸屬、專案指標與每次寫入檢查、簽章發布與金鑰鏈與 Git tag channel、發布／安裝命令列與 `release.yml`，見 v2 說明 P2 各節。3b 的 E1 已做：GitHub `release` environment（擁有者核准）存 CI 私鑰，公鑰在 `src/kit/release-keys.txt`。部署包、skill 與 `VERSION` 沒動。
+2026-11-11 P2（使用者逐片指示，Q20／Q21）：包格式與歸屬、專案指標與每次寫入檢查、簽章發布與金鑰鏈與 Git tag channel、發布／安裝命令列與 `release.yml`，見 v2 說明 P2 各節。3b 的 E1–E3 已做：GitHub `release` environment（擁有者核准）存 CI 私鑰，公鑰在 `src/kit/release-keys.txt`。部署包、skill 與 `VERSION` 沒動。
 
 ## 未完成／下一步
 
-1. P2 3b 剩 E3 tag 保護規則、E4 首次發 `beta`、E5 驗收，每步都要使用者點頭；之後是第 4 片能力矩陣、第 5 片遷移器。風險：workflow 沒在 GitHub 跑過，macOS runner 可能過不了驗證。HANDOFF 字元餘量約 500。F22 剩 Windows／Linux 與 Codex 沒量。
+1. P2 3b 剩 E4 首次發 `beta`、E5 驗收，每步都要使用者點頭（E3 依 Q22 只擋 `channel/**` 移動與刪除）；之後是第 4 片能力矩陣、第 5 片遷移器。風險：workflow 沒在 GitHub 跑過，macOS runner 可能過不了驗證。HANDOFF 字元餘量約 500。F22 剩 Windows／Linux 與 Codex 沒量。
 2. P0 Mac 已知缺口（真斷電、真重開機、錨點只擋意外遺失、通用工具進無共享 guest）清單在 v2 說明，不在 P0 補。
 3. 金鑰外洩後的撤銷與額度來源沒做；接真實工具前要補跨機通知／恢復、外部效果冪等與輸入裁剪。
 4. 動作提醒 hook 試行中：`bash -c "git push"` 會漏報，沒有 python 時退回字串比對會誤報。
