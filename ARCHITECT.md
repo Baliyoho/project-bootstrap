@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11（P2 第 3b 片 E1）：在 GitHub 建了 `release` environment（必要審核人是 repo 擁有者），CI 私鑰存成它的 `RELEASE_SIGNING_KEY` secret，本機私鑰已刪；公鑰寫進 `src/kit/release-keys.txt`，指紋寫進 README。還沒 push、沒設保護規則，workflow 沒跑過。
+> 最後更新：2026-11-11（P2 第 3b 片 E3，決策書 Q22）：GitHub 上加了一條 tag ruleset（id 27014223）：`refs/tags/channel/**` 不能移動、不能刪除，沒有任何人可以繞過，建立不限制。原計畫「只有 GitHub Actions 能建」做不到：個人帳號的 repo 不能把 Actions 列為例外。repo 檔案只改文件與 `channel.py` 的說明。
+
+> 2026-11-11 稍早（P2 第 3b 片 E1）：在 GitHub 建了 `release` environment（必要審核人是 repo 擁有者），CI 私鑰存成它的 `RELEASE_SIGNING_KEY` secret，本機私鑰已刪；公鑰寫進 `src/kit/release-keys.txt`，指紋寫進 README。還沒 push、沒設保護規則，workflow 沒跑過。
 
 > 2026-11-11 稍早（P2 第三片後半 3b 的本機準備，決策書 Q21）：新增 `.github/workflows/release.yml`（本 repo 第一支 workflow，只由 `release-request/*` tag 觸發、要使用者核准）、`tools/release_package.py`（CI 用：乾淨 checkout、建包、跑驗證、簽章、打包）、`tools/install_package.py`（使用者用：驗簽、裝進快取、寫指標，可鋪空專案）、`src/kit/release-keys.txt`（發布公鑰；目前是空的，等 E1）、`src/project_bootstrap/distribute.py` 與兩份測試。還沒有 push、沒有建 secret、environment 或保護規則，workflow 不會跑；部署包、skill／hook／接線與 `VERSION` 未動。
 

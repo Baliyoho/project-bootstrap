@@ -375,7 +375,7 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 
 依決策書 Q20 三題都選 (a)。`channel.py` 取代第二片「每次寫入對亂數簽章」的做法：CI 是跑完就結束的工作，沒辦法回應每一次寫入，而 Q20 決定不架常駐簽章服務。
 
-- **channel**：來源 repo 裡的 tag `refs/tags/channel/<名稱>/<epoch>-<digest>`。`git ls-remote` 不用 clone、也不寫任何東西就能列出來，所以每次寫入都直接連來源 repo 問一次。新鮮度靠這次直接連線，重播靠 GitHub 的 TLS 擋；誰能建這些 tag，由伺服器端的保護規則限制（3b）。
+- **channel**：來源 repo 裡的 tag `refs/tags/channel/<名稱>/<epoch>-<digest>`。`git ls-remote` 不用 clone、也不寫任何東西就能列出來，所以每次寫入都直接連來源 repo 問一次。新鮮度靠這次直接連線，重播靠 GitHub 的 TLS 擋。（2026-11-11 E3 更正：原本寫「誰能建這些 tag 由伺服器端保護規則限制」，但個人帳號的 repo 不能只放行 GitHub Actions，決策書 Q22 改成只擋 tag 被移動或刪除；有 push 權限的人仍能建新 tag，靠簽章讓它只能讓寫入停下。）
 - **發布（CI 端）**：`release` 收第一片的 debug 包和驗證報告，報告要整體通過、每一列都是本輪實查（沿用 `publish.py` 的判斷），才把包標成正式。CI 簽的是 channel、epoch、正式包 digest、報告 digest，加上 `next_keys`：下一版可以用哪些金鑰簽。
 - **安裝（客戶端）**：`install` 只接受上一版 `next_keys` 裡的金鑰簽的紀錄，第一次安裝用使用者給的根金鑰。換金鑰要先用舊金鑰發一版、在 `next_keys` 列出新金鑰。包和簽過的紀錄一起放進快取。
 - **每次寫入**：`GitWriteCheck` 先做本機檢查（指標、快取裡的包與紀錄、共用檔比對），被擋的寫入不會白跑一趟網路；再列 channel tag。只有最新的 tag 恰好等於已安裝紀錄的 (epoch, digest) 才放行。epoch 比較新而 digest 不同，照第二片的 D4 例外處理；epoch 比較舊是 `channel-rollback`；同一個 digest 卻換了 epoch 是 `channel-epoch-mismatch`；同一個 epoch 兩個 digest 是 `channel-conflict`。已安裝的 epoch 記在快取裡簽過的紀錄，換一個程序也不會接受較舊的 channel，第二片「只記在記憶體」的缺口因此補上。

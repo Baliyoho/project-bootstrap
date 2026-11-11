@@ -7,9 +7,11 @@ The channel is a set of tags in the source repository::
 ``git ls-remote`` lists them without a local clone or any write, so every
 managed write can ask the source repository directly. Freshness comes from
 that live connection, not from signing a nonce: a CI job cannot answer
-requests, and Q20 chose not to run a signing service. Who may create those
-tags is enforced on the server (GitHub rulesets, slice 3b), so the client
-also refuses any tag whose epoch and digest are not the pair CI signed.
+requests, and Q20 chose not to run a signing service. On GitHub a ruleset
+keeps channel tags from being moved or deleted (decision Q22), but anyone
+with push access can still create one; the client therefore refuses any tag
+whose epoch and digest are not the pair CI signed, so a forged tag can only
+stop writes, never let an unsigned or older package write.
 
 ``release`` is the CI side. It takes a debug package from ``package.py`` and
 the verification report, refuses unless every report row was checked this
@@ -31,9 +33,9 @@ the same digest under another epoch, two tags for one epoch or an unreadable
 tag name all refuse. The installed epoch lives in the signed record in the
 cache, so a fresh process cannot be fed an older channel.
 
-Limits: the CI key is a test key here; rulesets, the workflow and the first
-real release are slice 3b. Anyone who can create channel tags can still stop
-every writer (fail closed), and the cache is writable by the same user (P3).
+Limits: tests use disposable keys; the real key and the workflow are slice
+3b. Anyone who can create channel tags can still stop every writer (fail
+closed), and the cache is writable by the same user (P3).
 """
 import base64
 import json
