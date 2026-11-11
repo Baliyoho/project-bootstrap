@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11（P2 第 3b 片 E3，決策書 Q22）：GitHub 上加了一條 tag ruleset（id 27014223）：`refs/tags/channel/**` 不能移動、不能刪除，沒有任何人可以繞過，建立不限制。原計畫「只有 GitHub Actions 能建」做不到：個人帳號的 repo 不能把 Actions 列為例外。repo 檔案只改文件與 `channel.py` 的說明。
+> 最後更新：2026-11-11（P2 第 3b 片 E4）：第一次正式發布。使用者核准 workflow run 42982470611（macOS runner）後，`verify_bootstrap.py` 全部本輪實查通過、簽章，建出 `channel/beta/1-ed31ffed…` tag（指向 `243074c`）與同名 prerelease（三個檔）。repo 檔案只改文件。
+
+> 2026-11-11 稍早（P2 第 3b 片 E3，決策書 Q22）：GitHub 上加了一條 tag ruleset（id 27014223）：`refs/tags/channel/**` 不能移動、不能刪除，沒有任何人可以繞過，建立不限制。原計畫「只有 GitHub Actions 能建」做不到：個人帳號的 repo 不能把 Actions 列為例外。repo 檔案只改文件與 `channel.py` 的說明。
 
 > 2026-11-11 稍早（P2 第 3b 片 E1）：在 GitHub 建了 `release` environment（必要審核人是 repo 擁有者），CI 私鑰存成它的 `RELEASE_SIGNING_KEY` secret，本機私鑰已刪；公鑰寫進 `src/kit/release-keys.txt`，指紋寫進 README。還沒 push、沒設保護規則，workflow 沒跑過。
 

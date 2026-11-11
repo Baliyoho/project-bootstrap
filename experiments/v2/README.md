@@ -399,3 +399,11 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 `test_distribute.py` 10 個測試，`mutants.json` 新群組 25 個刪改全部 killed（首跑存活三個：gzip 檔頭時間沒驗、反斜線案例同時違反別的規則；開頭 `/` 的檢查被「第一段必須是 package」涵蓋，已從程式刪掉）。`test_release_tools_repo.py` 5 個測試拿 `src/kit` 的真內容從發布走到安裝與寫入檢查，驗證器與 git 狀態用替身（真的驗證器要跑幾分鐘，開發中工作樹也常不乾淨）。
 
 沒驗的：workflow 沒有在 GitHub 上跑過，macOS runner 能不能讓驗證器全部本輪實查通過、`gh api` 建 tag 會不會被之後的保護規則擋、保護規則能不能只放行 GitHub Actions，都要到 E1–E5 才知道。
+
+## P2 第 3b 片 E4：第一次正式發布（2026-11-11）
+
+使用者在 GitHub 核准 [run 42982470611](https://github.com/Baliyoho/project-bootstrap/actions/runs/42982470611) 後，workflow 在 macOS runner 上一次跑完：clone `243074c`、建包、跑完整 `verify_bootstrap.py`（全部本輪實查通過，否則發布工具會拒絕）、簽章、用 `gh api` 建 `channel/beta/1-ed31ffed53dc612b3d90aaa6e3ce4a6c5c4d7911a4f239755a08b4db61c5c78f`，再建同名 prerelease、上傳三個檔（包 61,084 bytes、紀錄 279、簽章 326）。E3 的規則只擋移動與刪除，所以 `GITHUB_TOKEN` 建 tag 沒有被擋。
+
+本機獨立核對：用已提交的 `src/kit/release-keys.txt` 驗簽通過；紀錄是 `beta`、epoch 1，`next_keys` 等於已提交的金鑰；解壓後 `package.check` 乾淨、正式版、版本 `2026-11-10.2`、27 個檔、digest 與紀錄相符；在本機同一個 commit 重建、標成正式版，digest 跟 CI 發的逐位元組相同。
+
+缺口：發布工具把驗證器輸出收進報告，沒有印到 workflow 日誌，所以日誌裡看不到每一項的結果，只能從「有簽章」反推全部通過；報告本身也只以 digest 進入簽章紀錄，沒有隨 Release 上傳。E5（乾淨環境安裝、對真的 GitHub 跑寫入檢查、假 tag 負向測試）還沒做。
