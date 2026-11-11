@@ -716,10 +716,10 @@ import sys
 from experiments.v2.contracts import Lab
 from experiments.v2.guest_runs import GuestRunLedger, read_boot_session
 from experiments.v2.vm_probe import VMRetirementGate
-db, runner, kernel, ramdisk, log = map(Path, sys.argv[1:])
+db, runner, kernel, ramdisk, log, anchor = map(Path, sys.argv[1:])
 lab = Lab(db)
 capability = lab.register('guest-crash-parent')
-ledger = GuestRunLedger(lab)
+ledger = GuestRunLedger(lab, anchor=str(anchor))
 gate = VMRetirementGate(runner, kernel, ramdisk, None, log, 'guest-crash', stop_after=12)
 run = ledger.open_run('guest-crash-parent', 0, gate.identity(),
                      host_log=os.path.abspath(str(log) + '.host'),
@@ -741,9 +741,11 @@ def probe_guest_parent_crash(work: Path, runner: Path, kernel: Path, ramdisk: Pa
 
     db = work / "guest-crash.sqlite"
     log = work / "guest-crash.log"
+    (work / "guest-crash-anchor").mkdir()
+    anchor = str((work / "guest-crash-anchor").resolve() / "ledger.anchor")
     parent = subprocess.Popen(
         [sys.executable, "-B", "-u", "-c", GUEST_CRASH_PARENT, str(db), str(runner),
-         str(kernel), str(ramdisk), str(log)],
+         str(kernel), str(ramdisk), str(log), anchor],
         cwd=HERE.parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -763,7 +765,7 @@ def probe_guest_parent_crash(work: Path, runner: Path, kernel: Path, ramdisk: Pa
             time.sleep(0.05)
         lab = Lab(db)
         try:
-            ledger = GuestRunLedger(lab)
+            ledger = GuestRunLedger(lab, anchor=anchor)
             runs = ledger.runs("guest-crash-parent")
             if [(run["run_id"], run["state"]) for run in runs] != [(run_id, "running")]:
                 raise RuntimeError(f"crashed guest run was not durable: {runs}")
@@ -780,10 +782,22 @@ def probe_guest_parent_crash(work: Path, runner: Path, kernel: Path, ramdisk: Pa
         finally:
             lab.close()
         release_after_crash(db, run_id, log)
+        # A lost ledger file must not read as a first start while the anchor survives.
+        db.rename(db.with_name(db.name + ".lost"))
+        lab = Lab(db)
+        try:
+            GuestRunLedger(lab, anchor=anchor)
+        except Denied as error:
+            if str(error) != "ledger-lost":
+                raise RuntimeError(f"unexpected lost-ledger result: {error}") from error
+        else:
+            raise RuntimeError("a lost ledger file read as a first start")
+        finally:
+            lab.close()
         print("guest_parent_sigkill: unshared guest stopped on control EOF; reopened "
               "ledger keeps the run unretired and blocks restart; crash release accepted "
               "the real runner log only, guest console refused; same boot session "
-              "refused as reboot evidence")
+              "refused as reboot evidence; lost ledger file refused by its anchor")
     finally:
         if parent.poll() is None:
             parent.kill()

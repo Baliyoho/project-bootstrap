@@ -24,12 +24,25 @@ time differs, the host has rebooted since, so that VM process is gone; this
 still needs the same local confirmation. The id is not a clock or a PID and a
 same-UID process cannot set it, but the recorded copy lives in this database,
 which a same-UID process can edit like everything else here.
+
+A ledger file that is deleted or emptied would otherwise read exactly like a
+first start. A parent that passes anchor= gets a second record outside the
+database: the first open writes a random ledger id to the anchor file (fsynced,
+directory fsynced) before storing the same id in the database. Afterwards the
+ledger opens only when both exist and match; a lost, emptied or swapped
+database with the anchor still present is refused, and so is a database whose
+anchor is gone. Keep the anchor in a different directory from the database.
+The anchor is only as durable as the filesystem, and a same-UID process can
+delete both; it catches accidental loss, not a forger. Clearing a refusal is a
+human step: confirm no guest of that ledger can still be running, then remove
+the anchor file by hand.
 """
 import hashlib
 import json
 import os
 import re
 import secrets
+import stat
 import subprocess
 
 from experiments.v2.contracts import Denied
@@ -40,6 +53,50 @@ _HEX64 = re.compile(r'[0-9a-f]{64}')
 _PROBE_ID = re.compile(r'[A-Za-z0-9_-]{1,64}')
 BOOT_SESSION = re.compile(r'[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
 SYSCTL = '/usr/sbin/sysctl'
+_ANCHOR = re.compile(rb'GUEST_LEDGER ([0-9a-f]{32})\n')
+MAX_ANCHOR = 64
+
+
+def read_anchor(path):
+    """Ledger id in the anchor file, or None when no file is there; odd files are refused."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    except FileNotFoundError:
+        return None
+    except OSError:
+        raise Denied('ledger-anchor-unreadable') from None
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise Denied('ledger-anchor-unreadable')
+        data = os.read(fd, MAX_ANCHOR + 1)
+    finally:
+        os.close(fd)
+    match = _ANCHOR.fullmatch(data)
+    if match is None:
+        raise Denied('ledger-anchor-unreadable')
+    return match.group(1).decode('ascii')
+
+
+def write_anchor(path, ledger_id):
+    """Create the anchor durably; never replaces an existing one."""
+    temporary = f'{path}.{secrets.token_hex(8)}.tmp'
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    try:
+        os.write(fd, f'GUEST_LEDGER {ledger_id}\n'.encode('ascii'))
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    try:
+        os.link(temporary, path)
+    except FileExistsError:
+        raise Denied('ledger-anchor-conflict') from None
+    finally:
+        os.unlink(temporary)
+    directory = os.open(os.path.dirname(path), os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
 
 
 def read_boot_session(run=subprocess.run):
@@ -68,7 +125,7 @@ def guest_identity(probe_id, digests):
 class GuestRunLedger:
     """Parent-only API. Agents and guests must never reach this object."""
 
-    def __init__(self, lab):
+    def __init__(self, lab, anchor=None):
         self.lab = lab
         self.lab.db.execute('''CREATE TABLE IF NOT EXISTS guest_runs (
             run_id TEXT PRIMARY KEY, actor TEXT NOT NULL, epoch INTEGER NOT NULL,
@@ -80,6 +137,31 @@ class GuestRunLedger:
             self.lab.db.execute('ALTER TABLE guest_runs ADD COLUMN host_log TEXT')
         if 'boot_session' not in columns:
             self.lab.db.execute('ALTER TABLE guest_runs ADD COLUMN boot_session TEXT')
+        self.lab.db.execute('''CREATE TABLE IF NOT EXISTS guest_ledger_anchor (
+            singleton INTEGER PRIMARY KEY CHECK(singleton=1), ledger_id TEXT NOT NULL)''')
+        if anchor is not None:
+            self._check_anchor(anchor)
+
+    def _check_anchor(self, anchor):
+        """Open only the ledger the anchor names; the first open writes the anchor first."""
+        if (not isinstance(anchor, str) or not os.path.isabs(anchor)
+                or os.path.normpath(anchor) != anchor):
+            raise Denied('invalid-ledger-anchor')
+        with self.lab.transaction():
+            recorded = read_anchor(anchor)
+            row = self.lab.db.execute('SELECT ledger_id FROM guest_ledger_anchor').fetchone()
+            stored = row['ledger_id'] if row is not None else None
+            if recorded is None and stored is None:
+                ledger_id = secrets.token_hex(16)
+                write_anchor(anchor, ledger_id)
+                self.lab.db.execute('INSERT INTO guest_ledger_anchor VALUES (1, ?)',
+                                    (ledger_id,))
+            elif recorded is None:
+                raise Denied('ledger-anchor-missing')
+            elif stored is None:
+                raise Denied('ledger-lost')
+            elif recorded != stored:
+                raise Denied('ledger-replaced')
 
     def _row(self, run_id):
         if not isinstance(run_id, str) or not re.fullmatch(r'[0-9a-f]{32}', run_id):

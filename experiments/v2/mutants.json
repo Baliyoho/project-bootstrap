@@ -3161,6 +3161,81 @@
      "file": "experiments/v2/crash_release.py",
      "old": "        if path is not None:\n            try:",
      "new": "        if False:\n            try:"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        return None\n    except OSError:\n",
+     "new": "        pass\n    except OSError:\n"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)",
+     "new": "fd = os.open(path, os.O_RDONLY)"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        if not stat.S_ISREG(os.fstat(fd).st_mode):\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "    if match is None:\n        raise Denied('ledger-anchor-unreadable')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        os.fsync(fd)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        os.fsync(directory)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "    except FileExistsError:\n        raise Denied('ledger-anchor-conflict') from None\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        os.unlink(temporary)\n",
+     "new": "        pass\n"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        if anchor is not None:\n            self._check_anchor(anchor)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "        if (not isinstance(anchor, str) or not os.path.isabs(anchor)\n                or os.path.normpath(anchor) != anchor):\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            elif recorded is None:\n                raise Denied('ledger-anchor-missing')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            elif stored is None:\n                raise Denied('ledger-lost')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "            elif recorded != stored:\n                raise Denied('ledger-replaced')\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "                write_anchor(anchor, ledger_id)\n",
+     "new": ""
+    },
+    {
+     "file": "experiments/v2/guest_runs.py",
+     "old": "os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600",
+     "new": "os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644"
     }
    ]
   },

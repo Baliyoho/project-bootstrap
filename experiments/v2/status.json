@@ -289,11 +289,11 @@
         },
         {
           "path": "experiments/v2/guest_runs.py",
-          "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明"
+          "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明。parent 可另給錨點檔（資料庫以外，2026-11-11）：第一次開啟先寫隨機帳本 id 到錨點再存進資料庫，之後兩邊都在且相同才開；帳本遺失、清空或被換掉而錨點還在就拒絕。同 UID 可同時刪兩者，只擋意外遺失；解除是人手動確認後刪錨點"
         },
         {
           "path": "experiments/v2/test_guest_runs.py",
-          "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗"
+          "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗。錨點（2026-11-11）：帳本被刪／清空／換成另一份、錨點不見、錨點是符號連結／目錄／格式不對、路徑非絕對都拒絕且不補寫；錨點與目錄都 fsync；同時建立時不覆蓋；mutants.json 新增 15 個刪改全部 killed"
         },
         {
           "path": "experiments/v2/crash_release.py",
@@ -305,7 +305,7 @@
         },
         {
           "path": "experiments/v2/test_host_crash.py",
-          "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋；沒登記開機識別的 run 沒有解除途徑，有登記的要重開機後識別不同、再經本機終端確認才解除（決策書 Q15 (a)，2026-11-10）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：帳本檔遺失或變空檔時讀起來跟第一次啟動一樣"
+          "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋；沒登記開機識別的 run 沒有解除途徑，有登記的要重開機後識別不同、再經本機終端確認才解除（決策書 Q15 (a)，2026-11-10）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：parent 沒給錨點時，帳本檔遺失或變空檔讀起來跟第一次啟動一樣；給了錨點（2026-11-11，決策書 Q19 (b)）同樣的遺失以 ledger-lost 拒絕，前提是錨點檔本身還在"
         },
         {
           "path": "experiments/v2/test_vm_guest_scripts.py",
@@ -774,11 +774,11 @@
         },
         {
           "path": "experiments/v2/guest_runs.py",
-          "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明"
+          "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明。parent 可另給錨點檔（資料庫以外，2026-11-11）：第一次開啟先寫隨機帳本 id 到錨點再存進資料庫，之後兩邊都在且相同才開；帳本遺失、清空或被換掉而錨點還在就拒絕。同 UID 可同時刪兩者，只擋意外遺失；解除是人手動確認後刪錨點"
         },
         {
           "path": "experiments/v2/test_guest_runs.py",
-          "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗"
+          "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗。錨點（2026-11-11）：帳本被刪／清空／換成另一份、錨點不見、錨點是符號連結／目錄／格式不對、路徑非絕對都拒絕且不補寫；錨點與目錄都 fsync；同時建立時不覆蓋；mutants.json 新增 15 個刪改全部 killed"
         },
         {
           "path": "experiments/v2/crash_release.py",
@@ -790,7 +790,7 @@
         },
         {
           "path": "experiments/v2/test_host_crash.py",
-          "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋；沒登記開機識別的 run 沒有解除途徑，有登記的要重開機後識別不同、再經本機終端確認才解除（決策書 Q15 (a)，2026-11-10）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：帳本檔遺失或變空檔時讀起來跟第一次啟動一樣"
+          "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋；沒登記開機識別的 run 沒有解除途徑，有登記的要重開機後識別不同、再經本機終端確認才解除（決策書 Q15 (a)，2026-11-10）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：parent 沒給錨點時，帳本檔遺失或變空檔讀起來跟第一次啟動一樣；給了錨點（2026-11-11，決策書 Q19 (b)）同樣的遺失以 ledger-lost 拒絕，前提是錨點檔本身還在"
         },
         {
           "path": "experiments/v2/test_vm_guest_scripts.py",

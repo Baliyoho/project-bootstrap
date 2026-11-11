@@ -13,9 +13,10 @@ What they show (2026-11-10):
   different boot session at release time is the host evidence, still behind
   the local terminal confirmation; the same boot keeps it blocked.
 - A ledger file cut short never reads as "nothing running".
-- A ledger file that is gone (or empty) reads exactly like a first start.
-  That is a known gap, kept below as an observed counterexample, not a
-  guarantee: nothing outside the database anchors that a ledger existed.
+- A ledger file that is gone (or empty) reads exactly like a first start
+  when the parent opened it without an anchor (kept below as an observed
+  counterexample). With anchor= (added 2026-11-11) the same loss is refused
+  as ledger-lost; that only holds while the anchor file itself survives.
 
 Not covered: a real power loss (SQLite and filesystem durability are taken on
 trust: synchronous=FULL), disk corruption that keeps the file size, and a
@@ -228,7 +229,7 @@ class HostCrashStateTests(unittest.TestCase):
         self.assertEqual(self.opened, [])
 
     def test_counterexample_lost_ledger_file_reads_as_a_first_start(self):
-        """Known gap, recorded on purpose: nothing outside the database says it existed."""
+        """Without anchor= nothing outside the database says a ledger existed."""
         for name, lose in (('deleted', self.db.unlink),
                            ('emptied', lambda: self.db.write_bytes(b''))):
             with self.subTest(ledger=name):
@@ -252,6 +253,26 @@ class HostCrashStateTests(unittest.TestCase):
                             self.opener(FakeTerminal()))
         self.assertEqual(self.opened, [])
 
+    def test_lost_ledger_file_with_an_anchor_is_refused(self):
+        """Same loss as the counterexample, but the parent anchored the ledger first."""
+        anchor = str(self.root / 'ledger.anchor')
+        lab = Lab(self.db)
+        try:
+            GuestRunLedger(lab, anchor=anchor)  # adopts the intact ledger, writes the anchor
+        finally:
+            lab.close()
+        for name, lose in (('deleted', self.db.unlink),
+                           ('emptied', lambda: self.db.write_bytes(b''))):
+            with self.subTest(ledger=name):
+                lose()
+                lab = Lab(self.db)
+                try:
+                    self.denied('ledger-lost', GuestRunLedger, lab, anchor=anchor)
+                finally:
+                    lab.close()
+                self.denied('unknown-guest-run', crash_release.release, self.db, self.run,
+                            self.opener(FakeTerminal()))
+        self.assertEqual(self.opened, [])
 
 if __name__ == '__main__':
     unittest.main()
