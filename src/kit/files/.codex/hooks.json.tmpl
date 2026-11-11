@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh\"",
+            "commandWindows": "cmd /d /c \"$((git rev-parse --show-cdup) -replace '/','\\').claude\\hooks\\codex-hook.cmd\" git-freshness.sh",
+            "timeout": 30,
+            "statusMessage": "檢查 git 是否與 origin 同步…"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/pre-push-handoff.sh\"",
+            "commandWindows": "cmd /d /c \"$((git rev-parse --show-cdup) -replace '/','\\').claude\\hooks\\codex-hook.cmd\" pre-push-handoff.sh; exit $LASTEXITCODE",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

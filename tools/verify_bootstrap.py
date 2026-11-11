@@ -2032,6 +2032,10 @@ def step_self():
     """
     ok = True
     tracked_files = [p for p in run(['git', 'ls-files', '-z'], cwd=ROOT).stdout.split('\0') if p]
+    # 2026-11-11：src/kit/ 是部署包的來源，內容逐位元組生成進 PROJECT-BOOTSTRAP.md
+    # （「部署包由來源生成」守），在那裡照部署包的豁免規則查；這裡再查一次只會因為
+    # kit.md 放在子目錄、範本保留佔位符而誤報。
+    tracked_files = [p for p in tracked_files if not p.startswith('src/kit/')]
     mds = [p for p in tracked_files if p.endswith('.md')]
     dead, undated, missing, stale, holes = source_repo_document_problems(ROOT, tracked_files)
     if dead or undated or missing or stale or holes:
@@ -2084,6 +2088,8 @@ def step_action_rules(tmp):
         ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git add a && git push -q origin b'}}, '準備 push'),
         ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git -C /x push'}}, '準備 push'),
         ('pre', {'tool_name': 'Edit', 'tool_input': {'file_path': '/r/PROJECT-BOOTSTRAP.md'}}, '正在改部署包'),
+        ('pre', {'tool_name': 'Edit', 'tool_input': {'file_path': '/r/src/kit/files/AGENTS.md.tmpl'}}, '正在改部署包'),
+        ('pre', {'tool_name': 'Write', 'tool_input': {'file_path': '/r/src/kit/kit.md'}}, '正在改部署包'),
         ('pre', {'tool_name': 'Write', 'tool_input': {'file_path': '/r/.claude/hooks/x.sh'}}, '正在改 hook'),
         ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git status -sb'}}, None),
         ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git pushd'}}, None),
@@ -5053,6 +5059,7 @@ def run_checks(dest, tmp):
     step_deployment_lifecycle(tmp)
     step_v2()
     step_p1_layout()
+    step_kit_source()
 
 
 # 鎖檔裡的套件名 → import 名，名字不一樣的才列
@@ -5173,6 +5180,72 @@ def step_p1_layout():
            'pyproject 依賴都在 uv.lock、%d 個外部套件都有 sha256 與授權、最低 Python 3.12；'
            '%d 支 A4 會跑到的程式只用標準函式庫；%d 個負向測試（鎖檔是否最新要另跑 uv lock --check，'
            '本項不需要 uv）' % (len(re.findall(r'source = \{ registry = ', lock)), len(sources), len(cases)))
+
+
+def kit_source_problems(build_kit, prose, files, kit):
+    """2026-11-11 P1 第三片：PROJECT-BOOTSTRAP.md 必須等於 src/kit 生成的結果。
+
+    只查生成結果逐位元組相同、每個範本剛好被用一次、範本集合等於 EXPECTED。
+    範本內容對不對由本檔其他各項（重生骨架起）照舊在生成出來的部署包上驗。
+    """
+    try:
+        built = build_kit.build(prose, files)
+    except build_kit.KitError as exc:
+        return ['src/kit 生不出部署包：%s' % exc]
+    bad = []
+    if built != kit:
+        lines = (built.split('\n'), kit.split('\n'))
+        first = next((i for i, pair in enumerate(zip(*lines)) if pair[0] != pair[1]),
+                     min(len(lines[0]), len(lines[1])))
+        bad.append('PROJECT-BOOTSTRAP.md 與 src/kit 生成結果不同（第 %d 行起）；'
+                   '改來源後跑 python3 -X utf8 tools/build_kit.py，不要手改部署包' % (first + 1))
+    if set(files) != EXPECTED:
+        bad.append('src/kit/files 的範本與 EXPECTED 不同：缺 %s 多 %s'
+                   % (sorted(EXPECTED - set(files)), sorted(set(files) - EXPECTED)))
+    return bad
+
+
+def step_kit_source():
+    sys.path.insert(0, str(ROOT / 'tools'))
+    try:
+        import build_kit
+        prose, files = build_kit.load_source()
+    except (ImportError, OSError) as exc:
+        record('FAIL', '部署包由來源生成', '讀不到 tools/build_kit.py 或 src/kit：%s' % exc)
+        return
+    except Exception as exc:  # build_kit.KitError（例如範本少了 .tmpl）
+        record('FAIL', '部署包由來源生成', str(exc))
+        return
+    finally:
+        sys.path.remove(str(ROOT / 'tools'))
+    kit = read_lf(KIT)
+    bad = kit_source_problems(build_kit, prose, files, kit)
+    cases = []
+    if not bad:
+        name = 'AGENTS.md'
+        directive = '<!-- kit-file: %s -->' % name
+        cases = [
+            ('手改部署包', kit_source_problems(build_kit, prose, files, kit.replace('鐵律', '鐵則', 1))),
+            ('改範本沒重生', kit_source_problems(build_kit, prose, dict(files, **{name: files[name] + 'x\n'}), kit)),
+            ('改 kit.md 沒重生', kit_source_problems(build_kit, prose.replace('## 0.', '## 0 .', 1), files, kit)),
+            ('多一個沒用到的範本', kit_source_problems(build_kit, prose, dict(files, **{'extra.md': 'x\n'}), kit)),
+            ('kit.md 指到不存在的範本', kit_source_problems(build_kit, prose.replace(
+                directive, '<!-- kit-file: missing.md -->', 1), files, kit)),
+            ('同一個範本用兩次', kit_source_problems(build_kit, prose.replace(
+                '<!-- kit-file: GEMINI.md -->', directive, 1), files, kit)),
+            ('範本少了結尾換行', kit_source_problems(build_kit, prose, dict(files, **{name: files[name][:-1]}), kit)),
+            ('範本含收尾圍籬', kit_source_problems(build_kit, prose, dict(
+                files, **{'.gitattributes': files['.gitattributes'] + '````\n'}), kit)),  # 3.13 用四個反引號圍
+            ('範本集合少一個', kit_source_problems(build_kit, prose.replace(
+                '<!-- kit-file: .gitattributes -->\n', '', 1),
+                {k: v for k, v in files.items() if k != '.gitattributes'}, kit)),
+        ]
+        for label, problems in cases:
+            if not problems:
+                bad.append('負向測試未擋：' + label)
+    record('FAIL' if bad else 'OK', '部署包由來源生成', '；'.join(bad) if bad else
+           'PROJECT-BOOTSTRAP.md 與 src/kit（kit.md＋%d 個 .tmpl 範本）生成結果逐位元組相同；'
+           '%d 個負向測試（只證明部署包是生成的，範本內容由其他各項驗）' % (len(files), len(cases)))
 
 
 def main():

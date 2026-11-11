@@ -1,0 +1,82 @@
+# {{PROJECT_NAME}}
+
+{{ONELINER}}
+
+> 最後更新：{{TODAY}}。**本檔是給「人」看的入口**；AI 代理請讀 [AGENTS.md](AGENTS.md)，接手工作請讀 [HANDOFF.md](HANDOFF.md)。
+
+## 三個入口，別走錯
+
+| 你是 | 讀這份 | 內容 |
+|---|---|---|
+| **人**（第一次接觸本專案） | 本檔 README | 系統是什麼、怎麼連、檔案結構 |
+| **AI 代理**（Claude／Gemini／Codex） | [AGENTS.md](AGENTS.md) | 鐵律、連線資料、知識庫地圖、跨模型協作規範 |
+| **接手者**（換 session／換機器） | [HANDOFF.md](HANDOFF.md) ＋ [handover-protocol.md](docs/ai-notes/handover-protocol.md) | 現在做到哪、下一步、交接程序 |
+
+要動結構之前（新增／搬移目錄、換掉一個元件）先讀 [ARCHITECT.md](ARCHITECT.md)——它是結構的唯一權威，下面的檔案結構只是它的摘要。
+
+## 怎麼連
+
+| 用途 | 網址／指令 | 說明 |
+|---|---|---|
+| <主服務> | <部署後填> | <部署後填> |
+
+## 換一個 AI 接手工作（交接 prompt）
+
+程序已經寫成 **[handoff skill](.claude/skills/handoff/SKILL.md)**（A 接棒／B 交棒／C 同步）。在 Claude Code 直接打 `/handoff` 就會執行；**Codex 與 Antigravity 也會自己發現它**（Codex 讀 `~/.codex/skills/` 與這個 repo 的 `.agents/skills/`，Antigravity 原生讀 `.agents/skills/`；各工具的實測結論見 [AGENTS.md](AGENTS.md)「跨工具的可靠度不一樣」）。下面兩段 prompt 是給**自動發現不成立**的時候用的：沒裝全域副本、工具不在那張表上，或你要明確指定跑哪一個模式。SKILL.md 是純 Markdown，任何模型照讀就能做。
+
+### 收工時：請目前這個 AI 交棒（skill 的 **B 模式**）
+
+```text
+請執行 .claude/skills/handoff/SKILL.md 的 B 模式（交棒），B1–B9 逐步做完，不要跳步：
+收斂安全點、知識落地（每個事實一個家、附絕對日期）、跑 verify_state、動過 .md 就跑 check_docs.py、
+條件式例行檢查、更新 ≤80 行 HANDOFF、檢查 staged 清單後 commit、fetch 確認遠端再 push。
+最後 5 行內回報分支、最終 commit hash、push 結果、驗證與最大地雷。
+```
+
+### 開工時：請新的 AI 接棒（skill 的 **A 模式**）
+
+```text
+你要接手這個 GitHub 多 AI 專案。請執行 .claude/skills/handoff/SKILL.md 的 A 模式（接棒），A1–A5 逐步做完：
+先同步 Git（異常一律停在安全點回報，不得 reset/force push/覆寫）、依 HANDOFF 的「待續分支」站對分支、
+只讀 AGENTS.md 與 HANDOFF.md、一律跑 verify_state（不需要憑證的本機／公開檢查照跑；只有需要憑證那幾層在確認本機真的沒配置之後才記 SKIPPED，連線失敗先排除設定問題，禁止自行找憑證）、
+回報 3–5 行後才動手。全程遵守 AGENTS.md；不確定的破壞性操作先問；結束時依 B 模式交棒。
+```
+
+> 順序是**先交棒、後接棒**：先讓舊 session 交棒（它會把狀態寫進 `HANDOFF.md` 並 push），新 session 才讀得到。跳過交棒直接開新 session，新 AI 會拿到過期的狀態。
+> **這兩段刻意不用自己的 A／B 編號**（2026-11-02／F15 改）：舊版把交棒叫 A、接棒叫 B，跟 skill 的 A 接棒／B 交棒**正好相反**，於是每次指路都要先做一次字母翻譯，而翻錯沒有任何徵兆。字母只留 skill 那一套，標題改用「收工／開工」講人話。
+> 完整協定（分支模型、SKIPPED 判準、交棒者義務）見 [handover-protocol.md](docs/ai-notes/handover-protocol.md)。
+
+## 檔案結構
+
+```text
+AGENTS.md / CLAUDE.md / GEMINI.md   AI 入口（後兩者只是指標）
+HANDOFF.md                          當下工作狀態（≤80 行，不累積歷史）
+ARCHITECT.md                        專案結構的唯一權威（只有結構變動才改）
+docs/ai-notes/                      持久知識庫（清單見 AGENTS.md 的地圖）
+.claude/                            hook 與 skills（純 Markdown，任何模型都該讀）
+tools/                              維運腳本（見下）
+{{STACK_DIRS}}                      專案本體
+```
+
+**不在 Git 裡**（各機器本地，見 `.gitignore`）：{{SECRETS}}、{{RUNTIME_DIRS}}。Git 存的是 source 與文件，**不是資料備份**。
+
+## 維運腳本
+
+| 腳本 | 做什麼 |
+|---|---|
+| `tools/verify_state.py` | **一鍵驗證**服務現況，輸出 key=value 事實快照 ＋ 彙總行，與 HANDOFF 的期望快照比對。**結束碼有意義**：0＝沒有 FAIL／ERROR，2＝有，3＝`--strict` 且有缺配置的 SKIP |
+| `tools/check_docs.py` | **文件與交接快照的機械檢查**：死連結、過期網址、缺日期標頭、硬編數量、殘留佔位符、交接快照的欄位／章節／行數。動過 `.md` 就跑；`--docs-only` 只查文件。**它不判斷文件寫得對不對**，也不代替交接程序 B6 核對待辦 |
+
+```bash
+python -X utf8 tools/verify_state.py
+```
+
+macOS／Linux 常常只有 `python3` 沒有 `python`——該機器上 `python` 不存在就改用 `python3`，兩支腳本都一樣。**需要 Python 3.8 以上**：它們只用到 3.8 就有的 API，所以舊機器上的 `python3` 多半跑得動（2026-11-02／F14 加；這個數字是「不使用更新的 API」的靜態擔保，不是「在 3.8 上跑過」——實跑過的只有維護這份骨架那台機器的版本）。
+
+## 動手前必讀的紅線
+
+1. **絕不提交祕密或運行資料**：{{SECRETS}}、{{RUNTIME_DIRS}}，{{GH_VISIBILITY}} repo 也不例外。
+2. **破壞性操作前先備份**，並說明副本放在哪。
+3. **不確定就先問**，不要用「應該沒問題」推進。
+
+完整鐵律見 [AGENTS.md](AGENTS.md)。

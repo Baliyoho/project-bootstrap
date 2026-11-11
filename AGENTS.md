@@ -34,14 +34,14 @@
 
 - **AI 協作專案管理骨架的權威版。** 唯一產出物是 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)：自帶所有檔案範本的部署包。用法見 [README.md](README.md)。
 - **這裡不是知識庫**：不累積專案知識、踩坑紀錄或狀態，那些屬於各自的專案 repo。
-- 不部署的例外：`tools/verify_bootstrap.py`（部署包的測試）；`src/project_bootstrap/`、`tests/`、`experiments/v2/`（說明與現況索引）與 `tools/verify_v2.py`（隔離原型，只用合成 fixture，不保存其他專案資料；**原型通過不授權切換程序或宣稱跨工具強保障**）；`pyproject.toml`／`uv.lock`（P1 開發骨架，A4 不需要）；[HANDOFF.md](HANDOFF.md)；本檔的理由檔。
+- 不部署的例外：`tools/verify_bootstrap.py`（部署包的測試）；`src/project_bootstrap/`、`tests/`、`experiments/v2/`（說明與現況索引）與 `tools/verify_v2.py`（隔離原型，只用合成 fixture，不保存其他專案資料；**原型通過不授權切換程序或宣稱跨工具強保障**）；`pyproject.toml`／`uv.lock`（P1 開發骨架，A4 不需要）；`tools/build_kit.py`（由 `src/kit/` 生成部署包）；[HANDOFF.md](HANDOFF.md)；本檔的理由檔。
 - 刻意沒有 handoff skill、`pre-push-handoff.sh`、`check_docs.py`。這是**已宣告的例外**，不是空白；宣告不等於 F46 已達成；撤銷宣告改成補裝是使用者的決定。
 
 [為什麼](AGENTS-reasons.md#what)
 
 ## 鐵律
 
-1. **`PROJECT-BOOTSTRAP.md` 是權威版。** 制度要改就改它，再用 `python -X utf8 tools/sync_project.py <專案路徑> --owner '<本 session 工作中欄位完整值>' --write` 覆蓋到各專案（先在目標完成 A1–A5；`--all` 只能批次預演，寫入逐專案；它只改檔、不 commit）。**不要**在單一專案就地改 skill 或 hook。**只有 `.claude/skills/handoff/` 目錄裡的檔（入口 `SKILL.md` 與五個模式／理由檔）真的改了內容才跳 `VERSION`**，而且六個檔的 `source:` 標記要同一個版本；跳版後要某專案下一次開場就提示，刪掉它的 `.claude/.bootstrap-version`。[為什麼](AGENTS-reasons.md#rule-1)
+1. **制度的權威來源是 `src/kit/`；`PROJECT-BOOTSTRAP.md` 是由它生成、發給各專案的部署包。** 制度要改就改 `src/kit/kit.md`（散文）或 `src/kit/files/<部署路徑>.tmpl`（範本），跑 `python3 -X utf8 tools/build_kit.py` 重生部署包，來源與部署包同一個 commit；**不要手改 `PROJECT-BOOTSTRAP.md`**（`verify_bootstrap.py`「部署包由來源生成」會擋）。之後用 `python -X utf8 tools/sync_project.py <專案路徑> --owner '<本 session 工作中欄位完整值>' --write` 覆蓋到各專案（先在目標完成 A1–A5；`--all` 只能批次預演，寫入逐專案；它只改檔、不 commit）。**不要**在單一專案就地改 skill 或 hook。**只有 `.claude/skills/handoff/` 目錄裡的檔（入口 `SKILL.md` 與五個模式／理由檔）真的改了內容才跳 `VERSION`**，而且六個檔的 `source:` 標記要同一個版本；跳版後要某專案下一次開場就提示，刪掉它的 `.claude/.bootstrap-version`。[為什麼](AGENTS-reasons.md#rule-1)
 2. **改 skill／hook 內容時，同步更新檔頭的 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->` 標記。** 同一天改第二次起在日期後面加序號（`.2`、`.3`）；序號算的是**當天第幾個帶 `source:` 標記的改動**。序號跟部署包開頭的「版本」行**不保證同號**：版本行與 `VERSION` 只跟著 handoff skill 目錄走。[為什麼](AGENTS-reasons.md#rule-2)
 3. **保留每條規則的「為什麼」。** 理由可以搬到理由檔，不能刪；`verify_bootstrap.py` 的「規則理由連結」會擋沒有理由的規則。[為什麼](AGENTS-reasons.md#rule-3)
 4. **改完要驗證**：跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**。印 `skip` 的項目會回傳 1，回報時照實寫。[為什麼](AGENTS-reasons.md#rule-4)

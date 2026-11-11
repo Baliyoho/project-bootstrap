@@ -57,6 +57,8 @@
 
 2026-11-10（決策書 Q9／F22）：handoff skill 從單檔拆成一個目錄、六個檔（入口 `SKILL.md`、`mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`）。上面寫「只有 `SKILL.md` 改了才跳 `VERSION`」的地方，現在指的是這個目錄裡任何一個檔：規則的理由沒變（版本號要回答的是「這個專案的交接程序是不是舊的」），變的只是程序住在幾個檔裡。六個檔的 `source:` 標記要同一個版本——各專案的開場檢查只讀入口那一行，模式檔落後而入口是新的時候不會有任何提示，所以由 `verify_bootstrap.py` 的「skill 拆分」擋。
 
+2026-11-11（P1 第三片，使用者在聊天中說「Start slice 3」，前一輪已說明這片會改鐵律 1）：權威來源從手改的 `PROJECT-BOOTSTRAP.md` 搬到 `src/kit/`。理由：實現規劃第 7 節 P1 要求「來源權威切換同批改文件」，效率計畫也主張來源與部署產物分離；一份 28 萬位元組的檔案裡夾著 27 個範本，改一個 hook 就要在散文中間找圍籬，範本也無法單獨 diff 或測試。做法：`tools/build_kit.py` 把 `kit.md` 裡的 `<!-- kit-file: 路徑 -->` 換回範本內容，第一次拆出時逐位元組重建、`extract()` 取出的 27 檔與範本相同；範本加 `.tmpl` 是為了不讓範本 `.gitignore`／`.gitattributes`／skill／hook 接線在本 repo 生效。`PROJECT-BOOTSTRAP.md` 仍然提交：各專案複製它、`sync_project.py` 讀它與它的 Git 歷史；所以它是產物不是第二個家，手改會被「部署包由來源生成」擋下。部署出去的內容這次沒有改，`VERSION` 不跳、不同步專案；範本檔頭的 `source: PROJECT-BOOTSTRAP.md` 標記照舊，從專案那一端看，權威仍是部署包。上面原文「改它」自這一天起讀成「改 `src/kit` 再重生」。
+
 <a id="rule-2"></a>
 
 ## 鐵律 2

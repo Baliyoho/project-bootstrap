@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# source: PROJECT-BOOTSTRAP.md v2026-11-06 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# Antigravity hook 轉接層：只做管線，不含任何程序知識。
+# 用法：bash .claude/hooks/ag-wrap.sh <要跑的腳本檔名> [參數...]
+set -u
+
+bs='\'
+
+# 把文字包成 SessionStart 的契約並結束。全程只用參數展開、不用 sed：這支會被抄進各專案，
+# 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西（同樣的理由見 3.10 工具欄那段）。
+emit() {
+  esc=$1
+  esc=${esc//"$bs"/"$bs$bs"}
+  esc=${esc//'"'/"$bs\""}
+  esc=${esc//$'\r'/}
+  esc=${esc//$'\t'/"${bs}t"}
+  esc=${esc//$'\n'/"${bs}n"}
+  printf '{"injectSteps":[{"ephemeralMessage":"%s"}]}\n' "$esc"
+  exit 0
+}
+
+target=${1:-}
+[ -n "$target" ] || emit "[ag-wrap] ⚠️ 沒有收到要跑的腳本名稱——.agents/hooks.json 的 command 少了參數。"
+shift
+
+# 位置從 $0 推，不依賴 cwd：被誰用什麼 cwd 呼叫都一樣。
+here=$(CDPATH= cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd) || emit "[ag-wrap] ⚠️ 取不到轉接層自己的位置。"
+root=$(CDPATH= cd -- "$here/../.." >/dev/null 2>&1 && pwd) || emit "[ag-wrap] ⚠️ 取不到專案根目錄。"
+script=$here/$target
+[ -f "$script" ] || emit "[ag-wrap] ⚠️ 找不到 ${target}（應該在 .claude/hooks/ 底下）。"
+
+out=$(CDPATH= cd -- "$root" && bash "$script" "$@" 2>&1)
+[ -n "$out" ] || { printf '{}\n'; exit 0; }
+emit "$out"

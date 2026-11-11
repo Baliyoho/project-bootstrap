@@ -1,0 +1,41 @@
+# HANDOFF — 工作交接狀態
+
+- **交接時間**：{{TODAY}} HH:MM（{{TZ}}）
+- **交棒者**：<模型／機器>（專案管理骨架部署完成）
+
+## 任務目標
+
+專案剛建立，管理骨架（AGENTS／HANDOFF／交接協定／hook／驗證腳本）已就緒。下一步是定義專案本體的第一批工作。
+
+## Git 狀態
+
+- Repo：{{GH_VISIBILITY}} `{{GH_OWNER}}/{{GH_REPO}}`；權威分支：`main`。
+- **待續分支**：無。
+- **工作中**：無（已交棒）
+- 本機能力：<作業系統；哪些憑證可用／未配置，不寫祕密值>
+
+## 已完成
+
+- 管理骨架部署：README／AGENTS／CLAUDE／GEMINI／HANDOFF／handover-protocol／roadmap／`handoff` skill／兩個 `.claude` hook／`tools/check_docs.py`／`tools/verify_state.py`。
+- `check_docs.py` 通過；首次 commit 已 push 到 `main`。
+
+## 未完成／下一步
+
+1. 填 AGENTS.md 的「連線基本資料」與專案專屬鐵律。
+2. 填 `tools/verify_state.py` 的檢查項目（目前是骨架）。
+3. 把第一批工作寫進 [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md)。
+
+## 地雷與注意事項
+
+- **single writer**：不要兩台機器同時改 `main`／`HANDOFF.md`。
+- 開工前先 `git fetch origin`；hook 只是保險，不能取代這一步。
+- 該機器沒有 `python` 指令就用 `python3`（macOS／Linux 常見）。
+
+## 服務查證與期望快照
+
+`python -X utf8 tools/verify_state.py`
+<目前實際關鍵輸出；未能查的層級寫 SKIPPED 與原因>
+
+## 懸置事項（AI 勿自行處理）
+
+- <等使用者決定的事>

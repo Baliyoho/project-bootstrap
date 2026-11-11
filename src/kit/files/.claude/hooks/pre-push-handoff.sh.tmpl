@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# PreToolUse hook：AI push 提醒（不是 Git 原生 pre-push／發布保證）
+# 起因：push 完才想起沒寫 HANDOFF，下一棒拿到過期狀態。
+# 只看字面 git push、目前分支與 origin 追蹤 ref，不解析選項／remote／refspec。
+# GUI／script 可能漏判，僅提到 git push 也可能誤擋；檢查已提交的 HANDOFF 差異。
+# 其他情況（非 push 指令、feature 分支中途推進度、判斷不了）一律放行——寧可漏擋，不要誤擋。
+# 退出碼：0＝放行；2＝擋下並把 stderr 交給模型（模型會看到訊息並改走交棒程序）。
+# 臨時停用：HANDOFF_HOOK=off
+# source: PROJECT-BOOTSTRAP.md v2026-11-02.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+
+[ "$HANDOFF_HOOK" = "off" ] && exit 0
+
+payload=$(cat 2>/dev/null)
+case "$payload" in
+  *'git push'*) ;;
+  *) exit 0 ;;
+esac
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$root" || exit 0
+[ -f HANDOFF.md ] || exit 0                    # 沒有這套交接制度就不管
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
+main=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
+main=${main#origin/}
+[ -n "$main" ] || main=main
+[ "$branch" = "$main" ] || exit 0               # feature 分支中途推進度不擋
+
+git rev-parse --quiet --verify "refs/remotes/origin/$branch" >/dev/null 2>&1 || exit 0
+[ -n "$(git rev-list "origin/$branch..HEAD" 2>/dev/null)" ] || exit 0   # 沒有要推的 commit
+git diff --name-only "origin/$branch..HEAD" 2>/dev/null | grep -qx 'HANDOFF.md' && exit 0
+# F06：未提交的 staged／unstaged 修改不會隨 push 上傳，不可據此放行。
+
+>&2 echo "[handoff-check] AI push 提醒：目前 $branch 相對 origin 的已提交差異沒有更新 HANDOFF.md（未提交修改不算）。"
+>&2 echo "[handoff-check] 收工 push 先跑 handoff skill 的 B 模式並在 B7 驗最終快照；開工標記與中途安全點是例外，分別照 A5／C，不宣稱交棒。"
+>&2 echo "[handoff-check] 若真的只是中途推進度：改推 feature 分支，或本次設 HANDOFF_HOOK=off。"
+exit 2

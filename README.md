@@ -2,7 +2,7 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-09-30。這個 repo 只有一個產出物：上面那份部署包。其他檔案都是說明、指標或它的測試。
+> 最後更新：2026-11-11。這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型。
 > 這個 repo 自己的結構（有哪些檔、部署包各節產出什麼、副本存在於哪些地方）見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 怎麼用
@@ -117,7 +117,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那六個檔（2026-11-1
 ## 要改這份骨架時：開 session 貼這段
 
 在本 repo 開新的 AI session 時整段複製貼上。**先走全域 handoff skill 的 A 模式**，再按任務閱讀需要的範本；本 repo 的差異見 `AGENTS.md`。
-改完部署包一律用 `python -X utf8 tools/verify_bootstrap.py` 驗證（重生骨架＋跑完所有檢查，**exit 0 才算完成**）。
+部署包 `PROJECT-BOOTSTRAP.md` 由 `src/kit/` 生成（2026-11-11 起）：改來源後先跑 `python3 -X utf8 tools/build_kit.py` 重生，再用 `python -X utf8 tools/verify_bootstrap.py` 驗證（重生骨架＋跑完所有檢查，**exit 0 才算完成**）。
 
 ```text
 這個 repo 是「AI 協作專案管理骨架」的權威版，唯一產出物是 PROJECT-BOOTSTRAP.md：一份自帶所有檔案範本的
@@ -126,10 +126,11 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那六個檔（2026-11-1
 
 先讀 AGENTS.md，照全域 handoff skill 跑完 A 模式，讀 HANDOFF.md 並驗證現況。
 任務碰到結構才讀 ARCHITECT.md；需要制度背景再讀 PROJECT-BOOTSTRAP.md 的第 0–2 節。
-第 3 節是各檔範本，改到哪一份才讀那一段——不要整份讀完，那是 1000 多行。
+第 3 節是各檔範本；來源在 src/kit/files/<部署路徑>.tmpl，改到哪一份才讀那一份——不要整份讀完。
 
 工作時遵守：
-1. 權威版是 PROJECT-BOOTSTRAP.md。制度要改就改它，不要去改各專案裡的副本；改完把副本一起覆蓋
+1. 制度的權威來源是 src/kit/（kit.md 是散文、files/ 是 .tmpl 範本），PROJECT-BOOTSTRAP.md 由
+   tools/build_kit.py 生成，不要手改；不要去改各專案裡的副本；改完重生部署包並把副本一起覆蓋
    （拓撲見 ARCHITECT.md「副本拓撲」，規則見 AGENTS.md「副本規則」）。
 2. 只放通用制度與 {{佔位符}}，不要塞專案專屬內容（網址、docId、憑證檔名、業務規則）。
 3. 每條規則都要保留「為什麼」與絕對日期。砍掉理由，下一棒就會覺得規則多餘而繞過它。
@@ -140,7 +141,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那六個檔（2026-11-1
 7. 本 repo 有 HANDOFF.md 當下交接快照與自己的 SessionStart hook；沒有專案層 handoff skill、
    pre-push-handoff.sh 或 check_docs.py。不要「順手」把整套骨架套到自己身上。
    A5 寫工作中標記，B6 核對並覆寫整份交接快照，移除已完成待辦，≤80 行、不累積歷史。
-   tools/ 的 verify_bootstrap.py 與 sync_project.py 分別是部署包的測試與發佈工具。
+   tools/ 的 build_kit.py、verify_bootstrap.py 與 sync_project.py 分別生成、測試與發佈部署包。
 
 改完必須驗證，沒驗證不算完成：
 
@@ -170,9 +171,9 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 `--all`／inventory 僅供批次預演；`--write` 必須指定單一專案與 owner，空閒標記不能寫入。同步後留在該專案完成 B7 最終檔案檢查、B8 發布與清標記；若要中途安全點則走 C，保留占用。這修正了舊工具「正常 A5 writer 被拒絕、陳舊空閒 checkout 卻能寫」的矛盾。
 
-handoff skill 目錄（六個檔）會同時存在於：**本 repo 的部署包內**（權威版）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
+handoff skill 目錄（六個檔）會同時存在於：**本 repo 的 `src/kit/files/.claude/skills/handoff/`**（權威來源，生成進部署包）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
 
-- 要改就**改本 repo 的 `PROJECT-BOOTSTRAP.md`**，再覆蓋下去；不要在單一專案裡就地改。
+- 要改就**改本 repo 的 `src/kit/files/.claude/skills/handoff/*.tmpl`**，跑 `tools/build_kit.py` 重生部署包，再覆蓋下去；不要在單一專案裡就地改，也不要手改 `PROJECT-BOOTSTRAP.md`。
 - 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，用它辨識落後的副本（同一天改第二次起加序號，如 `v2026-10-24.2`）。
 
 ## 來源

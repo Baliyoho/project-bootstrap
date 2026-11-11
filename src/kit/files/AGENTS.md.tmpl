@@ -1,0 +1,53 @@
+# AGENTS.md — AI 協作交接指引
+
+> 適用於所有參與本專案的 AI 代理（Claude Code、Codex、Antigravity、Gemini…）。**開工前先讀完本檔**，再依任務讀下方知識庫。
+> 本檔是唯一入口與權威來源；`CLAUDE.md`、`GEMINI.md` 只是指到這裡的指標。
+> 最後更新：{{TODAY}}（建立）
+
+## 開工第一件事（任何工具、任何模型都適用）
+
+**先讀 [`.claude/skills/handoff/SKILL.md`](.claude/skills/handoff/SKILL.md)，照 A 模式接棒；A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。** 收工時走 B 模式交棒，中途要拉最新或推安全點走 C 模式。
+
+那份檔案是純 Markdown，路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置——**其他工具直接讀它就好**，不要因為資料夾名字而略過。部分工具有自動化輔助（Claude Code 可打 `/handoff`、session 開始會自動檢查 git；Codex 可掛同樣的 hooks；Antigravity 原生讀 `.agents/skills/`），但**有沒有自動化都不改變義務**：沒有被自動提醒，就自己走。
+
+## 專案是什麼
+
+{{ONELINER}}。source／交接文件同步至 {{GH_VISIBILITY}} GitHub `{{GH_OWNER}}/{{GH_REPO}}`；**Git 不是資料備份**。專案概觀、檔案結構、啟動方式見 [README.md](README.md)。使用者以 **{{LANG}}** 溝通。
+
+## 鐵律（違反會造成實際損害，無例外）
+
+1. **嚴禁提交祕密或運行資料到 Git**：{{SECRETS}}、API／SSH private key、{{RUNTIME_DIRS}} 均不可 commit/push；{{GH_VISIBILITY}} repository 也不是例外。提交前固定檢查 staged 檔案清單。
+2. **破壞性操作前先備份**：改 schema、批次改資料、刪檔、覆寫設定之前，先產出可還原的副本並說明放在哪。
+3. **憑證原則**：憑證由使用者提供並存於 {{SECRETS}}，直接讀取即可；**不要**從系統檔、其他主機、Git history 自行挖取或搬運憑證。
+4. **不確定的破壞性操作先問**，不要用「應該沒問題」推進。
+<!-- 5. 專案專屬鐵律寫在這裡：每一條都要附「為什麼」與發生日期，否則下一棒會繞過它。 -->
+
+## 連線基本資料
+
+| 項目 | 值 |
+|---|---|
+| 服務網址 | <部署後填> |
+| 驗證方式 | <部署後填；只寫「key 在 {{SECRETS}} 的 XXX」，不要寫值> |
+| 主要資源 ID | <部署後填> |
+
+## 知識庫地圖（依任務讀）
+
+| 任務 | 必讀 |
+|---|---|
+| 接手／交棒工作 | **[.claude/skills/handoff/SKILL.md](.claude/skills/handoff/SKILL.md)**（可執行程序：A 接棒／B 交棒／C 同步，含指令與判讀表）＋ [HANDOFF.md](HANDOFF.md)（當下狀態）＋ [docs/ai-notes/handover-protocol.md](docs/ai-notes/handover-protocol.md)（規則與判準、分支模型） |
+| 想知道整個專案怎麼組起來、東西放在哪、哪一份是權威版 | [ARCHITECT.md](ARCHITECT.md)（結構的唯一權威；**只有結構變動才改**，改就跟該變動同一個 commit） |
+| 還有哪些事沒做（持久待辦、相依、優先序） | [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md) |
+| <新主題> | <新增 docs/ai-notes/xxx.md 後，回來把這一列補上> |
+
+`.claude/skills/` 資料夾雖然掛在 Claude 的路徑下，內容是純 Markdown，**任何模型都應直接讀取**。
+`.agents/skills/` 下的同名檔案只是給 Antigravity 這類原生讀 `.agents/` 的工具用的**指標**，內容不重複——看到指標請回頭讀 `.claude/skills/` 的權威版。
+
+## 跨模型／跨機器協作規範
+
+1. **先同步 Git，再相信本機文件**：開工先 `git status -sb`、`git fetch origin`。異常（dirty／diverged／遠端意外前進）一律停在安全點，禁止 `reset --hard`、force push 或覆寫。
+2. **single writer**：同一時間只讓一個 agent／一台機器修改 `main` 與 `HANDOFF.md`。非小型工作走 `feature/<ID>-<slug>`；未完成分支不得偷塞進 main。
+3. **知識寫進 repo，不留在私有記憶。** 踩到新坑、確立新流程、改了 schema——當場更新 `docs/ai-notes/` 或對應 SKILL.md，並附**絕對日期**。私有記憶只放「先讀 AGENTS.md」這類指標與個人偏好。
+4. **文件與現實衝突時，以實況為準**（安全唯讀查證），就地修正文件並註記日期。該機器缺憑證時只能明記 SKIPPED，**不得自行挖憑證**。
+5. **不要重複造文件——每個事實只有一個家。** 結構寫 `ARCHITECT.md`；設計與決策寫 `docs/ai-notes/`；操作步驟寫對應的部署／應用目錄；狀態寫 `roadmap.md`（持久）與 `HANDOFF.md`（當下）。其他地方只放指標。新知識歸入現有檔案，只有全新主題才開新檔並更新上方地圖。
+
+> ⬆️ 完整的接棒／交棒步驟、分支規則、HANDOFF 模板與標準 prompt 全在 **[handover-protocol.md](docs/ai-notes/handover-protocol.md)**，本節只是原則摘要，細節不在此重複。

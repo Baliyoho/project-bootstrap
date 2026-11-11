@@ -25,7 +25,7 @@ parser=auto
 
 # 三種提醒都不可能命中的輸入直接結束，不必啟動 python。
 case $input in
-  *push*|*.claude/hooks/*|*PROJECT-BOOTSTRAP.md*) ;;
+  *push*|*.claude/hooks/*|*PROJECT-BOOTSTRAP.md*|*src/kit/*) ;;
   *) exit 0 ;;
 esac
 
@@ -37,7 +37,7 @@ try:
     tool = str(d.get("tool_name") or "")
     if tool in ("Edit", "Write", "MultiEdit"):
         fp = str(ti.get("file_path") or "").replace("\\", "/")
-        print("hook" if ".claude/hooks/" in fp else "pack" if fp.endswith("PROJECT-BOOTSTRAP.md") else "none")
+        print("hook" if ".claude/hooks/" in fp else "pack" if fp.endswith("PROJECT-BOOTSTRAP.md") or "/src/kit/" in fp else "none")
         sys.exit(0)
     cmd = str(ti.get("command") or "")
 except Exception:
@@ -98,7 +98,7 @@ if [ -z "$kind" ]; then
   if printf '%s' "$input" | grep -Eq '"tool_name" *: *"(Edit|Write|MultiEdit)"'; then
     if printf '%s' "$input" | grep -Eq '"file_path" *: *"[^"]*\.claude/hooks/'; then
       kind=hook
-    elif printf '%s' "$input" | grep -Eq '"file_path" *: *"[^"]*PROJECT-BOOTSTRAP\.md"'; then
+    elif printf '%s' "$input" | grep -Eq '"file_path" *: *"[^"]*(PROJECT-BOOTSTRAP\.md"|/src/kit/)'; then
       kind=pack
     fi
   elif printf '%s' "$input" | grep -Eq "$push_re"; then
@@ -119,7 +119,7 @@ else
     hook)
       msg='[repo-rules] 正在改 hook：雙引號裡不要寫反引號（會被當成命令替換）；$變數後面緊接中文或全形標點一律寫成 ${變數}（macOS bash 3.2 會吃掉位元組）；用腳本改檔不要把 patch 從 heredoc 餵進 python -，命中數不是 1 就中止；行末保持 LF。本 repo 自己的 hook 不在副本拓撲裡，不要同步。' ;;
     pack)
-      msg='[repo-rules] 正在改部署包：制度只改 PROJECT-BOOTSTRAP.md，不在單一專案就地改；改到 skill／hook 內容要同步更新 source: 標記（同一天第二次起加 .2、.3）；只有 handoff skill 目錄六個檔改了內容才跳 VERSION，六個標記同版本；保留每條規則的理由；不放專案專屬內容、客戶名稱或本機絕對路徑；改完跑 python3 -X utf8 tools/verify_bootstrap.py，exit 0 才算改完，之後再用 sync_project.py 逐專案同步。' ;;
+      msg='[repo-rules] 正在改部署包：PROJECT-BOOTSTRAP.md 由 src/kit 生成，不要手改；改 src/kit/kit.md 或 src/kit/files/ 底下的 .tmpl，再跑 python3 -X utf8 tools/build_kit.py 重生，兩者同一個 commit；不在單一專案就地改；改到 skill／hook 內容要同步更新 source: 標記（同一天第二次起加 .2、.3）；只有 handoff skill 目錄六個檔改了內容才跳 VERSION，六個標記同版本；保留每條規則的理由；不放專案專屬內容、客戶名稱或本機絕對路徑；改完跑 python3 -X utf8 tools/verify_bootstrap.py，exit 0 才算改完，之後再用 sync_project.py 逐專案同步。' ;;
     push)
       msg='[repo-rules] 準備 push：先明確 stage（不要 git add -A），再跑 python3 -X utf8 tools/verify_bootstrap.py --staged，exit 0 才提交，指令用 && 綁住結束碼；push 前先 fetch，遠端意外前進就停下回報，禁止 force push。開工標記與中途安全點都不算交棒、不加次數；要交棒就先走 B6，把「工作中」改回「無（已交棒）」並覆寫整份 HANDOFF。' ;;
   esac

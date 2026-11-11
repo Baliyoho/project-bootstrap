@@ -1,0 +1,17 @@
+{
+  "handoff-git-check": {
+    "enabled": true,
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "../.claude/hooks/ag-wrap.sh git-freshness.sh",
+        "timeout": 30
+      },
+      {
+        "type": "command",
+        "command": ".\\ag-hook.cmd git-freshness.sh",
+        "timeout": 30
+      }
+    ]
+  }
+}

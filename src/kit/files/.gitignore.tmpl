@@ -1,0 +1,28 @@
+# Credentials (each machine keeps its own local copy)
+.env
+.env.*
+!.env.example
+
+# Runtime state, downloaded backups, and operational data
+data/
+backups/
+persist/
+archive/
+
+# Local scratch artefacts
+tmp/
+scratch/
+.claude/settings.local.json
+.claude/.bootstrap-version
+__pycache__/
+*.py[cod]
+*.log
+
+# Editor and operating-system metadata
+.DS_Store
+Thumbs.db
+.obsidian/
+
+# Interview-specific rules: one Git ignore pattern per line, no Markdown backticks
+{{SECRETS}}
+{{RUNTIME_DIRS}}

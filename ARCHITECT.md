@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11。P1 第二片：`experiments/v2` 的程式（`.py`、兩支 guest 腳本、`vm_runner.swift`、`mutants.json`）用 `git mv` 搬到 `src/project_bootstrap/`，測試搬到 `tests/`（加 `tests/__init__.py`），模組名 `experiments.v2.x` → `project_bootstrap.x`、`experiments.v2.test_x` → `tests.test_x`；`experiments/v2/` 只留 [說明](experiments/v2/README.md) 與 [現況索引](experiments/v2/status.json)。程式內容只改 import、路徑與子程序的工作目錄，邏輯沒動。下方舊登記裡的 `experiments/v2/*.py` 是當時位置。同日稍早 P1 第一片（開發骨架）：根目錄新增 `pyproject.toml`、`uv.lock`、`src/project_bootstrap/`、`tests/`；`.gitignore` 加 `.venv/`；`verify_bootstrap.py` 新增「P1 開發骨架」。用 uv 鎖依賴（版本、sha256、授權），pytest 跑既有 v2 測試與新 `tests/`；最低 Python 3.12。`verify_bootstrap.py`／`verify_v2.py`／v2 原型仍只用標準函式庫，A4 不需要裝 uv。部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+> 最後更新：2026-11-11。P1 第三片（來源權威切換）：新增 `src/kit/`（`kit.md` 散文＋`files/` 底下 27 個 `.tmpl` 範本）與 `tools/build_kit.py`；`PROJECT-BOOTSTRAP.md` 改成由它生成、仍提交，第一次拆出時逐位元組重建。AGENTS 鐵律 1 同批改寫；`verify_bootstrap.py` 新增「部署包由來源生成」；本 repo 兩支 hook 的提醒改指 `src/kit`。部署出去的內容沒變，`VERSION` 不跳、不同步。同日 P1 第二片：`experiments/v2` 的程式（`.py`、兩支 guest 腳本、`vm_runner.swift`、`mutants.json`）用 `git mv` 搬到 `src/project_bootstrap/`，測試搬到 `tests/`（加 `tests/__init__.py`），模組名 `experiments.v2.x` → `project_bootstrap.x`、`experiments.v2.test_x` → `tests.test_x`；`experiments/v2/` 只留 [說明](experiments/v2/README.md) 與 [現況索引](experiments/v2/status.json)。程式內容只改 import、路徑與子程序的工作目錄，邏輯沒動。下方舊登記裡的 `experiments/v2/*.py` 是當時位置。同日稍早 P1 第一片（開發骨架）：根目錄新增 `pyproject.toml`、`uv.lock`、`src/project_bootstrap/`、`tests/`；`.gitignore` 加 `.venv/`；`verify_bootstrap.py` 新增「P1 開發骨架」。用 uv 鎖依賴（版本、sha256、授權），pytest 跑既有 v2 測試與新 `tests/`；最低 Python 3.12。`verify_bootstrap.py`／`verify_v2.py`／v2 原型仍只用標準函式庫，A4 不需要裝 uv。部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
 > 2026-11-10 同日深夜：部署包 3.8 的 `reasons.md` 末尾加「規則 → 理由在哪」對照表（決策書 Q17 (b)），六個 skill 檔與 `VERSION` 跳到 `2026-11-10.2`，這台 Mac 的兩個全域副本一起覆蓋；`verify_bootstrap.py` 新增「skill 規則對照表」。結構沒有新增檔案。同日稍晚：本 repo 新增 `.claude/hooks/repo-action-rules.sh`（決策書 Q6 (a)），只接 Claude Code；`verify_bootstrap.py` 新增「動作當下送規則」，「本 repo 兩份接線」放寬為 Claude Code 可多接這支。這台 Mac 的兩個全域副本換成六檔版（Q11 (a)）。同日稍早：**部署包 3.8 從一個檔變成六個檔**（決策書 Q9／F22）：handoff skill 是一個目錄，入口 `SKILL.md` 加 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`；骨架 22 → 27 檔，`VERSION` `2026-11-10`。`tools/` 新增 `skill_split_baseline.json`；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」三項；兩支開場 hook 多印全綠行。同日 Q11 (a)：只有這台 Mac 的兩個全域副本換成六檔版；各專案尚未同步，`main` 也還沒有這一版。同日稍早：根目錄新增 [skill 拆分設計稿](project-bootstrap-skill-split-design.md)（決策書 Q8 (a)，等 Q9 審閱，未實施）。同日稍早：根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
@@ -91,7 +91,9 @@
 
 | 路徑 | 是什麼 | 什麼時候動 |
 |---|---|---|
-| [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **權威版部署包**：訪談表＋各檔範本＋上 GitHub＋自檢清單＋維持操作卡 | 制度要改就改它（鐵律第 1 條） |
+| [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **部署包**（發給各專案的產物）：訪談表＋各檔範本＋上 GitHub＋自檢清單＋維持操作卡。2026-11-11 起由 `src/kit/` 生成，仍提交（專案複製它、`sync_project.py` 讀它與它的 Git 歷史） | 不手改；改 `src/kit/` 後跑 `tools/build_kit.py`（鐵律第 1 條） |
+| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效） | 制度要改就改這裡，同一個 commit 重生部署包 |
+| [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `PROJECT-BOOTSTRAP.md`；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
 | [README.md](README.md) | 人的入口：怎麼用、部署後長什麼樣、跨工具相容性、改這份骨架的開場 prompt | 用法或相容性改變 |
 | [AGENTS.md](AGENTS.md) | AI 的入口：這個 repo 是什麼、鐵律、副本位置、行末規則 | 多一條鐵律、副本位置改變 |
 | [AGENTS-reasons.md](AGENTS-reasons.md) | **AGENTS 每條規則的完整原文、理由與事故**；2026-11-10 從 AGENTS.md 逐字搬來，入口用「為什麼」連結指過來。不是每輪必讀，不部署、不同步 | 規則改了就在對應段落補帶日期的理由，不刪舊事故 |
@@ -177,6 +179,8 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 
 ## 部署包 → 骨架的抽取規則（改範本前先讀這段）
 
+2026-11-11 起範本的權威在 `src/kit/files/<部署路徑>.tmpl`，`tools/build_kit.py` 把它們放回 `kit.md` 的圍籬區塊生成部署包；下面的規則講的是生成後的部署包，`build_kit.py` 拆分與重建用的是同一套讀法。
+
 `verify_bootstrap.py` 的 `extract()` 就是「照著部署包生檔案」的機器版，規則只有四條：
 
 1. **`### 3.x` 標題行裡的反引號路徑＝產出的檔名。** 改標題就是改檔名——3.2 的標題有兩個路徑，所以一節產兩檔。
@@ -185,7 +189,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 
 第 2 條在 2026-10-30 從「只取第一個 fence，`GEMINI.md` 的標題再由腳本替換」改成現在這樣：3.2 的 `CLAUDE.md` 從此只有一行 `@AGENTS.md` import、`GEMINI.md` 維持指標寫法，兩份內容不同了。把其中一份合成在腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
 
-所以：**新增一份範本＝新增一節＋把檔名加進 `EXPECTED`**。只做前者，驗證會 FAIL 說「多出」；只做後者會 FAIL 說「缺少」。
+所以：**新增一份範本＝在 `kit.md` 新增一節（區塊裡放 `<!-- kit-file: 路徑 -->`）＋新增 `src/kit/files/<路徑>.tmpl`＋把檔名加進 `EXPECTED`，再重生部署包**。只做前者，驗證會 FAIL 說「多出」；只做後者會 FAIL 說「缺少」。
 
 ## `tools/verify_bootstrap.py` 守的東西
 
@@ -244,6 +248,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 全綠行 | 兩支開場 hook 在真 Git fixture 上：正常才印含分支與 SHA 的全綠行，10 種不正常狀態都不印；拿掉條件的腳本會被看出來 | 不該綠的時候印了全綠，正常路徑會跳過完整判讀表 |
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
 | 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，mode 100755 與 wrapper 直接執行；7 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit；不測外部 GitHub 或模型行為（F16） |
+| 部署包由來源生成 | `src/kit` 生成結果與 `PROJECT-BOOTSTRAP.md` 逐位元組相同、每個範本剛好用一次、範本集合等於 `EXPECTED`；9 個負向測試（手改部署包、改範本或散文沒重生、多／少範本、指錯、重複、缺結尾換行、範本含收尾圍籬） | 有人手改了部署包，或改了來源沒重生 |
 | P1 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `src/project_bootstrap` 的程式不 import 鎖檔裡的套件；7 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 

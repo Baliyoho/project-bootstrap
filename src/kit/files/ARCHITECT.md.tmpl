@@ -1,0 +1,78 @@
+# ARCHITECT — 專案結構
+
+> **本檔＝結構的唯一權威**：這個專案由什麼組成、每樣東西的家在哪、哪一份是權威版。
+> 最後更新：{{TODAY}}（建立）
+>
+> **什麼時候改**：只有**結構**變動才改——新增／刪除／搬移長期存在的目錄或檔案、換掉一個元件、改變資料流向、改變「哪一份是權威版」。
+> 改功能、修 bug、更新進度**都不要動這一份**。它刻意比 [HANDOFF.md](HANDOFF.md) 慢：HANDOFF 每次交棒覆寫，本檔可能好幾個月不動。
+
+## 這一份與其他檔案的分工（同一件事不要有兩個家）
+
+| 你想知道 | 讀哪一份 |
+|---|---|
+| 專案由什麼組成、東西放在哪、誰是權威版 | **本檔** |
+| 我可以做什麼、不可以做什麼（鐵律、連線資料、知識庫地圖） | [AGENTS.md](AGENTS.md) |
+| 這是什麼系統、怎麼連、怎麼跑起來（給人看） | [README.md](README.md) |
+| 現在做到哪、下一步 | [HANDOFF.md](HANDOFF.md) |
+| 還有哪些事沒做、什麼被否決 | [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md) |
+| 交接的規則與理由 | [docs/ai-notes/handover-protocol.md](docs/ai-notes/handover-protocol.md) |
+| 交接怎麼做（指令、判讀表、模板） | [.claude/skills/handoff/SKILL.md](.claude/skills/handoff/SKILL.md) |
+
+README 的「檔案結構」只列到人看得懂的程度；**細節與理由在本檔**。兩邊衝突以本檔為準，並就地修 README。
+
+## 全貌
+
+```text
+{{GH_REPO}}/
+├─ 管理骨架     跨專案共通，部署時生成（見下表）
+├─ 專案本體     {{STACK_DIRS}}（見下方「專案本體」）
+└─ 不進 Git     {{SECRETS}}、{{RUNTIME_DIRS}}
+```
+
+## 管理骨架（部署時生成，跨專案共通）
+
+| 檔案 | 是什麼 | 權威版在哪 | 什麼時候動 |
+|---|---|---|---|
+| [README.md](README.md) | 人的入口 | 本專案 | 對外說明或連線方式改變 |
+| [AGENTS.md](AGENTS.md) | AI 的入口：鐵律、連線資料、知識庫地圖 | 本專案 | 多一條鐵律、多一份知識庫 |
+| [CLAUDE.md](CLAUDE.md)、[GEMINI.md](GEMINI.md) | Claude 用 `@AGENTS.md` import；Gemini 用文字指標 | 指向 AGENTS.md | 幾乎不動 |
+| [HANDOFF.md](HANDOFF.md) | 當下狀態（≤80 行、覆寫不累積） | 本專案 | **每次交棒** |
+| 本檔 | 結構 | 本專案 | 只有結構變動 |
+| [docs/ai-notes/handover-protocol.md](docs/ai-notes/handover-protocol.md) | 交接的規則與理由 | 本專案 | 協定本身改變 |
+| [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md) | 持久待辦與決策記錄 | 本專案 | 有新待辦或決策 |
+| [.claude/skills/handoff/SKILL.md](.claude/skills/handoff/SKILL.md)（入口）＋同目錄的 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` | 交接的可執行程序（0 建制／A 接棒／B 交棒／C 同步）；入口每次讀，其餘依模式才讀 | **部署包**（本專案這份是副本，檔頭 `source:` 標記可辨識落後） | 改制度先改部署包，再整份覆蓋下來 |
+| [.claude/hooks/git-freshness.sh](.claude/hooks/git-freshness.sh) | SessionStart：自動 fetch、報告落後／分岔 | 同上 | 同上 |
+| [.claude/hooks/pre-push-handoff.sh](.claude/hooks/pre-push-handoff.sh) | PreToolUse：AI push 提醒（有限覆蓋，見 3.11） | 同上 | 同上 |
+| [.claude/settings.json](.claude/settings.json) | 上面兩個 hook 的接線（進 Git） | 本專案 | 加減 hook |
+| `.claude/settings.local.json` | 各機器本地設定（**不進 Git**） | 各機器自己 | 換機器 |
+| [.codex/hooks.json](.codex/hooks.json) | Codex CLI 的 hook 接線——掛的是上面**同樣那兩個 `.sh`**，不另存一份腳本 | 本專案 | 加減 hook |
+| [.agents/skills/handoff/SKILL.md](.agents/skills/handoff/SKILL.md) | Antigravity 原生讀 `.agents/`：只放指向權威版的指標 | 指向 `.claude/` 那份 | 幾乎不動 |
+| [tools/check_docs.py](tools/check_docs.py) | 文件與交接快照的機械檢查：死連結／過期字串／缺日期標頭／硬編數量／殘留佔位符／交接快照結構 | 部署包（「專案設定」區塊除外，那塊本來就該依專案調） | 專案設定要調 |
+| [tools/verify_state.py](tools/verify_state.py) | 一鍵現況查證，輸出 key=value 事實快照 | 本專案（骨架來自部署包） | 服務或檢查項改變 |
+| [.gitignore](.gitignore)、[.gitattributes](.gitattributes) | 排除祕密與運行資料；行末強制 LF | 本專案 | 新增祕密檔或運行目錄 |
+
+**跨工具的可靠度不一樣**：`AGENTS.md` 與純 Markdown 的程序檔是**可攜層**（Claude Code／Codex／Antigravity 都原生讀得到）；hooks 已接 Claude Code、Codex CLI／桌面 App、Antigravity CLI／2.0，而且**都帶條件**——Codex 要專案被信任＋hook 經審核；Antigravity 的 Windows 這一面要找得到 Git Bash，CLI 與 2.0 已於 2026-10-31 實測觸發，IDE `1.107.0` 實測沒觸發、已決定不再追查。正確性押在可攜層，不押在 hook 上：2026-10-30 在未信任的資料夾實測，`AGENTS.md` 照樣被讀進 prompt，`.codex/hooks.json` 整層被跳過而且沒有任何訊息。
+
+## 專案本體
+
+<還沒有程式碼就照實寫「尚未有程式碼」。**不要先畫一個想像中的架構**——想像的架構會被下一棒當成既成事實去對齊，然後花一整天把程式碼扭成文件的形狀。>
+
+| 目錄／元件 | 職責 | 進入點 | 相依 |
+|---|---|---|---|
+| <{{STACK_DIRS}} 之一> | <做什麼> | <哪個檔或指令> | <依賴誰> |
+
+## 資料流
+
+<一段話講清楚：資料從哪裡進來、經過什麼、存到哪裡、誰讀它。部署後填。>
+
+## 不在 Git 裡的東西
+
+{{SECRETS}}、{{RUNTIME_DIRS}}——各機器保有自己的本地副本。**Git 存的是 source 與文件，不是資料備份。**
+換機器時這些不會跟著過去，所以 `HANDOFF.md` 的「本機能力」要寫明這台有哪些、缺哪些。
+
+## 改本檔的規矩
+
+1. **跟結構變動同一個 commit**。分開改就會出現「文件說有 `foo/`、實際已經搬走」的空窗；接手者照結構圖找不到檔案時，通常不會回頭修文件，只會下次不再相信它。
+2. **附絕對日期**（寫 `2026-09-07`，不要寫「今天」），並更新檔頭的「最後更新」。
+3. **只寫結構，不寫進度**。「正在重構 X」屬於 `HANDOFF.md`；「打算重構 X」屬於 roadmap。
+4. **每個事實只有一個家**：這裡只寫誰是權威版，不要把權威版的內容複製過來。

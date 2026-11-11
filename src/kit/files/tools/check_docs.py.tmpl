@@ -1,0 +1,422 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""文件與交接快照的機械檢查（交接用）。verify_state.py 查「服務現況」，本腳本查「文件本身」。
+
+**名字講的就是範圍**（2026-11-02 改／查核報告 F08）：它查**機械可判定**的腐化模式，
+不查「文件寫得對不對」。它不是完整的 Markdown 驗證器（連結檢查是 regex，而且刻意
+跳過圍欄與行內程式碼），也**不判斷待辦是否真的完成**——那是交接程序 B6 的事，沒有
+工具代替得了。舊版叫「文檔一致性檢查」，而「一致性」聽起來像它驗過全部，於是
+「通過」被讀成「文件沒問題」。
+
+用法（專案根目錄執行）：
+  python -X utf8 tools/check_docs.py              # 全部檢查
+  python -X utf8 tools/check_docs.py --quiet      # 只印問題與結論
+  python -X utf8 tools/check_docs.py --docs-only   # 只查文件，不查交接快照（第 7 項）
+
+檢查七項（都是實際發生過的腐化模式）：
+  1. 死連結     ——markdown 相對連結指向不存在的檔案（整併文件時最常見）
+  2. 過期字串   ——換了網址／改了名稱後殘留的舊值（見下方 STALE_PATTERNS，依專案調整）
+  3. 缺日期標頭 ——DATED_DIRS 底下每份都要有「最後更新」，否則無法判斷可信度
+  4. 硬編數量   ——「共 N 份」這類會自己過期的寫法
+  5. 殘留佔位符 ——部署訪談沒換掉的洞（2026-08-05 加入：原本是部署自檢清單上一個要人工 grep
+                  的核取方塊，而人工核取方塊遲早會有人跳過；改由工具擋才會自動發生。這一項掃
+                  PLACEHOLDER_GLOBS 的所有檔案，不只 .md——佔位符也會留在 tools/verify_state.py
+                  這種非文件檔裡；比對的是 PLACEHOLDER_NAMES 這份封閉清單，不是雙大括號語法）
+  6. 工作中欄位 ——HANDOFF.md 的「工作中」標記不見了，或標記在工作中卻沒填工具欄（2026-10-30
+                  加入，2026-10-31 補工具欄：這個欄位是跨機器誤接棒防呆的唯一依據，掉了不會有
+                  任何徵兆——下一棒只會看到一切正常然後接棒，正是這套骨架最怕的靜默失效。而
+                  「欄位缺席」與「沒人在做」分不開，所以不接受「沒寫就是沒人」：必須明確寫
+                  「無（已交棒）」。工具欄同理——少了它，同機器換工具的誤接棒會靜默退化成
+                  「大概是你自己另一個視窗」，而退化後的畫面跟「沒這個機制」一模一樣。
+                  沒有 HANDOFF.md 的 repo 整項跳過——那個洞由第 7 項補）
+  7. 交接快照   ——`HANDOFF.md` 必須存在、必要欄位與章節齊備、不超過 80 行
+                  （2026-11-02 加入／查核報告 F08：第 6 項只在「HANDOFF.md 有出現在
+                  輸入清單裡」時才驗，所以**整份被刪掉或改名時它回報乾淨**，而那正好
+                  把跨機器誤接棒防呆連根拔掉。80 行與必要章節是 skill B6 的規則，
+                  在此之前較強的版本只存在於骨架自己的 repo，沒有部署給使用者。
+                  真的只想查文件時用 `--docs-only`）
+
+問題以結束碼 2 回報，乾淨為 0。本工具唯讀，絕不修改任何檔案。
+
+source: PROJECT-BOOTSTRAP.md v2026-11-03 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+「專案設定」區塊以外的內容應與權威版一致；副本落後時用這一行辨識。
+"""
+import argparse
+import pathlib
+import re
+import subprocess
+import sys
+
+# ── 專案設定（部署後依實際情況調整）────────────────────────────
+# 過期字串：搬遷／改名後不該再出現的東西。留空 list 就跳過這項檢查。
+STALE_PATTERNS = [
+    # ('localhost:8080', '已遷到正式網域，文件不該再出現本機位址'),
+]
+# 這些關鍵字出現在同一行時視為「刻意保留的歷史敘述」，不報錯。
+STALE_OK = ('已停用', '已退役', '歷史', '勿再啟動', '~~')
+# 這些路徑整份豁免（例如保存歷史決策的文件、已退役的部署設定）。
+STALE_OK_PATHS = ()
+# 這些路徑下的 .md 必須在前 8 行有「最後更新」。比對的是路徑前綴，所以單一檔案也放得進來。
+# ARCHITECT.md 在列，是因為它會被拿來「找檔案」：沒有日期就無法判斷這份結構圖是哪一天的事實，
+# 而過期的結構圖比沒有更糟——照著它找不到檔案的人，通常不會回頭修文件。
+DATED_DIRS = ('docs/ai-notes/', 'ARCHITECT.md')
+# 連結檢查的豁免路徑。部署包內嵌各檔範本，範本裡的相對路徑是照「該範本部署後的位置」寫的
+# （例如 docs/ai-notes/ 或 .agents/skills/<slug>/），用部署包自己的位置去解析必然解不到——
+# 那是假警報，不是死連結。沒有這條，自檢清單第 1 項在刪掉部署包之前永遠不可能通過，
+# 而部署者只會學到「這支腳本的 FAIL 可以無視」，之後真的死連結也跟著被無視。
+LINK_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)
+# 佔位符檢查掃哪些檔（不只 .md：訪談要填的值也會落在 .gitignore 與 verify_state.py 裡）。
+PLACEHOLDER_GLOBS = ('*.md', '*.py', '*.sh', '*.json', '.gitignore', '.gitattributes')
+# 豁免路徑。部署包本身整份都是佔位符，還沒刪掉時不該報錯（自檢清單最後一項會叫你刪它）。
+# 專案若真的有檔案會用到上面那些名字當樣板變數，把該檔或該目錄加進來。
+PLACEHOLDER_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)
+# ── 專案設定結束 ──────────────────────────────────────────────
+# 以上依專案調整，以下與權威版一致。`tools/sync_project.py` 升級本檔時，會把上面這一段
+# 原樣留下、只換掉其餘部分——沒有這個標記它就得用啟發式猜邊界，而猜錯就是把專案自己的
+# 過期字串規則與豁免路徑默默洗掉，然後沒有人會發現。
+
+# 第 7 項要求的欄位與章節。**這是制度的一部分，不是專案設定**——所以放在上面那個
+# 標記之外，`sync_project.py` 升級本檔時會跟著覆蓋。要改就改部署包。
+HANDOFF_FILE = 'HANDOFF.md'
+HANDOFF_FIELDS = ('交接時間', '交棒者', '待續分支', '工作中')
+HANDOFF_SECTIONS = ('任務目標', 'Git 狀態', '已完成', '未完成／下一步',
+                    '地雷與注意事項', '服務查證與期望快照', '懸置事項（AI 勿自行處理）')
+HANDOFF_MAX_LINES = 80
+
+COUNT_RE = re.compile(r'(共|計|全)\s*\d+\s*(份|個|支|條)|\d+\s*份(?!量)')
+COUNT_CONTEXT = ('份', '個檔', '支腳本', '知識庫')
+# 部署訪談會填的佔位符（第 1 節那張表）。這裡刻意用「名字的封閉清單」而不是「任何雙大括號」
+# 或「雙大括號＋全大寫」：專案自己的樣板語法長得一模一樣——verify_state.py 範本裡有 docker 的
+# --format '{{ .Names }}'，也遇過專案拿同樣的大寫雙大括號寫法產 HTML——用語法比對兩者都會中。
+# 骨架只會留下下面這幾個洞，列舉它們就抓得完，而且不可能誤傷別人的樣板。
+# 部署包新增佔位符時要同步這份清單（verify_bootstrap.py 會比對，漏了會 FAIL）。
+PLACEHOLDER_NAMES = (
+    'PROJECT_NAME', 'ONELINER', 'GH_OWNER', 'GH_REPO', 'GH_VISIBILITY', 'LANG',
+    'TZ', 'TODAY', 'SECRETS', 'RUNTIME_DIRS', 'STACK_DIRS', 'VERIFY_TARGETS',
+)
+PLACEHOLDER_RE = re.compile(r'\{\{(?:' + '|'.join(PLACEHOLDER_NAMES) + r')\}\}')
+
+
+def tracked(*globs):
+    # -z 不能拿掉：git ls-files 預設 core.quotepath=true，會把非 ASCII 檔名輸出成加了
+    # 雙引號的八進位跳脫（"\350\256\200..."）。那串原封不動包成 Path，開檔必炸——Windows
+    # 是 OSError errno 22、macOS／Linux 是 FileNotFoundError，兩邊都是 traceback 而不是
+    # FAIL，接手的人很容易判成「環境或 Python 版本問題」而跳過驗證，正好繞開這套骨架
+    # 唯一的文檔關卡。2026-08-05 實際部署時踩到（中文檔名的專案會一直踩）。
+    # -z 另外連「檔名含換行」也一起擋掉，比 -c core.quotepath=false 更完整。
+    out = subprocess.run(['git', 'ls-files', '-z', *globs],
+                         capture_output=True, text=True, encoding='utf-8').stdout
+    return [pathlib.Path(p) for p in out.split('\0') if p]
+
+
+def tracked_md():
+    return tracked('*.md')
+
+
+FENCE_RE = re.compile(r'^\s*(```+|~~~+)')
+TITLE_RE = re.compile(r'\s+["\'][^"\']*["\']\s*$')
+
+
+def strip_code(text):
+    """把圍欄區塊與行內 code span 換成空白（行號不變）。
+
+    為什麼（2026-11-02／查核報告 F08）：文件裡的程式碼與範例常含 `[x](path)` 這種形狀，
+    那不是連結、那個路徑也不該存在。照掃就會**把正確的文件報成死連結**，而「這支腳本的
+    FAIL 可以無視」一旦被學會，真的死連結也跟著被無視——那比沒有這項檢查更糟。
+    """
+    out, fence = [], None
+    for line in text.split('\n'):
+        m = FENCE_RE.match(line)
+        if fence is not None:
+            out.append('')
+            if m and line.strip().startswith(fence):
+                fence = None
+            continue
+        if m:
+            fence = m.group(1)
+            out.append('')
+            continue
+        out.append(re.sub(r'`[^`]*`', lambda s: ' ' * len(s.group(0)), line))
+    return '\n'.join(out)
+
+
+def link_target(raw):
+    """從 `](...)` 裡取出真正的路徑：去掉 <>、去掉 "title"、去掉 anchor。
+
+    `[x](path "title")` 舊版會拿 `path "title"` 去開檔，必然不存在——又一種假警報。
+    """
+    link = raw.strip()
+    # R09：先去 title，再去 destination 的角括號；兩種合法寫法可以同時出現。
+    link = TITLE_RE.sub('', link).strip()
+    if link.startswith('<') and link.endswith('>'):
+        link = link[1:-1].strip()
+    return link.split('#')[0].strip()
+
+
+def check_links(files):
+    bad, total = [], 0
+    for md in files:
+        posix = md.as_posix()
+        if any(posix == p or posix.startswith(p) for p in LINK_OK_PATHS):
+            continue
+        body = strip_code(md.read_text(encoding='utf-8'))
+        for m in re.finditer(r'\[([^\]]*)\]\(([^)]+)\)', body):
+            link = link_target(m.group(2))
+            if not link or link.startswith(('http://', 'https://', 'mailto:')):
+                continue
+            total += 1
+            if not (md.parent / link).resolve().exists():
+                bad.append(f'{md.as_posix()} -> {link}')
+    return total, bad
+
+
+def check_stale(files):
+    bad = []
+    if not STALE_PATTERNS:
+        return bad
+    for md in files:
+        posix = md.as_posix()
+        if any(posix.startswith(p) or posix == p for p in STALE_OK_PATHS):
+            continue
+        for n, line in enumerate(md.read_text(encoding='utf-8').split('\n'), 1):
+            for pat, why in STALE_PATTERNS:
+                if pat in line and not any(ok in line for ok in STALE_OK):
+                    bad.append(f'{posix}:{n}  「{pat}」（{why}）  {line.strip()[:70]}')
+    return bad
+
+
+def check_dates(files):
+    bad = []
+    for md in files:
+        if not any(md.as_posix().startswith(d) for d in DATED_DIRS):
+            continue
+        head = '\n'.join(md.read_text(encoding='utf-8').split('\n')[:8])
+        if '最後更新' not in head:
+            bad.append(f'{md.as_posix()}  前 8 行沒有「最後更新：YYYY-MM-DD」')
+    return bad
+
+
+def check_placeholders(files):
+    bad = []
+    for md in files:
+        posix = md.as_posix()
+        if any(posix == p or posix.startswith(p) for p in PLACEHOLDER_OK_PATHS):
+            continue
+        for n, line in enumerate(md.read_text(encoding='utf-8').split('\n'), 1):
+            for m in PLACEHOLDER_RE.finditer(line):
+                bad.append(f'{posix}:{n}  「{m.group(0)}」  {line.strip()[:70]}')
+    return bad
+
+
+# 交棒後「工作中」欄位唯一合法的值。hook 與這支檢查器都只接受它，
+# 不接受任何含「無」的字串（2026-11-02，查核報告 F01）。
+FREE_MARK = '無（已交棒）'
+
+
+def check_busy_field(files):
+    # 第 6 項：HANDOFF.md 的「工作中」欄位必須在。這一欄是 handoff skill A2.5 判斷
+    # 「同一條分支有沒有別人在做」的唯一依據，而它掉了不會有任何徵兆——下一棒
+    # 只會看到一切正常然後接棒。不接受「沒寫就是沒人在做」：那和「忘了寫」分不開。
+    found, bad = False, []
+    for md in files:
+        if md.as_posix() != 'HANDOFF.md':
+            continue
+        found = True
+        text = md.read_text(encoding='utf-8')
+        if '**工作中**' not in text:
+            bad.append('HANDOFF.md  「Git 狀態」缺「- **工作中**：無（已交棒）」欄位'
+                       '——跨機器誤接棒防呆靠它（見 handoff skill 的 A2.5／A5／B6）')
+            continue
+        # 2026-10-31 加：標記在「工作中」的時候必須帶工具欄
+        # （`機器` ／ `工具` ／ `session 名`，最後一欄可選）。少了工具名，同一台機器換個
+        # 工具就會落進 hook 的「大概是你自己另一個視窗」🟡，而同機器通常就是同一個工作樹，
+        # 兩個 agent 即時互相覆寫——比跨機器那個洞更貴。新格式少一欄不會壞掉，只會靜默
+        # 退化回舊行為，而退化後的畫面跟「沒這個機制」一模一樣，所以要擋在這裡。
+        # 判別子是 session 名裡的全形豎線：`機器` ／ `工具` 的第二欄不會有它，
+        # `機器` ／ `session 名`（舊格式）的第二欄一定有。
+        # 2026-11-02 改成精確比對（查核報告 F01）。舊版用 `'無' in value` 判「已交棒」，
+        # 於是標記寫著別台機器正在做、而 session 主題叫「修無效連結」，整個格式驗證就被
+        # 跳過——兩支 hook 用同一個判準，所以同一個**正常的任務名稱**會讓它們印出錯誤的
+        # 綠燈。現在只有正規化後完整等於「無（已交棒）」才算空閒，其餘一律驗欄位。
+        # 同時擋「欄位重複」：hook 只讀第一列，重複的話判讀結果等於看運氣。
+        rows = [(n, l) for n, l in enumerate(text.splitlines(), 1) if '**工作中**' in l]
+        if len(rows) > 1:
+            bad.append('HANDOFF.md:%s  有 %d 列「工作中」欄位——這一欄只能有一列，'
+                       'hook 只會讀到第一列，其餘的靜默失效（B6 是覆寫，不要往下疊）'
+                       % ('、'.join(str(n) for n, _ in rows), len(rows)))
+        for num, line in rows:
+            # 砍掉「，2026-… (+08) 開工」那段尾註，再去頭尾的半形／全形空白與反引號
+            value = line.split('：', 1)[-1].split('，')[0].strip(' \t\u3000`').strip()
+            if value == FREE_MARK:
+                continue
+            fields = [f.strip(' \t\u3000`').strip() for f in value.split('／')]
+            if not fields[0]:
+                bad.append(f'HANDOFF.md:{num}  「工作中」欄位有值、但解析不出機器欄'
+                           f'（讀到：{value[:40]}）——交棒後要正好寫「{FREE_MARK}」，'
+                           '開工時寫 `機器` ／ `工具` ／ `session 名`（第三欄可選）')
+            elif len(fields) < 2 or not fields[1] or '｜' in fields[1]:
+                bad.append(f'HANDOFF.md:{num}  「工作中」標記缺工具欄——格式是 '
+                           '`機器` ／ `工具` ／ `session 名`（可選）。少了工具名，'
+                           '同機器換工具的誤接棒就擋不住（見 handoff skill 的 A5）')
+    return found, bad
+
+
+def check_snapshot(files):
+    """第 7 項：交接快照的結構（存在、必要欄位、必要章節、行數上限）。
+
+    為什麼第 6 項不夠（查核報告 F08）：它是「HANDOFF.md 有出現在輸入清單裡才驗」，
+    所以**整份被刪掉或改名時，它回報乾淨**——而那一刀正好把跨機器誤接棒防呆連根拔掉，
+    一聲不響。欄位唯一性、必要章節與 80 行這幾條是 skill B6 的規則，在 2026-11-02 之前
+    只有骨架自己的 repo 在驗，使用者的專案拿不到。
+
+    天花板：它驗結構，**不驗內容**。待辦是不是真的做完、快照寫得對不對，仍然只能靠 B6
+    逐項核對；這一項全過不代表狀態正確。
+    """
+    bad = []
+    target = [md for md in files if md.as_posix() == HANDOFF_FILE]
+    if not target:
+        return ['%s 不存在或沒被 git 追蹤——它是這套制度的核心檔，'
+                '少了它 A2.5 的跨機器防呆與 B6 的交接快照都沒有依據'
+                '（真的只想查文件請用 --docs-only）' % HANDOFF_FILE]
+    text = target[0].read_text(encoding='utf-8')
+    lines = text.splitlines()
+    if len(lines) > HANDOFF_MAX_LINES:
+        bad.append('%s 有 %d 行，超過 %d 行——它是當下快照，不是日誌（歷史查 Git；見 B6）'
+                   % (HANDOFF_FILE, len(lines), HANDOFF_MAX_LINES))
+    for label in HANDOFF_FIELDS:
+        hits = re.findall(r'^- \*\*' + re.escape(label) + r'\*\*：(.+)$', text, re.M)
+        if len(hits) != 1 or not hits[0].strip():
+            bad.append('%s 的「%s」欄位要有且只有一列、而且非空（讀到 %d 列）'
+                       % (HANDOFF_FILE, label, len(hits)))
+    for heading in HANDOFF_SECTIONS:
+        # 比對**開頭**而不是整行：標題後面加註記（`## 已完成（2026-11-01）`）無害，
+        # 真正的病是同一節出現兩次——那就是 B6 禁止的「往下疊成日誌」。2026-11-02 在
+        # 六個專案上實跑時量到：整行相等會把加了日期後綴的那一份判成「缺章節」，
+        # 訊息指著錯的方向，而同一份檔案真的有兩個「已完成」。
+        hits = re.findall(r'^## ' + re.escape(heading), text, re.M)
+        if len(hits) == 0:
+            bad.append('%s 缺少章節「## %s」（B6 的覆寫模板有這一節）'
+                       % (HANDOFF_FILE, heading))
+        elif len(hits) > 1:
+            bad.append('%s 有 %d 個「## %s」——它是當下快照，不要往下疊成日誌'
+                       '（歷史查 Git；見 B6）' % (HANDOFF_FILE, len(hits), heading))
+    return bad
+
+
+def check_counts(files):
+    bad = []
+    for md in files:
+        for n, line in enumerate(md.read_text(encoding='utf-8').split('\n'), 1):
+            if line.lstrip().startswith('>') and '最後更新' in line:
+                continue
+            m = COUNT_RE.search(line)
+            if m and any(w in line for w in COUNT_CONTEXT):
+                bad.append(f'{md.as_posix()}:{n}  「{m.group(0)}」 {line.strip()[:70]}')
+    return bad
+
+
+def check_staged_consistency():
+    """R07：本次文件／檢查器不得部分 stage，才能用工作樹檢查證明提交內容。"""
+    def names(*args):
+        p = subprocess.run(['git', 'diff', '--name-only', '-z', *args],
+                           capture_output=True, text=True, encoding='utf-8')
+        if p.returncode:
+            raise RuntimeError('無法讀取 Git 提交集合')
+        return set(filter(None, p.stdout.split('\0')))
+    staged = names('--cached')
+    dirty = names()
+    return sorted(p for p in staged & dirty if p.endswith('.md') or p == 'tools/check_docs.py')
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--quiet', action='store_true')
+    ap.add_argument('--staged', action='store_true', help='提交前檢查，拒絕本次文件／檢查器部分 stage')
+    ap.add_argument('--docs-only', action='store_true',
+                    help='只查文件，不查交接快照（第 7 項）')
+    args = ap.parse_args()
+
+    if args.staged:
+        partial = check_staged_consistency()
+        if partial:
+            print('[index] 🔴 本次文件／檢查器有未暫存變更，請先核對並重新 stage：' + '、'.join(partial))
+            return 2
+    files = tracked_md()
+    if not files:
+        print('找不到 tracked markdown——請在專案根目錄執行，且檔案已 git add')
+        return 2
+
+    problems = 0
+    total, dead = check_links(files)
+    if not args.quiet:
+        print(f'[links]   檢查 {total} 個相對連結')
+    if dead:
+        problems += len(dead)
+        print(f'[links]   🔴 {len(dead)} 個死連結：')
+        for b in dead:
+            print(f'            {b}')
+
+    stale = check_stale(files)
+    if stale:
+        problems += len(stale)
+        print(f'[stale]   🔴 {len(stale)} 處過期字串：')
+        for b in stale:
+            print(f'            {b}')
+
+    undated = check_dates(files)
+    if undated:
+        problems += len(undated)
+        print(f'[dates]   🔴 {len(undated)} 份缺「最後更新」標頭：')
+        for b in undated:
+            print(f'            {b}')
+    elif not args.quiet:
+        print('[dates]   受管目錄全部有「最後更新」標頭')
+
+    left = check_placeholders(tracked(*PLACEHOLDER_GLOBS))
+    if left:
+        problems += len(left)
+        print(f'[holes]   🔴 {len(left)} 處殘留佔位符（部署訪談沒填完，照文件做會失敗）：')
+        for b in left:
+            print(f'            {b}')
+    elif not args.quiet:
+        print('[holes]   沒有殘留的佔位符')
+
+    found_handoff, busy = check_busy_field(files)
+    if busy:
+        problems += len(busy)
+        print(f'[busy]    🔴 {len(busy)} 處「工作中」欄位問題：')
+        for b in busy:
+            print(f'            {b}')
+    elif not args.quiet:
+        print('[busy]    HANDOFF.md 的「工作中」欄位在位' if found_handoff
+              else '[busy]    沒有 HANDOFF.md，跳過這一項')
+
+    if args.docs_only:
+        if not args.quiet:
+            print('[snap]    --docs-only：跳過交接快照檢查')
+    else:
+        snap = check_snapshot(files)
+        if snap:
+            problems += len(snap)
+            print(f'[snap]    🔴 {len(snap)} 處交接快照問題：')
+            for b in snap:
+                print(f'            {b}')
+        elif not args.quiet:
+            print('[snap]    交接快照的欄位、章節與行數都合格（內容仍由 B6 核對）')
+
+    counts = check_counts(files)
+    if counts:
+        print(f'[counts]  🟡 {len(counts)} 處硬編數量（會自己過期，建議改成不寫數字）：')
+        for b in counts:
+            print(f'            {b}')
+
+    print()
+    if problems:
+        print(f'FAIL：{problems} 個問題需修正（硬編數量僅提醒，不計入）')
+        return 2
+    print('OK：機械檢查通過（語意與「待辦是否真的完成」仍由交接程序 B6 核對）')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
