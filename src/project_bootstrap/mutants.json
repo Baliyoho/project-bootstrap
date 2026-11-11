@@ -4069,6 +4069,148 @@
      "new": "    return 0\n"
     }
    ]
+  },
+  {
+   "tests": [
+    "tests.test_package"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if not isinstance(data, dict) or set(data) != {'schema', 'files'} or data['schema'] != 1:",
+     "new": "    if not isinstance(data, dict):"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if not isinstance(files, dict) or not files:",
+     "new": "    if not isinstance(files, dict):"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        if not isinstance(entry, dict) or set(entry) != {'owner', 'update'}:\n            raise Denied('invalid-owner:' + path)",
+     "new": "        if not isinstance(entry, dict):\n            raise Denied('invalid-owner:' + path)"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        if entry['owner'] not in OWNERS or entry['update'] not in OWNERS[entry['owner']]:",
+     "new": "        if entry['owner'] not in OWNERS:"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if not match:\n        raise Denied('no-version-line')",
+     "new": "    if not match:\n        return ''"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if unowned:\n        raise Denied('unknown-owner:' + ','.join(unowned))",
+     "new": "    if False:\n        raise Denied('unknown-owner:' + ','.join(unowned))"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if orphan:\n        raise Denied('owner-without-file:' + ','.join(orphan))",
+     "new": "    if False:\n        raise Denied('owner-without-file:' + ','.join(orphan))"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if MANIFEST in files:\n        raise Denied('reserved-path:' + MANIFEST)",
+     "new": "    if False:\n        raise Denied('reserved-path:' + MANIFEST)"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    path.chmod(0o755 if relative.endswith(EXECUTABLE_SUFFIX) else 0o644)",
+     "new": "    path.chmod(0o755)"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        os.chmod(folder, 0o755)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        manifest['owners'] = {path: dict(owners[path]) for path in sorted(data)}\n",
+     "new": "        manifest['owners'] = {}\n"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        manifest['kit'] = hashlib.sha256(kit_text.encode('utf-8')).hexdigest()",
+     "new": "        manifest['kit'] = ''"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    except (OSError, ValueError):\n        return ['manifest-unreadable']",
+     "new": "    except (OSError, ValueError):\n        return []"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if not isinstance(manifest, dict) or not isinstance(manifest.get('components'), dict):\n        return ['manifest-invalid']",
+     "new": "    if False:\n        return ['manifest-invalid']"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if not isinstance(owners, dict) or set(owners) != set(components):\n        problems.append('owners-mismatch')",
+     "new": "    if not isinstance(owners, dict):\n        problems.append('owners-mismatch')"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "                    or entry['update'] not in OWNERS[entry['owner']]):",
+     "new": "                    ):"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        if path.is_symlink():\n            problems.append('symlink:' + relative)",
+     "new": "        if False:\n            problems.append('symlink:' + relative)"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    for relative in sorted(present - set(components)):\n        problems.append('extra:' + relative)",
+     "new": "    for relative in ():\n        problems.append('extra:' + relative)"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "            problems.append('missing:' + relative)\n            continue",
+     "new": "            continue"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:\n            problems.append('digest:' + relative)",
+     "new": "        if False:\n            problems.append('digest:' + relative)"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        if runnable != (relative in executable):\n            problems.append('mode:' + relative)",
+     "new": "        if runnable and relative not in executable:\n            problems.append('mode:' + relative)"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        if runnable != (relative in executable):\n            problems.append('mode:' + relative)",
+     "new": "        if not runnable and relative in executable:\n            problems.append('mode:' + relative)"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if problems:\n        raise Denied('bad-package:' + ','.join(problems))",
+     "new": "    if False:\n        raise Denied('bad-package:' + ','.join(problems))"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if target.is_symlink():\n        raise Denied('out-is-symlink')",
+     "new": "    if False:\n        raise Denied('out-is-symlink')"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        if not (target / MANIFEST).is_file():\n            raise Denied('out-not-a-package')",
+     "new": "        if False:\n            raise Denied('out-not-a-package')"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        if not _only_package_files(target):\n            raise Denied('out-has-other-files')",
+     "new": "        if False:\n            raise Denied('out-has-other-files')"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "            if entry['owner'] in ('core', 'adapter') and entry['update'] == 'whole'}",
+     "new": "            if entry['owner'] in ('core', 'adapter')}"
+    }
+   ]
   }
  ]
 }

@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11（F22 第二輪）：新增「碰到才讀的文件」（從 AGENTS.md 搬來）與「開發注意事項」（從 HANDOFF.md 的地雷搬來），常態必讀因此變短。
+> 最後更新：2026-11-11（P2 第一片：正式包格式）：`src/kit/` 新增 `owners.json`（每個範本的歸屬：core／adapter／project 與更新方式）；新增 `tools/build_package.py`，由 `src/kit` 生成 `dist/package/`（每個部署檔一份加 `manifest.json`，Git 不追蹤）；`src/project_bootstrap/package.py` 與 `tests/test_package.py`、`tests/test_package_repo.py`。部署包內容、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+
+> 2026-11-11 稍早（F22 第二輪）：新增「碰到才讀的文件」（從 AGENTS.md 搬來）與「開發注意事項」（從 HANDOFF.md 的地雷搬來），常態必讀因此變短。
 
 > 2026-11-11 稍早：P1 第四片：`src/project_bootstrap/` 新增 `status_card.py`（只讀狀態卡）、`schema_check.py` 與 `status.schema.json`／`mutants.schema.json`（jsonschema）、`mdlinks.py`（markdown-it-py）；`tests/` 新增對應四份測試。後兩支用鎖檔套件，列在 `verify_bootstrap.py` 的 `P1_EXTRAS`：別的程式不能 import 它們；它們的測試開頭寫 `raise unittest.SkipTest('needs …')`；A4 的 `verify_v2` 不跑這些檔，報告與 v2 項會逐一列出（「跳過數必須是 0」的規則不變）。「P1 開發骨架」改守這三條規則。同日 P1 第三片（來源權威切換）：新增 `src/kit/`（`kit.md` 散文＋`files/` 底下 27 個 `.tmpl` 範本）與 `tools/build_kit.py`；`PROJECT-BOOTSTRAP.md` 改成由它生成、仍提交，第一次拆出時逐位元組重建。AGENTS 鐵律 1 同批改寫；`verify_bootstrap.py` 新增「部署包由來源生成」；本 repo 兩支 hook 的提醒改指 `src/kit`。部署出去的內容沒變，`VERSION` 不跳、不同步。同日 P1 第二片：`experiments/v2` 的程式（`.py`、兩支 guest 腳本、`vm_runner.swift`、`mutants.json`）用 `git mv` 搬到 `src/project_bootstrap/`，測試搬到 `tests/`（加 `tests/__init__.py`），模組名 `experiments.v2.x` → `project_bootstrap.x`、`experiments.v2.test_x` → `tests.test_x`；`experiments/v2/` 只留 [說明](experiments/v2/README.md) 與 [現況索引](experiments/v2/status.json)。程式內容只改 import、路徑與子程序的工作目錄，邏輯沒動。下方舊登記裡的 `experiments/v2/*.py` 是當時位置。同日稍早 P1 第一片（開發骨架）：根目錄新增 `pyproject.toml`、`uv.lock`、`src/project_bootstrap/`、`tests/`；`.gitignore` 加 `.venv/`；`verify_bootstrap.py` 新增「P1 開發骨架」。用 uv 鎖依賴（版本、sha256、授權），pytest 跑既有 v2 測試與新 `tests/`；最低 Python 3.12。`verify_bootstrap.py`／`verify_v2.py`／v2 原型仍只用標準函式庫，A4 不需要裝 uv。部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
@@ -125,8 +127,9 @@
 | 路徑 | 是什麼 | 什麼時候動 |
 |---|---|---|
 | [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **部署包**（發給各專案的產物）：訪談表＋各檔範本＋上 GitHub＋自檢清單＋維持操作卡。2026-11-11 起由 `src/kit/` 生成，仍提交（專案複製它、`sync_project.py` 讀它與它的 Git 歷史） | 不手改；改 `src/kit/` 後跑 `tools/build_kit.py`（鐵律第 1 條） |
-| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效） | 制度要改就改這裡，同一個 commit 重生部署包 |
+| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；更新方式目前與 `sync_project.py` 的清單逐檔一致，`test_package_repo.py` 守） | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬 |
 | [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `PROJECT-BOOTSTRAP.md`；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
+| [tools/build_package.py](tools/build_package.py) | P2 第一片：由 `src/kit/` 生成正式包資料夾 `dist/package/`（Git 不追蹤）；`--check` 建兩次比 digest、不寫檔。一律 debug，正式版只能經發布步驟（第 3 片）。只用標準函式庫，不部署 | 包格式改變時 |
 | [README.md](README.md) | 人的入口：怎麼用、部署後長什麼樣、跨工具相容性、改這份骨架的開場 prompt | 用法或相容性改變 |
 | [AGENTS.md](AGENTS.md) | AI 的入口：這個 repo 是什麼、鐵律、副本位置、行末規則 | 多一條鐵律、副本位置改變 |
 | [AGENTS-reasons.md](AGENTS-reasons.md) | **AGENTS 每條規則的完整原文、理由與事故**；2026-11-10 從 AGENTS.md 逐字搬來，入口用「為什麼」連結指過來。不是每輪必讀，不部署、不同步 | 規則改了就在對應段落補帶日期的理由，不刪舊事故 |

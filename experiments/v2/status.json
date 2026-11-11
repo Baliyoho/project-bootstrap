@@ -564,8 +564,8 @@
           "scope": "空資料夾預演不寫、套用後全新建、再跑全相同；既有專案保留 AGENTS、.gitignore 只補缺行且補換行；預演後被改即拒且不動檔；家目錄／根目錄／不存在／壞路徑拒絕；目錄、符號連結（含指向相同內容與懸空）保留；只有 .git 或只有其他檔都算既有；預演後才出現的檔不被覆寫；mutants.json 14 個刪改全部 killed"
         }
       ],
-      "unknown": "只處理呼叫端給的檔案集合，部署包範本尚未轉成套件；中文與空白路徑只測目標資料夾名；未接 sync_project.py；跨工具與跨 OS 尚未驗收",
-      "next": "把部署包第 3 節轉成套件後對真實空專案與既有專案預演"
+      "unknown": "只處理呼叫端給的檔案集合；部署包範本 2026-11-11 已能由 tools/build_package.py 轉成套件資料夾（見 F36），但 install.py 還沒讀那份包；中文與空白路徑只測目標資料夾名；未接 sync_project.py；跨工具與跨 OS 尚未驗收",
+      "next": "讓 install.py 讀 tools/build_package.py 產出的包，對真實空專案與既有專案預演"
     },
     {
       "id": "F18",
@@ -995,9 +995,21 @@
         {
           "path": "tests/test_policy.py",
           "scope": "實測更新取代核心、保留專案 hook、略過非受管與只是前綴相同的目錄、移除舊發布檔；未宣告的檔案、本機改過的核心或將被移除的發布檔、專案檔佔到新發布路徑、專案宣告與發布清單衝突、清單 owner 非法都停止；移除各守門後測試失敗"
+        },
+        {
+          "path": "src/project_bootstrap/package.py",
+          "scope": "P2 第 1 片正式包格式（2026-11-11）：從 src/kit 與 src/kit/owners.json 生成一個資料夾加 manifest.json，每個檔列 SHA-256、owner（core／adapter／project）與更新方式（whole／region／wiring／key／seed／lines）；範本沒有歸屬或歸屬沒有範本都停止；建包一律 debug；check 列出 digest、缺檔、多檔、符號連結、執行權限與歸屬不符；install 只換掉先前的包，不碰其他資料夾"
+        },
+        {
+          "path": "tests/test_package.py",
+          "scope": "合成來源：可重現、權限、只改 hook 就換 digest、歸屬改變也換 digest；未知歸屬、孤兒歸屬、保留路徑、缺版本行、八種非法歸屬與六種非法表停止；check 抓到六種壞包與四種壞 manifest；install 拒絕非包資料夾、含外來檔的舊包、符號連結與壞包且不動原檔；mutants.json 27 個刪改全部 killed（另一個只看更新方式的刪改因歸屬表不允許 project＋whole 而等價，未列入）"
+        },
+        {
+          "path": "tests/test_package_repo.py",
+          "scope": "本 repo：owners.json 恰好涵蓋 src/kit 的 27 個範本，更新方式與 sync_project.py 的 WHOLE／SURGICAL／WIRING／AG_WIRING／PARTIAL／INSTANCE 逐檔一致；skill 六檔與兩支 hook 腳本是 core；真實來源建包 check 乾淨、版本等於 VERSION"
         }
       ],
-      "unknown": "只在合成清單驗證；現行 sync_project.py 仍用自己的 INSTANCE／WIRING 規則，未改用此清單；檔案 digest 由呼叫端提供；跨工具與跨 OS 尚未驗收",
+      "unknown": "包已能從真實來源生成，但 sync_project.py 仍用自己的清單、未讀 manifest（P2 第 5 片）；policy.plan_update 只吃整份的 core／adapter 檔，region／wiring／key 三種部分歸屬還沒有更新規劃；沒有簽章與 channel（第 3 片）；跨工具與跨 OS 尚未驗收",
       "next": "保留專案自訂內容；未知所有權停止"
     },
     {

@@ -329,3 +329,26 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 - F22 實測：`baseline.py` 量常態必讀 17,373 字元（AGENTS 6,244、HANDOFF 5,745、skill 入口＋mode-a 5,384）；把 HANDOFF 已完成節縮短後是 16,608（HANDOFF 4,980），加開場 hook 輸出 819，約 17,400，仍超過 12,000。狀態卡約 600 字元，但程序沒有改，不算降量。
 - 2026-11-11 F22 第二輪（使用者指示「先修 F22 超標」）：AGENTS 規則縮成短句、壓縮前原文逐條補進 `AGENTS-reasons.md`，條件式文件表與 HANDOFF 的地雷搬到 ARCHITECT，開場 hook 末行縮短；skill 與部署包沒動。`baseline.py` 實測 10,462（AGENTS 3,456、HANDOFF 1,622），加 hook 全綠輸出約 600，約 11,100，字元在上限內；5 分鐘那一半沒量，F22 整體改記未驗證。
 - A4 仍然只用標準函式庫與正規式；要不要讓 A4 改用這兩個套件（等於要求每台機器都裝 uv），是現行程序的改變，沒有做。
+
+## P2 第一片：正式包格式（2026-11-11）
+
+`package.py` 從 `src/kit` 生成一個包資料夾：每個部署檔一份，加一份 `manifest.json`。manifest 沿用 `release.build_manifest` 的元件 digest（所以 `release.WriteGate` 讀得懂），另外記三件事：每個檔的歸屬與更新方式、哪些檔要可執行、同一份來源生成的 `PROJECT-BOOTSTRAP.md` 的 SHA-256。
+
+歸屬表是 `src/kit/owners.json`，三類對應實現規劃 4.1 的 F36：
+
+| 歸屬 | 更新方式 | 檔案 |
+|---|---|---|
+| core | whole：整份換 | handoff skill 六個檔、`git-freshness.sh`、`pre-push-handoff.sh` |
+| core | region：只換標記區段 | `tools/check_docs.py` |
+| adapter | whole | `ag-wrap.sh`、`codex-hook.cmd`、`.agents/ag-hook.cmd`、`.agents/skills/handoff/SKILL.md` |
+| adapter | wiring／key：只換包自己的接線 | `.claude/settings.json`、`.codex/hooks.json`／`.agents/hooks.json` |
+| project | lines：只補指定行或欄位 | `HANDOFF.md`、`.gitignore`、`CLAUDE.md` |
+| project | seed：安裝時寫一次 | 其餘八個 |
+
+更新方式不是新規則，是把 `sync_project.py` 現有的 `WHOLE`／`SURGICAL`／`WIRING`／`AG_WIRING`／`PARTIAL`／`INSTANCE` 搬成資料；`test_package_repo.py` 逐檔比對兩邊，第 5 片把同步器改成讀 manifest 之前，任一邊改了另一邊沒改就失敗。core 與 adapter 的切法是新的：skill 與兩支 hook 腳本是制度內容，其他是平台接線。
+
+範本沒有歸屬、歸屬沒有範本都停止建包，不猜。`tools/build_package.py` 一律建 debug 包，沒有建正式版的旗標；正式版只能經發布步驟（第 3 片，要先定簽章與 channel）。`check` 對照 manifest 列出 digest 不符、缺檔、多檔、符號連結、執行權限不符與歸屬不合法；`install` 只把通過檢查的包換到目標，目標必須不存在或是只含包內檔案的舊包。
+
+`test_package.py` 15 個合成測試、`test_package_repo.py` 4 個；`mutants.json` 新群組 27 個刪改全部 killed。另一個刪改（`whole_owned` 只看更新方式、不看歸屬）存活，但歸屬表本來就不允許 project＋whole，屬等價變異，未列入。本 repo 實建：27 個檔，可重現。
+
+沒做的：`sync_project.py` 與 `install.py` 還沒讀這個包；`policy.plan_update` 只處理整份的 core／adapter 檔，region／wiring／key 還沒有對應的更新規劃；沒有簽章、channel 與專案指標（第 2、3 片）；只在這台 macOS 跑過。
