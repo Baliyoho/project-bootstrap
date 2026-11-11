@@ -406,7 +406,7 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 
 本機獨立核對：用已提交的 `src/kit/release-keys.txt` 驗簽通過；紀錄是 `beta`、epoch 1，`next_keys` 等於已提交的金鑰；解壓後 `package.check` 乾淨、正式版、版本 `2026-11-10.2`、27 個檔、digest 與紀錄相符；在本機同一個 commit 重建、標成正式版，digest 跟 CI 發的逐位元組相同。
 
-缺口：發布工具把驗證器輸出收進報告，沒有印到 workflow 日誌，所以日誌裡看不到每一項的結果，只能從「有簽章」反推全部通過；報告本身也只以 digest 進入簽章紀錄，沒有隨 Release 上傳。E5（乾淨環境安裝、對真的 GitHub 跑寫入檢查、假 tag 負向測試）還沒做。
+缺口：發布工具把驗證器輸出收進報告，沒有印到 workflow 日誌，所以日誌裡看不到每一項的結果，只能從「有簽章」反推全部通過；報告本身也只以 digest 進入簽章紀錄，沒有隨 Release 上傳。（2026-11-11 稍後已補：`release_package.py` 把驗證器完整輸出與結束碼印到日誌，並把報告寫成第四個檔 `*.report.json`，內容是 canonical JSON，SHA-256 就是簽章紀錄的 `report` 欄位；`test_distribute.py` 與 `test_release_tools_repo.py` 驗這個對應。`beta` epoch 1 是補之前發的，沒有這個檔；下一次發布才會有。）E5（乾淨環境安裝、對真的 GitHub 跑寫入檢查、假 tag 負向測試）還沒做。
 
 ## P2 第 3b 片 E5：驗收（2026-11-11）
 

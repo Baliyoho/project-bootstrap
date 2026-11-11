@@ -1047,7 +1047,7 @@
           "scope": "以 src/kit 真實內容端到端：release_package 產生 epoch 1 的資產，install_package 用根公鑰裝進空專案並對本機 bare repo 跑寫入檢查通過；第二版沿金鑰鏈升級；工作樹不乾淨、驗證有失敗或跳過、channel 名稱錯、沒有金鑰都拒絕發布；錯 channel、非空專案、他人根金鑰都拒絕安裝且不留指標"
         }
       ],
-      "unknown": "CI 金鑰是測試替身，握有金鑰即可發布；2026-11-11 E1 已建要擁有者核准的 release environment 並存入 CI 私鑰，公鑰已提交；E3 依 Q22 設的 tag 規則經 E5 實測沒有作用（Q23），channel 歷史沒有伺服器端保護；有 push 權限的人（目前只有擁有者）能建、移、刪 channel tag 讓寫入停下，不能讓未簽或舊版寫入；E4（2026-11-11）第一次正式發布成功：run 42982470611 在 macOS runner 上驗證全過後建 channel/beta/1-ed31ffed… 與 prerelease，本機用已提交公鑰驗簽通過、包 check 乾淨，同一 commit 本機重建的正式 digest 與 CI 相同；CI 日誌不印驗證器各項結果（只在發布工具內判斷）；E5（2026-11-11）在空家目錄、無 git 設定與登入的環境匿名 clone 與下載後安裝進空專案並對真 GitHub 寫入檢查通過，本機六項負向測試都拒絕；只在這台 macOS；第一次安裝的根金鑰怎麼交給使用者還沒設計；未接進現行發布流程（現行阻擋仍是 verify_bootstrap 的 ZIP 門檻）；跨工具與跨 OS 尚未驗收",
+      "unknown": "CI 金鑰是測試替身，握有金鑰即可發布；2026-11-11 E1 已建要擁有者核准的 release environment 並存入 CI 私鑰，公鑰已提交；E3 依 Q22 設的 tag 規則經 E5 實測沒有作用（Q23），channel 歷史沒有伺服器端保護；有 push 權限的人（目前只有擁有者）能建、移、刪 channel tag 讓寫入停下，不能讓未簽或舊版寫入；E4（2026-11-11）第一次正式發布成功：run 42982470611 在 macOS runner 上驗證全過後建 channel/beta/1-ed31ffed… 與 prerelease，本機用已提交公鑰驗簽通過、包 check 乾淨，同一 commit 本機重建的正式 digest 與 CI 相同；CI 日誌原本不印驗證器各項結果，2026-11-11 稍後已改成印出完整輸出並上傳報告檔（SHA-256 等於簽章紀錄的 report），beta epoch 1 沒有這個檔、下一版才有；E5（2026-11-11）在空家目錄、無 git 設定與登入的環境匿名 clone 與下載後安裝進空專案並對真 GitHub 寫入檢查通過，本機六項負向測試都拒絕；只在這台 macOS；第一次安裝的根金鑰怎麼交給使用者還沒設計；未接進現行發布流程（現行阻擋仍是 verify_bootstrap 的 ZIP 門檻）；跨工具與跨 OS 尚未驗收",
       "next": "接真 CI 身分與金鑰治理；接進實際發布入口"
     },
     {

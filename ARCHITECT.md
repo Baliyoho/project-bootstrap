@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11（P2 第 3b 片 E5，決策書 Q23）：乾淨環境驗收通過；同時實測發現 E3 的 tag ruleset（27014223）擋不住移動與刪除，channel 歷史沒有伺服器端保護，照實記錄、靠簽章。測試用的 `channel/e5-test/…` tag 建了、移了、刪了，GitHub 回到只有 `channel/beta/1-…`。使用者同意後已刪掉 ruleset 27014223，免得它在設定頁顯示 active 讓人以為有保護；repo 現在沒有任何 ruleset。repo 檔案只改文件與 `channel.py` 的說明。
+> 最後更新：2026-11-11（P2 第 3b 片收尾）：`tools/release_package.py` 把驗證器完整輸出印進 CI 日誌，並多輸出一個 `*.report.json`（SHA-256 等於簽章紀錄的 `report`），workflow 會一起上傳；`distribute.py` 多一個 `report_bytes`。已發的 `beta` epoch 1 沒有這個檔。
+
+> 2026-11-11 稍早（P2 第 3b 片 E5，決策書 Q23）：乾淨環境驗收通過；同時實測發現 E3 的 tag ruleset（27014223）擋不住移動與刪除，channel 歷史沒有伺服器端保護，照實記錄、靠簽章。測試用的 `channel/e5-test/…` tag 建了、移了、刪了，GitHub 回到只有 `channel/beta/1-…`。使用者同意後已刪掉 ruleset 27014223，免得它在設定頁顯示 active 讓人以為有保護；repo 現在沒有任何 ruleset。repo 檔案只改文件與 `channel.py` 的說明。
 
 > 2026-11-11 稍早（P2 第 3b 片 E4）：第一次正式發布。使用者核准 workflow run 42982470611（macOS runner）後，`verify_bootstrap.py` 全部本輪實查通過、簽章，建出 `channel/beta/1-ed31ffed…` tag（指向 `243074c`）與同名 prerelease（三個檔）。repo 檔案只改文件。
 

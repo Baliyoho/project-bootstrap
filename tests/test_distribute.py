@@ -1,4 +1,5 @@
 """P2 slice 3b prep: report, keys, epoch, archive, seed and pointer helpers."""
+import hashlib
 import io
 import json
 import os
@@ -10,6 +11,7 @@ import unittest
 
 from project_bootstrap import distribute, package, pointer
 from project_bootstrap.contracts import Denied
+from project_bootstrap.publish import report_digest
 
 PROSE = '# kit\n\n> 版本：**2026-11-11.6**（測試）\n'
 FILES = {'.claude/hooks/check.sh': '#!/bin/sh\necho v1\n', 'AGENTS.md': '# agents\n',
@@ -82,7 +84,17 @@ class DistributeTests(unittest.TestCase):
         self.assertEqual(distribute.asset_names('beta', 3, 'abcdef0123456789' * 4),
                          {'package': 'beta-3-abcdef012345.tar.gz',
                           'record': 'beta-3-abcdef012345.record.json',
-                          'signature': 'beta-3-abcdef012345.sig'})
+                          'signature': 'beta-3-abcdef012345.sig',
+                          'report': 'beta-3-abcdef012345.report.json'})
+
+    def test_report_bytes_hash_to_the_signed_digest(self):
+        report = distribute.report_from_verifier('[  ok  ] 中文檢查\n', 0, 'c' * 40, 'r1', 0)
+        data = distribute.report_bytes(report)
+        self.assertEqual(hashlib.sha256(data).hexdigest(), report_digest(report))
+        self.assertEqual(json.loads(data), report)
+        data.decode('ascii')
+        reordered = dict(reversed(list(report.items())))
+        self.assertEqual(distribute.report_bytes(reordered), data)
 
     # archives
     def test_pack_is_reproducible_and_round_trips(self):

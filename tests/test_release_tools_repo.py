@@ -5,6 +5,10 @@ verifier run and the git cleanliness check are injected: running the real
 verifier here would take minutes and the working tree is often dirty while
 developing. The real kit in src/kit is built and released.
 """
+import contextlib
+import hashlib
+import io
+import json
 from pathlib import Path
 import platform
 import shutil
@@ -62,14 +66,17 @@ class ReleaseToolTests(unittest.TestCase):
     def release(self, verify=OK_RUN, dirty='', channel_name='beta', out='out'):
         args = types.SimpleNamespace(channel=channel_name, source=str(self.source),
                                      signing_key=str(self.key), out=str(self.root / out))
-        with self.fake_git(dirty):
-            return release_package.release(args, verify=lambda: verify, now=lambda: 0)
+        output = io.StringIO()
+        with self.fake_git(dirty), contextlib.redirect_stdout(output):
+            result = release_package.release(args, verify=lambda: verify, now=lambda: 0)
+        self.printed = output.getvalue()
+        return result
 
     def publish(self, result):
         subprocess.run(['git', '-C', str(self.source), 'update-ref', result['tag'], self.blob], check=True)
 
     def install(self, result, project, seed=True, check=True, channel_name='beta'):
-        archive, record, signature = result['assets']
+        archive, record, signature, _ = result['assets']
         args = types.SimpleNamespace(project=str(project), cache=str(self.root / 'cache'),
                                      archive=archive, record=record, signature=signature,
                                      channel=channel_name, source=str(self.source), seed=seed, check=check)
@@ -87,7 +94,13 @@ class ReleaseToolTests(unittest.TestCase):
         self.assertTrue(first['tag'].startswith('refs/tags/channel/beta/1-'))
         self.assertEqual(first['epoch'], 1)
         self.assertEqual([Path(a).name.split('.', 1)[1] for a in first['assets']],
-                         ['tar.gz', 'record.json', 'sig'])
+                         ['tar.gz', 'record.json', 'sig', 'report.json'])
+        self.assertIn('[  ok  ] alpha\n[  ok  ] beta\n', self.printed)
+        self.assertIn('verify_bootstrap.py exit 0', self.printed)
+        record = channel.parse_record(Path(first['assets'][1]).read_bytes())
+        report_file = Path(first['assets'][3]).read_bytes()
+        self.assertEqual(hashlib.sha256(report_file).hexdigest(), record['report'])
+        self.assertEqual(json.loads(report_file)['overall'], '通過')
         self.publish(first)
         project = self.root / 'project'
         result = self.install(first, project)

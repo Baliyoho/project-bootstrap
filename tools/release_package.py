@@ -12,9 +12,13 @@ Steps, each of which stops the release on failure:
 3. run tools/verify_bootstrap.py; every check must pass this round;
 4. read the channel tags from --source and take the next epoch;
 5. sign with --signing-key; next_keys come from src/kit/release-keys.txt;
-6. write the package tar.gz, the signed record and the signature to --out,
-   and print the channel tag to create (also to --github-output for the
-   workflow). This script creates no tag and uploads nothing.
+6. write the package tar.gz, the signed record, the signature and the
+   report to --out, and print the channel tag to create (also to
+   --github-output for the workflow). This script creates no tag and
+   uploads nothing.
+
+The verifier's full output is printed, so the CI log shows every check. The
+report file's SHA-256 is the ``report`` field of the signed record.
 """
 import argparse
 import os
@@ -63,6 +67,9 @@ def release(args, verify=run_verifier, list_tags=channel.list_channel, now=time.
     folder, _ = build_package.build_once()
     try:
         text, code = verify()
+        # Shown in the CI log, so every check result is visible next to the release.
+        print(text, end='' if text.endswith('\n') else '\n')
+        print('release_package: verify_bootstrap.py exit %d' % code)
         report = distribute.report_from_verifier(text, code, commit, uuid.uuid4().hex, now())
         if report['overall'] != '通過':
             failing = [row['claim'] for row in report['rows'] if row['state'] != '本輪實查']
@@ -80,10 +87,11 @@ def release(args, verify=run_verifier, list_tags=channel.list_channel, now=time.
         distribute.pack(formal, out / names['package'])
         (out / names['record']).write_bytes(document)
         (out / names['signature']).write_bytes(signature)
+        (out / names['report']).write_bytes(distribute.report_bytes(report))
     finally:
         shutil.rmtree(str(pathlib.Path(formal).parent), ignore_errors=True)
     return {'tag': tag, 'epoch': epoch, 'commit': commit, 'digest': fields['manifest'],
-            'assets': [str(out / names[k]) for k in ('package', 'record', 'signature')]}
+            'assets': [str(out / names[k]) for k in ('package', 'record', 'signature', 'report')]}
 
 
 def main(argv=None):

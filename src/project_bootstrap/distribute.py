@@ -11,6 +11,9 @@ lives here and is tested here:
 - ``load_keys``: the committed key file (one ``ssh-ed25519`` key per line;
   ``#`` comments and blank lines ignored). No key refuses.
 - ``next_epoch``: one past the newest channel tag, or 1 for an empty channel.
+- ``report_bytes``: the report published next to a release. Its SHA-256 is
+  the ``report`` field of the signed record, so anyone can check that the
+  uploaded report is the one CI signed.
 - ``pack``／``unpack``: a release asset is a tar.gz of the formal package.
   Packing is byte-for-byte reproducible; unpacking refuses absolute paths,
   ``..``, links, devices and anything outside one ``package/`` folder.
@@ -63,7 +66,13 @@ def next_epoch(tags):
 
 def asset_names(channel_name, epoch, digest):
     stem = '%s-%d-%s' % (channel_name, epoch, digest[:12])
-    return {'package': stem + '.tar.gz', 'record': stem + '.record.json', 'signature': stem + '.sig'}
+    return {'package': stem + '.tar.gz', 'record': stem + '.record.json', 'signature': stem + '.sig',
+            'report': stem + '.report.json'}
+
+
+def report_bytes(report):
+    """The report as published: the same canonical JSON whose SHA-256 the signed record carries."""
+    return json.dumps(report, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode('ascii')
 
 
 def pack(folder, out):
