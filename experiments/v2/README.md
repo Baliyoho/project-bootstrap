@@ -352,3 +352,21 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 `test_package.py` 15 個合成測試、`test_package_repo.py` 4 個；`mutants.json` 新群組 27 個刪改全部 killed。另一個刪改（`whole_owned` 只看更新方式、不看歸屬）存活，但歸屬表本來就不允許 project＋whole，屬等價變異，未列入。本 repo 實建：27 個檔，可重現。
 
 沒做的：`sync_project.py` 與 `install.py` 還沒讀這個包；`policy.plan_update` 只處理整份的 core／adapter 檔，region／wiring／key 還沒有對應的更新規劃；沒有簽章、channel 與專案指標（第 2、3 片）；只在這台 macOS 跑過。
+
+## P2 第二片：專案指標與每次寫入的檢查（2026-11-11）
+
+`pointer.py` 是 D3／D4／D5 的原型。專案不放制度副本，只放 `.bootstrap/pointer.json`：channel 名、已安裝包的 manifest digest，加一個可以是空的 D4 例外。包本身放在專案外的快取資料夾，一個 digest 一個子資料夾，格式是第一片的包。
+
+`WriteCheck.confirm(operation, target)` 在每次受管寫入前跑，什麼都不快取：
+
+1. 重讀指標，所以改了指標下一次寫入就生效。
+2. 從快取取出已安裝的包，用 `package.check` 驗過，manifest digest 要等於指標，而且要是正式版。
+3. 帶新 nonce 向 channel 要簽過的聲明。拿不到、重播、過期、未來簽發、錯 channel、他人金鑰、欄位型別錯、epoch 倒退都拒絕。
+4. channel 的包不是已安裝那份就拒絕（`release-mismatch`）；只有指標宣告了例外、例外釘住的正是已安裝那份、還沒過重新檢視日、而且寫入路徑在例外範圍內，才放行並標 `pinned`。
+5. 專案裡整份屬於 core／adapter 的檔逐一比 digest。專案自己的檔（AGENTS、HANDOFF）與 `settings.json` 這類只換部分的接線不比，所以專案改自己的檔不會被擋——這是 `release.WriteGate` 原本做不到的：它比 manifest 裡每一個檔。
+
+`status` 是只讀入口：不連 channel，報版本、digest 與例外，並標「未確認最新」（D5：可以繼續讀，但要講清楚限制）。
+
+`test_pointer.py` 15 個寫入／狀態測試加 3 個指標格式測試；`mutants.json` 新群組 39 個刪改全部 killed（首跑存活兩個：簽名合法但 epoch 是字串、簽發時間在未來，已補測試）。沒有 `ssh-keygen` 的平台不跳過，改驗驗證程式不在時拒絕寫入，跟 `test_release.py` 同一做法。
+
+沒做的：簽章金鑰與 channel 是測試替身（第 3 片）；指標檔還不在部署包裡，也沒有工具會寫它；`preflight.ManagedWrite` 還在用舊的 `WriteGate`，沒改用這個檢查；`check_docs.py` 的共用區段與三種接線檔沒比；最高 epoch 只記在記憶體，換一個程序就能接受較舊的聲明；例外的宣告人是記下的名字，不是驗過的身分。

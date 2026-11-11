@@ -4211,6 +4211,208 @@
      "new": "            if entry['owner'] in ('core', 'adapter')}"
     }
    ]
+  },
+  {
+   "tests": [
+    "tests.test_pointer"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "            or any(part in ('', '.', '..') for part in path.split('/'))):\n        return False",
+     "new": "            ):\n        return False"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if not isinstance(data, dict) or set(data) != FIELDS or data['schema'] != 1:\n        raise Denied('invalid-pointer')",
+     "new": "    if not isinstance(data, dict):\n        raise Denied('invalid-pointer')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if not isinstance(data['channel'], str) or not CHANNEL_RE.fullmatch(data['channel']):",
+     "new": "    if not isinstance(data['channel'], str):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if not isinstance(data['installed'], str) or not DIGEST_RE.fullmatch(data['installed']):",
+     "new": "    if not isinstance(data['installed'], str):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not isinstance(exception, dict) or set(exception) != EXCEPTION_FIELDS:",
+     "new": "        if not isinstance(exception, dict):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if exception['pin'] != data['installed']:\n            raise Denied('invalid-pointer:pin')",
+     "new": "        if False:\n            raise Denied('invalid-pointer:pin')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not isinstance(paths, list) or not paths or not all(_relative(p) for p in paths):",
+     "new": "        if not isinstance(paths, list) or not paths:"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not isinstance(paths, list) or not paths or not all(_relative(p) for p in paths):",
+     "new": "        if not isinstance(paths, list) or not all(_relative(p) for p in paths):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "            if not isinstance(exception[key], str) or not exception[key].strip():",
+     "new": "            if not isinstance(exception[key], str):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not isinstance(exception['review_by'], str) or not DATE_RE.fullmatch(exception['review_by']):",
+     "new": "        if not isinstance(exception['review_by'], str):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    return any(target == p or target.startswith(p + '/') for p in paths)",
+     "new": "    return any(target.startswith(p) for p in paths)"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    return any(target == p or target.startswith(p + '/') for p in paths)",
+     "new": "    return any(target.startswith(p + '/') for p in paths)"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        except FileNotFoundError:\n            raise Denied('no-pointer') from None\n        except (OSError, UnicodeDecodeError):",
+     "new": "        except (OSError, UnicodeDecodeError):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not (folder / package.MANIFEST).is_file():\n            raise Denied('package-not-cached')",
+     "new": "        if False:\n            raise Denied('package-not-cached')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if problems:\n            raise Denied('package-damaged:' + ','.join(problems))",
+     "new": "        if False:\n            raise Denied('package-damaged:' + ','.join(problems))"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if package.digest(manifest) != digest:\n            raise Denied('package-mismatch')",
+     "new": "        if False:\n            raise Denied('package-mismatch')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not isinstance(document, bytes) or not 1 <= len(document) <= 1024:",
+     "new": "        if not isinstance(document, bytes):"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        self.verifier._verify(document, signature)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "                or any(type(fields[key]) is not int for key in ('epoch', 'issued', 'expires'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if fields['channel'] != channel:\n            raise Denied('wrong-channel')",
+     "new": "        if False:\n            raise Denied('wrong-channel')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if fields['nonce'] != nonce:\n            raise Denied('stale-confirmation')",
+     "new": "        if False:\n            raise Denied('stale-confirmation')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not fields['issued'] <= now < fields['expires']:",
+     "new": "        if not now < fields['expires']:"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not fields['issued'] <= now < fields['expires']:",
+     "new": "        if not fields['issued'] <= now:"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if fields['epoch'] < self.highest_epoch:\n            raise Denied('channel-rollback')",
+     "new": "        if False:\n            raise Denied('channel-rollback')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not isinstance(operation, str) or not re.fullmatch(r'[0-9a-f]{32}', operation):\n            raise Denied('invalid-operation')",
+     "new": "        if False:\n            raise Denied('invalid-operation')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if not _relative(target):\n            raise Denied('invalid-target')",
+     "new": "        if False:\n            raise Denied('invalid-target')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        if manifest.get('kind') != 'formal':\n            raise Denied('debug-release')",
+     "new": "        if False:\n            raise Denied('debug-release')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "            if exception is None:\n                raise Denied('release-mismatch')",
+     "new": "            if False:\n                raise Denied('release-mismatch')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "            if _today(now) > exception['review_by']:\n                raise Denied('exception-expired')",
+     "new": "            if False:\n                raise Denied('exception-expired')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "            if _today(now) > exception['review_by']:\n                raise Denied('exception-expired')",
+     "new": "            if _today(now) >= exception['review_by']:\n                raise Denied('exception-expired')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "            if not _covers(exception['paths'], target):\n                raise Denied('exception-out-of-scope')",
+     "new": "            if False:\n                raise Denied('exception-out-of-scope')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "            pinned = True\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "            except FileNotFoundError:\n                raise Denied('component-missing:' + path) from None\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "            if hashlib.sha256(data).hexdigest() != manifest['components'][path]:\n                raise Denied('component-drift:' + path)",
+     "new": "            if False:\n                raise Denied('component-drift:' + path)"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        self.highest_epoch = fields['epoch']\n        return {'operation'",
+     "new": "        return {'operation'"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "        fields, now = self._statement(pointer['channel'])",
+     "new": "        fields, now = self._statement('stable')"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    except FileNotFoundError:\n        return {'state': 'no-pointer', 'fresh': 'unconfirmed'}\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    except (OSError, ValueError):\n        report['state'] = 'package-not-cached'\n        return report",
+     "new": "    except (OSError, ValueError):\n        return report"
+    },
+    {
+     "file": "src/project_bootstrap/pointer.py",
+     "old": "    if package.check(folder) or package.digest(manifest) != pointer['installed']:",
+     "new": "    if False:"
+    }
+   ]
   }
  ]
 }

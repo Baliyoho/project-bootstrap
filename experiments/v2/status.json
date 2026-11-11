@@ -580,9 +580,17 @@
         {
           "path": "tests/test_release.py",
           "scope": "實測只改 hook 或只改 schema、版本字串與 SKILL digest 都不變的新 release，舊客戶端以 release-mismatch 停止寫入；移除各守門後測試失敗"
+        },
+        {
+          "path": "src/project_bootstrap/pointer.py",
+          "scope": "P2 第 2 片專案指標與寫入檢查（2026-11-11）：專案只留 .bootstrap/pointer.json（channel＋已安裝包 digest），包在專案外的快取；每次寫入向 channel 拿新簽聲明，channel 的包不是已安裝的那份就拒絕；只比對整份的 core／adapter 檔，專案自己的檔與接線可以不同"
+        },
+        {
+          "path": "tests/test_pointer.py",
+          "scope": "只改一支 hook 的新版發布後，舊專案寫入得到 release-mismatch；本機改 hook 是 component-drift、刪 skill 是 component-missing；改 AGENTS／HANDOFF／settings.json 不擋；mutants.json 39 個刪改全部 killed"
         }
       ],
-      "unknown": "Windows 部署專案尚未同步 bash 3.2 hook 修正；M1 原型未接進現行部署包、sync_project 或任何工具，無遷移流程；跨工具與跨 OS 尚未驗收",
+      "unknown": "Windows 部署專案尚未同步 bash 3.2 hook 修正；M1 原型與 P2 指標檢查都未接進現行部署包、sync_project 或任何工具，無遷移流程；指標檢查只比整份的 core／adapter 檔，check_docs.py 的共用區段與接線還沒比；最高 epoch 只記在記憶體；跨工具與跨 OS 尚未驗收",
       "next": "單改 hook／schema 也使受影響舊客戶停止，不能只比 skill"
     },
     {
@@ -915,6 +923,14 @@
         {
           "path": "tests/test_release.py",
           "scope": "實測就地改元件內容而版本不變，以 component-drift 拒絕；換成 symlink 拒絕；元件路徑逃逸（..、絕對、空片段）以真實存在的檔案測試拒絕；移除各守門後測試失敗"
+        },
+        {
+          "path": "src/project_bootstrap/pointer.py",
+          "scope": "WriteCheck.confirm 回報已安裝的版本、digest 與 channel 當下的 digest；status 不連 channel 也能說出版本與 digest"
+        },
+        {
+          "path": "tests/test_pointer.py",
+          "scope": "回傳值逐欄比對版本、installed、latest；status 讀快取報版本並標 fresh=unconfirmed，快取被改、未快取、指標壞、無指標各有狀態"
         }
       ],
       "unknown": "只在 macOS 合成目錄驗證；現行 VERSION 仍只追 SKILL，原型未取代 git-freshness.sh；跨工具與跨 OS 尚未驗收",
@@ -941,6 +957,14 @@
         {
           "path": "tests/test_preflight.py",
           "scope": "實測連續兩次寫入各要一次新確認；通道離線、元件就地改動、無效操作在 Git 已通過時仍以 release: 代碼拒絕；移除確認呼叫後測試失敗"
+        },
+        {
+          "path": "src/project_bootstrap/pointer.py",
+          "scope": "每次寫入都重新讀指標、驗快取裡的包、向 channel 要新簽聲明，沒有快取路徑；D4 例外也不免除新鮮度確認"
+        },
+        {
+          "path": "tests/test_pointer.py",
+          "scope": "先成功寫一次再斷線仍拒絕；重播、過期、未來簽發、錯 channel、他人金鑰、空聲明、欄位型別錯、epoch 倒退都拒絕；被拒的寫入不推高 epoch；有例外時離線同樣拒絕；沒有 ssh-keygen 的平台改驗 channel-verifier-unavailable，不跳過"
         }
       ],
       "unknown": "可信端與簽章金鑰是測試替身，沒有 CI 身分、金鑰治理或真實網路；原型未接進現行寫入入口；跨工具與跨 OS 尚未驗收；preflight 組合檢查同樣未接進任何工具的寫入入口",
@@ -959,6 +983,14 @@
         {
           "path": "tests/test_decisions.py",
           "scope": "實測完整例外列在「宣告不等於通過」節；缺內容、授權者、來源、範圍、理由、重檢條件各給代碼；重檢日期無效、當天或已過期標出、未到期不標；重複 ID；移除各守門後測試失敗"
+        },
+        {
+          "path": "src/project_bootstrap/pointer.py",
+          "scope": "指標裡的 D4 例外必須寫齊釘住的 digest（等於已安裝）、適用路徑、理由、宣告人與重新檢視日；只在 channel 已前進時生效，過了檢視日或寫到範圍外就拒絕"
+        },
+        {
+          "path": "tests/test_pointer.py",
+          "scope": "範圍內與檢視日當天可寫且標 pinned；docsx/ 不算 docs/ 底下；過期、範圍外拒絕；例外不跳過 hook 漂移檢查；指標各欄位 20 種非法寫法拒絕"
         }
       ],
       "unknown": "現行三項來源例外仍寫在 ARCHITECT 文字中，尚未轉成紀錄；重檢條件只有日期能自動判定，文字條件靠人；未接進任何工具；跨工具與跨 OS 尚未驗收",
