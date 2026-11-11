@@ -327,4 +327,5 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 - `mdlinks.py`：markdown-it-py 讀連結，`test_mdlinks_repo.py` 對本 repo 的 Markdown 再查一次死連結，當 A4 正規式檢查的第二意見；2026-11-11 兩者都是 0。
 - 後兩支要 uv 環境（`uv run pytest`）。`verify_bootstrap.py` 的 `P1_EXTRAS` 列出可以用鎖檔套件的模組；別的程式不能 import 它們；它們的測試開頭寫 `raise unittest.SkipTest('needs …')`；A4 的 `verify_v2` 不跑這些檔，報告與 v2 項會逐一列出（「跳過數必須是 0」的規則不變），不會悄悄少驗。它們沒有 mutation 規格：`mutants.py` 用系統 Python 跑，缺套件會被當成跳過而存活；負向案例寫在測試裡。
 - F22 實測：`baseline.py` 量常態必讀 17,373 字元（AGENTS 6,244、HANDOFF 5,745、skill 入口＋mode-a 5,384）；把 HANDOFF 已完成節縮短後是 16,608（HANDOFF 4,980），加開場 hook 輸出 819，約 17,400，仍超過 12,000。狀態卡約 600 字元，但程序沒有改，不算降量。
+- 2026-11-11 F22 第二輪（使用者指示「先修 F22 超標」）：AGENTS 規則縮成短句、壓縮前原文逐條補進 `AGENTS-reasons.md`，條件式文件表與 HANDOFF 的地雷搬到 ARCHITECT，開場 hook 末行縮短；skill 與部署包沒動。`baseline.py` 實測 10,462（AGENTS 3,456、HANDOFF 1,622），加 hook 全綠輸出約 600，約 11,100，字元在上限內；5 分鐘那一半沒量，F22 整體改記未驗證。
 - A4 仍然只用標準函式庫與正規式；要不要讓 A4 改用這兩個套件（等於要求每台機器都裝 uv），是現行程序的改變，沒有做。

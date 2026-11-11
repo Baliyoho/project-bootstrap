@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11。P1 第四片：`src/project_bootstrap/` 新增 `status_card.py`（只讀狀態卡）、`schema_check.py` 與 `status.schema.json`／`mutants.schema.json`（jsonschema）、`mdlinks.py`（markdown-it-py）；`tests/` 新增對應四份測試。後兩支用鎖檔套件，列在 `verify_bootstrap.py` 的 `P1_EXTRAS`：別的程式不能 import 它們；它們的測試開頭寫 `raise unittest.SkipTest('needs …')`；A4 的 `verify_v2` 不跑這些檔，報告與 v2 項會逐一列出（「跳過數必須是 0」的規則不變）。「P1 開發骨架」改守這三條規則。同日 P1 第三片（來源權威切換）：新增 `src/kit/`（`kit.md` 散文＋`files/` 底下 27 個 `.tmpl` 範本）與 `tools/build_kit.py`；`PROJECT-BOOTSTRAP.md` 改成由它生成、仍提交，第一次拆出時逐位元組重建。AGENTS 鐵律 1 同批改寫；`verify_bootstrap.py` 新增「部署包由來源生成」；本 repo 兩支 hook 的提醒改指 `src/kit`。部署出去的內容沒變，`VERSION` 不跳、不同步。同日 P1 第二片：`experiments/v2` 的程式（`.py`、兩支 guest 腳本、`vm_runner.swift`、`mutants.json`）用 `git mv` 搬到 `src/project_bootstrap/`，測試搬到 `tests/`（加 `tests/__init__.py`），模組名 `experiments.v2.x` → `project_bootstrap.x`、`experiments.v2.test_x` → `tests.test_x`；`experiments/v2/` 只留 [說明](experiments/v2/README.md) 與 [現況索引](experiments/v2/status.json)。程式內容只改 import、路徑與子程序的工作目錄，邏輯沒動。下方舊登記裡的 `experiments/v2/*.py` 是當時位置。同日稍早 P1 第一片（開發骨架）：根目錄新增 `pyproject.toml`、`uv.lock`、`src/project_bootstrap/`、`tests/`；`.gitignore` 加 `.venv/`；`verify_bootstrap.py` 新增「P1 開發骨架」。用 uv 鎖依賴（版本、sha256、授權），pytest 跑既有 v2 測試與新 `tests/`；最低 Python 3.12。`verify_bootstrap.py`／`verify_v2.py`／v2 原型仍只用標準函式庫，A4 不需要裝 uv。部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+> 最後更新：2026-11-11（F22 第二輪）：新增「碰到才讀的文件」（從 AGENTS.md 搬來）與「開發注意事項」（從 HANDOFF.md 的地雷搬來），常態必讀因此變短。
+
+> 2026-11-11 稍早：P1 第四片：`src/project_bootstrap/` 新增 `status_card.py`（只讀狀態卡）、`schema_check.py` 與 `status.schema.json`／`mutants.schema.json`（jsonschema）、`mdlinks.py`（markdown-it-py）；`tests/` 新增對應四份測試。後兩支用鎖檔套件，列在 `verify_bootstrap.py` 的 `P1_EXTRAS`：別的程式不能 import 它們；它們的測試開頭寫 `raise unittest.SkipTest('needs …')`；A4 的 `verify_v2` 不跑這些檔，報告與 v2 項會逐一列出（「跳過數必須是 0」的規則不變）。「P1 開發骨架」改守這三條規則。同日 P1 第三片（來源權威切換）：新增 `src/kit/`（`kit.md` 散文＋`files/` 底下 27 個 `.tmpl` 範本）與 `tools/build_kit.py`；`PROJECT-BOOTSTRAP.md` 改成由它生成、仍提交，第一次拆出時逐位元組重建。AGENTS 鐵律 1 同批改寫；`verify_bootstrap.py` 新增「部署包由來源生成」；本 repo 兩支 hook 的提醒改指 `src/kit`。部署出去的內容沒變，`VERSION` 不跳、不同步。同日 P1 第二片：`experiments/v2` 的程式（`.py`、兩支 guest 腳本、`vm_runner.swift`、`mutants.json`）用 `git mv` 搬到 `src/project_bootstrap/`，測試搬到 `tests/`（加 `tests/__init__.py`），模組名 `experiments.v2.x` → `project_bootstrap.x`、`experiments.v2.test_x` → `tests.test_x`；`experiments/v2/` 只留 [說明](experiments/v2/README.md) 與 [現況索引](experiments/v2/status.json)。程式內容只改 import、路徑與子程序的工作目錄，邏輯沒動。下方舊登記裡的 `experiments/v2/*.py` 是當時位置。同日稍早 P1 第一片（開發骨架）：根目錄新增 `pyproject.toml`、`uv.lock`、`src/project_bootstrap/`、`tests/`；`.gitignore` 加 `.venv/`；`verify_bootstrap.py` 新增「P1 開發骨架」。用 uv 鎖依賴（版本、sha256、授權），pytest 跑既有 v2 測試與新 `tests/`；最低 Python 3.12。`verify_bootstrap.py`／`verify_v2.py`／v2 原型仍只用標準函式庫，A4 不需要裝 uv。部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
 > 2026-11-10 同日深夜：部署包 3.8 的 `reasons.md` 末尾加「規則 → 理由在哪」對照表（決策書 Q17 (b)），六個 skill 檔與 `VERSION` 跳到 `2026-11-10.2`，這台 Mac 的兩個全域副本一起覆蓋；`verify_bootstrap.py` 新增「skill 規則對照表」。結構沒有新增檔案。同日稍晚：本 repo 新增 `.claude/hooks/repo-action-rules.sh`（決策書 Q6 (a)），只接 Claude Code；`verify_bootstrap.py` 新增「動作當下送規則」，「本 repo 兩份接線」放寬為 Claude Code 可多接這支。這台 Mac 的兩個全域副本換成六檔版（Q11 (a)）。同日稍早：**部署包 3.8 從一個檔變成六個檔**（決策書 Q9／F22）：handoff skill 是一個目錄，入口 `SKILL.md` 加 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`；骨架 22 → 27 檔，`VERSION` `2026-11-10`。`tools/` 新增 `skill_split_baseline.json`；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」三項；兩支開場 hook 多印全綠行。同日 Q11 (a)：只有這台 Mac 的兩個全域副本換成六檔版；各專案尚未同步，`main` 也還沒有這一版。同日稍早：根目錄新增 [skill 拆分設計稿](project-bootstrap-skill-split-design.md)（決策書 Q8 (a)，等 Q9 審閱，未實施）。同日稍早：根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
@@ -86,6 +88,37 @@
 
 唯一產出物是 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)——一份自帶所有檔案範本的部署包，複製到新專案資料夾就能生出整套制度。
 其餘每個檔案都是它的**說明、指標或測試**，沒有第二個產出物（例外是下面那支本 repo 自己的開場檢查 hook——它誰的副本都不是——以及 `HANDOFF.md`，它是範本 3.3 的*實例*，承載當下交接快照與「工作中」標記）。
+
+## 碰到才讀的文件
+
+下列文件都不是每輪必讀，碰到那件事才讀（2026-11-11 F22 第二輪從 AGENTS.md 原樣搬來）。
+
+| 要做的事 | 先讀 |
+|---|---|
+| 討論需求、驗收、待決事項或替代工具 | [需求決策書](project-bootstrap-requirements-decision.md)：現行需求唯一權威（D1–D8、51 個穩定需求 ID）；待決唯一入口是第 6 節。決策定稿不等於實作完成 |
+| 查某個需求 ID 做到哪 | [v2 現況索引](experiments/v2/status.json)；HANDOFF 只留停點與行動 |
+| 動同步工具、驗證器、hook 或 R01–R09 相關的地方 | [第二輪複審快照](project-bootstrap-reaudit-2026-11-03.md)。2026-11-10 使用者同意從每輪必讀改成條件式；R01–R09 邊界的獨立複審還沒做，不要當成全部結案 |
+| 動原查核報告那 16 條 | [查核進度](project-bootstrap-audit-progress.md) |
+| 選型或架構實作 | [實現規劃](project-bootstrap-implementation-plan.md)；已授權 v2 分支實作，未部署，不授權略過現行程序 |
+| 動 v2 原型 | [v2 原型說明](experiments/v2/README.md) |
+| 效率改造 | [效率計畫](project-bootstrap-efficiency-plan.md)；尚未生效，不授權省略現行程序 |
+| 追溯需求修訂理由 | [需求歷史原件](project-bootstrap-requirements-history.md)；其中的「權威版」「現在」「待決」不再指示現行操作 |
+| 結構問題（有哪些檔、副本在哪） | 本檔；動到結構就跟它同一個 commit 改 |
+
+## 開發注意事項
+
+改這個 repo 時容易踩的地方（2026-11-11 F22 第二輪從 HANDOFF.md「地雷與注意事項」搬來；HANDOFF 只留指標）。碰到對應的檔才需要讀。
+
+- 錨點拒絕的解除是人工步驟：確認那份帳本沒有 guest 還可能在跑，再手動刪錨點檔；沒有做成工具，agent 不要自己刪。
+- 制度只改 `src/kit/`，改完跑 `python3 -X utf8 tools/build_kit.py` 重生 `PROJECT-BOOTSTRAP.md`，同一個 commit；手改部署包會被「部署包由來源生成」擋。handoff skill 的六個檔改 `src/kit/files/.claude/skills/handoff/*.tmpl`，六個 `source:` 標記與 `VERSION` 要同版本；同一天再改要加序號。改到逐字搬來的行，「skill 拆分」會擋：要嘛還原，要嘛在 `tools/skill_split_baseline.json` 的 `rewritten` 寫明去處。改了模式檔的段落標題，「skill 規則對照表」會擋，要一起改 `reasons.md` 對照表。改完要重新覆蓋這台的兩個全域目錄。
+- 各原型都是**偵測**或合成阻擋，沒有接進任何工具。不要寫成保障。崩潰解除的終端確認只抬高 agent 代答門檻；開機識別登記值與錨點都在同 UID 可寫的地方。
+- 改 `vm_guest_init.sh`／`vm_managed_worker.sh` 之後要重跑真 VM `vm_probe.py`（離線測試不是 busybox）；`mutants.json` 對應原文也要一起改（重構 `guest_runs.py`／`crash_release.py` 會讓舊原文失配，`mutants.py --only` 會報）。
+- `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書第 6 節的 `Q` 編號（或 `- 無。`）。決策書第 7 節每條要有 `理由：`；第 6 節有裁定的項目底下子項格式是「採用理由／未選／暫緩」。
+- 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗。
+- AGENTS.md 只有規則；新增或改規則時在 [AGENTS-reasons.md](AGENTS-reasons.md) 補段落與錨點。
+- 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。新守門用 `denied(code, ...)` 寫法。
+- 帳本列未 `retired` 時重啟一律阻擋，不要人工改列；解除走 `PYTHONPATH=src python3 -X utf8 -m project_bootstrap.crash_release DB RUN_ID`，必須人在 host 本機終端。
+- 僅合成暫存 fixture；原檔、票據、金鑰與合成 Git object 不進本 repo。
 
 ## 根目錄
 

@@ -1,6 +1,6 @@
 # AGENTS 規則的理由與事故
 
-> 最後更新：2026-11-10
+> 最後更新：2026-11-11（F22 第二輪：每段末尾補入口壓縮前的完整措辭）
 > 這裡是 [AGENTS.md](AGENTS.md) 每條規則的完整原文、理由與事故。2026-11-10（F22）從 AGENTS.md 逐字搬來：規則留在入口，理由住這裡，由入口的「為什麼」連結指過來。**不是每輪必讀**；要改、要質疑或想繞過某條規則之前先讀對應那一段。
 > 這裡的段落保存搬家當時的完整措辭；之後規則有變，先改 AGENTS.md，再在這裡對應段落補帶日期的理由，不要刪舊事故。
 
@@ -33,6 +33,22 @@
 
 **為什麼要在這裡再寫一次**：開場 hook 已經會講同樣的話，但它**只在 Claude Code、以及已經審核過 hook 的 Codex 上會跑**——Antigravity、Gemini CLI、還沒被信任的 Codex 都不會，而 `AGENTS.md` 是那些工具唯一保證會讀到的入口。把開工義務只放在 hook 裡，等於讓它在一半的平面上無聲消失。（2026-11-01 補。部署包範本 3.1 一直有這一節，缺的反而是骨架自己這個 repo——制度的來源比它的產物少一層保護，而且沒有任何徵兆。）
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> **先走接棒程序的 A 模式，A 沒跑完之前不要改任何檔案**；收工走 B 模式，中途要拉最新或推一個安全點走 C 模式。
+>
+> - 程序檔在**全域**副本 `~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）；這個 repo 刻意沒有專案層的那一份。工具不會自動載入 skill 就直接開那個檔讀。**這台機器沒有全域副本時，程序在 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的「3.8」節**；不要從別台機器搬檔或憑記憶重刻。
+> - 部署包 `2026-11-10` 起 skill 是一個目錄：`SKILL.md` 是入口，再照它讀同目錄的模式檔；這台 Mac 的全域副本 2026-11-10 已換成六檔版（決策書 Q11 (a) 試用）；**別台還沒換的仍是單檔**，照單檔走。本 repo 的「全綠」行由 `.claude/hooks/repo-git-check.sh` 印（前綴 `[repo-check]`），要重跑就跑它。
+> - **A4 改跑 `python -X utf8 tools/verify_bootstrap.py`**（不是 `verify_state.py`），**exit 0 才算改完**。
+> - 沒有 `check_docs.py`、沒有 pre-push 防呆，所以 B4 與擋 push 的關卡不存在；文件檢查由 `verify_bootstrap.py` 顧。
+> - **B7 先明確 stage，再跑 `python -X utf8 tools/verify_bootstrap.py --staged`。**
+> - **`HANDOFF.md` 是當下交接快照，也承載「工作中」標記**：A5 更新標記，B6 核對整份現況並覆寫，≤80 行、不累積歷史。
+>
+> 這些義務寫在這裡而不只放 hook，是因為有些工具不跑 hook。
+>
+> （「碰到才讀」的文件對照表原樣搬到 ARCHITECT.md「碰到才讀的文件」。）
+
+
 <a id="what"></a>
 
 ## 這個 repo 是什麼
@@ -49,6 +65,14 @@
 
 另一個例外是 [HANDOFF.md](HANDOFF.md)：2026-10-30 起這個 repo 多機維護，所以補上跨機器「工作中」標記（`.claude/hooks/repo-git-check.sh` 開場讀 origin 那一份）。**它同時必須是可信的當下交接快照**；只保留現況、未完成事項與接手限制，事故史與規則仍放回各自的家。本 repo 依然刻意沒有 handoff skill、沒有 `pre-push-handoff.sh`、沒有 `check_docs.py`——它是制度的**來源**，不是一個交接中的工作專案（理由見 [ARCHITECT.md](ARCHITECT.md)「這個 repo 刻意沒有的東西」）。⚠️ **2026-11-06 起這三項是「已宣告的例外」，不是空白**：需求 v3.10 新增的 F46 要求來源自身的保護不低於產物，使用者當天選了 D4／F34 的宣告路線而非補裝，正式宣告寫在 ARCHITECT 那一節的開頭。**但宣告不等於 F46 已達成**——F46 的強度是偵測。2026-11-08 起驗證器會逐項印出這三項來源例外；來源與產物的接手、占用、文件檢查尚未全部用同組情境驗收，所以 F46 仍未整項通過。要撤銷宣告改成補裝，是改使用者的決定。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **AI 協作專案管理骨架的權威版。** 唯一產出物是 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)：自帶所有檔案範本的部署包。用法見 [README.md](README.md)。
+> - **這裡不是知識庫**：不累積專案知識、踩坑紀錄或狀態，那些屬於各自的專案 repo。
+> - 不部署的例外：`tools/verify_bootstrap.py`（部署包的測試）；`src/project_bootstrap/`、`tests/`、`experiments/v2/`（說明與現況索引）與 `tools/verify_v2.py`（隔離原型，只用合成 fixture，不保存其他專案資料；**原型通過不授權切換程序或宣稱跨工具強保障**）；`pyproject.toml`／`uv.lock`（P1 開發骨架，A4 不需要）；`tools/build_kit.py`（由 `src/kit/` 生成部署包）；[HANDOFF.md](HANDOFF.md)；本檔的理由檔。
+> - 刻意沒有 handoff skill、`pre-push-handoff.sh`、`check_docs.py`。這是**已宣告的例外**，不是空白；宣告不等於 F46 已達成；撤銷宣告改成補裝是使用者的決定。
+
+
 <a id="rule-1"></a>
 
 ## 鐵律 1
@@ -59,6 +83,11 @@
 
 2026-11-11（P1 第三片，使用者在聊天中說「Start slice 3」，前一輪已說明這片會改鐵律 1）：權威來源從手改的 `PROJECT-BOOTSTRAP.md` 搬到 `src/kit/`。理由：實現規劃第 7 節 P1 要求「來源權威切換同批改文件」，效率計畫也主張來源與部署產物分離；一份 28 萬位元組的檔案裡夾著 27 個範本，改一個 hook 就要在散文中間找圍籬，範本也無法單獨 diff 或測試。做法：`tools/build_kit.py` 把 `kit.md` 裡的 `<!-- kit-file: 路徑 -->` 換回範本內容，第一次拆出時逐位元組重建、`extract()` 取出的 27 檔與範本相同；範本加 `.tmpl` 是為了不讓範本 `.gitignore`／`.gitattributes`／skill／hook 接線在本 repo 生效。`PROJECT-BOOTSTRAP.md` 仍然提交：各專案複製它、`sync_project.py` 讀它與它的 Git 歷史；所以它是產物不是第二個家，手改會被「部署包由來源生成」擋下。部署出去的內容這次沒有改，`VERSION` 不跳、不同步專案；範本檔頭的 `source: PROJECT-BOOTSTRAP.md` 標記照舊，從專案那一端看，權威仍是部署包。上面原文「改它」自這一天起讀成「改 `src/kit` 再重生」。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> 1. **制度的權威來源是 `src/kit/`；`PROJECT-BOOTSTRAP.md` 是由它生成、發給各專案的部署包。** 制度要改就改 `src/kit/kit.md`（散文）或 `src/kit/files/<部署路徑>.tmpl`（範本），跑 `python3 -X utf8 tools/build_kit.py` 重生部署包，來源與部署包同一個 commit；**不要手改 `PROJECT-BOOTSTRAP.md`**（`verify_bootstrap.py`「部署包由來源生成」會擋）。之後用 `python -X utf8 tools/sync_project.py <專案路徑> --owner '<本 session 工作中欄位完整值>' --write` 覆蓋到各專案（先在目標完成 A1–A5；`--all` 只能批次預演，寫入逐專案；它只改檔、不 commit）。**不要**在單一專案就地改 skill 或 hook。**只有 `.claude/skills/handoff/` 目錄裡的檔（入口 `SKILL.md` 與五個模式／理由檔）真的改了內容才跳 `VERSION`**，而且六個檔的 `source:` 標記要同一個版本；跳版後要某專案下一次開場就提示，刪掉它的 `.claude/.bootstrap-version`。
+
+
 <a id="rule-2"></a>
 
 ## 鐵律 2
@@ -67,11 +96,21 @@
 
 2026-11-10：上面的「`SKILL.md`」自這一天起讀成「handoff skill 目錄」（見鐵律 1 的同日註記）；跳號與超前的例子是拆分前的歷史，照原樣保留。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> 2. **改 skill／hook 內容時，同步更新檔頭的 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->` 標記。** 同一天改第二次起在日期後面加序號（`.2`、`.3`）；序號算的是**當天第幾個帶 `source:` 標記的改動**。序號跟部署包開頭的「版本」行**不保證同號**：版本行與 `VERSION` 只跟著 handoff skill 目錄走。
+
+
 <a id="rule-3"></a>
 
 ## 鐵律 3
 
 3. **保留每條規則的「為什麼」**。這份骨架的價值不在條文，在條文背後的事故；砍掉理由，下一棒就會繞過規則。（2026-08-05 隨首版 `1fa96a2` 寫入；日期取自 git 首次出現，當時沒有另外記錄理由）
+
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> 3. **保留每條規則的「為什麼」。** 理由可以搬到理由檔，不能刪；`verify_bootstrap.py` 的「規則理由連結」會擋沒有理由的規則。
+
 
 <a id="rule-4"></a>
 
@@ -79,11 +118,21 @@
 
 4. **改完要驗證**：跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**。它會重生骨架比對檔案清單、模擬部署填佔位符、跑 `check_docs.py`、負向測試佔位符檢查與 `ARCHITECT.md` 日期標頭檢查真的擋得住、掃絕對路徑與缺 `python3` 退路的跨平台地雷、測 pre-push hook 五情境、從子目錄實跑兩份接線的原始命令、查全檔 LF 與兩份 JSON 設定，也查本 repo 自己的 `.md` 死連結、`.claude/settings.json` 與本 repo 那支 hook 的「工作中」判讀，還查兩支部署後腳本的失敗訊號與交接快照檢查、四支 `.py` 有沒有用到高於宣告下限的 Python API、以及已修正的主張有沒有在範本、操作卡與入口文件裡復活（這個 repo 沒有部署 `check_docs.py`，否則那就成了要跳版同步的副本）。2026-08-05 之前這段是要人照著手刻的敘述，每一棒都得重刻一次，於是實務上常被跳過——所以固化成一個指令。跳過的項目（例如機器上沒有 bash）腳本會印 `skip` 並回傳 1，回報時要照實寫。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> 4. **改完要驗證**：跑 `python -X utf8 tools/verify_bootstrap.py`，**exit 0 才算改完**。印 `skip` 的項目會回傳 1，回報時照實寫。
+
+
 <a id="rule-5"></a>
 
 ## 鐵律 5
 
 5. **不要塞專案專屬內容**（網址、docId、憑證檔名、業務規則）。部署包只放通用制度與佔位符。（2026-08-05 隨首版 `1fa96a2` 寫入；日期取自 git 首次出現，當時沒有另外記錄理由）
+
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> 5. **不要塞專案專屬內容**（網址、docId、憑證檔名、業務規則）。部署包只放通用制度與佔位符。
+
 
 <a id="rule-6"></a>
 
@@ -91,17 +140,32 @@
 
 6. **這是公開 repo**（2026-09-07 起公開，MIT 授權）。任何人都看得到**全部 Git 歷史**，所以文件裡不要寫客戶／單位名稱、內部專案代號、本機絕對路徑——`README.md` 的「來源」那節就是為此改成不點名的中性描述。要補來源或舉例時照樣寫成中性描述；已經進歷史的東西刪不掉，所以是提交前擋，不是事後補救。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> 6. **這是公開 repo**（MIT）。不寫客戶／單位名稱、內部專案代號、本機絕對路徑；提交前擋，進了 Git 歷史刪不掉。
+
+
 <a id="copy-1"></a>
 
 ## 副本規則 1
 
 - **改完部署包，把所有副本一起覆蓋**，包括選用的全域 `~/.claude/skills/handoff/` 與 `~/.codex/skills/handoff/`（2026-10-30 實測 Codex CLI `0.164.0` 仍讀後者，雖然官方文件已經不列這個路徑）。漏掉一份，那台機器就繼續照舊制度做事。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **改完部署包，把所有副本一起覆蓋**，包括選用的全域 `~/.claude/skills/handoff/` 與 `~/.codex/skills/handoff/`。
+
+
 <a id="copy-2"></a>
 
 ## 副本規則 2
 
 - **Codex 的 hook 與 Claude Code 同格式同語意**，所以兩邊掛的是同樣那兩個 `.sh`——不要複製第二份腳本進 `.codex/`。兩份各自演化就會出現「Claude 端會擋、Codex 端不會擋」的不對稱。 Windows 的 Codex 接線另用 `commandWindows` 經 3.17 的 `.claude/hooks/codex-hook.cmd` 尋找 Git Bash；它只做管線、保留 stdin 與結束碼，沒有規則。2026-11-01 真部署重現 PATH 的 `bash` 是 WSL、缺 `/bin/bash` 而 exit 1。
+
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **Codex 與 Claude Code 掛同樣那兩個 `.sh`**，不要複製第二份腳本進 `.codex/`。Windows 的 Codex 接線用 `commandWindows` 經 3.17 的 `.claude/hooks/codex-hook.cmd` 找 Git Bash；它只做管線，沒有規則。
+
 
 <a id="copy-3"></a>
 
@@ -110,11 +174,21 @@
 - **Antigravity 的 hook 要分 surface 看，不要寫成整個產品的性質。** 它是四個獨立 surface（Antigravity 2.0 桌面 App／Antigravity CLI／Antigravity IDE／Python SDK，官方 blog 並排列出）。2026-10-31 實測：**CLI（`1.4.7`／`1.4.12`）與 2.0（`2.28.2`）都會讀專案層 `.agents/hooks.json` 並觸發**（CLI 靠 `agy -p` headless；2.0 沒有命令列入口，改成桌面自動化開 session ＋ 寫檔探針，再到真專案上確認注入進了 context），**接線已經端到端跑通並附進骨架**（3.18 轉接層 ＋ 3.19 Windows shim ＋ 3.20 接線）；**四個 surface 裡只剩 IDE `1.107.0` 沒觸發，原因仍未解釋**。**IDE 這一面 2026-10-31 決定不再追**（使用者不再用這個 surface，未解問題沒有讀者）——量到的事實照留，收掉的只是「去 IDE 重跑一次」那個下一步，掃到別再重提。改這三個檔之前先讀部署包「跨工具與跨平台」的 Antigravity 那一節——裡面有四個踩到才知道的約束：`.cmd` **必須全 ASCII**（中文註解會被 OEM code page 誤讀成指令執行）、**不能有多行括號區塊或 label**（LF 行末的 batch 會壞）、**路徑用 `%~dp0`／`$0` 推不靠 cwd**、**從 Windows 提交 `ag-wrap.sh` 要補 `git update-index --chmod=+x`**（Windows 不帶執行位元，而 Unix handler 直接跑這支 `.sh`，記成 `100644` 的話 Unix clone 上它靜默不動；2026-10-31 補裝六個專案時就是從 Windows 做的）。另外兩個反直覺的點：相對路徑可用而絕對路徑才脆弱（所以鐵律 5 跟它**沒有**衝突，在 Windows 上甚至是唯一寫得出來的形式）；`PreToolUse` 不明確回 `{"allow_tool": true}` 就等於**拒絕**，會擋掉使用者全部的工具呼叫——所以骨架**刻意只接 `SessionStart`**。
   要重開這個決定，門檻是比那次探針更強的證據——那次是讓 hook 自己寫檔，連 Hooks UI 自己列得出來的 `PreToolUse` 都沒觸發。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **Antigravity 只接 `SessionStart`；改 3.18–3.20 之前先讀部署包「跨工具與跨平台」的 Antigravity 那一節。** 四個約束：`.cmd` 全 ASCII；不能有多行括號區塊或 label；路徑用 `%~dp0`／`$0` 推、不靠 cwd；從 Windows 提交 `ag-wrap.sh` 要補 `git update-index --chmod=+x`。IDE 那一面已決定不再追，掃到別重提。
+
+
 <a id="copy-4"></a>
 
 ## 副本規則 4
 
 - **接線路徑一律相對**：寫死絕對路徑換機器就靜默失效（真的發生過），`verify_bootstrap.py` 的「跨平台防呆」會擋。⚠️ **但「相對」不等於「可以假設 cwd 是 repo 根目錄」**：hook 的 `command` 以 **session 的 cwd** 執行，從子目錄開 session（`cd tools && claude`）時 `bash .claude/hooks/git-freshness.sh` 是 exit 127，而 SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣——落後提醒、「工作中」標記、骨架落後三件事同時無聲消失。所以 3.9／3.17 的路徑前面掛 `$(git rev-parse --show-cdup)`（回傳的是**到根目錄的相對路徑**，所以這條規則本身不必改），Windows 那一欄再用 PowerShell 的 `-replace '/','\'` 正規化斜線（`cmd` 吃不下 `../.claude\hooks\...` 的混合斜線，實測 `'..' is not recognized`）。**Antigravity（3.20）刻意不跟**：它的 `command` 不經 shell、cwd 是 `.agents/`，基準不同（2026-11-02／F05）。
+
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **接線路徑一律相對，但不能假設 cwd 是 repo 根目錄**：3.9／3.17 的路徑前面掛 `$(git rev-parse --show-cdup)`，Windows 那一欄再用 PowerShell 的 `-replace '/','\'` 正規化斜線；Antigravity（3.20）刻意不跟。
+
 
 <a id="copy-5"></a>
 
@@ -122,11 +196,21 @@
 
 - **`.agents/` 只放指標與接線**，不複製程序內容。2026-10-31 起它有 `hooks.json`（接線）與 `ag-hook.cmd`（Windows shim）——兩者都**不含任何判斷規則**，規則只在被包的那支 `.sh` 裡（權威版只有一份），所以它們跟「複製第二份腳本」不是同一種風險：裡面沒有東西可以跟權威版分岔，只會在管線上壞掉，而管線由 `verify_bootstrap.py` 的「Antigravity 接線」守著。2026-10-30 起它不只給 Antigravity——`codex debug prompt-input` 的 Skill roots 表證實 Codex 也把 repo 的 `.agents/skills/` 當 skill 來源。既然會被自動發現，**那份指標的 `description` 就必須寫滿觸發詞**：agent 是靠它決定要不要開檔的，寫短等於無聲地關掉一個入口。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **`.agents/` 只放指標與接線**，不複製程序內容；那份 skill 指標的 `description` 必須寫滿觸發詞。
+
+
 <a id="copy-6"></a>
 
 ## 副本規則 6
 
 - **Codex Windows 啟動器也要同步**：它是新增的部署包副本，來源在 3.17；本 repo 自己也有同一份。`sync_project.py --codex-only` 可只更新各專案的 Codex 接線與啟動器，不動 SKILL 與其他設定；已裝接線的專案會補齊新依賴，沒有接線的專案不補裝。接線改過要重新審核並驗收實際執行（skill B5），不能只看檔案存在。（2026-11-01 隨 `b04ecf4` 寫入；日期取自 git 首次出現）
+
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **Codex Windows 啟動器也要同步**：`sync_project.py --codex-only` 只更新各專案的 Codex 接線與啟動器。接線改過要重新審核並驗收實際執行（skill B5），不能只看檔案存在。
+
 
 <a id="copy-7"></a>
 
@@ -134,6 +218,11 @@
 
 - **本 repo 自己的 `HANDOFF.md`、`.claude/hooks/repo-git-check.sh` 與兩份接線（`.claude/settings.json`、2026-11-01 起多一份 `.codex/hooks.json`）都不在副本拓撲裡**，`sync_project.py` 不要碰它們：`HANDOFF.md` 是範本 3.3 的*實例*；那支 hook 誰的副本都不是（檔頭寫了為什麼不抄 3.10）；兩份接線指向的是那支 hook，所以它們跟 3.9／3.17 只是**長得像**，不是副本。它們的檢查由 `verify_bootstrap.py` 顧。
   ⚠️ **但那兩份接線的路徑跟 `sync_project.py` 的 `WIRING` 清單同名**，所以 `sync_project.py <本 repo 路徑>` 會把它們改成指向這裡不存在的 `git-freshness.sh`，開場檢查就靜默失效——看起來有防護、實際上沒有。`--all` 本來就掃不到這個 repo（`discover()` 靠 handoff skill 發現專案，這裡刻意沒有），所以 2026-11-01 起改成**明確拒絕**把本 repo 自己當目標，而不是靠「記得不要這樣做」。
+
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **本 repo 自己的 `HANDOFF.md`、`.claude/hooks/repo-git-check.sh`、`.claude/hooks/repo-action-rules.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在副本拓撲裡**，`sync_project.py` 不要碰它們；它已明確拒絕把本 repo 當目標。
+
 
 <a id="snapshot"></a>
 
@@ -147,11 +236,24 @@
 
 需要額外模型呼叫的探針先取得使用者授權，且只用訂閱額度；不能因為驗證器沒有涵蓋就自行呼叫模型。新增守門檢查必須附負向測試，否則永遠回 `ok` 也看不出來。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **A5 寫工作中標記；B6 必須核對並覆寫整份 `HANDOFF.md`，≤80 行。** 已完成的待辦移除；保留的未知分清「現行故障」與「歷史無法歸因」；版本與驗證結果對實際執行結果，不抄上一輪；沒做完就明記風險與可續作步驟；收工清掉 origin 的工作中標記。
+> - `verify_bootstrap.py` 的「本 repo 交接狀態」只守必要欄位、80 行上限、`VERSION` 一致與已知過期待辦，**不能判斷任意待辦是否真的完成**；B6 仍須逐項核對證據。
+> - **需要額外模型呼叫的探針先取得使用者授權，且只用訂閱額度。**
+> - **新增守門檢查必須附負向測試**，否則永遠回 `ok` 也看不出來。
+
+
 <a id="pointer"></a>
 
 ## 這個 repo 自己的指標檔
 
 `CLAUDE.md` 2026-10-30 改成只有一行 `@AGENTS.md` import。**不要改回「去讀 AGENTS.md」那種句子**：Claude Code 有 `CLAUDE.md` 就不原生讀 `AGENTS.md`，用文字請它去讀不保證它真的開檔（當天在這個 repo 上驗證過：session 開場只拿到 `CLAUDE.md` 那三行）。`GEMINI.md` 維持指標寫法——Antigravity 原生讀 `AGENTS.md`，而它支不支援 `@` import 沒有文件可查。
+
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> `CLAUDE.md` 只有一行 `@AGENTS.md` import，**不要改回「去讀 AGENTS.md」那種句子**；`GEMINI.md` 維持指標寫法。
+
 
 <a id="eol"></a>
 
@@ -159,11 +261,21 @@
 
 `.gitattributes` 強制 `eol=lf`。部署包全檔是 LF；用 Python 改寫時記得 `newline=''` 或事後正規化，否則 Windows 會把整份寫成 CRLF。（2026-08-05 隨首版 `1fa96a2` 寫入；日期取自 git 首次出現）
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> `.gitattributes` 強制 `eol=lf`。用 Python 改寫時記得 `newline=''` 或事後正規化。
+
+
 <a id="hook-1"></a>
 
 ## 改兩支 hook 的訊息時 1
 
 **反引號在雙引號裡是命令替換。** ``echo "格式是 `機器` ／ `工具`"`` 會讓 shell 真的去執行 `機器`，訊息變成空白再加一行 command not found——而那兩支 `.sh` 會被抄進每個專案，所以錯一次就是錯六份。欄位名用「」包，不要用反引號（註解裡用沒問題，註解不求值）。2026-11-02 修 F01 時當場踩到，改完才發現；`verify_bootstrap.py` 的共用情境表現在把那句訊息的字面寫法釘住了。
+
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **雙引號裡不要寫反引號**（那是命令替換）；欄位名用「」包，註解裡才能用。
+
 
 <a id="hook-2"></a>
 
@@ -171,14 +283,28 @@
 
 **`$變數` 後面緊接中文或全形標點時一律寫成 `${變數}`。** macOS 內建的 `/bin/bash` 是 3.2，在 UTF-8 語系下會把緊接的那個字的第一個位元組吃進變數名：`（branch=$branch）` 印成 `（branch=��`，「`$tool`」整個消失，`ag-wrap.sh` 連 JSON 都吐不出來。判斷邏輯不受影響，壞的是每一句結論訊息，而 Windows 的 Git Bash（bash 5）完全不重現——2026-11-06 第一次在 Mac 上跑 `verify_bootstrap.py` 才以三項 FAIL 現形，修掉部署包 22 處、本 repo hook 17 處。`verify_bootstrap.py` 的「bash 3.2 多位元組變數」靜態掃描現在會擋。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **`$變數` 後面緊接中文或全形標點時一律寫成 `${變數}`**；macOS 的 bash 3.2 會吃掉緊接那個字的位元組。
+
+
 <a id="hook-3"></a>
 
 ## 改兩支 hook 的訊息時 3
 
 **用腳本改這些檔時，不要把 patch 從 heredoc 餵進 `python -`。** 轉義會被多解一層：反斜線 n 變成真的換行、反斜線 t 變成字面上的 TAB，於是 shell 範本裡的 `printf` 格式字串被切成三行、Python 的 `strip()` 參數裡塞進看不見的 TAB，而兩種壞法在 diff 上都很難看出來。把 patch 寫成檔案再執行，或用 `chr(10)` 組字串。2026-11-02 同日踩到三次，第三次就是在寫這一條的時候。
 
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **用腳本改這些檔時，不要把 patch 從 heredoc 餵進 `python -`**；把 patch 寫成檔案再執行，或用 `chr(10)` 組字串。
+
+
 <a id="hook-4"></a>
 
 ## 改兩支 hook 的訊息時 4
 
 **用腳本改 `.md` 時不要手寫 `\u` 轉義。** 手寫碼點會靜默寫出異體字或錯字：2026-11-05 一天踩兩次——`盾`／`證`／`斷`／`裡` 寫成「矛皾」「証」「中断」，以及 `㊣` 寫成 U+321B（正確是 U+32A3）、`權` 寫成日文異體 `権`。兩次在 diff 上都看不出來。直接寫中文字面，或把內容另存成 UTF-8 檔再拼接；patch 腳本一律加「命中數 ≠ 1 就 abort」，第二次就是靠它擋下來的。
+
+2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
+
+> - **用腳本改 `.md` 時不要手寫 `\u` 轉義**，直接寫中文字面；patch 腳本一律加「命中數 ≠ 1 就 abort」。
