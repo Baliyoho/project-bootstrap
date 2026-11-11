@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11（P2 第三片後半 3b 的本機準備，決策書 Q21）：新增 `.github/workflows/release.yml`（本 repo 第一支 workflow，只由 `release-request/*` tag 觸發、要使用者核准）、`tools/release_package.py`（CI 用：乾淨 checkout、建包、跑驗證、簽章、打包）、`tools/install_package.py`（使用者用：驗簽、裝進快取、寫指標，可鋪空專案）、`src/kit/release-keys.txt`（發布公鑰；目前是空的，等 E1）、`src/project_bootstrap/distribute.py` 與兩份測試。還沒有 push、沒有建 secret、environment 或保護規則，workflow 不會跑；部署包、skill／hook／接線與 `VERSION` 未動。
+> 最後更新：2026-11-11（P2 第 3b 片 E1）：在 GitHub 建了 `release` environment（必要審核人是 repo 擁有者），CI 私鑰存成它的 `RELEASE_SIGNING_KEY` secret，本機私鑰已刪；公鑰寫進 `src/kit/release-keys.txt`，指紋寫進 README。還沒 push、沒設保護規則，workflow 沒跑過。
+
+> 2026-11-11 稍早（P2 第三片後半 3b 的本機準備，決策書 Q21）：新增 `.github/workflows/release.yml`（本 repo 第一支 workflow，只由 `release-request/*` tag 觸發、要使用者核准）、`tools/release_package.py`（CI 用：乾淨 checkout、建包、跑驗證、簽章、打包）、`tools/install_package.py`（使用者用：驗簽、裝進快取、寫指標，可鋪空專案）、`src/kit/release-keys.txt`（發布公鑰；目前是空的，等 E1）、`src/project_bootstrap/distribute.py` 與兩份測試。還沒有 push、沒有建 secret、environment 或保護規則，workflow 不會跑；部署包、skill／hook／接線與 `VERSION` 未動。
 
 > 2026-11-11 稍早（P2 第三片前半 3a，決策書 Q20）：`src/project_bootstrap/` 新增 `channel.py`（CI 端發布、沿金鑰鏈安裝、從來源 repo 的 `channel/*` tag 做每次寫入的檢查），`tests/` 新增 `test_channel.py`；`pointer.py` 抽出三個共用步驟並允許指標多一個 `source` 欄位。全部在本機驗，沒有建 workflow、secret 或保護規則；部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
@@ -133,7 +135,7 @@
 | 路徑 | 是什麼 | 什麼時候動 |
 |---|---|---|
 | [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **部署包**（發給各專案的產物）：訪談表＋各檔範本＋上 GitHub＋自檢清單＋維持操作卡。2026-11-11 起由 `src/kit/` 生成，仍提交（專案複製它、`sync_project.py` 讀它與它的 Git 歷史） | 不手改；改 `src/kit/` 後跑 `tools/build_kit.py`（鐵律第 1 條） |
-| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`release-keys.txt` 是發布公鑰（P2 第 3b 片，空到 E1 建金鑰為止）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；更新方式目前與 `sync_project.py` 的清單逐檔一致，`test_package_repo.py` 守） | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬 |
+| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`release-keys.txt` 是發布公鑰（P2 第 3b 片；2026-11-11 E1 填入 CI 公鑰，指紋也寫在 README）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；更新方式目前與 `sync_project.py` 的清單逐檔一致，`test_package_repo.py` 守） | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬 |
 | [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `PROJECT-BOOTSTRAP.md`；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
 | [tools/release_package.py](tools/release_package.py) | P2 第 3b 片：CI 用的發布入口。要求 checkout 乾淨、建 debug 包、跑 `verify_bootstrap.py`、全部本輪實查通過才簽章，輸出包壓縮檔、簽過的紀錄與要建的 channel tag；自己不建 tag、不上傳。只用標準函式庫，不部署 | 發布流程改變時 |
 | [tools/install_package.py](tools/install_package.py) | P2 第 3b 片：使用者用的安裝入口。第一次用 `src/kit/release-keys.txt` 的根公鑰、之後沿上一版的 `next_keys` 驗簽，裝進快取並寫專案指標；`--seed` 鋪空專案、`--check` 跑一次寫入檢查。不下載。只用標準函式庫，不部署 | 安裝流程改變時 |

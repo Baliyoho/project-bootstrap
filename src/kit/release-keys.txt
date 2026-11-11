@@ -2,5 +2,8 @@
 # Every release lists these as next_keys, so the next release must be signed
 # by one of them. A first install also uses this file as the root key.
 #
-# Empty until P2 slice 3b step E1 creates the CI key. Until then
-# tools/release_package.py refuses with no-release-keys.
+# 2026-11-11 (step E1): the CI key. Its private half exists only as the
+# RELEASE_SIGNING_KEY secret of the `release` environment, which needs the
+# repository owner's approval for every run.
+# Fingerprint: SHA256:FjVJTEPBuOaloJZV0GvtZiG3bXYJo68v+cTaVqs0JU0
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIgWwG5cHEmFzh385om6YQAXht2809rDXn2U37TlVtJl

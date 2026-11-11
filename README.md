@@ -176,6 +176,16 @@ handoff skill 目錄（六個檔）會同時存在於：**本 repo 的 `src/kit/
 - 要改就**改本 repo 的 `src/kit/files/.claude/skills/handoff/*.tmpl`**，跑 `tools/build_kit.py` 重生部署包，再覆蓋下去；不要在單一專案裡就地改，也不要手改 `PROJECT-BOOTSTRAP.md`。
 - 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，用它辨識落後的副本（同一天改第二次起加序號，如 `v2026-10-24.2`）。
 
+## 正式包的發布公鑰（v2 試行，2026-11-11）
+
+v2 分支在試行「由 CI 簽章發布正式包、專案只留指標」（實現規劃 P2）。發布用的公鑰在 [src/kit/release-keys.txt](src/kit/release-keys.txt)，指紋：
+
+```text
+SHA256:FjVJTEPBuOaloJZV0GvtZiG3bXYJo68v+cTaVqs0JU0
+```
+
+第一次安裝時 `tools/install_package.py` 用這把公鑰驗簽；之後每一版只接受上一版列出的金鑰。私鑰只存在本 repo `release` environment 的 secret，每次發布都要 repo 擁有者核准。現行的部署方式（複製 `PROJECT-BOOTSTRAP.md`）不受影響。
+
 ## 來源
 
 從兩個實際運行的專案萃取：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，另一個是文本識別系統。兩個都是多模型（Claude／Gemini／Codex）、多機器（Windows↔macOS）協作。
