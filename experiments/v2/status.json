@@ -729,10 +729,14 @@
         {
           "path": "tests/test_campaign.py",
           "scope": "20 個混合目標（10 更新、4 未受影響、1 排除、5 失敗）全列、3 次確認仍 NOT OK；乾淨 2 次 OK；無更新 0 次；兩個漂移超過上限；未知結果、重複、受影響未評估、上限收緊各自不 ok；另以真 assess_many 列產生缺失與排除；mutants.json 14 個刪改全部 killed"
+        },
+        {
+          "path": "src/project_bootstrap/migrate.py",
+          "scope": "P2 第 5 片（Q25）遷移報告：每個要求的目標恰好一列（已是目標版／遷移／人工比對／失敗／排除），有客製或行末不同的專案各算一次人工比對；有失敗或需人工比對就不是 ok。只算比對次數，不是真人確認次數的實測"
         }
       ],
-      "unknown": "確認次數是規劃值，未量真人實際操作與時間；impact 專案名到批次目標的對應由呼叫端提供；未接 sync_project.py 實際同步；跨工具與跨 OS 尚未驗收",
-      "next": "接 sync_project 實跑 20 專案並量實際人工確認次數"
+      "unknown": "確認次數是規劃值，未量真人實際操作與時間；impact 專案名到批次目標的對應由呼叫端提供；遷移器（P2 第 5 片）只算人工比對次數，真實專案沒有寫入；跨工具與跨 OS 尚未驗收",
+      "next": "對真實 20 專案跑遷移並量實際人工確認次數"
     },
     {
       "id": "F25",
@@ -900,9 +904,13 @@
         {
           "path": "tests/test_preflight.py",
           "scope": "批次帶 confirm 時逐目標做發布確認：Git 乾淨對齊但套件已漂移的目標列 failed／release:component-drift、不算 eligible；confirm 例外記 target-error；Git 先拒絕的目標不呼叫 confirm；移除各守門後測試失敗"
+        },
+        {
+          "path": "tests/test_migrate_repo.py",
+          "scope": "P2 第 5 片：20 個 Git fixture 目標的清單預演全數列出（12 遷移、2 已是目標版、3 停下、2 失敗、1 排除），報告 NOT ok；預演前後每個專案含 .git 的位元組與修改時間不變。真實專案只讀跑只找到 4 個，不是 20 個"
         }
       ],
-      "unknown": "原型只彙總 gitclaim 開工資格與可選的逐目標發布確認，未接進 sync_project.py 的實際同步；現行同步器的 inventory 行為以 verify_bootstrap 為準；跨工具與跨 OS 尚未驗收",
+      "unknown": "gitclaim 批次只彙總開工資格；遷移器的 20 目標報告只在 Git fixture 成立，真實只讀跑只找到 4 個專案、其餘要使用者給私人清單；現行同步器的 inventory 行為以 verify_bootstrap 為準；跨工具與跨 OS 尚未驗收",
       "next": "20 目標完整列出，一壞不能宣稱全部成功"
     },
     {
@@ -1080,9 +1088,17 @@
         {
           "path": "tests/test_package_repo.py",
           "scope": "本 repo：owners.json 恰好涵蓋 src/kit 的 27 個範本，更新方式與 sync_project.py 的 WHOLE／SURGICAL／WIRING／AG_WIRING／PARTIAL／INSTANCE 逐檔一致；skill 六檔與兩支 hook 腳本是 core；真實來源建包 check 乾淨、版本等於 VERSION"
+        },
+        {
+          "path": "tools/migrate_project.py",
+          "scope": "P2 第 5 片（Q25）：舊專案搬到包＋指標，只換本 repo 部署包歷史裡發過的舊版、補缺的共用檔、合併混合檔保留專案部分；客製或 CRLF 行末不同就整個專案不寫；寫入要單一專案、占用檢查與驗過簽的正式發布，寫完用寫入檢查的元件比對確認"
+        },
+        {
+          "path": "tests/test_migrate.py",
+          "scope": "合成觀察：六種檔案狀態、客製或行末讓專案停下、已是目標版的條件、20 目標報告與重複／缺漏／多出的目標；mutants.json 28 個刪改全部 killed"
         }
       ],
-      "unknown": "包已能從真實來源生成，但 sync_project.py 仍用自己的清單、未讀 manifest（P2 第 5 片）；policy.plan_update 只吃整份的 core／adapter 檔，region／wiring／key 三種部分歸屬還沒有更新規劃；沒有簽章與 channel（第 3 片）；跨工具與跨 OS 尚未驗收",
+      "unknown": "sync_project.py 的清單 2026-11-11 起由 owners.json 算出；遷移器只換本 repo 發過的舊版、客製停下，但 policy.plan_update 仍只吃整份的 core／adapter 檔，客製沒有搬進覆寫位置的工具；寫入檢查逐位元組比對，專案 .gitattributes 強制 CRLF 的 .cmd 會被擋（待決）；真實專案沒有寫入；跨工具與跨 OS 尚未驗收",
       "next": "保留專案自訂內容；未知所有權停止"
     },
     {
@@ -1134,10 +1150,14 @@
         {
           "path": "tests/test_inventory.py",
           "scope": "六個專案：乾淨、改 core、缺 adapter、只改專案檔仍乾淨、版本未知、讀不到；被改優先於遺失；無發布檔為無可檢查；掃描前後檔案位元組不變；mutants.json 8 個刪改全部 killed"
+        },
+        {
+          "path": "tools/migrate_project.py",
+          "scope": "P2 第 5 片預演對使用者真實專案只讀跑一次（Q25）：本機一層目錄 4 個有骨架的專案，3 個可遷移、1 個因 .cmd 的 CRLF 行末停下（內容與發布版相同）；報告只留本機"
         }
       ],
-      "unknown": "清單由呼叫端提供，不掃整顆磁碟；不判斷修改是否該搬進覆寫；未對真實專案跑；跨工具與跨 OS 尚未驗收",
-      "next": "對真實專案清單跑一次並把被改檔交人判斷"
+      "unknown": "清單由呼叫端提供，不掃整顆磁碟；不判斷修改是否該搬進覆寫；真實只讀跑只涵蓋本機一層目錄的 4 個專案；跨工具與跨 OS 尚未驗收",
+      "next": "使用者給完整私人清單再跑一次，停下的專案交人判斷"
     },
     {
       "id": "F40",

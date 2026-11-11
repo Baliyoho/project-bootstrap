@@ -4950,6 +4950,153 @@
      "new": ""
     }
    ]
+  },
+  {
+   "tests": [
+    "tests.test_migrate"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    if (not isinstance(observed, tuple) or len(observed) != 2\n            or observed[0] not in ('digest', 'eol') or not isinstance(observed[1], str)):\n        raise Denied('invalid-observation')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "observed[0] not in ('digest', 'eol')",
+     "new": "observed[0] not in ('digest', 'eol', 'hash')"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "len(observed) != 2\n",
+     "new": "len(observed) < 2\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "        return 'eol' if digest == target or digest in known else 'customised'\n",
+     "new": "        return 'eol'\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "        return 'eol' if digest == target or digest in known else 'customised'\n",
+     "new": "        return 'eol' if digest == target else 'customised'\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    if kind == 'eol':\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    if digest in known:\n        return 'known'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    if digest == target:\n        return 'current'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    if set(observed) != set(package):\n        raise Denied('observation-mismatch')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "s in ('customised', 'eol')",
+     "new": "s == 'customised'"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    if eol:\n        row['eol'] = eol\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    if customised:\n        row['compare'] = customised\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    if row['problems'] or unreadable:\n",
+     "new": "    if row['problems']:\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    if row['problems'] or unreadable:\n",
+     "new": "    if unreadable:\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "        row['problems'] += ['unreadable:' + p for p in unreadable]\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    elif customised:\n        row['action'] = 'manual'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": " and not merges\n",
+     "new": "\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "          and pointer_digest is not None and pointer_digest == package_digest):",
+     "new": "          and pointer_digest is not None):"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "all(s == 'current' for s in files.values())",
+     "new": "True"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "        row['replace'] = sorted(p for p, s in files.items() if s == 'known')\n",
+     "new": "        row['replace'] = sorted(p for p, s in files.items() if s in ('known', 'current'))\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "        row['add'] = sorted(p for p, s in files.items() if s == 'missing')\n",
+     "new": "        row['add'] = []\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "        if row.get('action') not in ACTIONS:\n            raise Denied('invalid-row')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "        if name in seen:\n            out.append(failed(name, 'duplicate-target'))\n            continue\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "        out.append(found[0] if len(found) == 1 else\n",
+     "new": "        out.append(found[0] if found else\n"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "    for name in sorted(set(by_name) - seen):\n        out.append(failed(name, 'not-requested'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "            'ok': not totals['failed'] and not totals['manual']}",
+     "new": "            'ok': not totals['failed']}"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "            'ok': not totals['failed'] and not totals['manual']}",
+     "new": "            'ok': not totals['manual']}"
+    },
+    {
+     "file": "src/project_bootstrap/migrate.py",
+     "old": "            'manual_prompts': totals['manual'],",
+     "new": "            'manual_prompts': 0,"
+    }
+   ]
   }
  ]
 }

@@ -58,23 +58,44 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 # --all 的預設根目錄。其他位置用 --root 指定，不必改程式；固定範圍用私人 inventory。
 ROOTS = (pathlib.Path.home() / 'Desktop',)
 
+# 每個範本怎麼更新，2026-11-11 起只寫在 src/kit/owners.json（P2 第 5 片）。以前這裡另有
+# 一份手寫清單，靠 test_package_repo 逐檔對照兩邊；兩個家遲早會分岔，所以改成從那份讀。
+# 下面幾個名字照舊，只是值由它算出來。whole／seed 是通用的：整份換／不碰。其他三種
+# 每個檔都有專屬的處理程式，所以 owners.json 多一個或少一個這種檔就停，不猜怎麼處理。
+OWNERS_FILE = ROOT / 'src' / 'kit' / 'owners.json'
+
+
+def load_updates(path=OWNERS_FILE):
+    """{範本路徑: 更新方式}，依 owners.json 的順序。"""
+    data = json.loads(path.read_text(encoding='utf-8'))
+    files = data.get('files') if isinstance(data, dict) and data.get('schema') == 1 else None
+    if not isinstance(files, dict) or not files:
+        raise ValueError('owners.json 格式不對')
+    out = {}
+    for rel, entry in files.items():
+        update = entry.get('update') if isinstance(entry, dict) else None
+        if update not in ('whole', 'region', 'wiring', 'key', 'lines', 'seed'):
+            raise ValueError('owners.json 的 %s 更新方式不認得' % rel)
+        out[rel] = update
+    return out
+
+
+def by_update(updates, kind):
+    return tuple(rel for rel, update in updates.items() if update == kind)
+
+
+UPDATES = load_updates()
+
 # 整份覆蓋就對的檔：純制度內容，沒有任何專案專屬的值。
 # handoff skill 2026-11-10 起是一個目錄（決策書 F22）：入口 SKILL.md 加五個模式／理由檔。
 # 模式檔排在入口前面寫：寫到一半失敗時，舊入口還在而且不會提到模式檔，多出來的檔不會被讀到；
 # 反過來先換入口，就會留下一個指向不存在檔案的新入口。
 SKILL_DIR = '.claude/skills/handoff/'
 SKILL_ENTRY = SKILL_DIR + 'SKILL.md'
-SKILL_PARTS = tuple(SKILL_DIR + name for name in (
-    'mode-a.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md', 'reasons.md'))
-WHOLE = SKILL_PARTS + (
-    SKILL_ENTRY,
-    '.claude/hooks/git-freshness.sh',
-    '.claude/hooks/pre-push-handoff.sh',
-    '.claude/hooks/ag-wrap.sh',
-    '.claude/hooks/codex-hook.cmd',
-    '.agents/ag-hook.cmd',
-    '.agents/skills/handoff/SKILL.md',
-)
+SKILL_PARTS = tuple(rel for rel in by_update(UPDATES, 'whole')
+                    if rel.startswith(SKILL_DIR) and rel != SKILL_ENTRY)
+WHOLE = SKILL_PARTS + (SKILL_ENTRY,) + tuple(
+    rel for rel in by_update(UPDATES, 'whole') if not rel.startswith(SKILL_DIR))
 # 手術式更新：這一份混了「共用程式」與「專案自己的設定」，整份蓋過去會把設定洗掉。
 SURGICAL = 'tools/check_docs.py'
 SETTINGS_START = '# ── 專案設定（部署後依實際情況調整）'
@@ -86,7 +107,7 @@ SETTINGS_END = '# ── 專案設定結束'
 # 舊的 `Bash`，而那台機器的主 shell 正是 PowerShell——pre-push 防呆整個不會觸發，而且
 # 完全沒有徵兆。JSON 塞不進 `source:` 版本標記，落後偵測同樣看不到它們，所以這份清單
 # 是這兩個檔唯一的守門人。
-WIRING = ('.claude/settings.json', '.codex/hooks.json')
+WIRING = by_update(UPDATES, 'wiring')
 OWNED_SCRIPTS = ('git-freshness.sh', 'pre-push-handoff.sh')
 CODEX_WIRING = '.codex/hooks.json'
 CODEX_LAUNCHER = '.claude/hooks/codex-hook.cmd'
@@ -99,15 +120,11 @@ AG_WIRING = '.agents/hooks.json'
 AG_KEY = 'handoff-git-check'
 
 # 只補單一欄位／單一行，其餘歸專案自己。
-PARTIAL = ('HANDOFF.md', '.gitignore', 'CLAUDE.md')
+PARTIAL = by_update(UPDATES, 'lines')
 # 刻意不同步：部署後就歸專案自己，內容會長成專案的樣子（副本拓撲見 ARCHITECT.md）。
 # 這份清單唯一的用途是讓 verify_bootstrap 的「同步清單涵蓋骨架」對得起來——新增一份範本
 # 卻忘了歸類，會在那裡 FAIL，而不是安靜地沒人同步（那正是 WIRING 兩個檔踩過的坑）。
-INSTANCE = (
-    'AGENTS.md', 'ARCHITECT.md', 'GEMINI.md', 'README.md',
-    'docs/ai-notes/handover-protocol.md', 'docs/ai-notes/roadmap.md',
-    'tools/verify_state.py', '.gitattributes',
-)
+INSTANCE = by_update(UPDATES, 'seed')
 
 BUSY_FIELD = '- **工作中**：無（已交棒）'
 GITIGNORE_LINES = ('.claude/.bootstrap-version', '.obsidian/')
@@ -116,6 +133,16 @@ GITIGNORE_LINES = ('.claude/.bootstrap-version', '.obsidian/')
 # import 是純加法（官方說留著 import 不會讓它讀兩次），專案自己加的內容原樣保留。
 # 不這樣做的話，這個修正只有新部署的專案拿得到，既有專案會無聲地停在舊行為。
 CLAUDE_IMPORT = '@AGENTS.md'
+
+# 有專屬處理程式的檔：owners.json 跟這裡對不上就是有檔沒人處理，或處理程式指向不存在的檔。
+HANDLED = {'region': {SURGICAL}, 'key': {AG_WIRING}, 'lines': {'HANDOFF.md', '.gitignore', 'CLAUDE.md'},
+           'wiring': {'.claude/settings.json', '.codex/hooks.json'}}
+for _kind, _expected in HANDLED.items():
+    if set(by_update(UPDATES, _kind)) != _expected:
+        raise SystemExit('owners.json 的 %s 檔是 %s，同步器只會處理 %s：先改同步器再改 owners.json'
+                         % (_kind, sorted(by_update(UPDATES, _kind)), sorted(_expected)))
+if SKILL_ENTRY not in by_update(UPDATES, 'whole') or len(set(WHOLE)) != len(WHOLE):
+    raise SystemExit('owners.json 缺 handoff skill 入口，或整份覆蓋清單重複')
 
 
 def read(p):
