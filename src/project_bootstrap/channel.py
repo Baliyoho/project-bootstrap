@@ -7,9 +7,10 @@ The channel is a set of tags in the source repository::
 ``git ls-remote`` lists them without a local clone or any write, so every
 managed write can ask the source repository directly. Freshness comes from
 that live connection, not from signing a nonce: a CI job cannot answer
-requests, and Q20 chose not to run a signing service. On GitHub a ruleset
-keeps channel tags from being moved or deleted (decision Q22), but anyone
-with push access can still create one; the client therefore refuses any tag
+requests, and Q20 chose not to run a signing service. Nothing on the server
+protects channel tags: the ruleset set up for decision Q22 was measured to
+block neither moves nor deletes (Q23), so anyone with push access can create,
+move or delete one. The client therefore refuses any tag
 whose epoch and digest are not the pair CI signed, so a forged tag can only
 stop writes, never let an unsigned or older package write.
 

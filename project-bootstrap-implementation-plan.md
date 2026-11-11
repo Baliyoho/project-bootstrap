@@ -142,7 +142,7 @@ flowchart TD
 1. 發布 pipeline 驗指定 source tree，產出 manifest：整包版本、元件 digest、schema／核心相容範圍、影響 ID、驗收證據、正式或調試分類。
 2. CI 身分才持有正式發布能力；agent 與一般工作樹不能修改正式 channel 或簽章金鑰。channel 指向已驗證的不可變 release，不等於來源分支的最新未驗證 commit。
 3. 寫入前向可信端確認 channel epoch；本地已快取相同 digest 仍要確認新鮮度。失敗停止寫入，不用 720 分鐘快取放行。只讀可用舊內容，但明示版本與未確認最新。
-   2026-11-11 依決策書 Q20 改寫「可信端」的做法：不架常駐簽章服務，也不對一次性亂數簽章；channel 是來源 repo 裡由 CI 建立的 tag（`channel/<名稱>/<epoch>-<digest>`），每次寫入直接用 `git ls-remote` 連來源 repo 讀最新的 tag。新鮮度靠這次直接連線，重播靠 GitHub 的 TLS 擋。GitHub 規則只擋 tag 被移動或刪除（決策書 Q22：個人帳號的 repo 不能只放行 GitHub Actions），有 push 權限的人仍能建新 tag。客戶端只在最新 tag 恰好等於已安裝、CI 簽過的那一筆 (epoch, digest) 時放行，所以偽造的 tag 只能讓寫入停下，不能讓舊版繼續寫。
+   2026-11-11 依決策書 Q20 改寫「可信端」的做法：不架常駐簽章服務，也不對一次性亂數簽章；channel 是來源 repo 裡由 CI 建立的 tag（`channel/<名稱>/<epoch>-<digest>`），每次寫入直接用 `git ls-remote` 連來源 repo 讀最新的 tag。新鮮度靠這次直接連線，重播靠 GitHub 的 TLS 擋。伺服器端沒有保護 channel tag：決策書 Q22 設的規則經 E5 實測擋不住移動與刪除（Q23），有 push 權限的人可以建、移、刪；客戶端只接受 CI 簽過的 (epoch, digest)，所以這些動作只會讓寫入停下。客戶端只在最新 tag 恰好等於已安裝、CI 簽過的那一筆 (epoch, digest) 時放行，所以偽造的 tag 只能讓寫入停下，不能讓舊版繼續寫。
 4. 執行代理把 epoch 與具體操作綁定，長時間操作須在可安全中止的界線再確認；新規則啟用前先暫停並排空受影響操作。禁止用「開場確認過」涵蓋整個 session。
 5. 更新採下載、驗 digest／簽章、驗相容性、原子切換；故障保留舊發布物供只讀／復原，不能自動回舊版繼續寫。合法 pin 例外須可見且有範圍、理由與重新檢視條件。
 

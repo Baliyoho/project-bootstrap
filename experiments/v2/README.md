@@ -407,3 +407,13 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 本機獨立核對：用已提交的 `src/kit/release-keys.txt` 驗簽通過；紀錄是 `beta`、epoch 1，`next_keys` 等於已提交的金鑰；解壓後 `package.check` 乾淨、正式版、版本 `2026-11-10.2`、27 個檔、digest 與紀錄相符；在本機同一個 commit 重建、標成正式版，digest 跟 CI 發的逐位元組相同。
 
 缺口：發布工具把驗證器輸出收進報告，沒有印到 workflow 日誌，所以日誌裡看不到每一項的結果，只能從「有簽章」反推全部通過；報告本身也只以 digest 進入簽章紀錄，沒有隨 Release 上傳。E5（乾淨環境安裝、對真的 GitHub 跑寫入檢查、假 tag 負向測試）還沒做。
+
+## P2 第 3b 片 E5：驗收（2026-11-11）
+
+**乾淨環境**：空的家目錄、不讀系統與使用者 git 設定、不帶 GitHub 登入（`env -i`）。匿名 clone 公開 repo 的 v2 分支，拿到 `243074c`（channel tag 指的那個 commit）；匿名下載 Release 的三個檔，與登入後下載的逐位元組相同。用 clone 裡的 `install_package.py --seed --check` 裝進空專案：27 個檔、根公鑰驗簽、寫指標，對真的 GitHub `git ls-remote` 跑寫入檢查，最新與已安裝都是 `ed31ffed…`、epoch 1，放行。
+
+**本機負向測試**（不碰 GitHub）：專案改自己的 `AGENTS.md`／`HANDOFF.md` 照樣放行；改共用 hook 是 `component-drift`；來源連不到是 `channel-unreachable`；壓縮檔內容被改是 `bad-package`；簽章紀錄被改、換成別的根公鑰都是 `not-signed-by-trusted-key`；被拒的安裝都沒寫指標、沒建快取。（「壓縮檔被改」第一次看似沒擋，是測試腳本忘了傳入那個檔，修正後重跑才算數。）
+
+**GitHub 上的 tag 規則沒有作用**（決策書 Q23）：在 `channel/e5-test/` 用 API 建假 tag（預期成功）後，用 API 移到另一個 commit——成功；改用 `git push` 刪除——也成功。規則評估紀錄是空的（連 workflow 建 `beta` tag 那次都沒有），GitHub 卻回報 ruleset 27014223 是 active、擁有者「永遠不能繞過」。原因沒有查明。所以 channel 歷史沒有伺服器端保護：有 push 權限的人能建、移、刪 channel tag。安全那條線仍由簽章守：客戶端只接受 CI 簽過、而且等於已安裝紀錄的 (epoch, digest)，上面的乾淨環境與 3a 的離線測試都驗過，假 tag 或被移走的 tag 只會讓寫入停下。測試 tag 已刪，`beta` 的 tag 沒有被碰過。使用者同意後也刪掉了 ruleset 27014223，免得它看起來有保護。
+
+沒驗的：Windows／Linux；真實專案的遷移（第 5 片）；第二版發布與沿金鑰鏈升級只在本機測過，GitHub 上還沒發過 epoch 2。
