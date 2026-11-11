@@ -5059,7 +5059,7 @@ def run_checks(dest, tmp):
 P1_IMPORT_NAMES = {'attrs': ('attr', 'attrs'), 'markdown-it-py': ('markdown_it',),
                    'pytest': ('pytest', '_pytest'), 'rpds-py': ('rpds',)}
 # A4 會跑到的程式：只能用標準函式庫，沒裝 uv 的機器也要能驗
-P1_STDLIB_ONLY = ('tools', 'experiments/v2')
+P1_STDLIB_ONLY = ('tools', 'src/project_bootstrap')
 
 
 def p1_section(text, header):

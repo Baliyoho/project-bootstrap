@@ -1,6 +1,7 @@
 # v2 P0：可重跑的契約與架構門檻
 
-> 最後更新：2026-11-10
+> 最後更新：2026-11-11
+> 2026-11-11 P1 第二片：本目錄的程式已搬到 [src/project_bootstrap](../../src/project_bootstrap/__init__.py)、測試搬到 [tests](../../tests/__init__.py)；這裡只留本說明與 [現況索引](status.json)。下文提到的檔名是同一份程式，指令已改成新位置；各節日期的歷史敘述不改。
 > 範圍：v2 分支的合成實驗，沒有部署、模型呼叫、付費服務或正式制度切換。
 
 需求以 [決策書](../../project-bootstrap-requirements-decision.md) 為準；[實現規劃](../../project-bootstrap-implementation-plan.md) 定義 P0–P5。現行部署包仍是 22 檔的唯一權威。本目錄不是第二份 handoff 制度，也不複製其他專案的檔案。
@@ -86,7 +87,7 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 
 2026-11-08 Mac 後代事件候選探針：macOS 27 SDK 的 [`es_new_descendants_client`](https://developer.apple.com/documentation/endpointsecurity/es_new_descendants_client(_:_:)) 宣稱可接收呼叫程序整棵後代樹的事件；依該定義推論，`setsid` 不會因改變程序群組而移出後代樹，此點尚未實測。同一份 SDK header 明定需要 `com.apple.developer.endpoint-security.client` entitlement。這台 macOS 27.2 的未簽署合成 helper 成功編譯，API 回傳 3（`ERR_NOT_ENTITLED`），因此本機沒有可用事件客戶端。`tree_probe.py` 的可重跑前置探針只測 API 准入，沒有訂閱事件或操作真實程序。即使有 entitlement，通知本身也不會在 guardian 被殺時自動終止已存活後代；仍需獨立驗證事件遺失、程序身分、結束確認、重啟恢復與撤銷時的 fail closed 行為。此候選目前不提供 Mac 多程序退場保障，亦不改變 P0 未退出。
 
-2026-11-08 Mac VM 候選已從支援查詢推進到合成 guest。`python3 -X utf8 experiments/v2/vm_probe.py` 在這台 Apple silicon／macOS 27.2 下載並核對 [Alpine 3.24.4 aarch64 netboot](https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/netboot/) 的固定 SHA-256，從壓縮的 `vmlinuz-virt` 解出 ARM64 Image，替換 initramfs 的 `/init`，編譯並 ad hoc 簽署帶 [`com.apple.security.virtualization` entitlement](https://developer.apple.com/documentation/virtualization/adding-the-virtualization-entitlement-to-your-project) 的 Swift runner。原壓縮 kernel 使 VM start 回 `VZErrorDomain Code=1`；解壓後啟動成功。影像只快取於本機暫存目錄，repo 不保存下載的二進位。探針建立一個無網路裝置、只共享新暫存目錄的 VM；guest 以 `setsid` 啟動持 guest 檔案鎖、每 0.2 秒寫一次共享 heartbeat 的後代。guest 自查鎖被占用與子程序另有 session，host 另查 heartbeat 在運行中增加。這是有限的合成執行面，沒有測真實工具或任意命令。
+2026-11-08 Mac VM 候選已從支援查詢推進到合成 guest。`python3 -X utf8 src/project_bootstrap/vm_probe.py`（2026-11-11 前是 `experiments/v2/vm_probe.py`）在這台 Apple silicon／macOS 27.2 下載並核對 [Alpine 3.24.4 aarch64 netboot](https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/netboot/) 的固定 SHA-256，從壓縮的 `vmlinuz-virt` 解出 ARM64 Image，替換 initramfs 的 `/init`，編譯並 ad hoc 簽署帶 [`com.apple.security.virtualization` entitlement](https://developer.apple.com/documentation/virtualization/adding-the-virtualization-entitlement-to-your-project) 的 Swift runner。原壓縮 kernel 使 VM start 回 `VZErrorDomain Code=1`；解壓後啟動成功。影像只快取於本機暫存目錄，repo 不保存下載的二進位。探針建立一個無網路裝置、只共享新暫存目錄的 VM；guest 以 `setsid` 啟動持 guest 檔案鎖、每 0.2 秒寫一次共享 heartbeat 的後代。guest 自查鎖被占用與子程序另有 session，host 另查 heartbeat 在運行中增加。這是有限的合成執行面，沒有測真實工具或任意命令。
 
 同輪實測 [`stop`](https://developer.apple.com/documentation/virtualization/vzvirtualmachine/stop(completionhandler:)) 回呼成功且 VM state=0 後，heartbeat 停止；直接 SIGKILL host runner 後 heartbeat 也停止，重新啟動 VM 才恢復增加，舊 guest 的獨立 heartbeat 檔保持不變。**host 的 `flock` 對同一 virtiofs 檔案在 guest 持鎖期間仍可取得鎖**；再同時啟動兩台 VM 共用同一目錄與鎖檔，兩個 guest 都回報持鎖且各自的 heartbeat 增加。這個鎖不能跨 host／VM 協調單 writer，也不能用 host 鎖取得當作退場證據。
 
@@ -205,7 +206,7 @@ Mac `broker_fixture.py` 已用此生命週期與票據庫執行原有 11 次請�
 本輪各節提到的「scratch 副本逐一移除守門」原本只存在聊天暫存檔，換機就拿不到（F49）。現在刪改清單存在 `mutants.json`（每項記檔案、原文、替換與要跑的測試模組），`mutants.py` 在暫存複本逐一套用並跑測試，結果分 killed、survived、stale（原文不是恰好出現一次，代表規格過期）；只有全部 killed 才 exit 0，工作樹不被改動。
 
 ```bash
-python3 -X utf8 experiments/v2/mutants.py
+python3 -X utf8 src/project_bootstrap/mutants.py
 ```
 
 2026-11-09 macOS 實跑：144 個全部 killed（之後加入 `doctor.py` 的 8 個，單獨跑也全部 killed，共 152 個），約 90 秒；先前 `lines.py` 刪掉的兩段冗餘守門對應的刪改已從清單移除（執行器把它們報為 stale）。`test_mutants.py` 用合成套件測執行器本身。邊界：只涵蓋本輪新增模組，較早模組的 mutation 仍只在上文敘述；刪改由人挑選；太慢，不在 `verify_v2.py` 預設流程。
@@ -261,7 +262,7 @@ python3 -X utf8 experiments/v2/mutants.py
 崩潰解除現在問的是「本機終端前的人」，同 UID 程式可以自己開偽終端答題；使用者說過日後要改走簽署金鑰（Q1 (b)）。`presence_probe.py` 只量作業系統有沒有可用的積木，**不是核准機制，也沒有接進任何放行路徑**：它編一個未簽署的 Swift helper，用 CryptoKit 建三把 Secure Enclave 金鑰，全程禁止互動（不會跳出任何驗證視窗）。
 
 ```bash
-python3 -X utf8 -m experiments.v2.presence_probe
+PYTHONPATH=src python3 -X utf8 -m project_bootstrap.presence_probe
 ```
 
 2026-11-10 在這台 macOS 27.2／Apple silicon 實跑（exit 0）：未設門檻的對照金鑰可簽、驗章成立；設了 `.userPresence`（Touch ID 或登入密碼，由系統視窗詢問）的金鑰可以建立，簽章被 LocalAuthentication 以 -1004「需要使用者互動」拒絕；設 `.biometryCurrentSet`（只認指紋）的金鑰在禁止互動時連建立都失敗（-1000），所以「只認指紋」這一種沒有量到。結果判讀寫死成 `候選可用但未驗收`，`test_presence_probe.py` 驗任何輸出都不會被判成通過、設了門檻卻簽得出來會報反例；`mutants.json` 7 個刪改全部 killed。
@@ -313,6 +314,8 @@ HANDOFF 保留 writer、目前行動與此索引的指標；若索引不可讀�
 
 ## P1 第一片：用 pytest 跑（2026-11-11）
 
-P1 第一片加了 `pyproject.toml` 與 `uv.lock`（見 [ARCHITECT](../../ARCHITECT.md)）。裝了 uv 的機器可以 `uv run pytest` 跑本目錄與 `tests/` 的全部測試；3.15 與 3.12 實跑結果與 unittest 相同（456 個）。`verify_v2.py` 仍用 unittest、只要標準函式庫，A4 不需要 uv。
+P1 第一片加了 `pyproject.toml` 與 `uv.lock`（見 [ARCHITECT](../../ARCHITECT.md)）。裝了 uv 的機器可以 `uv run pytest` 跑 `tests/` 的全部測試；3.15 與 3.12 實跑結果與 unittest 相同（第一片時 456 個；第二片搬完是 461 個，含 `test_layout.py`）。`verify_v2.py` 仍用 unittest、只要標準函式庫，A4 不需要 uv。
 
 pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個連結，sandbox 只放行基底 Python 的路徑，受隔離的合成 agent 因此起不來（`launcher-start-failed`）。`broker_fixture.sandbox_plan` 改成直接啟動解析後的基底直譯器；agent 只用標準函式庫，不需要虛擬環境。
+
+第二片搬家後，用 `-c` 起的子程序靠工作目錄 import：測試裡這類子程序的 `cwd` 改成 `src`，`vm_probe.py` 的 crash parent 也是。命令列模組要從 repo 根目錄跑 `PYTHONPATH=src python3 -X utf8 -m project_bootstrap.<模組>`；`mutants.py` 複製 `src` 與 `tests` 兩個目錄並設 `PYTHONPATH`。

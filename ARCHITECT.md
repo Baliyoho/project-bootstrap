@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11。P1 第一片（開發骨架）：根目錄新增 `pyproject.toml`、`uv.lock`、`src/project_bootstrap/`、`tests/`；`.gitignore` 加 `.venv/`；`verify_bootstrap.py` 新增「P1 開發骨架」。用 uv 鎖依賴（版本、sha256、授權），pytest 跑既有 v2 測試與新 `tests/`；最低 Python 3.12。`verify_bootstrap.py`／`verify_v2.py`／v2 原型仍只用標準函式庫，A4 不需要裝 uv。部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+> 最後更新：2026-11-11。P1 第二片：`experiments/v2` 的程式（`.py`、兩支 guest 腳本、`vm_runner.swift`、`mutants.json`）用 `git mv` 搬到 `src/project_bootstrap/`，測試搬到 `tests/`（加 `tests/__init__.py`），模組名 `experiments.v2.x` → `project_bootstrap.x`、`experiments.v2.test_x` → `tests.test_x`；`experiments/v2/` 只留 [說明](experiments/v2/README.md) 與 [現況索引](experiments/v2/status.json)。程式內容只改 import、路徑與子程序的工作目錄，邏輯沒動。下方舊登記裡的 `experiments/v2/*.py` 是當時位置。同日稍早 P1 第一片（開發骨架）：根目錄新增 `pyproject.toml`、`uv.lock`、`src/project_bootstrap/`、`tests/`；`.gitignore` 加 `.venv/`；`verify_bootstrap.py` 新增「P1 開發骨架」。用 uv 鎖依賴（版本、sha256、授權），pytest 跑既有 v2 測試與新 `tests/`；最低 Python 3.12。`verify_bootstrap.py`／`verify_v2.py`／v2 原型仍只用標準函式庫，A4 不需要裝 uv。部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
 > 2026-11-10 同日深夜：部署包 3.8 的 `reasons.md` 末尾加「規則 → 理由在哪」對照表（決策書 Q17 (b)），六個 skill 檔與 `VERSION` 跳到 `2026-11-10.2`，這台 Mac 的兩個全域副本一起覆蓋；`verify_bootstrap.py` 新增「skill 規則對照表」。結構沒有新增檔案。同日稍晚：本 repo 新增 `.claude/hooks/repo-action-rules.sh`（決策書 Q6 (a)），只接 Claude Code；`verify_bootstrap.py` 新增「動作當下送規則」，「本 repo 兩份接線」放寬為 Claude Code 可多接這支。這台 Mac 的兩個全域副本換成六檔版（Q11 (a)）。同日稍早：**部署包 3.8 從一個檔變成六個檔**（決策書 Q9／F22）：handoff skill 是一個目錄，入口 `SKILL.md` 加 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`；骨架 22 → 27 檔，`VERSION` `2026-11-10`。`tools/` 新增 `skill_split_baseline.json`；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」三項；兩支開場 hook 多印全綠行。同日 Q11 (a)：只有這台 Mac 的兩個全域副本換成六檔版；各專案尚未同步，`main` 也還沒有這一版。同日稍早：根目錄新增 [skill 拆分設計稿](project-bootstrap-skill-split-design.md)（決策書 Q8 (a)，等 Q9 審閱，未實施）。同日稍早：根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
@@ -119,8 +119,8 @@
 | 本檔 | 結構 | 只有結構變動 |
 | [LICENSE](LICENSE) | MIT（2026-09-07 起公開） | 授權改變 |
 | [pyproject.toml](pyproject.toml)、[uv.lock](uv.lock) | **P1 開發骨架**（2026-11-11）：依賴、最低 Python 3.12、pytest 設定，以及鎖檔裡每個套件的授權表；`uv.lock` 鎖版本與 sha256。`[tool.uv] package = false`，打包屬 P2。不部署、不同步；A4 不需要它們 | 加減依賴時兩檔一起改（`uv lock`），新套件同時登記授權 |
-| [src/project_bootstrap/](src/project_bootstrap/__init__.py) | v2 核心的正式位置，第一片只有空的套件；第二片把 `experiments/v2` 的模組搬進來。不部署 | P1 搬模組時 |
-| [tests/](tests/test_layout.py) | pytest 測試；第一片只有開發骨架自己的測試（用 tomllib 對照驗證器的簡易解析）。`experiments/v2` 的測試第二片才搬 | 加測試時 |
+| [src/project_bootstrap/](src/project_bootstrap/__init__.py) | v2 原型程式（2026-11-11 從 `experiments/v2` 搬來，內容不變）：契約、broker、受管 worker、VM 探針、偵測原型與 `mutants.py`／`mutants.json`。仍是合成 fixture 原型，不部署；只用標準函式庫，A4 的 `verify_v2.py` 不需要 uv 就能 import | 改原型時；之後的模組分組另做 |
+| [tests/](tests/test_layout.py) | 全部測試（unittest 寫法，pytest 與 `verify_v2.py` 都跑）：v2 原型的測試加上開發骨架自己的 `test_layout.py`。讀本 repo 真文件的測試叫 `*_repo.py`，不放進 mutation 群組 | 加測試時 |
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
 | [tools/skill_split_baseline.json](tools/skill_split_baseline.json) | 拆分前單檔 `SKILL.md`（`VERSION` `2026-11-03`）每一行的雜湊，加上 11 行刻意改寫的去處。`verify_bootstrap.py`「skill 拆分」用它確認沒有行被弄丟。不部署、不同步 | 只有刻意改寫或刪掉舊文本的某一行時，並寫明去處 |
 | [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案。`check_docs.py` 的專案設定區塊、兩份 hook 接線裡專案自己加的設定都會原樣保留。只改檔案，不 commit | 骨架多一個要同步的檔時（而且要同時歸類進 `WHOLE`／`WIRING`／`PARTIAL`／`INSTANCE`，否則驗證會 FAIL） |
@@ -244,7 +244,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 全綠行 | 兩支開場 hook 在真 Git fixture 上：正常才印含分支與 SHA 的全綠行，10 種不正常狀態都不印；拿掉條件的腳本會被看出來 | 不該綠的時候印了全綠，正常路徑會跳過完整判讀表 |
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
 | 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，mode 100755 與 wrapper 直接執行；7 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit；不測外部 GitHub 或模型行為（F16） |
-| P1 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `experiments/v2` 的非測試程式不 import 鎖檔裡的套件；7 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
+| P1 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `src/project_bootstrap` 的程式不 import 鎖檔裡的套件；7 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
 **exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫。

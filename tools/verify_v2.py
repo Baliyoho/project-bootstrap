@@ -18,17 +18,18 @@ import unittest
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / 'src'))
 
-from experiments.v2.approvals import VERIFIER as SIGNATURE_VERIFIER
-from experiments.v2.baseline import measure
-from experiments.v2.broker_fixture import SANDBOX_EXEC, probe_broker
-from experiments.v2.feasibility import run_probes
-from experiments.v2.isolation import probe_isolation
-from experiments.v2.lifecycle import guardian_inputs
-from experiments.v2.managed_fixture import probe_managed
-from experiments.v2.registry import validate
-from experiments.v2.supervisor import run_supervisor_probe
-from experiments.v2.tree_probe import probe_descendant_api, probe_tree
+from project_bootstrap.approvals import VERIFIER as SIGNATURE_VERIFIER
+from project_bootstrap.baseline import measure
+from project_bootstrap.broker_fixture import SANDBOX_EXEC, probe_broker
+from project_bootstrap.feasibility import run_probes
+from project_bootstrap.isolation import probe_isolation
+from project_bootstrap.lifecycle import guardian_inputs
+from project_bootstrap.managed_fixture import probe_managed
+from project_bootstrap.registry import validate
+from project_bootstrap.supervisor import run_supervisor_probe
+from project_bootstrap.tree_probe import probe_descendant_api, probe_tree
 
 
 def runtime_artifacts():
@@ -53,8 +54,8 @@ def main():
     data = json.loads((ROOT / 'experiments/v2/status.json').read_text(encoding='utf-8'))
     errors = validate(data, (ROOT / 'project-bootstrap-requirements-decision.md').read_text(encoding='utf-8'), ROOT)
     stream = io.StringIO()
-    suite = unittest.defaultTestLoader.discover(str(ROOT / 'experiments/v2'), pattern='test_*.py',
-                                               top_level_dir=str(ROOT / 'experiments'))
+    suite = unittest.defaultTestLoader.discover(str(ROOT / 'tests'), pattern='test_*.py',
+                                               top_level_dir=str(ROOT))
     result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
     findings = run_probes()
     isolation = probe_isolation()

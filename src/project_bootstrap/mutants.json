@@ -1,0 +1,4027 @@
+{
+ "schema": 1,
+ "groups": [
+  {
+   "tests": [
+    "tests.test_preflight",
+    "tests.test_batch"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/preflight.py",
+     "old": "    if not isinstance(owner, str) or len(owner_parts(owner.strip()) or ()) != 3:\n        raise GitGateDenied('invalid-owner')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/preflight.py",
+     "old": "    if ahead and behind:\n        raise GitGateDenied('diverged')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/preflight.py",
+     "old": "    if behind:\n        raise GitGateDenied('behind-pull-required')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/preflight.py",
+     "old": "    if remote_owner is None:\n        raise GitGateDenied('owner-unknown')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/preflight.py",
+     "old": "    if remote_owner == IDLE:\n        raise GitGateDenied('not-claimed')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/preflight.py",
+     "old": "    if remote_owner != owner:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/preflight.py",
+     "old": "    _fetch(repo, env, remote)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/preflight.py",
+     "old": "            confirmed = self.gate.confirm(operation)\n",
+     "new": "            confirmed = {'operation': operation, 'epoch': 1, 'manifest': ''}\n"
+    },
+    {
+     "file": "src/project_bootstrap/batch.py",
+     "old": "                if confirm is not None:\n                    row['manifest'] = confirm(path)['manifest']\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/batch.py",
+     "old": "            except Denied as error:\n                row.update(outcome='failed', code='release:' + str(error))\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_lines"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/lines.py",
+     "old": "        if not isinstance(line_id, str) or not line_id or line_id in ids:\n            row['codes'].append('duplicate-line')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/lines.py",
+     "old": "not line_id or line_id in ids",
+     "new": "line_id in ids"
+    },
+    {
+     "file": "src/project_bootstrap/lines.py",
+     "old": "        if actual != branch:\n            row['codes'].append('branch-mismatch')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/lines.py",
+     "old": "    for groups, code in ((by_tree, 'shared-worktree'), (by_index, 'shared-index'),",
+     "new": "    for groups, code in ((by_index, 'shared-index'),"
+    },
+    {
+     "file": "src/project_bootstrap/lines.py",
+     "old": "(by_index, 'shared-index'),\n",
+     "new": "\n"
+    },
+    {
+     "file": "src/project_bootstrap/lines.py",
+     "old": "\n                         (by_branch, 'shared-branch')):",
+     "new": "):"
+    },
+    {
+     "file": "src/project_bootstrap/lines.py",
+     "old": "return {'ok': bool(rows) and all(",
+     "new": "return {'ok': all("
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_readonly"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "'--no-optional-locks', ",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "    elif before['refs'] != after['refs'] or before['head'] != after['head']:",
+     "new": "    elif before['refs'] != after['refs']:"
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "before['refs'] != after['refs'] or ",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "    if before['index'] != after['index']:\n        changes.append('index-changed')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "    if before['files'] != after['files']:\n        changes.append('worktree-changed')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "    elif before['remote'] != after['remote']:\n        changes.append('remote-changed')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "    if before['remote'] is None or after['remote'] is None:\n        unverified.append('remote')\n    elif",
+     "new": "    if"
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "    if before['refs'] is None or after['refs'] is None:\n        unverified.append('local-refs')\n    elif",
+     "new": "    if"
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "        advertised = data if listed == 0 else None",
+     "new": "        advertised = data"
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "            files[path] = data.strip() if code_ == 0 else b'unreadable'",
+     "new": "            files[path] = b''"
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "        error.read_report = compare(before, snapshot(repo, env))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/readonly.py",
+     "old": "return {'ok': not changes and not unverified,",
+     "new": "return {'ok': not changes,"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_state"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "if not isinstance(goal, dict) or not str(goal.get('text', '')).strip():",
+     "new": "if not isinstance(goal, dict):"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        if not isinstance(ids, list) or not ids:\n            findings.append(('goal', 'goal-without-ids'))\n        elif",
+     "new": "        if"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        elif any(i not in known for i in ids):\n            findings.append(('goal', 'goal-unknown-id'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        if current is None:\n            findings.append(('goal', 'decision-version-unreadable'))\n        elif",
+     "new": "        if"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        elif goal.get('decision_version') != current:\n            findings.append(('goal', 'goal-stale-version'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "or not (Path(root) / source).is_file():",
+     "new": "or False:"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        if not isinstance(tid, str) or not tid or tid in seen:\n            findings.append((str(tid), 'duplicate-or-missing-id'))\n            continue\n",
+     "new": "        if not isinstance(tid, str):\n            continue\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        if task.get('status') not in TASK_STATES:\n            findings.append((tid, 'task-status-invalid'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        if task.get('status') == 'done' and not task.get('evidence'):\n            findings.append((tid, 'done-without-evidence'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "            findings.append((tid, 'blocked-without-reason'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "            findings.append((str(tid), 'next-unknown-task'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "            findings.append((tid, 'done-listed-as-next'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        findings.append(('next', 'next-duplicate'))\n",
+     "new": "        pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        findings.append((tid, 'open-not-scheduled'))\n",
+     "new": "        pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "            findings.append((rid, 'risk-kind-invalid'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        findings += _evidence_findings(risk, root, rid)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        findings += _evidence_findings(task, root, tid)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "            findings.append((rid, risk['kind'] + '-without-evidence'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        if not isinstance(rid, str) or not rid or rid in seen:",
+     "new": "        if not isinstance(rid, str) or not rid:"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        return [(where, 'evidence-invalid')]\n",
+     "new": "        return []\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "                or '..' in path.split('/')):",
+     "new": "):"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "            found.append((where, 'evidence-missing'))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        return 'unknown'\n",
+     "new": "        return risk.get('kind')\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": " or 'evidence-missing' in codes):",
+     "new": "):"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        if task is None or task.get('status') == 'done':",
+     "new": "        if task is None:"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "            tasks.setdefault(task['id'], task)",
+     "new": "            tasks[task['id']] = task"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "    if unscheduled:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "    if other:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/state.py",
+     "old": "        status = '未驗證' if by_where.get('goal') else '已核對'",
+     "new": "        status = '已核對'"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_evidence"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "and not value.startswith('/') and '..' not in value.split('/'):",
+     "new": ":"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "and '..' not in value.split('/'):",
+     "new": ":"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "            except OSError:\n                return None\n",
+     "new": "            except OSError:\n                return ''\n"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "        if kind == 'env' and value in environ:",
+     "new": "        if kind == 'env':"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "    if not isinstance(record, dict) or record.get('result') not in RESULTS:",
+     "new": "    if not isinstance(record, dict):"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "    if record.get('id') in revoked:\n        return '未驗證', 'revoked'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "        if not all(isinstance(record.get(key), str) and record.get(key).strip()",
+     "new": "        if not all(isinstance(record.get(key), str)"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "for key in ('source', 'acquired_at', 'scope')):",
+     "new": "for key in ('source',)):"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "        if not isinstance(depends, dict) or not depends:",
+     "new": "        if not isinstance(depends, dict):"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "            if current is None:\n                return '未驗證', 'dependency-unreadable:' + name\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "            if current != digest:\n                return '未驗證', 'expired:' + name\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "    if result in ('FAIL', 'ERROR'):",
+     "new": "    if result in ('FAIL',):"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "    if result in ('SKIP', 'NOT_CONFIGURED'):",
+     "new": "    if result in ('SKIP',):"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "    elif '不通過' in states:\n        overall = '不通過'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "    elif '未驗證' in states:\n        overall = '未驗證'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "    if not rows:\n        overall = '未驗證'\n    elif",
+     "new": "    if"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "            rows.append({'claim': claim, 'state': '未驗證', 'reason': 'no-evidence'})\n            continue\n",
+     "new": "            continue\n"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "        state, reason = _resolve(candidates[-1],",
+     "new": "        state, reason = _resolve(candidates[0],"
+    },
+    {
+     "file": "src/project_bootstrap/evidence.py",
+     "old": "    fresh = record.get('round') == round_id",
+     "new": "    fresh = True"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_facts"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": "    if result.returncode:\n        raise LookupError('git query failed')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": "    if (not isinstance(relative, str) or not relative or relative.startswith('/')\n            or '..' in relative.split('/')):\n        raise LookupError('path outside repository')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": " or relative.startswith('/')",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": "\n            or '..' in relative.split('/')):",
+     "new": "):"
+    },
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": "        elif claim['fact'] not in allowed:\n            row.update(state='未知', reason='not-authorized')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": "                row.update(state='一致' if observed == claim.get('expected') else '不一致',",
+     "new": "                row.update(state='一致',"
+    },
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": "    overall = ('不一致' if '不一致' in states else '未知' if '未知' in states or not rows\n               else '一致')",
+     "new": "    overall = ('不一致' if '不一致' in states else '未知' if '未知' in states\n               else '一致')"
+    },
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": "    overall = ('不一致' if '不一致' in states else '未知'",
+     "new": "    overall = ('未知' if '未知' in states else '不一致' if '不一致' in states else '未知'"
+    },
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": "'--no-optional-locks', ",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/facts.py",
+     "old": "_git(repo, env, 'status', '--porcelain') == ''",
+     "new": "True"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_decisions"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "    return isinstance(value, str) and value.strip() != ''",
+     "new": "    return isinstance(value, str)"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "    return isinstance(value, list) and value and all(_text(item) for item in value)",
+     "new": "    return isinstance(value, list) and all(_text(item) for item in value)"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "    return isinstance(value, list) and value and all(",
+     "new": "    return value and all("
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "    return [d for d in valid if affects <= set(d['scope'])]",
+     "new": "    return [d for d in valid if affects & set(d['scope'])]"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "        if (delegation.get('granted_by') == 'user' and _text(delegation.get('source'))",
+     "new": "        if (_text(delegation.get('source'))"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": " and _text(delegation.get('source'))\n",
+     "new": "\n"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "                and _ids(delegation.get('scope'))):",
+     "new": "                ):"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "        if not _text(did) or did in ids:",
+     "new": "        if not _text(did):"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "        if not (_text(decision.get('question')) and _ids(decision.get('affects'))):",
+     "new": "        if not _ids(decision.get('affects')):"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "and _ids(decision.get('affects'))):",
+     "new": "):"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "            if not _ids(decision.get('options')):\n                findings.append((did, 'pending-without-options'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "            if covered:\n                findings.append((did, 'delegated-but-waiting-for-user'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "                if not covered:\n                    findings.append((did, 'ai-decided-without-delegation'))\n                elif",
+     "new": "                if"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "                elif not _text(decision.get('rationale')):\n                    findings.append((did, 'delegated-without-rationale'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "            elif by != 'user':\n                findings.append((did, 'decider-unknown'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "            if not _text(decision.get('source')):\n                findings.append((did, 'decided-without-source'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "        else:\n            findings.append((did, 'decision-status-invalid'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "        if waits not in ids:\n            findings.append((str(task.get('id')), 'waits-for-unregistered-decision'))\n        elif",
+     "new": "        if"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "        elif waits not in pending:\n            findings.append((str(task.get('id')), 'waits-for-settled-decision'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "        if not _text(eid) or eid in ids:",
+     "new": "        if not _text(eid):"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "        for key in ('what', 'authorized_by', 'source', 'scope', 'reason'):",
+     "new": "        for key in ('what',):"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "        if not isinstance(recheck, dict) or not (_text(recheck.get('when'))\n                                                  or _text(recheck.get('until'))):",
+     "new": "        if not isinstance(recheck, dict):"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "                findings.append((eid, 'exception-recheck-invalid'))\n",
+     "new": "                pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "                if due <= today:",
+     "new": "                if due < today:"
+    },
+    {
+     "file": "src/project_bootstrap/decisions.py",
+     "old": "    if not pending:\n        lines.append('無登記中的待決事項。')\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_policy"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        if any(entry.get('owner') not in RELEASED for entry in manifest.values()):\n            raise Denied('manifest-owner-invalid')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "    for manifest in (old, new):",
+     "new": "    for manifest in (new,):"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        if not any(path == root or path.startswith(root.rstrip('/') + '/')",
+     "new": "        if not any(path == root or path.startswith(root.rstrip('/'))"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "            if path in new or path in old:\n                raise Denied('ownership-conflict:' + path)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "            if path in local and path in old and local[path] != old[path]['sha256']:\n                raise Denied('released-file-edited:' + path)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "            if path in local and path not in old and local[path] != new[path]['sha256']:\n                raise Denied('ownership-unknown:' + path)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "            plan[path] = 'unchanged' if local.get(path) == new[path]['sha256'] else 'replace'",
+     "new": "            plan[path] = 'replace'"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "            if local[path] != old[path]['sha256']:\n                raise Denied('released-file-edited:' + path)\n            plan[path] = 'remove-released'",
+     "new": "            plan[path] = 'remove-released'"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        else:\n            raise Denied('ownership-unknown:' + path)\n",
+     "new": "        else:\n            plan[path] = 'keep-project'\n"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        if direction not in DIRECTIONS:\n            problems.append((name, 'direction-unknown'))\n        elif",
+     "new": "        if"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        elif effect not in ('restrict', 'permit'):\n            problems.append((name, 'effect-unconfirmed'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        elif (direction, effect) not in COHERENT:\n            problems.append((name, 'direction-loosens'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        if name in schema.get('slots', {}):\n            problems.append((name, 'mandatory-has-override-slot'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "    if check_schema(schema):\n        raise Denied('schema-invalid')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        if key in mandatory:\n            raise Denied('mandatory-not-overridable:' + key)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        if key not in slots:\n            raise Denied('unknown-field:' + key)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        if type(value) is not kind or type(base) is not kind:",
+     "new": "        if type(value) is not kind:"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        if type(value) is not kind or type(base) is not kind:",
+     "new": "        if type(base) is not kind:"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "            if missing:\n                raise Denied('loosens:' + key)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        elif direction == 'at-least' and value < base:",
+     "new": "        elif direction == 'at-least' and value < 0:"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        elif direction == 'at-most' and value > base:",
+     "new": "        elif direction == 'at-most' and False:"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        elif direction == 'true-only' and base and not value:",
+     "new": "        elif direction == 'true-only' and False:"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "        base = core.get(key, slots[key].get('default'))",
+     "new": "        base = slots[key].get('default')"
+    },
+    {
+     "file": "src/project_bootstrap/policy.py",
+     "old": "    lines += [f'- {name}' for name in sorted(schema.get('mandatory', ()))]",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_impact"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/impact.py",
+     "old": "        items = [row] + list(row.get('parts', {}).values())",
+     "new": "        items = [row]"
+    },
+    {
+     "file": "src/project_bootstrap/impact.py",
+     "old": "                if path:\n",
+     "new": "                if True:\n"
+    },
+    {
+     "file": "src/project_bootstrap/impact.py",
+     "old": "    return path.rsplit('/', 1)[-1].startswith('test_')",
+     "new": "    return 'test_' in path"
+    },
+    {
+     "file": "src/project_bootstrap/impact.py",
+     "old": "                          and not any(path in installed for installed in projects.values()))",
+     "new": "                          )"
+    },
+    {
+     "file": "src/project_bootstrap/impact.py",
+     "old": "                          if path not in components\n",
+     "new": "                          if False\n"
+    },
+    {
+     "file": "src/project_bootstrap/impact.py",
+     "old": "    tests = {path for path in all_tests if components[path] & requirements}",
+     "new": "    tests = set()"
+    },
+    {
+     "file": "src/project_bootstrap/impact.py",
+     "old": "                      if any(path in installed for path in changed))",
+     "new": "                      )"
+    },
+    {
+     "file": "src/project_bootstrap/impact.py",
+     "old": "'tests': sorted(all_tests), 'projects': sorted(projects)}",
+     "new": "'tests': sorted(all_tests), 'projects': []}"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_doctor"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/doctor.py",
+     "old": "'state': 'ok' if which(name) else 'missing-tool'})",
+     "new": "'state': 'ok'})"
+    },
+    {
+     "file": "src/project_bootstrap/doctor.py",
+     "old": "        present = bool(environ.get(name, '').strip())",
+     "new": "        present = name in environ"
+    },
+    {
+     "file": "src/project_bootstrap/doctor.py",
+     "old": "        missing = ([t for t in needs_tools if not which(t)]\n                   + [c for c in needs_configs if not environ.get(c, '').strip()])",
+     "new": "        missing = [c for c in needs_configs if not environ.get(c, '').strip()]"
+    },
+    {
+     "file": "src/project_bootstrap/doctor.py",
+     "old": "\n                   + [c for c in needs_configs if not environ.get(c, '').strip()])",
+     "new": ")"
+    },
+    {
+     "file": "src/project_bootstrap/doctor.py",
+     "old": "                state = 'ok' if probe() is True else 'connection-failed'",
+     "new": "                state = 'ok' if probe() else 'connection-failed'"
+    },
+    {
+     "file": "src/project_bootstrap/doctor.py",
+     "old": "            except Exception:\n                state = 'connection-failed'",
+     "new": "            except Exception as error:\n                state = 'connection-failed: ' + str(error)"
+    },
+    {
+     "file": "src/project_bootstrap/doctor.py",
+     "old": "        if missing:\n            state = 'not-attempted'\n        else:",
+     "new": "        if False:\n            pass\n        else:"
+    },
+    {
+     "file": "src/project_bootstrap/doctor.py",
+     "old": "    return {'ok': all(row['state'] == 'ok' for row in rows), 'rows': rows}",
+     "new": "    return {'ok': True, 'rows': rows}"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_contradictions"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            if hit['variant'] != rule['canonical']:",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "                if len(in_doc) > 1:",
+     "new": "                if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            if len(docs) > 1:",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            elif not any(hit['doc'] == doc for hit in hits):",
+     "new": "            elif False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            if doc not in lines:\n                unknown.append((doc, 'required-doc-unreadable:' + rule['id']))",
+     "new": "            if False:\n                pass"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            if rule.get('docs') and doc not in rule['docs']:",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "        if fenced and not transparent:",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            if _history(doc, row[0], row[2], history):",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "        if fenced:\n            skipped.append",
+     "new": "        if False:\n            skipped.append"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "        if excluded:",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            unknown.append((doc, 'doc-unreadable'))",
+     "new": "            pass"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "        if not entry:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "        elif entry.group('id') in entries:",
+     "new": "        elif False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "    unknown = [] if found else [(registry_doc, 'registry-section-missing')]",
+     "new": "    unknown = []"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            unknown.append((doc, 'pending-doc-unreadable'))",
+     "new": "            pass"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            if re.match(r'^\\s*[-*]\\s+無[。.]?\\s*$', line):",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            if not cited:",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "                if entries[cid] != 'pending':",
+     "new": "                if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "                if not PENDING_WORDS.search(line):",
+     "new": "                if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "                    if entries[cid] == 'decided':",
+     "new": "                    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "                if doc == registry_doc and re.search(registry_heading, section):",
+     "new": "                if False:"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "    overall = '矛盾' if findings else '未知' if unknown else '未發現'",
+     "new": "    overall = '矛盾' if findings else '未發現'"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "            path = path[:level - 1] + [''] * max(0, level - 1 - len(path)) + [heading.group(2)]",
+     "new": "            path = path + [heading.group(2)]"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "                                       else re.search(item['line'], line))",
+     "new": "                                       else False)"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "(就|都)要?跳 ?`?VERSION(?!`?」)',",
+     "new": "(就|都)要?跳 ?`?VERSION',"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "r'(?<!「)`?VERSION`? ?跟著 ?`?source'],",
+     "new": "],"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "'skill-only': [r'VERSION`? ?只跟著 ?`?SKILL\\.md',\n",
+     "new": "'skill-only': [r'XX_NEVER',\n"
+    },
+    {
+     "file": "src/project_bootstrap/contradictions.py",
+     "old": "        if not re.match(r'^[-*]\\s+', line):\n            continue\n        entry = _ENTRY.match(line)",
+     "new": "        if not re.match(r'^\\s*[-*]\\s+', line):\n            continue\n        entry = _ENTRY.match(line)"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_trail"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if not _text(iid) or iid in seen:",
+     "new": "        if not _text(iid):"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if d.get('status') not in STATUSES:",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        for key in ('title', 'rationale', 'baseline'):",
+     "new": "        for key in ('title',):"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if not _date(d.get('date')):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "            if not (_text(alt.get('option')) and alt.get('outcome') in ('rejected', 'deferred')\n                    and _text(alt.get('reason'))):",
+     "new": "            if not _text(alt.get('option')):"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "            if newer not in by_id:",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "            elif by_id[newer].get('supersedes') != did:",
+     "new": "            elif False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        elif newer is not None:",
+     "new": "        elif False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if older is not None and (older not in by_id or by_id[older].get('superseded_by') != did):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if did not in by_id:\n            findings.append((str(rid), 'rule-without-decision'))",
+     "new": "        if did not in by_id:\n            pass"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        elif by_id[did].get('status') == 'rejected':",
+     "new": "        elif False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        elif by_id[did].get('status') == 'superseded':",
+     "new": "        elif False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        did = d.get('superseded_by')",
+     "new": "        did = None"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if d.get('status') == 'rejected':\n            routes.append",
+     "new": "        if False:\n            routes.append"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        for alt in d.get('alternatives') or []:\n            routes.append",
+     "new": "        for alt in []:\n            routes.append"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if did not in new:\n            findings.append((str(did), 'decision-erased'))",
+     "new": "        if did not in new:\n            continue"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "            if alt.get('option') not in kept:",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if d.get('rationale') != new[did].get('rationale'):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "    if not any(m.get('status') in ('active', 'planned') for m in by_id.values()):",
+     "new": "    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if not _text(m.get('goal')):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if m.get('status') not in ('planned', 'active', 'done', 'dropped'):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if m.get('status') == 'dropped' and not _text(m.get('reason')):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if mid not in by_id:\n            findings.append((tid, 'task-without-milestone'))",
+     "new": "        if mid not in by_id:\n            pass"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        elif task.get('status') != 'done' and by_id[mid].get('status') in ('done', 'dropped'):",
+     "new": "        elif by_id[mid].get('status') == 'done':"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_confluence"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    if not all(_text(finding.get(k)) for k in ('line', 'key', 'source')):",
+     "new": "    if not all(_text(finding.get(k)) for k in ('line', 'key')):"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "        datetime.datetime.fromisoformat(finding.get('obtained_at'))\n    except (TypeError, ValueError):\n        return False",
+     "new": "        datetime.datetime.fromisoformat(finding.get('obtained_at'))\n    except (TypeError, ValueError):\n        pass"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    return isinstance(finding.get('scope'), dict) and finding.get('status') in ('verified', 'claimed')",
+     "new": "    return finding.get('status') in ('verified', 'claimed')"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    return isinstance(finding.get('scope'), dict) and finding.get('status') in ('verified', 'claimed')",
+     "new": "    return isinstance(finding.get('scope'), dict)"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    return all(a[k] == b[k] for k in set(a) & set(b))",
+     "new": "    return True"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    return all(a[k] == b[k] for k in set(a) & set(b))",
+     "new": "    return a == b"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "        elif finding['status'] == 'claimed':",
+     "new": "        elif False:"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "                if a.get('value') != b.get('value') and _overlap(a['scope'], b['scope']):",
+     "new": "                if False:"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "        rest = [f for i, f in enumerate(group) if i not in clashing]",
+     "new": "        rest = group"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "        whole = len(buckets) == 1 and (not clashing or settled is not None)",
+     "new": "        whole = len(buckets) == 1"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "        whole = len(buckets) == 1 and (not clashing or settled is not None)",
+     "new": "        whole = True"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "            scope = tuple(sorted(finding['scope'].items()))",
+     "new": "            scope = ()"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    if any(c['key'] == key for c in merged['conflicts']):",
+     "new": "    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "        if entry['key'] == key and all(scope.get(k) == v for k, v in entry['scope'].items()):",
+     "new": "        if entry['key'] == key:"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    for entry in merged['shared'] + merged['conditional']:",
+     "new": "    for entry in merged['shared'] + merged['conditional'] + merged['unconfirmed']:"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_campaign"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "        if target in seen:\n            problems.append((target, 'listed-twice'))\n            continue",
+     "new": "        if False:\n            continue"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "            action = 'update' if every or target in affected else 'skip-unaffected'",
+     "new": "            action = 'update'"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "            action = 'update' if every or target in affected else 'skip-unaffected'",
+     "new": "            action = 'update' if target in affected else 'skip-unaffected'"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "        elif code in MANUAL_CODES:",
+     "new": "        elif False:"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "            action = 'failed'\n            code = 'unknown-outcome'",
+     "new": "            action = 'excluded'"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "    for target in sorted(affected - seen):",
+     "new": "    for target in []:"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "    if updates:\n        prompts.append({'kind': 'approve-release'})",
+     "new": "    if updates:\n        pass"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "    if review:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "    prompts += [{'kind': 'compare-by-hand', 'targets': [t]} for t in by_hand]",
+     "new": "    prompts += [{'kind': 'compare-by-hand', 'targets': by_hand}] if by_hand else []"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "    within = len(prompts) <= budget",
+     "new": "    within = True"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "    ok = within and not review and not by_hand and not problems",
+     "new": "    ok = within and not review and not problems"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "    ok = within and not review and not by_hand and not problems",
+     "new": "    ok = within and not by_hand and not problems"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "    ok = within and not review and not by_hand and not problems",
+     "new": "    ok = within and not review and not by_hand"
+    },
+    {
+     "file": "src/project_bootstrap/campaign.py",
+     "old": "    ok = within and not review and not by_hand and not problems",
+     "new": "    ok = not review and not by_hand and not problems"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_publish"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if not isinstance(report, dict):\n        return False",
+     "new": "    if not isinstance(report, dict):\n        return True"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if report.get('overall') != '通過' or not isinstance(rows, list) or not rows:",
+     "new": "    if not isinstance(rows, list) or not rows:"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if report.get('overall') != '通過' or not isinstance(rows, list) or not rows:",
+     "new": "    if report.get('overall') != '通過' or not isinstance(rows, list):"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    return all(isinstance(r, dict) and r.get('state') == '本輪實查' for r in rows)",
+     "new": "    return all(isinstance(r, dict) and r.get('state') in ('本輪實查', '沿用') for r in rows)"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    return all(isinstance(r, dict) and r.get('state') == '本輪實查' for r in rows)",
+     "new": "    return any(isinstance(r, dict) and r.get('state') == '本輪實查' for r in rows)"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if not isinstance(signature, bytes) or not 1 <= len(signature) <= 2048:\n        raise Denied('invalid-attestation-signature')",
+     "new": "    if not isinstance(signature, bytes):\n        raise Denied('invalid-attestation-signature')"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if result.returncode:\n        raise Denied('not-signed-by-ci')",
+     "new": "    if False:\n        raise Denied('not-signed-by-ci')"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "                [str(VERIFIER), '-Y', 'verify', '-f', str(signers), '-I', CI_SIGNER,\n                 '-n', NAMESPACE, '-s', str(proof)],",
+     "new": "                [str(VERIFIER), '-Y', 'check-novalidate', '-n', NAMESPACE, '-s', str(proof)],"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "            or not re.fullmatch(rb'ssh-ed25519 [A-Za-z0-9+/]{68}', ci_key)):",
+     "new": "            and False):"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if (not isinstance(manifest, dict) or manifest.get('kind') not in KINDS\n            or not re.fullmatch(r'[0-9A-Za-z][0-9A-Za-z.-]{0,63}', str(manifest.get('version')))):",
+     "new": "    if not isinstance(manifest, dict) or manifest.get('kind') not in KINDS:"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if (not isinstance(manifest, dict) or manifest.get('kind') not in KINDS\n",
+     "new": "    if (not isinstance(manifest, dict)\n"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if not _verified_this_round(report):",
+     "new": "    if manifest.get('kind') == 'formal' and not _verified_this_round(report):"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if not _verified_this_round(report):",
+     "new": "    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if not isinstance(document, bytes) or not 1 <= len(document) <= 1024:",
+     "new": "    if not isinstance(document, bytes):"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if not isinstance(fields, dict) or set(fields) != ATTESTATION_FIELDS:",
+     "new": "    if not isinstance(fields, dict):"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if fields['manifest'] != manifest_digest(manifest) or fields['report'] != report_digest(report):",
+     "new": "    if fields['manifest'] != manifest_digest(manifest):"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if fields['manifest'] != manifest_digest(manifest) or fields['report'] != report_digest(report):",
+     "new": "    if fields['report'] != report_digest(report):"
+    },
+    {
+     "file": "src/project_bootstrap/publish.py",
+     "old": "    if target.exists():",
+     "new": "    if False:"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_bypass"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "        if owners.get(path) not in ('core', 'adapter'):",
+     "new": "        if owners.get(path) != 'core':"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "        if result.returncode:\n            raise Denied('in-place-core-delete:' + path)",
+     "new": "        if result.returncode:\n            continue"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "        if hashlib.sha256(result.stdout).hexdigest() != manifest['components'][path]:",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "        result = subprocess.run(['git', '-C', str(repo), 'show', ':' + path],",
+     "new": "        result = subprocess.run(['git', '-C', str(repo), 'show', 'HEAD:' + path],"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "    if event.get('status') not in ('done', 'skipped') or not event.get('step'):",
+     "new": "    if not event.get('step'):"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "    if event.get('status') not in ('done', 'skipped') or not event.get('step'):",
+     "new": "    if event.get('status') not in ('done', 'skipped'):"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "    if event['status'] == 'skipped' and not str(event.get('reason') or '').strip():",
+     "new": "    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "            previous = _line_digest(lines[-1])",
+     "new": "            previous = GENESIS"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "            if not isinstance(event, dict) or event.get('prev') != previous:",
+     "new": "            if not isinstance(event, dict):"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "                break\n            events.append(event)",
+     "new": "                continue\n            events.append(event)"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "        elif event.get('status') == 'skipped' and str(event.get('reason') or '').strip():",
+     "new": "        elif event.get('status') == 'skipped':"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "            findings.append((str(event.get('step')), 'event-unaccounted'))",
+     "new": "            pass"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "        if step not in steps:\n            steps[step] = 'silent-skip'",
+     "new": "        if False:\n            steps[step] = 'silent-skip'"
+    },
+    {
+     "file": "src/project_bootstrap/bypass.py",
+     "old": "        findings.append(('log', 'log-missing'))",
+     "new": "        pass"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_install"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "    if not relative or relative.startswith('/') or '\\\\' in relative or any(\n            p in ('', '.', '..') for p in parts):",
+     "new": "    if not relative or any(p == '..' for p in parts):"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "    if target in (home, Path(target.anchor)):",
+     "new": "    if target == home:"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "    if target in (home, Path(target.anchor)):",
+     "new": "    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "    if not target.is_dir():\n        raise Denied('target-missing')",
+     "new": "    if False:\n        raise Denied('target-missing')"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "        if path.is_symlink() or (path.exists() and not path.is_file()):",
+     "new": "        if path.exists() and not path.is_file():"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "        if current == package[relative]:",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "        elif relative in APPEND_ONLY:",
+     "new": "        elif False:"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "                       if line and line not in have]",
+     "new": "                       if line]"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "            actions.append({'path': relative, 'action': 'append' if missing else 'same',",
+     "new": "            actions.append({'path': relative, 'action': 'append',"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "    if current != approved:\n        raise Denied('plan-changed')",
+     "new": "    if False:\n        raise Denied('plan-changed')"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "            with path.open('xb') as handle:",
+     "new": "            with path.open('wb') as handle:"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "            text = ('' if before.endswith(b'\\n') or not before else '\\n') + ''.join(",
+     "new": "            text = ''.join("
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "            with path.open('ab') as handle:",
+     "new": "            with path.open('wb') as handle:"
+    },
+    {
+     "file": "src/project_bootstrap/install.py",
+     "old": "'existing_project': bool(others),",
+     "new": "'existing_project': False,"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_inventory"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/inventory.py",
+     "old": "        if manifest is None:\n            report.append({'project': name, 'state': 'unknown-manifest', 'files': {}})\n            continue",
+     "new": "        if manifest is None:\n            continue"
+    },
+    {
+     "file": "src/project_bootstrap/inventory.py",
+     "old": "            if owners.get(relative) not in ('core', 'adapter'):",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/inventory.py",
+     "old": "            if owners.get(relative) not in ('core', 'adapter'):",
+     "new": "            if owners.get(relative) != 'core':"
+    },
+    {
+     "file": "src/project_bootstrap/inventory.py",
+     "old": "            except FileNotFoundError:\n                files[relative] = 'missing'\n                continue",
+     "new": "            except FileNotFoundError:\n                continue"
+    },
+    {
+     "file": "src/project_bootstrap/inventory.py",
+     "old": "            except OSError:\n                files[relative] = 'unreadable'\n                continue",
+     "new": "            except OSError:\n                continue"
+    },
+    {
+     "file": "src/project_bootstrap/inventory.py",
+     "old": "            files[relative] = 'ok' if hashlib.sha256(data).hexdigest() == digest else 'edited'",
+     "new": "            files[relative] = 'ok'"
+    },
+    {
+     "file": "src/project_bootstrap/inventory.py",
+     "old": "        state = ('edited' if 'edited' in states else 'incomplete' if states - {'ok'}",
+     "new": "        state = ('incomplete' if states - {'ok'} else 'edited' if 'edited' in states"
+    },
+    {
+     "file": "src/project_bootstrap/inventory.py",
+     "old": "                 else 'clean' if files else 'nothing-to-check')",
+     "new": "                 else 'clean')"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_ingest"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "        if not CANDIDATE.match(line):\n            continue",
+     "new": "        if not line.startswith('['):\n            continue"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "        if not match:\n            records.append(_record(f'verify_bootstrap:unparsed-line-{number}', 'ERROR', meta, line))\n            continue",
+     "new": "        if not match:\n            continue"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "        if claim in seen:\n            records.append(_record(claim + ':duplicate', 'ERROR', meta, line))\n            continue",
+     "new": "        if False:\n            continue"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    if not records:\n        overall = 'FAIL'",
+     "new": "    if not records:\n        overall = 'PASS'"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    elif exit_code == 0 and results == {'PASS'}:",
+     "new": "    elif results == {'PASS'}:"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    elif exit_code == 0 and results == {'PASS'}:",
+     "new": "    elif exit_code == 0 and 'FAIL' not in results:"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    elif exit_code == 1 and 'SKIP' in results and results <= {'PASS', 'SKIP'}:",
+     "new": "    elif 'SKIP' in results and results <= {'PASS', 'SKIP'}:"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    elif exit_code == 1 and 'SKIP' in results and results <= {'PASS', 'SKIP'}:",
+     "new": "    elif exit_code == 1 and 'SKIP' in results:"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    if not isinstance(tests, dict) or not all(isinstance(tests.get(k), int)",
+     "new": "    if not isinstance(tests, dict) or not all(True"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    if tests['failed'] or tests['errors'] or not tests['run']:",
+     "new": "    if tests['failed'] or tests['errors']:"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    if tests['failed'] or tests['errors'] or not tests['run']:",
+     "new": "    if tests['failed'] or not tests['run']:"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    elif tests['skipped']:\n        test_result = 'SKIP'",
+     "new": "    elif False:\n        test_result = 'SKIP'"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    registry = 'PASS' if report.get('registry_errors') == [] else 'FAIL'",
+     "new": "    registry = 'PASS' if not report.get('registry_errors') else 'FAIL'"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    harness = 'PASS' if report.get('harness_passed') is True and exit_code == 0 else 'FAIL'",
+     "new": "    harness = 'PASS' if report.get('harness_passed') else 'FAIL'"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "    strict = 'PASS' if report.get('strict_ready') is True else 'FAIL'",
+     "new": "    strict = 'PASS'"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "            'depends': dict(meta['depends']), 'detail': detail}",
+     "new": "            'depends': {}, 'detail': detail}"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "            'round': meta['round'], 'source': f\"{meta['command']} @ {meta['commit']}\",",
+     "new": "            'round': meta['round'], 'source': meta['command'],"
+    },
+    {
+     "file": "src/project_bootstrap/ingest.py",
+     "old": "        if not CANDIDATE.match(line):\n            continue",
+     "new": "        if not LINE.match(line):\n            continue"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_trail_sources"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    end = re.search(r'^#{2,%d} ' % level, rest, re.MULTILINE)",
+     "new": "    end = None"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "            if started:\n                break",
+     "new": "            if started:\n                pass"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        if not re.match(r'^\\|[\\s|:-]+\\|$', line):",
+     "new": "        if True:"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    return rows[1:]",
+     "new": "    return rows"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        title, _, rationale = item.partition('理由：')\n        decisions.append({'id': f'book-7.{number}'",
+     "new": "        title, _, rationale = item.partition('。')\n        decisions.append({'id': f'book-7.{number}'"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    baseline = f'決策書決策版本 {version.group(1)}' if version else ''",
+     "new": "    baseline = '決策書'"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                          'date': date.group(1) if date else '', 'baseline': baseline,",
+     "new": "                          'date': '2026-11-06', 'baseline': baseline,"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    if len(chosen) != 1:",
+     "new": "    if not chosen:"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    rows = [r for r in _rows(body) if len(r) == 4]",
+     "new": "    rows = _rows(body)"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                              for r in rows if r is not chosen[0]]}]",
+     "new": "                              for r in rows]}]"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "            milestones.append({'id': phase.group(1), 'goal': row[1], 'exit': row[2],\n                               'status': status.get(phase.group(1), 'planned')})",
+     "new": "            milestones.append({'id': phase.group(1), 'goal': row[1], 'exit': row[2],\n                               'status': 'planned'})"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        phase = re.match(r'(P\\d)\\s', row[0] + ' ')",
+     "new": "        phase = re.match(r'(\\S+)\\s', row[0] + ' ')"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        if not status.startswith('已決'):\n            continue\n",
+     "new": "        if False:\n            continue\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    body, _ = _section(text, r'6\\. ')\n",
+     "new": "    body = text\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        elif items and line.startswith('  - '):",
+     "new": "        elif items and line.startswith('- '):"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "            if kind.group(1) == '採用理由':\n                rationale = kind.group(3)\n",
+     "new": "            if kind.group(1) == '採用理由':\n                pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                                     'outcome': 'rejected' if kind.group(1) == '未選' else 'deferred',",
+     "new": "                                     'outcome': 'rejected',"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        for letter in sorted(set(_LETTER.findall(listed)) - set(_CHOSEN.findall(status)) - named):",
+     "new": "        for letter in []:"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        for letter in sorted(set(_LETTER.findall(listed)) - set(_CHOSEN.findall(status)) - named):",
+     "new": "        for letter in sorted(set(_LETTER.findall(listed)) - named):"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "_CHOSEN = re.compile(r'[採選](?: AI 建議)? \\(([a-z])\\)')",
+     "new": "_CHOSEN = re.compile(r'[採選] \\(([a-z])\\)')"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        day = _DAY.search(status)\n",
+     "new": "        day = _DAY.search(head)\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        rationale, alternatives = status.partition('理由：')[2].rstrip('）'), []\n",
+     "new": "        rationale, alternatives = '', []\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        title, _, rationale = item.partition('理由：')\n        decisions.append({'id': 'plan-nongoal-%d'",
+     "new": "        title, rationale = item, ''\n        decisions.append({'id': 'plan-nongoal-%d'"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                          'title': title.strip(), 'status': 'rejected', 'date': date,",
+     "new": "                          'title': title.strip(), 'status': 'accepted', 'date': date,"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    body, _ = _section(text, r'3\\.2 ')\n",
+     "new": "    body = text\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_resume"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "        return {'result': '未知', 'reasons': ['entry-unreadable']}\n",
+     "new": "        text = ''\n"
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "    if section is None:\n        return {'result': '未知', 'reasons': ['section-missing']}\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "                if other and len(other.group(1)) <= depth:\n                    break\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "        if re.match(r'[a-z]+:', target) or target.startswith('#'):\n            continue\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "        found.append(('repo', target.split('#')[0]))\n",
+     "new": "        found.append(('repo', target))\n"
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "    for path in HOME_PATH.findall(section):\n        found.append(('home', path))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "        if kind == 'repo' and content is None and not location.is_dir():\n",
+     "new": "        if kind == 'repo' and content is None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "            if first is not None and (Path(first) / path).exists():\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "        found = marker.search(content) if content is not None else None\n",
+     "new": "        found = content\n"
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "            source = SOURCE.search(content, found.end())\n",
+     "new": "            source = SOURCE.search(content)\n"
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "    in_repo = [p for p in procedures if p['kind'] == 'repo']\n",
+     "new": "    in_repo = procedures\n"
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "    if missing:\n        reasons.append('required-missing')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "    if private:\n        reasons.append('private-attachment')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "            'drift': drift if len(drift) > 1 else []}\n",
+     "new": "            'drift': []}\n"
+    },
+    {
+     "file": "src/project_bootstrap/resume.py",
+     "old": "    subprocess.run(['git', 'clone', '-q', '--no-hardlinks', '--single-branch', '--branch',\n                    branch, str(repo), str(dest)], check=True, capture_output=True)\n",
+     "new": "    import shutil\n    shutil.copytree(repo, dest)\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_gitclaim"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    return values[0] if len(values) == 1 and values[0] else None\n",
+     "new": "    return values[0] if values else None\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if not 2 <= len(parts) <= 3:\n        return None\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "        if (match is None or not match.group(1).strip()\n",
+     "new": "        if (match is None\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "                or (index < len(parts) - 1 and match.end() != len(part.strip()))):\n",
+     "new": "                ):\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if theirs is None:\n        return 'owner-unknown'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if len(theirs) == 2 and theirs[1] not in KNOWN_TOOLS:\n        return 'busy-unidentified-tool'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if theirs[0] != mine[0]:\n        return 'busy-other-machine'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if theirs[1] != mine[1]:\n        return 'busy-same-machine-other-tool'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if branch == 'HEAD':\n        raise GitGateDenied('detached-head')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if upstream.returncode != 0:\n        raise GitGateDenied('no-upstream')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if not remote or upstream != f'{remote}/{branch}':\n",
+     "new": "    if not remote:\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if _git(repo, env, 'fetch', '--quiet', remote, check=False).returncode != 0:\n        raise GitGateDenied('fetch-failed')\n",
+     "new": "    _git(repo, env, 'fetch', '--quiet', remote, check=False)\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    return bool(_out(repo, env, 'status', '--porcelain', '--untracked-files=all'))\n",
+     "new": "    return bool(_out(repo, env, 'status', '--porcelain', '--untracked-files=no'))\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if not isinstance(owner, str) or len(owner_parts(owner.strip()) or ()) != 3:\n        raise GitGateDenied('invalid-owner')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    _fetch(repo, env, remote)\n    if _dirty(repo, env):\n        raise GitGateDenied('dirty-unknown')\n",
+     "new": "    _fetch(repo, env, remote)\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if ahead and behind:\n        raise GitGateDenied('diverged')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if ahead:\n        raise GitGateDenied('ahead-only')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if behind:\n        raise GitGateDenied('behind-pull-required')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if remote_owner is None:\n        raise GitGateDenied('owner-unknown')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if remote_owner not in (IDLE, owner.strip()):\n",
+     "new": "    if remote_owner not in (IDLE, owner.strip()) and False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if not argv or not all(isinstance(item, str) and item for item in argv):\n        raise GitGateDenied('invalid-check')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if _dirty(repo, env) or _out(repo, env, 'rev-parse', 'HEAD^{tree}') != tree:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    skipped = len(re.findall(r'(?im)^\\s*\\[?\\s*skip\\b', text))\n",
+     "new": "    skipped = 0\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if not isinstance(receipts, (list, tuple)) or not receipts:\n",
+     "new": "    if not isinstance(receipts, (list, tuple)):\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "        if receipt['exit'] != 0 or receipt['skipped'] != 0:\n",
+     "new": "        if receipt['exit'] != 0:\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "        if receipt['tree'] != tree:\n            raise GitGateDenied('final-checks-stale')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "    if _remote_owner(repo, env, 'HEAD', marker_path) != IDLE:\n        raise GitGateDenied('marker-not-released')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "            check=False).returncode != 0:\n        raise GitGateDenied('remote-advanced')\n",
+     "new": "            check=False).returncode != 0 and False:\n        raise GitGateDenied('remote-advanced')\n"
+    },
+    {
+     "file": "src/project_bootstrap/gitclaim.py",
+     "old": "            check=False).returncode != 0:\n        raise GitGateDenied('push-failed')\n",
+     "new": "            check=False).returncode != 0 and False:\n        raise GitGateDenied('push-failed')\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_release"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "            or '\\\\' in relative or any(part in ('', '.', '..') for part in relative.split('/'))):\n",
+     "new": "            ):\n"
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if path.is_symlink() or not path.is_file():\n            raise Denied('invalid-component')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "    if kind not in KINDS or not isinstance(version, str) or not version:\n",
+     "new": "    if not isinstance(version, str) or not version:\n"
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "    if not paths:\n        raise Denied('invalid-manifest')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "                or not re.fullmatch(rb'ssh-ed25519 [A-Za-z0-9+/]{68}', public_key)):\n",
+     "new": "                ):\n"
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if result.returncode:\n            raise Denied('invalid-channel-signature')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if not isinstance(operation, str) or not re.fullmatch(r'[0-9a-f]{32}', operation):\n",
+     "new": "        if not isinstance(operation, str):\n"
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        except Exception:\n            raise Denied('channel-unreachable') from None\n",
+     "new": "        except ZeroDivisionError:\n            raise Denied('channel-unreachable') from None\n"
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if not isinstance(document, bytes) or not 1 <= len(document) <= 1024:\n",
+     "new": "        if not isinstance(document, bytes):\n"
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        self._verify(document, signature)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if (not isinstance(fields, dict) or set(fields) != STATEMENT_FIELDS\n",
+     "new": "        if (not isinstance(fields, dict)\n"
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if fields['channel'] != self.channel:\n            raise Denied('wrong-channel')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if fields['nonce'] != nonce:\n            raise Denied('stale-confirmation')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if not fields['issued'] <= now < fields['expires']:\n",
+     "new": "        if not now < fields['expires']:\n"
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if not fields['issued'] <= now < fields['expires']:\n",
+     "new": "        if not fields['issued'] <= now:\n"
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if fields['epoch'] < self.highest_epoch:\n            raise Denied('channel-rollback')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if fields['manifest'] != self.digest:\n            raise Denied('release-mismatch')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        if self.manifest.get('kind') != 'formal':\n            raise Denied('debug-release')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "            if _file_digest(self.root, path) != expected:\n                raise Denied('component-drift')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/release.py",
+     "old": "        self.highest_epoch = fields['epoch']\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_contracts",
+    "tests.test_recovery"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        return bool(self.event_id) and all(value is True for value in (\n",
+     "new": "        return all(value is True for value in (\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "            self.final_checks_passed, self.push_succeeded,\n            self.remote_released, self.upstream_aligned))\n",
+     "new": "            self.final_checks_passed, self.push_succeeded))\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if not re.fullmatch(r'\\d{8}', self.started):\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if not self.topic or len(self.topic) > 10 or any(\n",
+     "new": "        if not self.topic or any(\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "                ch in self.topic for ch in '\\n\\r｜'):\n",
+     "new": "                ch in self.topic for ch in '\\n'):\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if type(self.count) is not int or self.count < 0:\n",
+     "new": "        if type(self.count) is not int:\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if self.state not in ('working', 'waiting', 'handed_off'):\n            raise ValueError('invalid session state')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if len(set(self.completed)) != len(self.completed) or any(\n",
+     "new": "        if any(\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        count = ('≥' if self.at_least else '') + str(self.count)\n",
+     "new": "        count = str(self.count)\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if event in ('start', 'message'):\n",
+     "new": "        if event == 'start':\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if event == 'checkpoint':\n            return self\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if receipt is None or not receipt.valid():\n",
+     "new": "        if receipt is None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if receipt.event_id in self.completed:\n            return self\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if self.state == 'handed_off':\n            raise ValueError('resume before a new handoff')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "        if instance.title()[0] != symbol:\n            raise ValueError('symbol contradicts status')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "    if adapter is None:\n        return {'status': 'unavailable', 'requested': target, 'observed': None}\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "    except Exception:\n        return {'status': 'error', 'requested': target, 'observed': None}\n",
+     "new": "    except ZeroDivisionError:\n        return {'status': 'error', 'requested': target, 'observed': None}\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "    if observed not in (target, target.replace('　', ' ', 1)):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/session.py",
+     "old": "    if observed not in (target, target.replace('　', ' ', 1)):\n",
+     "new": "    if observed != target:\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_registry"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "    if len(ids) != len(set(ids)) or set(observed) != set(ids) or len(observed) != len(ids):\n",
+     "new": "    if set(observed) != set(ids):\n"
+    },
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "            if not row.get(key):\n",
+     "new": "            if key not in row:\n"
+    },
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "        if row.get('result') not in STATES:\n            errors.append(f'{row.get(\"id\")} 結果無效')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "        if set(row.get('parts', {})) != expected:\n",
+     "new": "        if not set(row.get('parts', {})) >= expected:\n"
+    },
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "            if item.get('result') == '通過':\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "                if not path or path.startswith('/') or '..' in path.split('/'):\n",
+     "new": "                if not path:\n"
+    },
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "                elif not (root / path).is_file():\n",
+     "new": "                elif False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "                if not evidence.get('scope'):\n",
+     "new": "                if False:\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_approvals"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "        if not isinstance(public_key, bytes) or not re.fullmatch(rb'ssh-ed25519 [A-Za-z0-9+/]{68}', public_key):\n",
+     "new": "        if not isinstance(public_key, bytes):\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "        if not base64.b64decode(public_key.split()[1]).startswith(algorithm):\n            raise Denied('invalid-approval-public-key')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "                if self.lab.db.execute('SELECT 1 FROM grants LIMIT 1').fetchone():\n                    raise Denied('legacy-effect-grants-present')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "                self.check_policy(policy)\n",
+     "new": "                pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "                or policy['signer_digest'] != self.signer_digest or policy['verifier_digest'] != self.verifier_digest):\n",
+     "new": "                or policy['signer_digest'] != self.signer_digest):\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "                or policy['signer_digest'] != self.signer_digest or policy['verifier_digest'] != self.verifier_digest):\n",
+     "new": "                or policy['verifier_digest'] != self.verifier_digest):\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "        if self.verifier_fingerprint() != self.verifier_digest:\n            raise Denied('approval-verifier-changed')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "        if not isinstance(signature, bytes) or not 1 <= len(signature) <= 2048:\n",
+     "new": "        if not isinstance(signature, bytes):\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "        if result.returncode:\n            raise Denied('invalid-approval-signature')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "        if not isinstance(document, bytes) or not 1 <= len(document) <= 4096:\n",
+     "new": "        if not isinstance(document, bytes):\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "        if not isinstance(fields, dict) or set(fields) != FIELDS:\n",
+     "new": "        if not isinstance(fields, dict):\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "            if not isinstance(fields[key], str) or not re.fullmatch('[0-9a-f]{%d}' % length, fields[key]):\n",
+     "new": "            if not isinstance(fields[key], str):\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "        if (not isinstance(kind, str) or kind not in EFFECT_KINDS or fields['funding'] != FUNDING.get(kind)\n",
+     "new": "        if (not isinstance(kind, str) or kind not in EFFECT_KINDS\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "                or not isinstance(fields['resource'], str) or not fields['resource']\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "                or type(fields['uses']) is not int or not 1 <= fields['uses'] <= 32\n",
+     "new": "                or type(fields['uses']) is not int\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "                or any(type(fields[key]) is not int or not 0 <= fields[key] <= 2**53\n",
+     "new": "                or any(type(fields[key]) is not int\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "        self.verify(document, signature)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "            self.check_policy(self.lab.db.execute('SELECT * FROM signed_effect_policy').fetchone())\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "            if fields['audience'] != self.audience or fields['actor'] != permit['actor']:\n",
+     "new": "            if fields['actor'] != permit['actor']:\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "            if fields['audience'] != self.audience or fields['actor'] != permit['actor']:\n",
+     "new": "            if fields['audience'] != self.audience:\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "            if not fields['issued'] <= now < fields['expires']:\n",
+     "new": "            if not now < fields['expires']:\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "            if not fields['issued'] <= now < fields['expires']:\n",
+     "new": "            if not fields['issued'] <= now:\n"
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "            self.lab.require_epoch(fields['epoch'])\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "                if previous['document'] != document:\n                    raise Denied('approval-id-reused')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "                if previous['id'] is None:\n                    raise Denied('approval-grant-missing')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/approvals.py",
+     "old": "            if self.lab.db.execute('SELECT 1 FROM grants WHERE source=?', (source,)).fetchone():\n                raise Denied('approval-record-missing')\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_confluence"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "            _text(resolution.get(k)) for k in ('decided_by', 'reason')):\n",
+     "new": "            _text(resolution.get(k)) for k in ('decided_by',)):\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "            _text(resolution.get(k)) for k in ('decided_by', 'reason')):\n",
+     "new": "            _text(resolution.get(k)) for k in ('reason',)):\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "        datetime.datetime.fromisoformat(resolution.get('decided_at'))\n    except (TypeError, ValueError):\n        return 'resolution-incomplete'\n",
+     "new": "        pass\n    except (TypeError, ValueError):\n        return 'resolution-incomplete'\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    if not isinstance(resolution.get('scope'), dict) or not isinstance(cites, list) or not cites:\n",
+     "new": "    if not isinstance(cites, list) or not cites:\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    if not isinstance(resolution.get('scope'), dict) or not isinstance(cites, list) or not cites:\n",
+     "new": "    if not isinstance(resolution.get('scope'), dict) or not isinstance(cites, list):\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    if not all(isinstance(c, dict) for c in cites):\n        return 'resolution-incomplete'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    if None in cited:\n        return 'resolution-cites-unknown'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "    if 'value' not in resolution or all(f.get('value') != resolution['value'] for f in cited):\n",
+     "new": "    if 'value' not in resolution:\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "            if clashing and {_ident(group[i]) for i in clashing} <= cited:\n",
+     "new": "            if clashing:\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "            kept = [group[i] for i in sorted(clashing) if group[i].get('value') == settled['value']]\n",
+     "new": "            kept = [group[i] for i in sorted(clashing)]\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "        whole = len(buckets) == 1 and (not clashing or settled is not None)\n",
+     "new": "        whole = len(buckets) == 1 and not clashing\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "                entry['decision'] = out['resolved'][-1]['decision']\n",
+     "new": "                pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/confluence.py",
+     "old": "            if settled is not None and (scope, value) == (\n",
+     "new": "            if settled is not None and (scope, value) != (\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_trail_sources"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        if not _ABSENT.search(lead):\n            continue\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        days = _DAY.findall(lead) or _DAY.findall(rest)[:1]\n",
+     "new": "        days = _DAY.findall(lead)\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        days = _DAY.findall(lead) or _DAY.findall(rest)[:1]\n",
+     "new": "        days = _DAY.findall(lead + rest)\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                          'date': days[-1] if days else '',\n",
+     "new": "                          'date': days[0] if days else '',\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                          'rationale': rest.strip()})\n",
+     "new": "                          'rationale': item.strip()})\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    for item in re.findall(r'^- \\*\\*(.+)$', body, re.MULTILINE):\n",
+     "new": "    for item in re.findall(r'^\\s*- \\*\\*(.+)$', body, re.MULTILINE):\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    body, _ = _section(text, r'這個 repo 刻意沒有的東西')\n",
+     "new": "    body = text\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "_ANCHOR = re.compile(r'^<a id=\"([a-z0-9-]+)\"></a>\\n', re.MULTILINE)",
+     "new": "_ANCHOR = re.compile(r'<a id=\"([a-z0-9-]+)\"></a>', re.MULTILINE)"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "_WHY = re.compile(r'\\[為什麼\\]\\(AGENTS-reasons\\.md#([a-z0-9-]+)\\)')",
+     "new": "_WHY = re.compile(r'\\]\\([A-Za-z.-]*#([a-z0-9-]+)\\)')"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        rationale = body[heading.end():].strip() if heading else body.strip()\n",
+     "new": "        rationale = body.strip()\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "        days = sorted(_DAY.findall(rationale))\n",
+     "new": "        days = _DAY.findall(rationale)\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                          'status': 'accepted', 'date': days[0] if days else '',\n",
+     "new": "                          'status': 'accepted', 'date': days[0] if days else '2026-11-10',\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                          'title': heading.group(1).strip() if heading else '',\n",
+     "new": "                          'title': heading.group(1).strip() if heading else anchor,\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    rules = [{'id': 'agents#' + anchor, 'decision': 'reasons#' + anchor}\n             for anchor in _WHY.findall(agents)]\n",
+     "new": "    rules = [{'id': 'agents#' + anchor, 'decision': 'reasons#' + anchor}\n             for anchor in _WHY.findall(agents) if 'reasons#' + anchor in {d['id'] for d in decisions}]\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_broker",
+    "tests.test_launcher",
+    "tests.test_recovery",
+    "tests.test_approvals"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            if channel in self.channels:\n                channel.closed = True\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            if channel not in self.channels or channel.closed:\n",
+     "new": "            if channel.closed:\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            if channel not in self.channels or channel.closed:\n",
+     "new": "            if channel not in self.channels:\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            if not isinstance(raw, bytes) or len(raw) > MAX_REQUEST_BYTES:\n",
+     "new": "            if not isinstance(raw, bytes):\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            if not isinstance(request, dict) or type(request.get('id')) is not int or request['id'] < 1:\n",
+     "new": "            if not isinstance(request, dict) or type(request.get('id')) is not int:\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "                    if channel.authorize is not None:\n                        channel.authorize(channel)\n                    previous",
+     "new": "                    previous"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "                        if previous['digest'] != fingerprint:\n                            return self.response(request_id, 'changed-retry')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "                        if request_id != last + 1:\n",
+     "new": "                        if request_id <= last:\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "                        except (TypeError, ValueError, UnicodeError):\n                            response = self.response(request_id, 'invalid-request')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            except Denied:\n                channel.closed = True\n                return self.response(request_id, 'session-no-longer-valid')\n",
+     "new": "            except Denied:\n                return self.response(request_id, 'session-no-longer-valid')\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            except Exception:\n                channel.closed = True\n                return self.response(request_id, 'broker-error-channel-closed')\n",
+     "new": "            except Exception:\n                return self.response(request_id, 'broker-error-channel-closed')\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "                if request.get('resource') not in channel.resources:\n                    return self.response(request_id, 'resource-not-authorized')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "                    if channel.authorize is not None:\n                        with self.lab.transaction():\n                            channel.authorize(channel)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            if key in result:\n                raise ValueError('duplicate-key')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "        if method not in schemas:\n            raise Denied('unknown-method')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "        if set(request) != schemas[method]:\n",
+     "new": "        if not set(request) >= schemas[method]:\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "        if not isinstance(resource, str) or resource not in channel.resources:\n",
+     "new": "        if not isinstance(resource, str):\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "        if type(request['epoch']) is not int or request['epoch'] < 0:\n",
+     "new": "        if type(request['epoch']) is not int:\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            if self.materializer is not None:\n                self.materializer.ensure_ready(resource)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            if base is not None and (not isinstance(base, str) or len(base) != 64\n",
+     "new": "            if base is not None and (not isinstance(base, str)\n"
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "            if not isinstance(request['text'], str):\n                raise Denied('invalid-content')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/broker.py",
+     "old": "        if not isinstance(request['kind'], str) or request['kind'] not in EFFECT_KINDS:\n",
+     "new": "        if not isinstance(request['kind'], str):\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_launcher",
+    "tests.test_recovery",
+    "tests.test_approvals"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if not isinstance(ticket, str) or len(ticket) != 64:\n",
+     "new": "        if not isinstance(ticket, str):\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if row is None or row['revoked'] or now >= row['expires']:\n",
+     "new": "        if row is None or now >= row['expires']:\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if row is None or row['revoked'] or now >= row['expires']:\n",
+     "new": "        if row is None or row['revoked']:\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if row is None or row['revoked']:\n            raise Denied('launch-not-renewable')\n",
+     "new": "        if row is None:\n            raise Denied('launch-not-renewable')\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if (not isinstance(source, str) or not source.strip()\n",
+     "new": "        if (not isinstance(source, str)\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                or expires_at <= max(now, row['expires'])):\n",
+     "new": "                or expires_at <= now):\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if not self.lab.db.in_transaction:\n            raise Denied('renewal-transaction-required')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if (not isinstance(resources, (tuple, list, set, frozenset)) or not resources\n",
+     "new": "        if (not isinstance(resources, (tuple, list, set, frozenset))\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                or any(not isinstance(r, str) or not r for r in resources)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                    or expires_at <= now):\n                raise Denied('invalid-launch-deadline')\n",
+     "new": "                    ):\n                raise Denied('invalid-launch-deadline')\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                if (self.lab.actor(candidate.capability) != current['actor']\n",
+     "new": "                if (False\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                        or candidate.resources != frozenset(json.loads(current['resources']))):\n",
+     "new": "                        ):\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "            if self.lab.db.execute('SELECT 1 FROM signed_effect_policy').fetchone():\n                raise Denied('signed-effect-approval-required')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if resource not in json.loads(permit['resources']):\n            raise Denied('resource-not-authorized')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                or expires_at > permit['expires']):\n",
+     "new": "                ):\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if self.channel not in self.broker.channels or self.channel.closed or self.channel.authorize is None:\n",
+     "new": "        if self.channel.authorize is None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        self.channel.authorize(self.channel)\n        actor = self.lab.actor",
+     "new": "        actor = self.lab.actor"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if cursor is None or [r['request_id'] for r in rows] != list(range(1, cursor[0])):\n",
+     "new": "        if cursor is None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "        if set(receipts) - {r['request_id'] for r in rows}:\n            raise Denied('request-journal-incomplete')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "            if (hashlib.sha256(row['raw']).hexdigest() != row['digest']\n",
+     "new": "            if (False\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                    or (receipt is not None and receipt['digest'] != row['digest'])\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                    or (row['completed'] and receipt is None)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                    or (not row['completed'] and index != len(rows) - 1)):\n",
+     "new": "                    ):\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "            if not isinstance(fields, dict) or 'id' in fields:\n",
+     "new": "            if not isinstance(fields, dict):\n"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "            if len(raw) > MAX_REQUEST_BYTES:\n                raise Denied('request-too-large-or-invalid')\n            self.lab",
+     "new": "            self.lab"
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "            if request['id'] != next_id:\n                raise Denied('client-sequence-is-managed')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                if not rows or rows[-1]['completed']:\n                    raise Denied('no-pending-request')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/launcher.py",
+     "old": "                if receipt is not None and receipt['response'] == response:\n",
+     "new": "                if True:\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_recovery",
+    "tests.test_launcher"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if (not parts or any(not part or part in ('.', '..') or part.casefold() == '.git' or '\\\\' in part\n",
+     "new": "            if (not parts or any(not part or part in ('.', '..') or '\\\\' in part\n"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if (not parts or any(not part or part in ('.', '..') or part.casefold() == '.git' or '\\\\' in part\n",
+     "new": "            if (not parts or any(not part or part.casefold() == '.git' or '\\\\' in part\n"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "                                 or '\\0' in part or part.casefold().startswith('.bootstrap-') for part in parts)):\n",
+     "new": "                                 or '\\0' in part for part in parts)):\n"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "        if len(normalized) != len(self.resources):\n            raise Denied('aliased-resources')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "        if any(not isinstance(resource, str) or not resource for resource in self.resources):\n            raise Denied('invalid-resource-id')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "                if self.lab.db.execute('SELECT 1 FROM writes LIMIT 1').fetchone():\n                    raise Denied('missing-materializer-binding')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            elif previous[0] != binding:\n                raise Denied('materializer-binding-conflict')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "        if resource not in self.resources:\n            raise Denied('unmapped-resource')\n        flags",
+     "new": "        flags"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if (metadata.st_dev, metadata.st_ino) != self.root_identity:\n                raise Denied('materializer-binding-conflict')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:\n                raise Denied('not-an-exclusive-regular-file')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if metadata.st_size > MAX_CONTENT or stat.S_IMODE(metadata.st_mode) & 0o7000:\n",
+     "new": "            if metadata.st_size > MAX_CONTENT:\n"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if (self.lab.db.execute('SELECT 1 FROM files WHERE path=?', (resource,)).fetchone()\n",
+     "new": "            if (False\n"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "        if pending:\n            raise Denied('previous-materialization-pending')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "        if not re.fullmatch('[0-9a-f]{32}', event_id):\n            raise Denied('invalid-event')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if event is None or epoch is None:\n",
+     "new": "            if event is None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if state is not None and (state['phase'] not in ('prepared', 'applied') or state['resource'] != event['path']):\n",
+     "new": "            if state is not None and state['phase'] not in ('prepared', 'applied'):\n"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if state is not None and state['phase'] == 'applied':\n                return 'applied'  # A receipt for past work, never a reapply of old content.\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            self.lab.require_epoch(epoch[0])\n            if len(event['after'])",
+     "new": "            if len(event['after'])"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            if len(event['after']) > MAX_CONTENT:\n                raise Denied('content-too-large')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "                if content != event['before']:\n                    raise Denied('disk-base-conflict')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "            self.lab.require_epoch(epoch[0])\n            state = self.lab.db.execute",
+     "new": "            state = self.lab.db.execute"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "                elif current != event['before'] or mode != state['mode']:\n",
+     "new": "                elif current != event['before']:\n"
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "                        if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:\n                            raise Denied('unsafe-stage-file')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "                    if self.read(descriptor, name) != (event['before'], state['mode']):\n                        raise Denied('disk-base-conflict')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/materializer.py",
+     "old": "                os.fsync(descriptor)\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_crash_release",
+    "tests.test_guest_runs"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "    if not os.path.isfile(db):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "    if lines != list(HOST_LINES):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "os.O_RDONLY | os.O_NOFOLLOW",
+     "new": "os.O_RDONLY"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "    if len(data) > MAX_LOG:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "    if any(env.get(name) for name in REMOTE_ENV):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "    if not os.isatty(fd):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "    terminal.discard_pending()\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "    if terminal.read_line() != expected:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "        if path is None and recorded is None:\n            raise Denied('crash-release-unavailable')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        if row['host_log'] is None:\n            raise Denied('crash-release-unavailable')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                or evidence['host_log'] != row['host_log']\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                or evidence['probe_id'] != identity['probe_id']\n                or evidence['stop_marker'] != STOP_MARKER\n                or evidence['host_log'] != row['host_log']\n",
+     "new": "                or evidence['stop_marker'] != STOP_MARKER\n                or evidence['host_log'] != row['host_log']\n"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                    or confirmation['method'] != 'local-terminal'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                    or confirmation['run_id'] != run_id\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                    or not confirmation['tty'].startswith('/dev/')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "            self.lab.resume(row['actor'])\n\n    @staticmethod\n    def _check_host_log",
+     "new": "\n    @staticmethod\n    def _check_host_log"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        if host_log is not None and (not isinstance(host_log, str)",
+     "new": "        if False and (not isinstance(host_log, str)"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "            self.lab.db.execute('ALTER TABLE guest_runs ADD COLUMN host_log TEXT')\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "            if self.lab.actor(capability) != row['actor']:\n                raise Denied('guest-channel-mismatch')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "            if self._unretired(actor):\n                raise Denied('vm-retirement-unconfirmed')\n            if self.lab.db.execute('SELECT 1 FROM guest_runs WHERE actor=? AND epoch>=?",
+     "new": "            if self.lab.db.execute('SELECT 1 FROM guest_runs WHERE actor=? AND epoch>=?"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                    or evidence['host_exit'] != 0 or type(evidence['host_exit']) is not int):",
+     "new": "                    ):"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "            # The retired guest's channel must die with it, not only by convention.\n            self.lab.resume(row['actor'])\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                or row['channel'] != self._channel(capability)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "    def require_quiescent(self, actor):\n        \"\"\"Restart gate: refuse while any recorded guest lacks durable retirement.\"\"\"\n        if self._unretired(actor):\n",
+     "new": "    def require_quiescent(self, actor):\n        \"\"\"Restart gate: refuse while any recorded guest lacks durable retirement.\"\"\"\n        if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        if boot_session is not None and (not isinstance(boot_session, str)",
+     "new": "        if False and (not isinstance(boot_session, str)"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "            self.lab.db.execute('ALTER TABLE guest_runs ADD COLUMN boot_session TEXT')\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        if row['boot_session'] is None:\n            raise Denied('crash-release-unavailable')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                or evidence['boot_session_recorded'] != row['boot_session']\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                or evidence['boot_session_now'] == row['boot_session']):",
+     "new": "                or False):"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                or not BOOT_SESSION.fullmatch(evidence['boot_session_now'])\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                or evidence['probe_id'] != identity['probe_id']\n                or evidence['boot_session_recorded']",
+     "new": "                or evidence['boot_session_recorded']"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "    return value if result.returncode == 0 and BOOT_SESSION.fullmatch(value) else None",
+     "new": "    return value or None"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        result = run([SYSCTL, '-n', 'kern.bootsessionuuid'],",
+     "new": "        result = run(['sysctl', '-n', 'kern.bootsessionuuid'],"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "            or now == recorded):",
+     "new": "            or False):"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "    if (not isinstance(now, str) or not BOOT_SESSION.fullmatch(now)\n",
+     "new": "    if (not isinstance(now, str)\n"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "                if recorded is None:\n                    raise\n",
+     "new": "                raise\n"
+    },
+    {
+     "file": "src/project_bootstrap/crash_release.py",
+     "old": "        if path is not None:\n            try:",
+     "new": "        if False:\n            try:"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        return None\n    except OSError:\n",
+     "new": "        pass\n    except OSError:\n"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)",
+     "new": "fd = os.open(path, os.O_RDONLY)"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        if not stat.S_ISREG(os.fstat(fd).st_mode):\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "    if match is None:\n        raise Denied('ledger-anchor-unreadable')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        os.fsync(fd)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        os.fsync(directory)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "    except FileExistsError:\n        raise Denied('ledger-anchor-conflict') from None\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        os.unlink(temporary)\n",
+     "new": "        pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        if anchor is not None:\n            self._check_anchor(anchor)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "        if (not isinstance(anchor, str) or not os.path.isabs(anchor)\n                or os.path.normpath(anchor) != anchor):\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "            elif recorded is None:\n                raise Denied('ledger-anchor-missing')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "            elif stored is None:\n                raise Denied('ledger-lost')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "            elif recorded != stored:\n                raise Denied('ledger-replaced')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "                write_anchor(anchor, ledger_id)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guest_runs.py",
+     "old": "os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600",
+     "new": "os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_supervisor"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "            if ready != {'type': 'ready', 'epoch': epoch,\n",
+     "new": "            if False and ready != {'type': 'ready', 'epoch': epoch,\n"
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "        if message is None:\n            raise Denied('worker-ended')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "        if self.process.poll() is None or self.reader.is_alive():\n            raise Denied('worker-not-stopped')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "        if not self.ready or name in self.pending_work:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "            if message != {'type': 'started', 'epoch': self.epoch}:\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "        if not self.ready or name not in self.pending_work:\n",
+     "new": "        if name not in self.pending_work:\n"
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "            if result.get('type') != 'result' or result.get('epoch') != self.epoch:\n",
+     "new": "            if result.get('type') != 'result':\n"
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "        for worker in self.workers.values():\n            worker.stop()\n        old_stopped",
+     "new": "        old_stopped"
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "                self.lab.acknowledge(capability, epoch, change, application=True)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "        self.pending_work.clear()\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/supervisor.py",
+     "old": "        self.ready = False\n        change = json.dumps",
+     "new": "        change = json.dumps"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_guardian"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "    if time.monotonic() >= deadline or select.select([watch], [], [], 0)[0]:\n",
+     "new": "    if select.select([watch], [], [], 0)[0]:\n"
+    },
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "    if time.monotonic() >= deadline or select.select([watch], [], [], 0)[0]:\n",
+     "new": "    if time.monotonic() >= deadline:\n"
+    },
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "            if remaining <= 0:\n                break\n",
+     "new": "            if remaining <= 0:\n                remaining = 0.05\n"
+    },
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "                os.read(watch, 1)\n                break\n",
+     "new": "                os.read(watch, 1)\n"
+    },
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "            child.terminate()\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "                child.kill()\n",
+     "new": "                pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "    signal.signal(signal.SIGTERM, stop)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "stderr=subprocess.DEVNULL, close_fds=True)",
+     "new": "stderr=subprocess.DEVNULL, close_fds=False)"
+    },
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "        record_reap(report, ('reaped:%d\\n' % code).encode('ascii'))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/guardian.py",
+     "old": "    return code if code >= 0 else 128 - code\n",
+     "new": "    return code\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_lifecycle"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if os.name != 'posix' or not hasattr(os, 'O_NOFOLLOW'):\n            raise Denied('ticket-vault-platform-unverified')\n",
+     "new": "        if False:\n            raise Denied('ticket-vault-platform-unverified')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700:\n            raise Denied('ticket-vault-permissions')\n",
+     "new": "        if False:\n            raise Denied('ticket-vault-permissions')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if not self.valid(ticket):\n            raise Denied('invalid-launch-ticket')\n",
+     "new": "        if False:\n            raise Denied('invalid-launch-ticket')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if not self.valid(handle):\n            raise Denied('invalid-ticket-handle')\n",
+     "new": "        if False:\n            raise Denied('invalid-ticket-handle')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if not self.valid(ticket):\n            raise Denied('invalid-ticket-file')\n",
+     "new": "        if False:\n            raise Denied('invalid-ticket-file')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if record is None:\n            raise Denied('worker-reap-unconfirmed')\n",
+     "new": "        if False:\n            raise Denied('worker-reap-unconfirmed')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                if self.file_identity(fd) != record['identity']:\n                    raise Denied('worker-reap-unconfirmed')\n",
+     "new": "                if False:\n                    raise Denied('worker-reap-unconfirmed')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                    if proof != ('reaped:%d\\n' % code).encode('ascii'):\n                        raise Denied('worker-reap-unconfirmed')\n",
+     "new": "                    if False:\n                        raise Denied('worker-reap-unconfirmed')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if not cwd.is_dir():\n            raise Denied('invalid-launch-plan')\n",
+     "new": "        if False:\n            raise Denied('invalid-launch-plan')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "            if not resolved.is_file():\n                raise Denied('invalid-launch-plan')\n",
+     "new": "            if False:\n                raise Denied('invalid-launch-plan')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if permit is None or permit['actor'] != row['actor']:\n            raise Denied('renewed-ticket-binding-mismatch')\n",
+     "new": "        if False:\n            raise Denied('renewed-ticket-binding-mismatch')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if expected is not None and (record is None or record['name'] != expected):\n            raise Denied('worker-reap-unconfirmed')\n",
+     "new": "        if False:\n            raise Denied('worker-reap-unconfirmed')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "            if actor in self.children:\n                raise Denied('process-still-owned')\n",
+     "new": "            if False:\n                raise Denied('process-still-owned')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if row is None or row['plan'] != plan.fingerprint():\n            raise Denied('launch-plan-changed')\n",
+     "new": "        if False:\n            raise Denied('launch-plan-changed')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if row['state'] not in ('starting', 'running', 'stopping', 'unresolved'):\n            raise Denied('invalid-managed-state')\n",
+     "new": "        if False:\n            raise Denied('invalid-managed-state')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                if row is not None and row['state'] != 'stopped':\n                    raise Denied('unresolved-previous-process')\n",
+     "new": "                if False:\n                    raise Denied('unresolved-previous-process')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                    if child.reader.is_alive():\n                        raise Denied('child-reader-not-stopped')\n",
+     "new": "                    if False:\n                        raise Denied('child-reader-not-stopped')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                if child.process.poll() is None:\n                    raise Denied('child-not-stopped')\n",
+     "new": "                if False:\n                    raise Denied('child-not-stopped')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "            if row is None:\n                raise Denied('launch-not-authorized')\n",
+     "new": "            if False:\n                raise Denied('launch-not-authorized')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                    if previous is not None and previous['plan'] != fingerprint:\n                        raise Denied('launch-plan-changed')\n",
+     "new": "                    if False:\n                        raise Denied('launch-plan-changed')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                if message != self.READY or process.poll() is not None:\n                    raise Denied('child-not-ready')\n",
+     "new": "                if False:\n                    raise Denied('child-not-ready')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                    if time.monotonic() >= deadline:\n                        raise Denied('process-deadline-expired')\n",
+     "new": "                    if False:\n                        raise Denied('process-deadline-expired')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                    if child.process.poll() is not None:\n                        raise Denied('child-ended')\n",
+     "new": "                    if False:\n                        raise Denied('child-ended')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "            if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()\n                    or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1):\n                raise Denied('ticket-file-permissions-or-alias')\n",
+     "new": "            if False:\n                raise Denied('ticket-file-permissions-or-alias')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()\n                or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1):\n            raise Denied('private-file-permissions-or-alias')\n",
+     "new": "        if False:\n            raise Denied('private-file-permissions-or-alias')\n"
+    },
+    {
+     "file": "src/project_bootstrap/lifecycle.py",
+     "old": "                or record['vault'] != f'{directory.st_dev}:{directory.st_ino}'):\n",
+     "new": "                ):\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_vm_probe"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "    return STOP_MARKER in host_text(log).splitlines()\n",
+     "new": "    return STOP_MARKER in host_text(log)\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "            if (\"HOST_NO_SHARED_DIRECTORY\" in host_text(log).splitlines()\n",
+     "new": "            if (\"HOST_NO_SHARED_DIRECTORY\" in output + host_text(log)\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "                    and \"GUEST_NO_SHARED_DIRECTORY\" in output\n",
+     "new": "                    and True\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "                    and \"GUEST_CHANNEL_READY\" in output\n                    and f\"GUEST_PROBE_ID={probe_id}\" in output\n                    and \"GUEST_MOUNTED\" not in output\n",
+     "new": "                    and True\n                    and f\"GUEST_PROBE_ID={probe_id}\" in output\n                    and \"GUEST_MOUNTED\" not in output\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "                    and f\"GUEST_PROBE_ID={probe_id}\" in output\n                    and \"GUEST_MOUNTED\" not in output\n",
+     "new": "                    and True\n                    and \"GUEST_MOUNTED\" not in output\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "                    and \"GUEST_MOUNTED\" not in output\n",
+     "new": "                    and True\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "                    and \"GUEST_UNEXPECTED_SHARED_DIRECTORY\" not in output):\n",
+     "new": "                    and True):\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if (\"GUEST_LOCK_HELD\" in output and \"GUEST_CHANNEL_READY\" in output\n",
+     "new": "        if (True and \"GUEST_CHANNEL_READY\" in output\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if (\"GUEST_LOCK_HELD\" in output and \"GUEST_CHANNEL_READY\" in output\n",
+     "new": "        if (\"GUEST_LOCK_HELD\" in output and True\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "                and f\"GUEST_PROBE_ID={probe_id}\" in output\n                and pid and session",
+     "new": "                and True\n                and pid and session"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "heartbeat_count(share, probe_id) >= 3):",
+     "new": "heartbeat_count(share, probe_id) >= 0):"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "            if pid.group(1) != session.group(1):\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "            if second <= first:\n",
+     "new": "            if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "    if second != first:\n        raise RuntimeError(f\"guest effect",
+     "new": "    if False:\n        raise RuntimeError(f\"guest effect"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if process.poll() is not None:\n            raise RuntimeError(\"VM exited during computation\")\n",
+     "new": "        if False:\n            raise RuntimeError(\"VM exited during computation\")\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if remaining <= 0:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if not chunk:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if len(raw) > limit:\n",
+     "new": "        if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "    if not re.fullmatch(rb\"[0-9a-f]{32} [0-9]+ -?[0-9]+\\n\", raw):\n",
+     "new": "    if not re.match(rb\"[0-9a-f]{32} [0-9]+ -?[0-9]+\", raw):\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "    if observed_id != request_id or int(observed_epoch) != epoch:\n",
+     "new": "    if int(observed_epoch) != epoch:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "    if observed_id != request_id or int(observed_epoch) != epoch:\n",
+     "new": "    if observed_id != request_id:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "    if match is None or match[1].decode('ascii') != request_id:\n",
+     "new": "    if match is None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "    if (request['id'] != sequence or request['epoch'] != epoch\n",
+     "new": "    if (False or request['epoch'] != epoch\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "    if (request['id'] != sequence or request['epoch'] != epoch\n",
+     "new": "    if (request['id'] != sequence or False\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "            or request['base'] != expected_base):\n",
+     "new": "            or False):\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "    if raw != expected:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if self.process is None or self.process.poll() is not None:\n            raise RuntimeError(\"VM is not live for computation\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or any(",
+     "new": "        if False:\n            raise RuntimeError(\"VM is not live for computation\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or any("
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or any(type(item) is not int or abs(item) > 1000 for item in (factor, value))):\n            raise ValueError(\"invalid guest operation\")\n        request_id = secrets.token_hex(16)\n        try:\n            self.process.guest_request.write(\n                f\"{request_id}",
+     "new": "        if False:\n            raise ValueError(\"invalid guest operation\")\n        request_id = secrets.token_hex(16)\n        try:\n            self.process.guest_request.write(\n                f\"{request_id}"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if (type(sequence) is not int or not 1 <= sequence <= 1000\n                or type(epoch)",
+     "new": "        if (False\n                or type(epoch)"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if self.share is not None or self.process is None or self.process.poll() is not None:\n            raise RuntimeError(\"unshared guest tool is not live\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or type(factor)",
+     "new": "        if False:\n            raise RuntimeError(\"unshared guest tool is not live\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or type(factor)"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "                or type(factor) is not int or abs(factor) > 1000):\n",
+     "new": "                or False):\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if self.share is not None or self.process is None or self.process.poll() is not None:\n            raise RuntimeError(\"unshared guest tool is not live\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or type(value)",
+     "new": "        if False:\n            raise RuntimeError(\"unshared guest tool is not live\")\n        if (type(epoch) is not int or not 0 <= epoch <= 1000\n                or type(value)"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "                or type(value) is not int or abs(value) > 1000\n                or type(sequence) is not int or not 1 <= sequence <= 1000):\n",
+     "new": "                or False):\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if base is not None and (not isinstance(base, str) or\n",
+     "new": "        if False and (not isinstance(base, str) or\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if self.process is None or self.process.poll() is not None:\n            raise RuntimeError(\"VM was not live at retirement\")\n",
+     "new": "        if False:\n            raise RuntimeError(\"VM was not live at retirement\")\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if result != 0 or not host_stopped(self.log):\n",
+     "new": "        if not host_stopped(self.log):\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if result != 0 or not host_stopped(self.log):\n",
+     "new": "        if result != 0:\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_probe.py",
+     "old": "        if self.share is not None:\n            evidence[\"final_heartbeat\"]",
+     "new": "        if False:\n            evidence[\"final_heartbeat\"]"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_managed_fixture"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if child.reader.is_alive():\n            raise Denied('previous-reader-still-running')",
+     "new": "        if False:\n            raise Denied('previous-reader-still-running')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "                if time.monotonic() >= deadline:\n                    raise Denied('worker-timeout')",
+     "new": "                if False:\n                    raise Denied('worker-timeout')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not raw.endswith(b'\\n') or len(raw) > 1024:\n            raise Denied('invalid-worker-message')",
+     "new": "        if False:\n            raise Denied('invalid-worker-message')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if reply != {'type': 'ready', 'epoch': epoch,\n                     'context_digest': hashlib.sha256(context.encode()).hexdigest()}:\n            raise Denied('worker-context-not-confirmed')",
+     "new": "        if False:\n            raise Denied('worker-context-not-confirmed')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "            if self.lab.db.execute('SELECT 1 FROM managed_initial_context UNION ALL '\n                                   'SELECT 1 FROM managed_launches LIMIT 1').fetchone():\n                raise Denied('already-started')",
+     "new": "            if False:\n                raise Denied('already-started')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if type(factor) is not int or abs(factor) > 1000:\n            raise Denied('invalid-fixture-factor')",
+     "new": "        if False:\n            raise Denied('invalid-fixture-factor')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not self.ready or self.vm_gate is not None or self.pending is not None:\n            raise Denied('managed-fixture-not-ready')",
+     "new": "        if False:\n            raise Denied('managed-fixture-not-ready')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "            if previous is not None and previous['state'] != 'retired':\n                raise Denied('vm-retirement-unconfirmed')",
+     "new": "            if False:\n                raise Denied('vm-retirement-unconfirmed')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "            if previous is not None and previous['epoch'] >= self.epoch:\n                raise Denied('vm-run-already-recorded')",
+     "new": "            if False:\n                raise Denied('vm-run-already-recorded')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "                if updated.rowcount != 1:\n                    raise Denied('vm-run-not-current')",
+     "new": "                if False:\n                    raise Denied('vm-run-not-current')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "                    if updated.rowcount != 1:\n                        raise Denied('vm-retirement-unconfirmed')",
+     "new": "                    if False:\n                        raise Denied('vm-retirement-unconfirmed')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if self.child is not None:\n            raise Denied('already-started')",
+     "new": "        if False:\n            raise Denied('already-started')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "                if vm is not None:\n                    raise Denied('vm-retirement-unconfirmed')",
+     "new": "                if False:\n                    raise Denied('vm-retirement-unconfirmed')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if pending and (type(epoch) is not int or epoch != state['epoch'] + 1):\n            raise Denied('invalid-pending-epoch')",
+     "new": "        if False:\n            raise Denied('invalid-pending-epoch')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if row is not None and epoch != 0:\n            row = self.lab.db.execute('SELECT change FROM notices WHERE actor=? AND epoch=? AND acknowledged=?',\n                                      (actor, epoch, int(not pending))).fetchone()\n        if row is None or (pending and row[0] != state['change']):\n            raise Denied('missing-or-inconsistent-context')",
+     "new": "        if False:\n            raise Denied('missing-or-inconsistent-context')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is not None:\n            raise Denied('managed-fixture-not-ready')",
+     "new": "        if False:\n            raise Denied('managed-fixture-not-ready')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if type(value) is not int or abs(value) > 1000:\n            raise Denied('invalid-fixture-value')",
+     "new": "        if False:\n            raise Denied('invalid-fixture-value')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "                if self.exchange({'type': 'begin', 'value': value}) != {'type': 'started', 'epoch': self.epoch}:\n                    raise Denied('work-not-started')",
+     "new": "                if False:\n                    raise Denied('work-not-started')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is None:\n            raise Denied('no-current-work')",
+     "new": "        if False:\n            raise Denied('no-current-work')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "                if type(value) is not int:\n                    raise Denied('wrong-guest-result')",
+     "new": "                if False:\n                    raise Denied('wrong-guest-result')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "                if (not isinstance(result, dict) or result.get('type') != 'result'\n                        or result.get('epoch') != self.epoch or type(result.get('value')) is not int):\n                    raise Denied('wrong-worker-result')",
+     "new": "                if False:\n                    raise Denied('wrong-worker-result')"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "            raise Denied('worker-timeout') from None\n",
+     "new": "            continue\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not raw.endswith(b'\\n') or len(raw) > 1024:\n",
+     "new": "        if len(raw) > 1024:\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not raw.endswith(b'\\n') or len(raw) > 1024:\n",
+     "new": "        if not raw.endswith(b'\\n'):\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not self.ready or self.vm_gate is not None or self.pending is not None:\n",
+     "new": "        if not self.ready or self.pending is not None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not self.ready or self.vm_gate is not None or self.pending is not None:\n",
+     "new": "        if not self.ready or self.vm_gate is not None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is not None:\n            raise Denied('managed-fixture-not-ready')\n        if type(value)",
+     "new": "        if self.pending is not None:\n            raise Denied('managed-fixture-not-ready')\n        if type(value)"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is not None:\n            raise Denied('managed-fixture-not-ready')\n        if type(value)",
+     "new": "        if not self.ready:\n            raise Denied('managed-fixture-not-ready')\n        if type(value)"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is None:\n",
+     "new": "        if self.pending is None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if not self.ready or self.pending is None:\n",
+     "new": "        if not self.ready:\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if row is None or (pending and row[0] != state['change']):\n",
+     "new": "        if row is None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "            if self.context(fields['factor']) != context:\n                raise ValueError\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "                        or result.get('epoch') != self.epoch or type(result.get('value')) is not int):\n",
+     "new": "                        or type(result.get('value')) is not int):\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        self.launcher.check()\n        actor = self.lab.actor(self.child.channel.capability)\n        with self.lab.transaction():\n            previous",
+     "new": "        actor = self.lab.actor(self.child.channel.capability)\n        with self.lab.transaction():\n            previous"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if type(factor) is not int or abs(factor) > 1000:\n",
+     "new": "        if type(factor) is not int:\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "        if type(value) is not int or abs(value) > 1000:\n",
+     "new": "        if type(value) is not int:\n"
+    },
+    {
+     "file": "src/project_bootstrap/managed_fixture.py",
+     "old": "                self.lab.db.execute(\"UPDATE operations SET status='invalid' WHERE actor=? AND status='running'\",\n                                    (actor,))\n",
+     "new": ""
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_vm_guest_scripts"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "    case \"$1\" in '' | *[!0123456789]* | 0?*) return 1 ;; esac\n",
+     "new": "    case \"$1\" in '' | *[!0123456789]*) return 1 ;; esac\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "    [ \"${#1}\" -le 6 ]\n",
+     "new": "    true\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "is_int() { is_uint \"${1#-}\"; }\n",
+     "new": "is_int() { true; }\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "if ! is_uint \"$first\" || ! is_int \"$second\"; then echo GUEST_TOOL_BAD_CONTEXT",
+     "new": "if false; then echo GUEST_TOOL_BAD_CONTEXT"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "if ! is_int \"$first\" || ! is_uint \"$second\"; then echo GUEST_TOOL_BAD_REQUEST",
+     "new": "if false; then echo GUEST_TOOL_BAD_REQUEST"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "if [ \"$loaded\" -ne 0 ]; then",
+     "new": "if false; then"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "if [ \"$loaded\" -ne 1 ]; then",
+     "new": "if false; then"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "if [ -n \"$extra\" ]; then echo GUEST_TOOL_BAD_CONTEXT",
+     "new": "if false; then echo GUEST_TOOL_BAD_CONTEXT"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "    if [ \"${#nonce}\" -ne 32 ]; then\n",
+     "new": "    if false; then\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "if [ \"${#extra}\" -ne 64 ]; then",
+     "new": "if false; then"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "        '' | *[!0123456789abcdef]*) echo GUEST_TOOL_BAD_NONCE",
+     "new": "        '') echo GUEST_TOOL_BAD_NONCE"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "                *[!0123456789abcdef]* | '') echo GUEST_TOOL_BAD_BASE",
+     "new": "                '') echo GUEST_TOOL_BAD_BASE"
+    },
+    {
+     "file": "src/project_bootstrap/vm_managed_worker.sh",
+     "old": "\"$((factor * value))\" \"$epoch\"",
+     "new": "\"$((factor + value))\" \"$epoch\""
+    },
+    {
+     "file": "src/project_bootstrap/vm_guest_init.sh",
+     "old": "    if ! is_uint \"$epoch\" || ! is_int \"$factor\" || ! is_int \"$value\"; then\n",
+     "new": "    if false; then\n"
+    },
+    {
+     "file": "src/project_bootstrap/vm_guest_init.sh",
+     "old": "        if ! is_uint \"$sequence\"; then",
+     "new": "        if false; then"
+    },
+    {
+     "file": "src/project_bootstrap/vm_guest_init.sh",
+     "old": "        if [ -n \"$fifth$sixth\" ]; then",
+     "new": "        if false; then"
+    },
+    {
+     "file": "src/project_bootstrap/vm_guest_init.sh",
+     "old": "    case \"$request_id\" in '' | *[!0123456789abcdef]*)",
+     "new": "    case \"$request_id\" in '')"
+    },
+    {
+     "file": "src/project_bootstrap/vm_guest_init.sh",
+     "old": "    case \"$1\" in '' | *[!0123456789]* | 0?*) return 1 ;; esac\n",
+     "new": "    case \"$1\" in '' | *[!0123456789]*) return 1 ;; esac\n"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_presence_probe"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/presence_probe.py",
+     "old": "    if any(value is not None and value.startswith('signed') for value in gated):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/presence_probe.py",
+     "old": "    if observed['CONTROL'] != 'signed valid':\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/presence_probe.py",
+     "old": "    if observed['PRESENCE'] != INTERACTION_REQUIRED:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/presence_probe.py",
+     "old": "    if set(lines) - set(observed) or len(lines) != len([l for l in output.splitlines() if l]):\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/presence_probe.py",
+     "old": "    if set(lines) - set(observed) or len(lines)",
+     "new": "    if set(lines) - set(observed) and len(lines)"
+    },
+    {
+     "file": "src/project_bootstrap/presence_probe.py",
+     "old": "'biometry_only': observed['BIOMETRY'] == INTERACTION_REQUIRED",
+     "new": "'biometry_only': True"
+    },
+    {
+     "file": "src/project_bootstrap/presence_probe.py",
+     "old": "value.startswith('signed')",
+     "new": "value == 'signed valid'"
+    }
+   ]
+  }
+ ]
+}

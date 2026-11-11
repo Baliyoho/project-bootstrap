@@ -16,11 +16,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/state.py",
+          "path": "src/project_bootstrap/state.py",
           "scope": "M2 狀態模型原型：目標（需求 ID、決策版本、人類決策來源）、任務（狀態、證據、卡點）、有序下一步、風險（已知壞掉／未知／風險／已知正常）存成資料；check 回 (位置, 代碼)，render 由同一份資料生成 HANDOFF 目標／已完成／下一步／地雷各節並把代碼標在對應項目旁。只用標準函式庫，未選 schema 函式庫；證據檔存在不等於命題為真"
         },
         {
-          "path": "experiments/v2/test_state.py",
+          "path": "tests/test_state.py",
           "scope": "合成決策書實測：沒有目標、空白目標、無 ID、未知 ID、舊決策版本、版本型別錯、來源檔不存在、決策書版本行讀不到，各給代碼且生成的目標節寫「未驗證」；移除各守門後測試失敗"
         }
       ],
@@ -34,11 +34,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/state.py",
+          "path": "src/project_bootstrap/state.py",
           "scope": "M2 狀態模型原型：目標（需求 ID、決策版本、人類決策來源）、任務（狀態、證據、卡點）、有序下一步、風險（已知壞掉／未知／風險／已知正常）存成資料；check 回 (位置, 代碼)，render 由同一份資料生成 HANDOFF 目標／已完成／下一步／地雷各節並把代碼標在對應項目旁。只用標準函式庫，未選 schema 函式庫；證據檔存在不等於命題為真"
         },
         {
-          "path": "experiments/v2/test_state.py",
+          "path": "tests/test_state.py",
           "scope": "實測已完成任務被列入下一步時視圖仍不把它排進下一步並標出；完成無證據、證據不存在／路徑逃逸／型別錯、卡住無原因、狀態值無效、開放任務沒排入下一步（視圖另列不消失）、下一步引用不存在任務、重複、重複 ID（先出現者保留）各給代碼；移除各守門後測試失敗"
         }
       ],
@@ -52,23 +52,23 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/evidence.py",
+          "path": "src/project_bootstrap/evidence.py",
           "scope": "M2 證據帳原型 resolve：每個宣稱由證據紀錄決定，本輪實查、沿用、未驗證、不通過四組分開；沿用須有來源、取得時間、範圍與依賴輸入 digest，依賴變動或讀不到即失效，使用者可撤銷；SKIP／NOT_CONFIGURED／無紀錄為未驗證；任一宣稱未驗證或不通過整體就不是通過。file_probe 以檔案內容與環境變數取 digest"
         },
         {
-          "path": "experiments/v2/test_evidence.py",
+          "path": "tests/test_evidence.py",
           "scope": "實測混入一個無證據的宣稱整份為未驗證；SKIP、NOT_CONFIGURED 為未驗證，FAIL、ERROR 為不通過，不通過優先於未驗證；無效紀錄、空宣稱集合不算通過；報告四組分開且空組照列；移除各守門後測試失敗"
         },
         {
-          "path": "experiments/v2/ingest.py",
+          "path": "src/project_bootstrap/ingest.py",
           "scope": "把 verify_bootstrap 文字輸出與結束碼、verify_v2 --json 轉成帶輪次、命令與 commit、時間、範圍、輸入 digest 的紀錄；看不懂的狀態行與重複項記 ERROR，結束碼與各行矛盾或無檢查行整體 FAIL，資訊行不算檢查"
         },
         {
-          "path": "experiments/v2/test_ingest.py",
+          "path": "tests/test_ingest.py",
           "scope": "真實格式轉換後本輪通過、FAIL／SKIP 保留語意、SKIP only＋exit 1 為未驗證、結束碼矛盾整體 FAIL、看不懂／重複／空輸出不算通過、輸入改變使沿用失效、v2 報告四筆與各種失敗與壞報告；mutants.json 18 個刪改全部 killed；2026-11-10 實跑輸出轉成 59 筆全 PASS"
         },
         {
-          "path": "experiments/v2/test_ingest_format.py",
+          "path": "tests/test_ingest_format.py",
           "scope": "測試用格式與 verify_bootstrap.py 的 record 實際輸出逐字相同"
         }
       ],
@@ -82,11 +82,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/gitclaim.py",
+          "path": "src/project_bootstrap/gitclaim.py",
           "scope": "遠端標記拆成機器／工具／session 三欄判讀：別台機器、同機別工具、同工具別 session（含缺 session）、兩欄且第二欄不是慣用工具名（舊格式）各給不同代碼；空白欄、缺反引號、尾端雜訊算 owner-unknown；遠端查不到是 fetch-failed。自己的標記必須是完整三欄"
         },
         {
-          "path": "experiments/v2/test_gitclaim.py",
+          "path": "tests/test_gitclaim.py",
           "scope": "本機 bare origin 實測 11 種遠端標記與 3 種不合格自身標記；移除各解析守門後測試失敗。工具身分仍由寫標記者自填，不是環境偵測或身分證明"
         }
       ],
@@ -100,11 +100,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/state.py",
+          "path": "src/project_bootstrap/state.py",
           "scope": "M2 狀態模型原型：目標（需求 ID、決策版本、人類決策來源）、任務（狀態、證據、卡點）、有序下一步、風險（已知壞掉／未知／風險／已知正常）存成資料；check 回 (位置, 代碼)，render 由同一份資料生成 HANDOFF 目標／已完成／下一步／地雷各節並把代碼標在對應項目旁。只用標準函式庫，未選 schema 函式庫；證據檔存在不等於命題為真"
         },
         {
-          "path": "experiments/v2/test_state.py",
+          "path": "tests/test_state.py",
           "scope": "實測宣稱已知正常或已知壞掉卻無證據或證據不存在時，代碼標出且視圖改顯示「未知」；風險種類無效、ID 與任務重複各給代碼；「未知」不需證據；移除各守門後測試失敗"
         }
       ],
@@ -118,23 +118,23 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/trail.py",
+          "path": "src/project_bootstrap/trail.py",
           "scope": "M2 留痕紀錄原型：規則記出自哪個決策；why 從規則走到理由與當時基準，被取代時沿雙向取代關係走到現行決策並保留舊理由；規則引用被取代／被否決／不存在的決策報出"
         },
         {
-          "path": "experiments/v2/test_trail.py",
+          "path": "tests/test_trail.py",
           "scope": "合成紀錄實測規則找到理由與基準、引用被取代決策報出且鏈走到現行、缺決策／不存在／被否決報出、決策缺理由／基準／日期／標題、狀態無效、重複編號；mutants.json 24 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/trail_sources.py",
+          "path": "src/project_bootstrap/trail_sources.py",
           "scope": "讀決策書第 7 節為決策紀錄（理由、日期、決策版本基準）；2026-11-10 抓到第 7 條缺理由標記並補上；同日加讀 ARCHITECT「這個 repo 刻意沒有的東西」：粗體開頭說不裝的每條是一筆採納決策，其餘文字為理由，日期取粗體段最後一個（否則條目第一個）；2026-11-10 再加 rules_from_agents：AGENTS.md 每個「為什麼」連結是一條規則，引用 AGENTS-reasons.md 對應錨點段落，每段是一筆採納決策（標題、理由、段內最早日期）；2026-11-10 依決策書 Q7 (b) 加 questions_from_book（第 6 節已決 Q：採用理由／未選／暫緩子項，沒選又沒寫的字母選項以空理由報出）與 nongoals_from_plan（效率計畫 3.2 每條非目標為否決路線，「理由：」後為理由）"
         },
         {
-          "path": "experiments/v2/test_trail_sources.py",
+          "path": "tests/test_trail_sources.py",
           "scope": "合成文件：節界、第一張表、表頭、非階段列、缺節／日期／版本、推薦不唯一、壞列；mutants.json 12 個刪改全部 killed；ARCHITECT 減項：非減項條、巢狀項、別節不收，缺日期與缺理由報出，日期退回條目內；7 個刪改全部 killed；AGENTS 規則：一般連結與行內錨點不算、缺日期／缺段落／缺標題報出、why 走到理由；7 個刪改全部 killed；2026-11-10 依決策書 Q7 (b) 加 questions_from_book（第 6 節已決 Q：採用理由／未選／暫緩子項，沒選又沒寫的字母選項以空理由報出）與 nongoals_from_plan（效率計畫 3.2 每條非目標為否決路線，「理由：」後為理由）"
         },
         {
-          "path": "experiments/v2/test_trail_repo.py",
+          "path": "tests/test_trail_repo.py",
           "scope": "真文件：第 7 節 7 筆決策都有理由日期基準、兩條否決路線有理由、P0–P5 且有進行中里程碑；ARCHITECT 三條減項都有理由與日期（2026-11-10 首跑抓到「沒有 CI」無日期，已補 git 首次出現日 2026-09-13 並註明出處）；AGENTS 每條規則都走得到有日期的理由段落、沒有沒被引用的段落（2026-11-10 首跑前掃到 4 段無日期，已補 git 首次出現日並註明出處，未改原句）；2026-11-10 第 6 節 10 個已決 Q 每個沒選的選項都有理由、效率計畫 5 條非目標都有理由（找不到出處的寫「當時沒有記錄理由」，Q2 (b) 一條標為推論）"
         }
       ],
@@ -148,23 +148,23 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/trail.py",
+          "path": "src/project_bootstrap/trail.py",
           "scope": "M2 留痕紀錄原型：rejected_routes 列出被否決的決策與各決策的替代方案（含結果與理由）；compare 對舊快照，決策消失、替代方案消失、理由改寫都報出"
         },
         {
-          "path": "experiments/v2/test_trail.py",
+          "path": "tests/test_trail.py",
           "scope": "合成紀錄實測列出三條沒走的路與理由、替代方案缺理由或結果無效報出、取代關係單向／指向不存在／未取代卻有後繼報出、刪除決策／刪替代方案／改寫理由（含狀態一起改）報出；mutants.json 24 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/trail_sources.py",
+          "path": "src/project_bootstrap/trail_sources.py",
           "scope": "讀實現規劃 3.4 路線表：推薦列為選擇，其餘為否決路線並以代價為理由；2026-11-10 依決策書 Q7 (b) 加 questions_from_book（第 6 節已決 Q：採用理由／未選／暫緩子項，沒選又沒寫的字母選項以空理由報出）與 nongoals_from_plan（效率計畫 3.2 每條非目標為否決路線，「理由：」後為理由）"
         },
         {
-          "path": "experiments/v2/test_trail_sources.py",
+          "path": "tests/test_trail_sources.py",
           "scope": "合成文件：節界、第一張表、表頭、非階段列、缺節／日期／版本、推薦不唯一、壞列；mutants.json 12 個刪改全部 killed；ARCHITECT 減項：非減項條、巢狀項、別節不收，缺日期與缺理由報出，日期退回條目內；7 個刪改全部 killed；2026-11-10 依決策書 Q7 (b) 加 questions_from_book（第 6 節已決 Q：採用理由／未選／暫緩子項，沒選又沒寫的字母選項以空理由報出）與 nongoals_from_plan（效率計畫 3.2 每條非目標為否決路線，「理由：」後為理由）"
         },
         {
-          "path": "experiments/v2/test_trail_repo.py",
+          "path": "tests/test_trail_repo.py",
           "scope": "真文件：第 7 節 7 筆決策都有理由日期基準、兩條否決路線有理由、P0–P5 且有進行中里程碑；ARCHITECT 三條減項都有理由與日期（2026-11-10 首跑抓到「沒有 CI」無日期，已補 git 首次出現日 2026-09-13 並註明出處）；2026-11-10 第 6 節 10 個已決 Q 每個沒選的選項都有理由、效率計畫 5 條非目標都有理由（找不到出處的寫「當時沒有記錄理由」，Q2 (b) 一條標為推論）"
         }
       ],
@@ -178,23 +178,23 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/trail.py",
+          "path": "src/project_bootstrap/trail.py",
           "scope": "M2 留痕紀錄原型：路線圖由里程碑（目標、狀態、放棄須附理由）組成，任務引用里程碑；沒有開放里程碑、任務無里程碑、未完成任務掛在已結束里程碑報出"
         },
         {
-          "path": "experiments/v2/test_trail.py",
+          "path": "tests/test_trail.py",
           "scope": "合成紀錄實測 HANDOFF 清空任務後路線圖仍完整、任務缺里程碑／掛在已完成或已放棄里程碑、無開放里程碑、缺目標、狀態無效、放棄無理由、重複編號報出；mutants.json 24 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/trail_sources.py",
+          "path": "src/project_bootstrap/trail_sources.py",
           "scope": "讀實現規劃第 7 節分期表為路線圖（P0–P5），進度由呼叫端提供"
         },
         {
-          "path": "experiments/v2/test_trail_sources.py",
+          "path": "tests/test_trail_sources.py",
           "scope": "合成文件：節界、第一張表、表頭、非階段列、缺節／日期／版本、推薦不唯一、壞列；mutants.json 12 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/test_trail_repo.py",
+          "path": "tests/test_trail_repo.py",
           "scope": "真文件：第 7 節 7 筆決策都有理由日期基準、兩條否決路線有理由、P0–P5 且有進行中里程碑"
         }
       ],
@@ -208,19 +208,19 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/gitclaim.py",
+          "path": "src/project_bootstrap/gitclaim.py",
           "scope": "M3 開工資格原型 assess_start：對真 Git 先 fetch，失敗就拒絕且不用舊 tracking ref；未知 dirty、ahead-only、分岔、落後、無 upstream、追錯分支、detached、遠端標記缺／重複／他人占用都拒絕；只讀 origin 的標記。非原子 claim"
         },
         {
-          "path": "experiments/v2/test_gitclaim.py",
+          "path": "tests/test_gitclaim.py",
           "scope": "本機 bare origin＋多 clone 實測上述情境（含本機標記空閒而遠端他人占用）；移除任一守門後測試失敗。只測 macOS 本機 Git，非跨工具／OS 驗收"
         },
         {
-          "path": "experiments/v2/preflight.py",
+          "path": "src/project_bootstrap/preflight.py",
           "scope": "寫入時資格 assess_write：開工後每次寫入先 fetch，遠端標記必須正好是本 session（空閒＝not-claimed、他人照占用代碼），落後或分岔拒絕；未提交與未推送的本機工作允許。ManagedWrite 先過 Git 再要發布確認，Git 拒絕時不消耗確認。非原子 claim"
         },
         {
-          "path": "experiments/v2/test_preflight.py",
+          "path": "tests/test_preflight.py",
           "scope": "真 Git 實測：持有者帶未提交／未推送工作可寫；空閒、他人、同工具別 session、標記不可讀、無效 owner 都拒絕；開工後被他人搶占時本機 HANDOFF 仍寫自己，寫入檢查以 behind／diverged 擋下；離線不用舊 tracking ref；移除各守門後測試失敗"
         }
       ],
@@ -234,11 +234,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/gitclaim.py",
+          "path": "src/project_bootstrap/gitclaim.py",
           "scope": "M3 收尾原型 finish：只收 run_check 產生、綁定 HEAD tree 的檢查收據（布林值不收）；缺收據、非零、SKIP、舊 tree、工作樹不乾淨、HEAD 未釋出標記、fetch 失敗、遠端出現 HEAD 沒有的 commit、push 被拒都不推或不給收據；推送後重新 fetch，遠端等於 HEAD 且標記已釋出才回 HandoffReceipt。不 force"
         },
         {
-          "path": "experiments/v2/test_gitclaim.py",
+          "path": "tests/test_gitclaim.py",
           "scope": "本機 bare origin 實測成功收尾（收據只讓 F50 計數加一次）、遠端前進、pre-receive 拒絕、離線、推送後被搶占；移除任一可獨立觸發的守門後測試失敗"
         }
       ],
@@ -252,107 +252,107 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
       "evidence": [
         {
-          "path": "experiments/v2/test_contracts.py",
+          "path": "tests/test_contracts.py",
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "experiments/v2/feasibility.py",
+          "path": "src/project_bootstrap/feasibility.py",
           "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
         },
         {
-          "path": "experiments/v2/broker_fixture.py",
+          "path": "src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         },
         {
-          "path": "experiments/v2/test_recovery.py",
+          "path": "tests/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
         },
         {
-          "path": "experiments/v2/test_launcher.py",
+          "path": "tests/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         },
         {
-          "path": "experiments/v2/test_lifecycle.py",
+          "path": "tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL 後以本次啟動紀錄續接，監護失效、無監護與錯誤紀錄負向對照；非任意後代或全 OS 保證"
         },
         {
-          "path": "experiments/v2/test_managed_fixture.py",
+          "path": "tests/test_managed_fixture.py",
           "scope": "macOS 單 worker：父程序 SIGKILL 後依持久前提與回收證據重建，作廢未完成計算並重送原始請求；過期要先明確續期"
         },
         {
-          "path": "experiments/v2/tree_probe.py",
+          "path": "src/project_bootstrap/tree_probe.py",
           "scope": "POSIX 程序群組候選：一般後代退場、setsid 脫離後仍持鎖；證明此候選不足以涵蓋任意後代"
         },
         {
-          "path": "experiments/v2/vm_probe.py",
+          "path": "src/project_bootstrap/vm_probe.py",
           "scope": "Mac 兩條獨立路徑：舊 host worker／共享 scratch 的逐 epoch 退場探針，及無共享 guest 的固定受管 shell 工具。後者在 guest 內載入前提、兩 epoch 經專用 console 發原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending 舊寫入拒絕、新 epoch 寫入有事件關聯。新路徑經 guest_runs 帳本持久記錄 run 身分與 host 停機證據，重開資料庫核對；父程序 SIGKILL 後重開仍阻擋，再以真 runner 停機紀錄加合成終端替身走崩潰解除，guest console 日誌被拒；outbox 已存未送時崩潰，解除後重送只套用一次。未接真實工具或可信 guest 身分"
         },
         {
-          "path": "experiments/v2/guest_runs.py",
+          "path": "src/project_bootstrap/guest_runs.py",
           "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明。parent 可另給錨點檔（資料庫以外，2026-11-11）：第一次開啟先寫隨機帳本 id 到錨點再存進資料庫，之後兩邊都在且相同才開；帳本遺失、清空或被換掉而錨點還在就拒絕。同 UID 可同時刪兩者，只擋意外遺失；解除是人手動確認後刪錨點"
         },
         {
-          "path": "experiments/v2/test_guest_runs.py",
+          "path": "tests/test_guest_runs.py",
           "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗。錨點（2026-11-11）：帳本被刪／清空／換成另一份、錨點不見、錨點是符號連結／目錄／格式不對、路徑非絕對都拒絕且不補寫；錨點與目錄都 fsync；同時建立時不覆蓋；mutants.json 新增 15 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/crash_release.py",
+          "path": "src/project_bootstrap/crash_release.py",
           "scope": "父程序崩潰後的人工解除（Q1 (a)）：先讀開機前登記的 runner stderr 檔，必須逐行等於乾淨無共享停機的四行；有證據才在 /dev/tty（非 stdin）出新挑戰碼要人照打，SSH 或無控制終端拒絕；兩者都過才在帳本同交易退場並輪換 capability。同 UID 可偽造 host 檔與偽終端，不是真人證明"
         },
         {
-          "path": "experiments/v2/test_crash_release.py",
+          "path": "tests/test_crash_release.py",
           "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/test_host_crash.py",
+          "path": "tests/test_host_crash.py",
           "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋；沒登記開機識別的 run 沒有解除途徑，有登記的要重開機後識別不同、再經本機終端確認才解除（決策書 Q15 (a)，2026-11-10）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：parent 沒給錨點時，帳本檔遺失或變空檔讀起來跟第一次啟動一樣；給了錨點（2026-11-11，決策書 Q19 (b)）同樣的遺失以 ledger-lost 拒絕，前提是錨點檔本身還在"
         },
         {
-          "path": "experiments/v2/test_vm_guest_scripts.py",
+          "path": "tests/test_vm_guest_scripts.py",
           "scope": "guest 殼層腳本的離線測試（不開 VM、不用 busybox）：把腳本的 busybox 路徑換成殼層內建、console 換成暫存檔後在 host 的 dash 與 sh 執行，回覆直接餵給 vm_probe 的 host 解析函式；逐條驗受管工具的錯誤代碼、被拒的行不結束程式也不改已載入的前提，以及舊共享路徑請求迴圈的格式。mutants.json 18 個刪改全部 killed。不涵蓋掛載、virtiofs、序列埠與 busybox ash 本身"
         },
         {
-          "path": "experiments/v2/vm_managed_worker.sh",
+          "path": "src/project_bootstrap/vm_managed_worker.sh",
           "scope": "封入無共享 guest initramfs 的固定合成工具；一次載入前提，後續由 guest 產生受限 broker 請求。非通用工具或正式身分證明"
         },
         {
-          "path": "experiments/v2/contracts.py",
+          "path": "src/project_bootstrap/contracts.py",
           "scope": "P0 交易模型與管理／agent API 契約，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/broker.py",
+          "path": "src/project_bootstrap/broker.py",
           "scope": "父程序持有的 agent RPC，身分來自繼承管道，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/guardian.py",
+          "path": "src/project_bootstrap/guardian.py",
           "scope": "直接子程序監護與生命週期管道，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/test_guardian.py",
+          "path": "tests/test_guardian.py",
           "scope": "直接驅動 guardian.py 子程序的 9 個測試：父端先死或期限已過不啟動 worker、父端 EOF／意外資料／期限到都停並回收、忽略 SIGTERM 的子程序寬限後 SIGKILL、guardian 被 terminate 仍回收、worker 不繼承控制描述元；mutants.json 10 個刪改全部 killed。不涵蓋 guardian 自己被 SIGKILL"
         },
         {
-          "path": "experiments/v2/launcher.py",
+          "path": "src/project_bootstrap/launcher.py",
           "scope": "受信父程序啟動權與耐久請求 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/lifecycle.py",
+          "path": "src/project_bootstrap/lifecycle.py",
           "scope": "受監護 worker 生命週期與票據保管，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/managed_fixture.py",
+          "path": "src/project_bootstrap/managed_fixture.py",
           "scope": "單一受限 worker 整合前提屏障與 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/test_broker_fixture.py",
+          "path": "tests/test_broker_fixture.py",
           "scope": "broker_fixture 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/vm_guest_init.sh",
+          "path": "src/project_bootstrap/vm_guest_init.sh",
           "scope": "無共享 guest 的 init，vm_probe 載入，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/vm_runner.swift",
+          "path": "src/project_bootstrap/vm_runner.swift",
           "scope": "Virtualization.framework runner，vm_probe 編譯，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
@@ -370,35 +370,35 @@
           "scope": "決策書第 4 節對應子項完整門檻",
           "evidence": [
             {
-              "path": "experiments/v2/feasibility.py",
+              "path": "src/project_bootstrap/feasibility.py",
               "scope": "同 UID／直接 Git 的合成繞過反例"
             },
             {
-              "path": "experiments/v2/isolation.py",
+              "path": "src/project_bootstrap/isolation.py",
               "scope": "Mac 單一受包覆子程序 OS 邊界；不是全部工具隔離"
             },
             {
-              "path": "experiments/v2/test_broker.py",
+              "path": "tests/test_broker.py",
               "scope": "依 parent 管道身分關聯完整事件；可信 launcher 的正式資格尚未驗收"
             },
             {
-              "path": "experiments/v2/materializer.py",
+              "path": "src/project_bootstrap/materializer.py",
               "scope": "prepared／applied 關聯內容事件；受隔離合成工作樹，非任意外部寫入歸因"
             },
             {
-              "path": "experiments/v2/test_launcher.py",
+              "path": "tests/test_launcher.py",
               "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
             },
             {
-              "path": "experiments/v2/test_lifecycle.py",
+              "path": "tests/test_lifecycle.py",
               "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
             },
             {
-              "path": "experiments/v2/test_tree_probe.py",
+              "path": "tests/test_tree_probe.py",
               "scope": "程序群組對一般後代有效但 setsid 可脫離；移除逃逸後負向測試失敗，不能作任意後代完整歸因保證"
             },
             {
-              "path": "experiments/v2/vm_probe.py",
+              "path": "src/project_bootstrap/vm_probe.py",
               "scope": "Mac 真 VM 無共享目錄的固定合成 shell 工具：guest 載入 epoch／factor，原始請求由持久 outbox 送 broker；兩個 epoch 的事件歸同一 principal，pending 舊寫入拒絕；寫入前須帳本確認該 run 為唯一存活 run。非通用工具、可信 guest 身分或完整覆寫歸因"
             }
           ],
@@ -413,11 +413,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/lines.py",
+          "path": "src/project_bootstrap/lines.py",
           "scope": "M4 登記線原型 assess_lines：每條線（線 ID、checkout 路徑、宣告分支）以 Git 自己回報的 toplevel、index 路徑與目前分支判定；同工作樹、同 index、同分支、宣告分支與實際不符、非 checkout、重複／空線 ID 各有代碼，每條線恰列一次，任一有代碼或沒有線就不是 ok。只偵測，不鎖、不搬"
         },
         {
-          "path": "experiments/v2/test_lines.py",
+          "path": "tests/test_lines.py",
           "scope": "真 Git 實測：git worktree 與獨立 clone 互不影響（一邊 stage 另一邊 status 為空）；同一工作樹換分支仍判 shared-worktree／shared-index；子目錄與 symlink 解析成同一棵樹；複製 .git 檔指向別線 git dir 判 shared-index；detached、不存在、非 repo、重複 ID 都列出不丟棄；移除各守門後測試失敗"
         }
       ],
@@ -431,23 +431,23 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/test_recovery.py",
+          "path": "tests/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
         },
         {
-          "path": "experiments/v2/test_launcher.py",
+          "path": "tests/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         },
         {
-          "path": "experiments/v2/test_lifecycle.py",
+          "path": "tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         },
         {
-          "path": "experiments/v2/launcher.py",
+          "path": "src/project_bootstrap/launcher.py",
           "scope": "請求保存與恢復，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/lifecycle.py",
+          "path": "src/project_bootstrap/lifecycle.py",
           "scope": "中斷後未解決 run 的阻擋，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
@@ -465,19 +465,19 @@
           "scope": "決策書第 4 節對應子項完整門檻",
           "evidence": [
             {
-              "path": "experiments/v2/test_recovery.py",
+              "path": "tests/test_recovery.py",
               "scope": "四個程序終止點重連同一事件；不補造當時未記錄的推理，不等於斷電或裝置遺失保證"
             },
             {
-              "path": "experiments/v2/test_launcher.py",
+              "path": "tests/test_launcher.py",
               "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
             },
             {
-              "path": "experiments/v2/test_lifecycle.py",
+              "path": "tests/test_lifecycle.py",
               "scope": "POSIX 固定啟動／監護回收；真 parent SIGKILL 後以本次啟動紀錄續接，SIGSTOP 後監護到期回收；監護失效或證據缺失保持阻擋"
             },
             {
-              "path": "experiments/v2/test_managed_fixture.py",
+              "path": "tests/test_managed_fixture.py",
               "scope": "Mac 合成執行面四個父程序 SIGKILL 階段：切換中恢復同一通知，已啟用時復原前提與原請求"
             }
           ],
@@ -516,15 +516,15 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/resume.py",
+          "path": "src/project_bootstrap/resume.py",
           "scope": "M4 換裝置接續偵測原型：clone 用單分支 git clone，只帶已提交的檔，未追蹤／ignore／repo 外的私有附件都不會到第二機；check 以指定家目錄（乾淨機＝空資料夾）照入口文件開工段落走：`~/` 路徑與 repo 內連結是候選，含程序標記行者算程序；程序必須在 repo 內找得到，家目錄副本不算；段落點名的 repo 連結在 checkout 缺席為缺漏，只在第一機工作樹存在為私有附件；可達副本的 source 標記不同列為漂移；入口或段落讀不到為未知"
         },
         {
-          "path": "experiments/v2/test_resume.py",
+          "path": "tests/test_resume.py",
           "scope": "合成 repo 實測：只指向家目錄的程序在空家目錄不通過、家目錄有副本仍要求 repo 內來源、段落內連到部署包通過、只在其他節連到不算、無標記不算、真 git clone 後缺漏與私有附件分開報（外站連結、錨點、目錄連結不誤報）、source 漂移、入口讀不到／缺段落為未知、段落止於同層標題；mutants.json 15 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/test_resume_repo.py",
+          "path": "tests/test_resume_repo.py",
           "scope": "對本 repo 以空家目錄跑須通過且程序來自 PROJECT-BOOTSTRAP.md；2026-11-10 首跑（乾淨 clone＋空家目錄）不通過：AGENTS 開工段落只指向全域 skill 路徑，舊句要人「直接開那個檔讀」而新機上它不存在；已在 AGENTS 補部署包 3.8 節指標；同日加生成骨架：部署包 extract 出的專案以空家目錄跑通過，刪掉部署的 SKILL.md 即不通過（生成骨架，非已部署真實專案）"
         }
       ],
@@ -538,11 +538,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
       "evidence": [
         {
-          "path": "experiments/v2/doctor.py",
+          "path": "src/project_bootstrap/doctor.py",
           "scope": "M2 doctor 原型 diagnose：工具（PATH 上有沒有）、設定（環境變數有沒有設且非空，只看名稱不存值）、連線（前提都在才呼叫 probe，回 True 才算 ok）三類分開報；缺前提的連線記 not-attempted 並列原因，不當成連線失敗"
         },
         {
-          "path": "experiments/v2/test_doctor.py",
+          "path": "tests/test_doctor.py",
           "scope": "實測缺工具、空白或未設定的設定、連線回 False／拋例外／回非 True 值、缺工具或設定而未呼叫的連線各分開；假的設定值與例外訊息不出現在報告 JSON；全部具備才 ok；mutants.json 8 個刪改全部 killed"
         }
       ],
@@ -556,11 +556,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/install.py",
+          "path": "src/project_bootstrap/install.py",
           "scope": "預演原型：plan 不寫檔，每套件檔一動作（新建／已相同／.gitignore 只補缺行／其他既有檔保留給人）；拒絕家目錄與根目錄；有非套件項目（含 .git）標既有專案；apply 重新預演不同即拒，只新建與附加，新建排他開檔"
         },
         {
-          "path": "experiments/v2/test_install.py",
+          "path": "tests/test_install.py",
           "scope": "空資料夾預演不寫、套用後全新建、再跑全相同；既有專案保留 AGENTS、.gitignore 只補缺行且補換行；預演後被改即拒且不動檔；家目錄／根目錄／不存在／壞路徑拒絕；目錄、符號連結（含指向相同內容與懸空）保留；只有 .git 或只有其他檔都算既有；預演後才出現的檔不被覆寫；mutants.json 14 個刪改全部 killed"
         }
       ],
@@ -574,11 +574,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/release.py",
+          "path": "src/project_bootstrap/release.py",
           "scope": "M1 原型：manifest 列整包元件 SHA-256；寫入前 WriteGate 向可信端要一份綁定本次 client nonce 的 ssh-keygen 簽章聲明，驗簽、channel、時效、epoch 不倒退、manifest 一致、非調試版，再重算本機元件 digest。無快取路徑。拋棄式測試金鑰，無 CI 身分、網路傳輸或原子安裝"
         },
         {
-          "path": "experiments/v2/test_release.py",
+          "path": "tests/test_release.py",
           "scope": "實測只改 hook 或只改 schema、版本字串與 SKILL digest 都不變的新 release，舊客戶端以 release-mismatch 停止寫入；移除各守門後測試失敗"
         }
       ],
@@ -592,11 +592,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/gitclaim.py",
+          "path": "src/project_bootstrap/gitclaim.py",
           "scope": "run_check 在乾淨工作樹執行驗證並記結束碼、SKIP 行數與 HEAD tree；執行中改動工作樹不給收據。finish 遇空收據、非零、SKIP、欄位不符或 tree 不同就拒絕交棒"
         },
         {
-          "path": "experiments/v2/test_gitclaim.py",
+          "path": "tests/test_gitclaim.py",
           "scope": "本機 Git 實測：布林／空清單／缺欄位／多欄位、exit 1、一筆 SKIP、多筆中一筆失敗、驗證後又 commit（舊 tree）都拒絕；移除各守門後測試失敗。SKIP 只認行首 skip 字樣，非通用輸出解析"
         }
       ],
@@ -610,11 +610,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/facts.py",
+          "path": "src/project_bootstrap/facts.py",
           "scope": "M2 事實 adapter 原型 check_claims：每個宣稱帶文件、命題文字、adapter 與預期值，對真 Git／檔案實查（目前分支、工作樹乾淨、檔案存在、檔案內容），結果為一致、不一致（列文件、命題、預期與實際）或未知；未授權、沒有 adapter、查詢失敗都是未知，不算一致。handoff_claims 從 HANDOFF 實際格式取出骨架版本與待續分支。唯讀，查詢不改寫 index"
         },
         {
-          "path": "experiments/v2/test_facts.py",
+          "path": "tests/test_facts.py",
           "scope": "真 Git 實測：與實況相符為一致；VERSION 與分支被改時逐條列出文件、命題、預期、實際；未授權、未知 adapter、repo 外路徑（檔案存在且內容相符仍拒絕）、檔案不存在、缺參數、非 UTF-8、detached 都是未知；不一致優先於未知；stat 過期時查詢不改寫 index；移除各守門後測試失敗"
         }
       ],
@@ -628,15 +628,15 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/bypass.py",
+          "path": "src/project_bootstrap/bypass.py",
           "scope": "分層原型：guard_commit 讀 Git index 比對已安裝 manifest 的 core／adapter 檔，staged 改動或刪除拒絕提交（阻擋就地改共用制度）；record／audit 以前一行 SHA-256 串成 JSON lines，必要步驟未完成也未登記略過為無聲略過，略過須附理由，鏈斷後不採信（跳步留痕）"
         },
         {
-          "path": "experiments/v2/test_bypass.py",
+          "path": "tests/test_bypass.py",
           "scope": "真 Git index 實測：未改與改專案檔通過；staged 改 core／adapter 拒絕；只改工作樹不擋、index 改了而工作樹還原仍擋；從 index 刪發布檔拒絕。紀錄：完成與附理由略過涵蓋必要步驟、缺步驟為無聲略過、無理由／未知狀態寫入被拒、繞過 record 的無理由略過不算、改行／截斷／插入垃圾行鏈斷且其後不採信、缺紀錄檔回報；mutants.json 14 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/publish.py",
+          "path": "src/project_bootstrap/publish.py",
           "scope": "發布未驗證來源的阻擋層，見 F35"
         }
       ],
@@ -650,7 +650,7 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
       "evidence": [
         {
-          "path": "experiments/v2/baseline.py",
+          "path": "src/project_bootstrap/baseline.py",
           "scope": "當輪檔案字元、digest 與可選的既有驗證器耗時"
         }
       ],
@@ -664,11 +664,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/readonly.py",
+          "path": "src/project_bootstrap/readonly.py",
           "scope": "只讀輪次守門原型 read_only：回答前後比對本機 branch／tag ref 與 HEAD、index 檔、每個變更或未追蹤檔內容、遠端 ls-remote；允許 fetch（不比 remote-tracking ref）。遠端列不出來記 unverified 不算乾淨；遠端變了只說變了、不歸因是誰推的；回答拋例外時把報告掛在例外上。只偵測不還原"
         },
         {
-          "path": "experiments/v2/test_readonly.py",
+          "path": "tests/test_readonly.py",
           "scope": "真 Git 實測：讀檔、log、fetch 為乾淨；stat 過期時不因 status 自刷 index 誤報；寫標記、對已改檔再改、stage、commit、push、新增檔、開分支、只建 ref、只 detach 各被指出；離線與無 upstream 記 unverified；非 repo 兩項皆 unverified；移除各守門後測試失敗"
         }
       ],
@@ -682,11 +682,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
       "evidence": [
         {
-          "path": "experiments/v2/campaign.py",
+          "path": "src/project_bootstrap/campaign.py",
           "scope": "多專案更新規劃原型：吃 batch 報告與 impact 受影響清單，每目標恰一列動作（更新／未受影響略過／排除／失敗／逐專案比對）；人工確認分為放行版本、整份更新清單、全部失敗審閱各一次，漂移專案各算一次；超過上限（預設 3）照實報，失敗、需比對、重複、受影響未評估都不是 ok"
         },
         {
-          "path": "experiments/v2/test_campaign.py",
+          "path": "tests/test_campaign.py",
           "scope": "20 個混合目標（10 更新、4 未受影響、1 排除、5 失敗）全列、3 次確認仍 NOT OK；乾淨 2 次 OK；無更新 0 次；兩個漂移超過上限；未知結果、重複、受影響未評估、上限收緊各自不 ok；另以真 assess_many 列產生缺失與排除；mutants.json 14 個刪改全部 killed"
         }
       ],
@@ -700,7 +700,7 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/test_gitclaim.py",
+          "path": "tests/test_gitclaim.py",
           "scope": "本機 bare origin：兩條分支各帶自己的標記互不阻擋；同一分支已有他人標記時第二個 writer 以 busy-* 停止，標記時間再舊也不當租約到期"
         }
       ],
@@ -714,11 +714,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/confluence.py",
+          "path": "src/project_bootstrap/confluence.py",
           "scope": "M2／M4 合流原型：各線發現帶問題鍵、值、已驗證／聲稱、來源、取得時間、適用範圍；merge 分成共同依據（已驗證且值與範圍相同，附全部來源）、帶條件結論（範圍不同不丟棄）、未確認、不完整、衝突（範圍重疊值不同）；basis 只給共同依據或範圍涵蓋的條件結論，有未解衝突整鍵擋下；2026-11-10 加衝突處置：裁決記裁決者、時間、理由、範圍與引用的衝突發現，只能選被引用發現的值，須引用全部衝突發現才生效，後來的衝突發現使其重開；被否決者留存，採用值帶 decision 進入依據；無效裁決列出且衝突照擋"
         },
         {
-          "path": "experiments/v2/test_confluence.py",
+          "path": "tests/test_confluence.py",
           "scope": "合成發現實測：一致已驗證成共同依據並保留來源、聲稱不共用、範圍不同保留條件且不升為處處適用、範圍重疊衝突擋用、未參與衝突者保留、範圍不相交不衝突、缺來源／時間／範圍／狀態無效為不完整；mutants.json 15 個刪改全部 killed；處置 5 個測試（生效並保留否決、裁決範圍取代、後到發現重開、不可造值／引用不明／欄位缺、其他鍵或無衝突不受影響），處置 13 個刪改全部 killed"
         }
       ],
@@ -741,23 +741,23 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
       "evidence": [
         {
-          "path": "experiments/v2/test_contracts.py",
+          "path": "tests/test_contracts.py",
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "experiments/v2/feasibility.py",
+          "path": "src/project_bootstrap/feasibility.py",
           "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
         },
         {
-          "path": "experiments/v2/supervisor.py",
+          "path": "src/project_bootstrap/supervisor.py",
           "scope": "固定合成子程序已可中止、重建上下文、確認新 context digest 後啟用；尚非真實工具／模型"
         },
         {
-          "path": "experiments/v2/test_managed_fixture.py",
+          "path": "tests/test_managed_fixture.py",
           "scope": "macOS 單 worker 實測：封住舊 epoch、guardian 回收、確認新前提再啟用；父程序重啟恢復同一通知與 outbox；另以失敗 VM gate 驗證退場未確認時切換和重啟均阻擋"
         },
         {
-          "path": "experiments/v2/tree_probe.py",
+          "path": "src/project_bootstrap/tree_probe.py",
           "scope": "程序群組停止一般後代但 setsid 脫離仍存活；多程序切換不能憑 leader 退場放行"
         },
         {
@@ -765,55 +765,55 @@
           "scope": "Mac VM 候選的本機邊界、合成 guest 實測結果與未驗範圍"
         },
         {
-          "path": "experiments/v2/vm_probe.py",
+          "path": "src/project_bootstrap/vm_probe.py",
           "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復，無共享路徑再以真 runner 停機紀錄加合成終端替身走崩潰解除、guest console 日誌被拒；另一台在 outbox 已存、未送出時 SIGKILL 父程序，解除後替代 parent 重送原 bytes 只套用一次；2026-11-10 再加 guest_unread_request：guest 已產生寫入請求（console 有標記）、parent 還沒讀就被 SIGKILL，解除後沒有可重送的請求，帳本與工作樹都沒有效果；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收；2026-11-10 guest_runner_sigkill：父程序活著、直接 SIGKILL VM runner，host 檔沒有停機行，退場與寫入都拒絕，重開帳本阻擋，崩潰解除不開終端就拒絕（Q1 退回 (c)）"
         },
         {
-          "path": "experiments/v2/vm_managed_worker.sh",
+          "path": "src/project_bootstrap/vm_managed_worker.sh",
           "scope": "無共享 guest 中的固定合成工具，載入 epoch／factor 並產生受限寫入請求；真 VM 測兩個 epoch、舊請求拒絕與新寫入"
         },
         {
-          "path": "experiments/v2/guest_runs.py",
+          "path": "src/project_bootstrap/guest_runs.py",
           "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明。parent 可另給錨點檔（資料庫以外，2026-11-11）：第一次開啟先寫隨機帳本 id 到錨點再存進資料庫，之後兩邊都在且相同才開；帳本遺失、清空或被換掉而錨點還在就拒絕。同 UID 可同時刪兩者，只擋意外遺失；解除是人手動確認後刪錨點"
         },
         {
-          "path": "experiments/v2/test_guest_runs.py",
+          "path": "tests/test_guest_runs.py",
           "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗。錨點（2026-11-11）：帳本被刪／清空／換成另一份、錨點不見、錨點是符號連結／目錄／格式不對、路徑非絕對都拒絕且不補寫；錨點與目錄都 fsync；同時建立時不覆蓋；mutants.json 新增 15 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/crash_release.py",
+          "path": "src/project_bootstrap/crash_release.py",
           "scope": "父程序崩潰後的人工解除（Q1 (a)）：先讀開機前登記的 runner stderr 檔，必須逐行等於乾淨無共享停機的四行；有證據才在 /dev/tty（非 stdin）出新挑戰碼要人照打，SSH 或無控制終端拒絕；兩者都過才在帳本同交易退場並輪換 capability。同 UID 可偽造 host 檔與偽終端，不是真人證明"
         },
         {
-          "path": "experiments/v2/test_crash_release.py",
+          "path": "tests/test_crash_release.py",
           "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/test_host_crash.py",
+          "path": "tests/test_host_crash.py",
           "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋；沒登記開機識別的 run 沒有解除途徑，有登記的要重開機後識別不同、再經本機終端確認才解除（決策書 Q15 (a)，2026-11-10）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：parent 沒給錨點時，帳本檔遺失或變空檔讀起來跟第一次啟動一樣；給了錨點（2026-11-11，決策書 Q19 (b)）同樣的遺失以 ledger-lost 拒絕，前提是錨點檔本身還在"
         },
         {
-          "path": "experiments/v2/test_vm_guest_scripts.py",
+          "path": "tests/test_vm_guest_scripts.py",
           "scope": "guest 殼層腳本的離線測試（不開 VM、不用 busybox）：把腳本的 busybox 路徑換成殼層內建、console 換成暫存檔後在 host 的 dash 與 sh 執行，回覆直接餵給 vm_probe 的 host 解析函式；逐條驗受管工具的錯誤代碼、被拒的行不結束程式也不改已載入的前提，以及舊共享路徑請求迴圈的格式。mutants.json 18 個刪改全部 killed。不涵蓋掛載、virtiofs、序列埠與 busybox ash 本身"
         },
         {
-          "path": "experiments/v2/test_vm_probe.py",
+          "path": "tests/test_vm_probe.py",
           "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch／context ACK／base、截斷回覆、無共享路徑缺啟動標記／虛報 mount，及 guest console 偽造 host 啟動／停機標記的離線負向控制；不代替 VM 實跑"
         },
         {
-          "path": "experiments/v2/managed_fixture.py",
+          "path": "src/project_bootstrap/managed_fixture.py",
           "scope": "前提屏障與 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/test_supervisor.py",
+          "path": "tests/test_supervisor.py",
           "scope": "supervisor 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/vm_guest_init.sh",
+          "path": "src/project_bootstrap/vm_guest_init.sh",
           "scope": "guest init，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/vm_runner.swift",
+          "path": "src/project_bootstrap/vm_runner.swift",
           "scope": "VM runner，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
@@ -827,15 +827,15 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/mutants.py",
+          "path": "src/project_bootstrap/mutants.py",
           "scope": "mutation 執行器：在暫存複本逐一套用 mutants.json 的守門刪改，跑對應測試，分 killed／survived／stale（原文不是恰好一次）；只有全部 killed 才 exit 0；不改工作樹"
         },
         {
-          "path": "experiments/v2/mutants.json",
+          "path": "src/project_bootstrap/mutants.json",
           "scope": "2026-11-09 本輪新增九個模組（preflight、batch、lines、readonly、state、evidence、facts、decisions、policy、impact）與 doctor 共 152 個守門刪改；同日在 macOS 實跑全部 killed，約 90 秒；2026-11-10 加入 resume 15、confluence 處置 13、trail_sources 7 個，並把較早的 gitclaim 29、release 20、session＋registry 27、approvals 26、broker 22 個轉進規格（先補存活對應的測試）；全量 443 個 macOS 實跑全部 killed（約 6 分鐘），其後 trail_sources 7、broker 22、launcher 28、materializer 25 個（兩者先補 6、7 個測試）單獨跑全部 killed，共 525 個；同日再加崩潰解除＋guest_runs 23、supervisor 11、guardian 10（新增 test_guardian）、lifecycle 26（先補 7 個逐代碼測試）、F45 版本規則 3 個，共 598 個；全量 595 個（不含其後加入的 F45 版本規則 3 個）macOS 實跑全部 killed，版本規則 3 個以 --spec 單獨跑全部 killed。2026-11-10 再把 VM 探針相關的兩個 Python 檔轉進規格：vm_probe 38 個（首跑 26 個存活，test_vm_probe 補 10 個逐代碼測試）、managed_fixture 37 個（首跑 30 個存活，test_managed_fixture 補 9 個逐代碼測試，並在既有崩潰恢復測試加斷言未完成工作被標 invalid），兩組各以 --spec 單獨跑全部 killed，共 673 個；其後 trail_sources 的 AGENTS 規則轉接 7 個單獨跑全部 killed，共 680 個。"
         },
         {
-          "path": "experiments/v2/test_mutants.py",
+          "path": "tests/test_mutants.py",
           "scope": "合成套件實測執行器分得出被測到的守門（killed）、沒被測到的守門（survived）、原文不存在與出現兩次（stale）、檔案不存在（stale）；空規格不算通過；只跑指定測試模組；原始檔不被改動"
         }
       ],
@@ -849,15 +849,15 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/batch.py",
+          "path": "src/project_bootstrap/batch.py",
           "scope": "批次彙總原型：每個輸入目標恰列一次；archived 列為 excluded 不隱藏；重複、缺失、未知狀態、被拒與非預期例外都算失敗且不中斷其他目標；有任一失敗或沒有處理任何目標就不是 ok"
         },
         {
-          "path": "experiments/v2/test_batch.py",
+          "path": "tests/test_batch.py",
           "scope": "20 個真 Git 目標（14 正常、他人占用、dirty、ahead-only、離線、已搬走、archived）全數列出，摘要寫 NOT OK 與實際計數；移除各守門後測試失敗。只做開工資格彙總，不是 sync_project 的同步批次"
         },
         {
-          "path": "experiments/v2/test_preflight.py",
+          "path": "tests/test_preflight.py",
           "scope": "批次帶 confirm 時逐目標做發布確認：Git 乾淨對齊但套件已漂移的目標列 failed／release:component-drift、不算 eligible；confirm 例外記 target-error；Git 先拒絕的目標不呼叫 confirm；移除各守門後測試失敗"
         }
       ],
@@ -871,11 +871,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
       "evidence": [
         {
-          "path": "experiments/v2/impact.py",
+          "path": "src/project_bootstrap/impact.py",
           "scope": "M1 影響圖原型：元件→需求對應直接從 status.json 的證據路徑讀出（含子項），不另維護第二份手寫圖；支持同一需求的 test_ 檔是重驗點；專案宣告安裝的元件決定受影響專案。任一變更路徑沒有需求或專案認領就回全驗（全部需求、測試、專案）並列出未分類路徑"
         },
         {
-          "path": "experiments/v2/test_impact.py",
+          "path": "tests/test_impact.py",
           "scope": "實測改一個接線檔列出對應需求、重驗測試與安裝它的專案；共用元件列出兩個需求與兩組測試；只被專案認領的元件列專案不列測試；檔名含 test_ 但不以它開頭的檔不算測試；空路徑證據不進圖；混入一個未分類路徑即回全驗；另以真實 status.json 確認 gitclaim 變更會指到 test_gitclaim；移除各守門後測試失敗；另測每個 v2 檔都被認領（只剩 __init__.py 與 status.json）"
         }
       ],
@@ -889,11 +889,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/release.py",
+          "path": "src/project_bootstrap/release.py",
           "scope": "M1 原型：manifest 列整包元件 SHA-256；寫入前 WriteGate 向可信端要一份綁定本次 client nonce 的 ssh-keygen 簽章聲明，驗簽、channel、時效、epoch 不倒退、manifest 一致、非調試版，再重算本機元件 digest。無快取路徑。拋棄式測試金鑰，無 CI 身分、網路傳輸或原子安裝"
         },
         {
-          "path": "experiments/v2/test_release.py",
+          "path": "tests/test_release.py",
           "scope": "實測就地改元件內容而版本不變，以 component-drift 拒絕；換成 symlink 拒絕；元件路徑逃逸（..、絕對、空片段）以真實存在的檔案測試拒絕；移除各守門後測試失敗"
         }
       ],
@@ -907,19 +907,19 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/release.py",
+          "path": "src/project_bootstrap/release.py",
           "scope": "M1 原型：manifest 列整包元件 SHA-256；寫入前 WriteGate 向可信端要一份綁定本次 client nonce 的 ssh-keygen 簽章聲明，驗簽、channel、時效、epoch 不倒退、manifest 一致、非調試版，再重算本機元件 digest。無快取路徑。拋棄式測試金鑰，無 CI 身分、網路傳輸或原子安裝"
         },
         {
-          "path": "experiments/v2/test_release.py",
+          "path": "tests/test_release.py",
           "scope": "實測離線時即使先前確認成功仍 channel-unreachable；重播先前合法簽章回覆以 stale-confirmation 拒絕；過期、未來簽發、他人金鑰、錯 namespace、竄改、epoch 倒退都拒絕；每次寫入都重新確認；移除各守門後測試失敗"
         },
         {
-          "path": "experiments/v2/preflight.py",
+          "path": "src/project_bootstrap/preflight.py",
           "scope": "ManagedWrite 把 M3 寫入資格與 M1 WriteGate 組成單一寫入前檢查，每次寫入兩邊都重新查，拒絕代碼標明 git: 或 release: 層"
         },
         {
-          "path": "experiments/v2/test_preflight.py",
+          "path": "tests/test_preflight.py",
           "scope": "實測連續兩次寫入各要一次新確認；通道離線、元件就地改動、無效操作在 Git 已通過時仍以 release: 代碼拒絕；移除確認呼叫後測試失敗"
         }
       ],
@@ -933,11 +933,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/decisions.py",
+          "path": "src/project_bootstrap/decisions.py",
           "scope": "M2 待決與例外紀錄原型：check_decisions 要求待決事項有問題、影響 ID、選項；AI 只能在使用者授予且有來源的委任範圍內定案並須記理由；委任範圍內的事項不得列為待使用者決定；等待決定的任務必須指向已登記且仍待決的事項。check_exceptions 要求例外有內容、授權者、來源、範圍、理由與重檢條件，到期標出。render 生成懸置事項與「已宣告例外（宣告不等於通過）」兩節"
         },
         {
-          "path": "experiments/v2/test_decisions.py",
+          "path": "tests/test_decisions.py",
           "scope": "實測完整例外列在「宣告不等於通過」節；缺內容、授權者、來源、範圍、理由、重檢條件各給代碼；重檢日期無效、當天或已過期標出、未到期不標；重複 ID；移除各守門後測試失敗"
         }
       ],
@@ -951,11 +951,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/publish.py",
+          "path": "src/project_bootstrap/publish.py",
           "scope": "阻擋原型：驗證報告須整體通過且每列本輪實查（沿用／未驗證／FAIL 拒絕，調試包無例外）；CI 證明同時簽 manifest 與報告 digest，改報告或換套件為偽造；只認設定的 CI 金鑰、身分與 namespace；版本字串限定字元；同版本不重發；拒絕時不寫任何檔"
         },
         {
-          "path": "experiments/v2/test_publish.py",
+          "path": "tests/test_publish.py",
           "scope": "ssh-keygen 拋棄式金鑰實測：正式與調試包驗證通過才發布；九種未驗證報告（含整體與列不一致、空列、非 dict）對正式與調試包都拒絕；簽後改報告、換套件、簽別的內容、空簽章、壞證明拒絕；開發者金鑰、錯 namespace、非 ed25519 金鑰拒絕；壞 manifest 與跳目錄版本拒絕；每次拒絕後發布目錄為空；mutants.json 18 個刪改全部 killed"
         }
       ],
@@ -969,11 +969,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/policy.py",
+          "path": "src/project_bootstrap/policy.py",
           "scope": "M1／M3 所有權與覆寫原型：plan_update 以發布清單（core／adapter）與專案宣告的 project-owned 規劃更新，只取代本機仍等於舊發布的檔案、保留專案檔，受管目錄下沒人宣告的路徑或被就地改過的發布檔一律停止；merge 只接受 schema 宣告的空位且只往加嚴方向，mandatory 無覆寫入口；check_schema 拒絕方向與效果不一致（例如只增不減的允許清單）或效果未確認的空位；describe 列出可填空位與不可改部分"
         },
         {
-          "path": "experiments/v2/test_policy.py",
+          "path": "tests/test_policy.py",
           "scope": "實測更新取代核心、保留專案 hook、略過非受管與只是前綴相同的目錄、移除舊發布檔；未宣告的檔案、本機改過的核心或將被移除的發布檔、專案檔佔到新發布路徑、專案宣告與發布清單衝突、清單 owner 非法都停止；移除各守門後測試失敗"
         }
       ],
@@ -987,11 +987,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/policy.py",
+          "path": "src/project_bootstrap/policy.py",
           "scope": "M1／M3 所有權與覆寫原型：plan_update 以發布清單（core／adapter）與專案宣告的 project-owned 規劃更新，只取代本機仍等於舊發布的檔案、保留專案檔，受管目錄下沒人宣告的路徑或被就地改過的發布檔一律停止；merge 只接受 schema 宣告的空位且只往加嚴方向，mandatory 無覆寫入口；check_schema 拒絕方向與效果不一致（例如只增不減的允許清單）或效果未確認的空位；describe 列出可填空位與不可改部分"
         },
         {
-          "path": "experiments/v2/test_policy.py",
+          "path": "tests/test_policy.py",
           "scope": "實測加嚴的覆寫合併成功且核心不被改動；覆寫 mandatory（即使值相同）、未知欄位、清單刪項、下限調低、上限調高、已開啟的 true-only 關掉、型別錯（含 bool 冒充 int、浮點）、核心值型別錯都拒絕且不產生有效政策；schema 不一致時整個合併拒絕；移除各守門後測試失敗"
         }
       ],
@@ -1005,11 +1005,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
       "evidence": [
         {
-          "path": "experiments/v2/policy.py",
+          "path": "src/project_bootstrap/policy.py",
           "scope": "M1／M3 所有權與覆寫原型：plan_update 以發布清單（core／adapter）與專案宣告的 project-owned 規劃更新，只取代本機仍等於舊發布的檔案、保留專案檔，受管目錄下沒人宣告的路徑或被就地改過的發布檔一律停止；merge 只接受 schema 宣告的空位且只往加嚴方向，mandatory 無覆寫入口；check_schema 拒絕方向與效果不一致（例如只增不減的允許清單）或效果未確認的空位；describe 列出可填空位與不可改部分"
         },
         {
-          "path": "experiments/v2/test_policy.py",
+          "path": "tests/test_policy.py",
           "scope": "實測新發布加入的合法空位可直接使用；schema 中允許清單用只增方向、效果未宣告或未知、方向未知、mandatory 同時有空位都被指出；說明列出每個空位的方向、預設與用途，並單獨列出沒有覆寫入口的 mandatory；移除各守門後測試失敗"
         }
       ],
@@ -1023,11 +1023,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
       "evidence": [
         {
-          "path": "experiments/v2/inventory.py",
+          "path": "src/project_bootstrap/inventory.py",
           "scope": "一次性盤點原型：對明列專案以其記錄的 manifest 比對 core／adapter 檔，逐檔正常／被改／遺失／讀不到，未知版本不算乾淨；只讀不覆蓋"
         },
         {
-          "path": "experiments/v2/test_inventory.py",
+          "path": "tests/test_inventory.py",
           "scope": "六個專案：乾淨、改 core、缺 adapter、只改專案檔仍乾淨、版本未知、讀不到；被改優先於遺失；無發布檔為無可檢查；掃描前後檔案位元組不變；mutants.json 8 個刪改全部 killed"
         }
       ],
@@ -1041,23 +1041,23 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
       "evidence": [
         {
-          "path": "experiments/v2/evidence.py",
+          "path": "src/project_bootstrap/evidence.py",
           "scope": "M2 證據帳原型 resolve：每個宣稱由證據紀錄決定，本輪實查、沿用、未驗證、不通過四組分開；沿用須有來源、取得時間、範圍與依賴輸入 digest，依賴變動或讀不到即失效，使用者可撤銷；SKIP／NOT_CONFIGURED／無紀錄為未驗證；任一宣稱未驗證或不通過整體就不是通過。file_probe 以檔案內容與環境變數取 digest"
         },
         {
-          "path": "experiments/v2/test_evidence.py",
+          "path": "tests/test_evidence.py",
           "scope": "實測沿用缺來源／時間／範圍或缺依賴為未驗證；依賴檔內容改變、環境變數改變、依賴檔被改名都使沿用失效；改名無關檔案不誤失效；使用者撤銷生效；較新的無效紀錄不被較舊的通過靜默取代；逃逸路徑以真實存在的檔案測試拒絕；移除各守門後測試失敗"
         },
         {
-          "path": "experiments/v2/ingest.py",
+          "path": "src/project_bootstrap/ingest.py",
           "scope": "把 verify_bootstrap 文字輸出與結束碼、verify_v2 --json 轉成帶輪次、命令與 commit、時間、範圍、輸入 digest 的紀錄；看不懂的狀態行與重複項記 ERROR，結束碼與各行矛盾或無檢查行整體 FAIL，資訊行不算檢查"
         },
         {
-          "path": "experiments/v2/test_ingest.py",
+          "path": "tests/test_ingest.py",
           "scope": "真實格式轉換後本輪通過、FAIL／SKIP 保留語意、SKIP only＋exit 1 為未驗證、結束碼矛盾整體 FAIL、看不懂／重複／空輸出不算通過、輸入改變使沿用失效、v2 報告四筆與各種失敗與壞報告；mutants.json 18 個刪改全部 killed；2026-11-10 實跑輸出轉成 59 筆全 PASS"
         },
         {
-          "path": "experiments/v2/test_ingest_format.py",
+          "path": "tests/test_ingest_format.py",
           "scope": "測試用格式與 verify_bootstrap.py 的 record 實際輸出逐字相同"
         }
       ],
@@ -1071,11 +1071,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
       "evidence": [
         {
-          "path": "experiments/v2/test_resume_repo.py",
+          "path": "tests/test_resume_repo.py",
           "scope": "對照歷史觀測③（雲端每次都沒有全域 skill）：本 repo 以空家目錄模擬，2026-11-10 起 AGENTS 開工段落可在 repo 內找到程序；是本機模擬，不是雲端重驗"
         },
         {
-          "path": "experiments/v2/test_gitclaim.py",
+          "path": "tests/test_gitclaim.py",
           "scope": "對照歷史觀測①（雲端機器名一律 vm）：v2 開工判定要求標記完整相符，同機器同工具但 session 名不同即 busy-same-tool-other-session 拒絕；只在合成 Git 驗證，session 名本身可能相撞，未在雲端重驗"
         }
       ],
@@ -1089,63 +1089,63 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
       "evidence": [
         {
-          "path": "experiments/v2/test_contracts.py",
+          "path": "tests/test_contracts.py",
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "experiments/v2/broker_fixture.py",
+          "path": "src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         },
         {
-          "path": "experiments/v2/test_recovery.py",
+          "path": "tests/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
         },
         {
-          "path": "experiments/v2/test_launcher.py",
+          "path": "tests/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         },
         {
-          "path": "experiments/v2/test_lifecycle.py",
+          "path": "tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         },
         {
-          "path": "experiments/v2/test_approvals.py",
+          "path": "tests/test_approvals.py",
           "scope": "合成刪除以固定公開金鑰驗分離簽章；竄改、異簽署者、錯範圍、舊 epoch、重播與缺收據不授權"
         },
         {
-          "path": "experiments/v2/approvals.py",
+          "path": "src/project_bootstrap/approvals.py",
           "scope": "合成動作的分離簽核，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/broker.py",
+          "path": "src/project_bootstrap/broker.py",
           "scope": "RPC 無管理方法與任意命令，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/launcher.py",
+          "path": "src/project_bootstrap/launcher.py",
           "scope": "啟動授權，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/lifecycle.py",
+          "path": "src/project_bootstrap/lifecycle.py",
           "scope": "票據保管，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/test_broker_fixture.py",
+          "path": "tests/test_broker_fixture.py",
           "scope": "broker_fixture 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/crash_release.py",
+          "path": "src/project_bootstrap/crash_release.py",
           "scope": "父程序崩潰後的人工解除（Q1 (a)）：先讀開機前登記的 runner stderr 檔，必須逐行等於乾淨無共享停機的四行；有證據才在 /dev/tty（非 stdin）出新挑戰碼要人照打，SSH 或無控制終端拒絕；兩者都過才在帳本同交易退場並輪換 capability。同 UID 可偽造 host 檔與偽終端，不是真人證明"
         },
         {
-          "path": "experiments/v2/test_crash_release.py",
+          "path": "tests/test_crash_release.py",
           "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/presence_probe.py",
+          "path": "src/project_bootstrap/presence_probe.py",
           "scope": "真人核准來源的候選探針（不是核准機制）：這台 Mac 上未簽署的命令列程式可建立每次使用都要本人在場的 Secure Enclave 金鑰，禁止互動時簽章被系統以「需要使用者互動」拒絕，未設門檻的對照金鑰可簽可驗；沒有問過任何人，沒有金鑰保存、輪替或撤銷，結果只會是候選可用但未驗收"
         },
         {
-          "path": "experiments/v2/test_presence_probe.py",
+          "path": "tests/test_presence_probe.py",
           "scope": "探針判讀的離線測試：設了門檻的金鑰無人在場卻簽出來是反例；因別的原因被拒、對照金鑰失敗、缺行、多行、重複行都是未驗證；任何輸出都不會判成通過。不執行 Swift helper；mutants.json 7 個刪改全部 killed"
         }
       ],
@@ -1159,15 +1159,15 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
       "evidence": [
         {
-          "path": "experiments/v2/test_contracts.py",
+          "path": "tests/test_contracts.py",
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "experiments/v2/feasibility.py",
+          "path": "src/project_bootstrap/feasibility.py",
           "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
         },
         {
-          "path": "experiments/v2/broker_fixture.py",
+          "path": "src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         }
       ],
@@ -1179,11 +1179,11 @@
           "scope": "決策書第 4 節對應子項完整門檻",
           "evidence": [
             {
-              "path": "experiments/v2/feasibility.py",
+              "path": "src/project_bootstrap/feasibility.py",
               "scope": "同 UID／直接 Git 的合成繞過反例"
             },
             {
-              "path": "experiments/v2/isolation.py",
+              "path": "src/project_bootstrap/isolation.py",
               "scope": "Mac 單一受包覆子程序 OS 邊界；不是全部工具隔離"
             }
           ],
@@ -1204,11 +1204,11 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "experiments/v2/decisions.py",
+          "path": "src/project_bootstrap/decisions.py",
           "scope": "M2 待決與例外紀錄原型：check_decisions 要求待決事項有問題、影響 ID、選項；AI 只能在使用者授予且有來源的委任範圍內定案並須記理由；委任範圍內的事項不得列為待使用者決定；等待決定的任務必須指向已登記且仍待決的事項。check_exceptions 要求例外有內容、授權者、來源、範圍、理由與重檢條件，到期標出。render 生成懸置事項與「已宣告例外（宣告不等於通過）」兩節"
         },
         {
-          "path": "experiments/v2/test_decisions.py",
+          "path": "tests/test_decisions.py",
           "scope": "實測完整紀錄乾淨且待決事項列在懸置節；AI 超出委任範圍或沒有委任定案、委任內缺理由、決定者不明、已決無來源、狀態無效、委任非使用者授予／無來源／範圍空或型別錯、委任範圍內仍列待使用者決定、任務等待未登記或已定案的事項、待決缺選項／問題／影響 ID、重複 ID 各給代碼；移除各守門後測試失敗"
         }
       ],
@@ -1222,23 +1222,23 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
       "evidence": [
         {
-          "path": "experiments/v2/contradictions.py",
+          "path": "src/project_bootstrap/contradictions.py",
           "scope": "M4 跨文件矛盾偵測原型：宣告式規則表逐行比對（跳過程式碼區塊與標為歷史的節並列出跳過數，部署包範本照掃），報反向規則、同檔節間衝突、跨文件衝突；讀決策書第 6 節登記列，HANDOFF 懸置每條須引用仍待決的編號，已決編號被稱為待決即報；讀不到、規則缺席、缺登記節為未知。REPO_CONFIG 宣告本 repo 的核心優先序與待決登記"
         },
         {
-          "path": "experiments/v2/test_contradictions.py",
+          "path": "tests/test_contradictions.py",
           "scope": "合成文件實測：README 反向規則（含節與行號）、跨文件衝突、無正確說法時的節間衝突、待決漏登、已決仍稱待決（懸置節與其他文件）、登記列格式錯／重複／缺節、文件讀不到／規則缺席為未知、規則限定文件、程式碼區塊與歷史節跳過照列、描述舊規則不誤報；日期紀錄行以樣式標為歷史；mutants.json 24 個刪改全部 killed"
         },
         {
-          "path": "experiments/v2/test_contradictions_repo.py",
+          "path": "tests/test_contradictions_repo.py",
           "scope": "對本 repo 的 README、AGENTS、部署包、HANDOFF、決策書跑宣告表須未發現；2026-11-10 首跑抓到 HANDOFF 懸置未登記，已補登決策書第 6 節 Q1；同日加需求數規則抓到 ARCHITECT 根目錄表寫 50 條需求，已更正為 51；同日加入互斥鎖與序號兩條規則，並對每條規則把反向句注入真文件副本確認會報；同日加「VERSION 只跟著 SKILL.md」規則，本 repo 未發現，反向句注入會報"
         },
         {
-          "path": "experiments/v2/registry.py",
+          "path": "src/project_bootstrap/registry.py",
           "scope": "status.json 與決策書第 3 節 ID 集合的一致性核對（同一事實在兩份文件），實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "experiments/v2/test_registry.py",
+          "path": "tests/test_registry.py",
           "scope": "registry 的缺漏、重複、子項遺失、證據不存在與憑空成功測試；目前只核對 ID 集合，不核對各列內容"
         }
       ],
@@ -1266,15 +1266,15 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
       "evidence": [
         {
-          "path": "experiments/v2/broker_fixture.py",
+          "path": "src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         },
         {
-          "path": "experiments/v2/test_lifecycle.py",
+          "path": "tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         },
         {
-          "path": "experiments/v2/test_tree_probe.py",
+          "path": "tests/test_tree_probe.py",
           "scope": "POSIX 程序群組候選的正反例與失效變異；不是 Windows Job Object 或真實工具驗收"
         }
       ],
@@ -1288,27 +1288,27 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
       "evidence": [
         {
-          "path": "experiments/v2/test_contracts.py",
+          "path": "tests/test_contracts.py",
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "experiments/v2/broker_fixture.py",
+          "path": "src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         },
         {
-          "path": "experiments/v2/test_recovery.py",
+          "path": "tests/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
         },
         {
-          "path": "experiments/v2/test_launcher.py",
+          "path": "tests/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         },
         {
-          "path": "experiments/v2/test_lifecycle.py",
+          "path": "tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         },
         {
-          "path": "experiments/v2/test_approvals.py",
+          "path": "tests/test_approvals.py",
           "scope": "合成額度簽核綁種類、資源、期限、epoch、次數與額度來源；Mac 隔離 agent 消耗一次合成 paid-api，無付費或模型呼叫"
         }
       ],
@@ -1326,12 +1326,12 @@
           "scope": "一鍵重取時間、OS／Python、repo 輸入與所列執行檔 digest；不可用元件明示未驗證"
         },
         {
-          "path": "experiments/v2/test_lifecycle.py",
+          "path": "tests/test_lifecycle.py",
           "scope": "真 guardian 啟動後修改腳本內容，原計畫不能用於替換或重啟續接"
         },
         {
-          "path": "experiments/v2/mutants.json",
-          "scope": "本輪 mutation 證據改存 repo：每個刪改的檔案、原文、替換與要跑的測試模組都可在另一台機器以 python3 -X utf8 experiments/v2/mutants.py 重跑，不依賴聊天暫存檔"
+          "path": "src/project_bootstrap/mutants.json",
+          "scope": "本輪 mutation 證據改存 repo：每個刪改的檔案、原文、替換與要跑的測試模組都可在另一台機器以 python3 -X utf8 src/project_bootstrap/mutants.py 重跑，不依賴聊天暫存檔"
         }
       ],
       "unknown": "完整依賴／授權清單、環境搬遷及跨工具證據尚未驗收",
@@ -1344,11 +1344,11 @@
       "origin": "fdc0bbd:HANDOFF.md 第一步，使用者補列必要功能；決策版本 2",
       "evidence": [
         {
-          "path": "experiments/v2/test_contracts.py",
+          "path": "tests/test_contracts.py",
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "experiments/v2/session.py",
+          "path": "src/project_bootstrap/session.py",
           "scope": "改名狀態轉移與 adapter 契約，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],

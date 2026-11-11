@@ -1,6 +1,6 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-10（本 repo 加動作當下送規則的 hook；全域副本換成六檔版）
+> 最後更新：2026-11-11（P1：原型程式搬到 src／tests，加 pyproject／uv.lock；前次 2026-11-10 本 repo 加動作當下送規則的 hook、全域副本換成六檔版）
 > 本檔只放規則。每條規則的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)，由規則後面的「為什麼」指過去；**要改、要質疑或想繞過某條規則之前，先讀它的理由**。（2026-11-10／F22：理由原本夾在規則裡，常態必讀量超標；搬家不刪。）
 
 ## 開工第一件事（任何工具、任何模型都適用）
@@ -34,7 +34,7 @@
 
 - **AI 協作專案管理骨架的權威版。** 唯一產出物是 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)：自帶所有檔案範本的部署包。用法見 [README.md](README.md)。
 - **這裡不是知識庫**：不累積專案知識、踩坑紀錄或狀態，那些屬於各自的專案 repo。
-- 不部署的例外：`tools/verify_bootstrap.py`（部署包的測試）；`experiments/v2/` 與 `tools/verify_v2.py`（隔離原型，只用合成 fixture，不保存其他專案資料；**原型通過不授權切換程序或宣稱跨工具強保障**）；[HANDOFF.md](HANDOFF.md)；本檔的理由檔。
+- 不部署的例外：`tools/verify_bootstrap.py`（部署包的測試）；`src/project_bootstrap/`、`tests/`、`experiments/v2/`（說明與現況索引）與 `tools/verify_v2.py`（隔離原型，只用合成 fixture，不保存其他專案資料；**原型通過不授權切換程序或宣稱跨工具強保障**）；`pyproject.toml`／`uv.lock`（P1 開發骨架，A4 不需要）；[HANDOFF.md](HANDOFF.md)；本檔的理由檔。
 - 刻意沒有 handoff skill、`pre-push-handoff.sh`、`check_docs.py`。這是**已宣告的例外**，不是空白；宣告不等於 F46 已達成；撤銷宣告改成補裝是使用者的決定。
 
 [為什麼](AGENTS-reasons.md#what)

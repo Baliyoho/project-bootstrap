@@ -23,7 +23,7 @@ package = false
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
-testpaths = ["tests", "experiments/v2"]
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = ["-p", "no:cacheprovider"]
 
