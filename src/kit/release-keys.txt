@@ -1,0 +1,6 @@
+# Release keys (decision Q21 (a)): one ssh-ed25519 public key per line.
+# Every release lists these as next_keys, so the next release must be signed
+# by one of them. A first install also uses this file as the root key.
+#
+# Empty until P2 slice 3b step E1 creates the CI key. Until then
+# tools/release_package.py refuses with no-release-keys.

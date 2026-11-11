@@ -4636,6 +4636,138 @@
      "new": ""
     }
    ]
+  },
+  {
+   "tests": [
+    "tests.test_distribute"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    claims = [r['claim'] for r in records if r['claim'] != 'verify_bootstrap'] + ['verify_bootstrap']",
+     "new": "    claims = [r['claim'] for r in records if r['claim'] != 'verify_bootstrap']"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    claims = [r['claim'] for r in records if r['claim'] != 'verify_bootstrap'] + ['verify_bootstrap']",
+     "new": "    claims = ['verify_bootstrap']"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "            if line.strip() and not line.lstrip().startswith('#')]",
+     "new": "            if line.strip()]"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    if not keys:\n        raise Denied('no-release-keys')",
+     "new": "    if False:\n        raise Denied('no-release-keys')"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "        if not channel.KEY_RE.fullmatch(key):\n            raise Denied('invalid-release-key')",
+     "new": "        if False:\n            raise Denied('invalid-release-key')"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    return sorted(set(keys))",
+     "new": "    return keys"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    if not tags:\n        return 1",
+     "new": "    if not tags:\n        return 0"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    return channel.newest(tags)[0] + 1",
+     "new": "    return max(epoch for epoch, _ in tags) + 1"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    if package.check(root):\n        raise Denied('bad-package')",
+     "new": "    if False:\n        raise Denied('bad-package')"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "            info.type, info.mode, info.mtime = tarfile.DIRTYPE, 0o755, MTIME",
+     "new": "            info.type, info.mode, info.mtime = tarfile.DIRTYPE, 0o755, int(time.time())"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "            info.size, info.mtime = len(data), MTIME",
+     "new": "            info.size, info.mtime = len(data), int(time.time())"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "            info.mode = 0o755 if (root / name).stat().st_mode & 0o111 else 0o644",
+     "new": "            info.mode = 0o644"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "        with gzip.GzipFile(filename='', mode='wb', fileobj=raw, mtime=MTIME) as zipped:",
+     "new": "        with gzip.GzipFile(filename='', mode='wb', fileobj=raw) as zipped:"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "        if len(set(names)) != len(names):\n            raise Denied('unsafe-archive-path:duplicate')",
+     "new": "        if False:\n            raise Denied('unsafe-archive-path:duplicate')"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "            if ('\\\\' in member.name or parts[0] != ROOT_NAME\n",
+     "new": "            if (parts[0] != ROOT_NAME\n"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "            if ('\\\\' in member.name or parts[0] != ROOT_NAME\n",
+     "new": "            if ('\\\\' in member.name\n"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "                    or any(part in ('', '.', '..') for part in parts)):",
+     "new": "                    ):"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "            if not (member.isfile() or member.isdir()):\n                raise Denied('unsafe-archive-member:' + member.name)",
+     "new": "            if False:\n                raise Denied('unsafe-archive-member:' + member.name)"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "            target.chmod(0o755 if member.mode & 0o111 else 0o644)",
+     "new": "            target.chmod(0o755)"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    problems = package.check(folder)\n    if problems:\n        raise Denied('bad-package:' + ','.join(problems))\n    return folder",
+     "new": "    return folder"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    if project.exists() and any(project.iterdir()):\n        raise Denied('project-not-empty')",
+     "new": "    if False:\n        raise Denied('project-not-empty')"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "        shutil.copy2(Path(folder) / relative, target)",
+     "new": "        shutil.copyfile(Path(folder) / relative, target)"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "        if current['exception'] is not None:\n            raise Denied('exception-present')",
+     "new": "        if False:\n            raise Denied('exception-present')"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    pointer.parse(text)\n    path.parent.mkdir",
+     "new": "    path.parent.mkdir"
+    },
+    {
+     "file": "src/project_bootstrap/distribute.py",
+     "old": "    meta = {'round': round_id,",
+     "new": "    meta = {'round': 'other-round',"
+    }
+   ]
   }
  ]
 }

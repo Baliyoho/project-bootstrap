@@ -385,3 +385,17 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 `test_channel.py` 21 個測試，用本機 bare repo 模擬來源、拋棄式 ed25519 金鑰模擬 CI；沒有 `ssh-keygen` 的平台不跳過，改驗驗證程式不在時拒絕安裝。`mutants.json` 的 `channel` 群組 41 個刪改全部 killed；另一個刪改（安裝時不先檢查包）存活，但 `package.install` 會再檢查一次、結果相同，屬等價變異，未列入。`pointer` 群組因重構改寫 10 條、加 2 條 `source` 守門，共 41 個全部 killed。
 
 沒做的（3b，要另行授權）：GitHub Actions workflow、CI 金鑰放進 secret、用保護規則限制 `channel/*` tag 只能由 CI 建立、第一次正式發布與乾淨機器驗收。另外還沒設計：第一次安裝的根金鑰怎麼交給使用者；發布用的命令列入口（目前只有函式）；快取仍可被同一個使用者改（P3）。
+
+## P2 第三片後半（3b）的本機準備（2026-11-11）
+
+依決策書 Q21 五題都選 (a)。這一段只寫檔案，不碰 GitHub：
+
+- `distribute.py`：兩個命令列入口會拒絕的東西都在這裡、都有測試。驗證器輸出經 `ingest.from_bootstrap` 與 `evidence.resolve` 變成報告，每個檢查行加上整體都要是本輪實查；發布公鑰檔一行一把，只有註解就拒絕；下一個 epoch 是最新 tag 加一；包的壓縮檔逐位元組可重現（檔案時間與 gzip 檔頭時間都是 0），解壓只接受 `package/` 底下的一般檔與目錄，拒絕連結、裝置、`..`、反斜線與重複名稱，解出來還要通過 `package.check`；鋪專案只接受空資料夾；專案有 D4 例外時不改指標，要人先拿掉。
+- `tools/release_package.py`（CI 跑）：checkout 要乾淨，報告才對得上 HEAD；建 debug 包、跑 `verify_bootstrap.py`、讀 channel tag 算 epoch、用 `release-keys.txt` 當 `next_keys` 簽章，輸出三個檔與要建的 tag 名。它自己不建 tag、不上傳。
+- `tools/install_package.py`（使用者跑）：專案還沒有指標時用 `release-keys.txt` 的根公鑰，之後用已安裝那一版的 `next_keys`；先比 channel 名再碰快取；`--seed` 鋪空專案、`--check` 立刻跑一次寫入檢查。它不下載。
+- `.github/workflows/release.yml`：push `release-request/<channel>` tag 觸發，跑在 macOS（驗證器有 macOS 專用探針），金鑰放在要使用者核准的 `release` environment；不用第三方 action，tag 帶來的字串只經環境變數進 shell。成功後用 `gh api` 建 channel tag、`gh release create` 上傳三個檔（標為 prerelease）。
+- `src/kit/release-keys.txt`：目前只有註解，所以現在跑發布會得到 `no-release-keys`。
+
+`test_distribute.py` 10 個測試，`mutants.json` 新群組 25 個刪改全部 killed（首跑存活三個：gzip 檔頭時間沒驗、反斜線案例同時違反別的規則；開頭 `/` 的檢查被「第一段必須是 package」涵蓋，已從程式刪掉）。`test_release_tools_repo.py` 5 個測試拿 `src/kit` 的真內容從發布走到安裝與寫入檢查，驗證器與 git 狀態用替身（真的驗證器要跑幾分鐘，開發中工作樹也常不乾淨）。
+
+沒驗的：workflow 沒有在 GitHub 上跑過，macOS runner 能不能讓驗證器全部本輪實查通過、`gh api` 建 tag 會不會被之後的保護規則擋、保護規則能不能只放行 GitHub Actions，都要到 E1–E5 才知道。

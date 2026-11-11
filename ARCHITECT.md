@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11（P2 第三片前半 3a，決策書 Q20）：`src/project_bootstrap/` 新增 `channel.py`（CI 端發布、沿金鑰鏈安裝、從來源 repo 的 `channel/*` tag 做每次寫入的檢查），`tests/` 新增 `test_channel.py`；`pointer.py` 抽出三個共用步驟並允許指標多一個 `source` 欄位。全部在本機驗，沒有建 workflow、secret 或保護規則；部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+> 最後更新：2026-11-11（P2 第三片後半 3b 的本機準備，決策書 Q21）：新增 `.github/workflows/release.yml`（本 repo 第一支 workflow，只由 `release-request/*` tag 觸發、要使用者核准）、`tools/release_package.py`（CI 用：乾淨 checkout、建包、跑驗證、簽章、打包）、`tools/install_package.py`（使用者用：驗簽、裝進快取、寫指標，可鋪空專案）、`src/kit/release-keys.txt`（發布公鑰；目前是空的，等 E1）、`src/project_bootstrap/distribute.py` 與兩份測試。還沒有 push、沒有建 secret、environment 或保護規則，workflow 不會跑；部署包、skill／hook／接線與 `VERSION` 未動。
+
+> 2026-11-11 稍早（P2 第三片前半 3a，決策書 Q20）：`src/project_bootstrap/` 新增 `channel.py`（CI 端發布、沿金鑰鏈安裝、從來源 repo 的 `channel/*` tag 做每次寫入的檢查），`tests/` 新增 `test_channel.py`；`pointer.py` 抽出三個共用步驟並允許指標多一個 `source` 欄位。全部在本機驗，沒有建 workflow、secret 或保護規則；部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
 > 2026-11-11 稍早（P2 第二片：專案指標與每次寫入的檢查）：`src/project_bootstrap/` 新增 `pointer.py`、`tests/` 新增 `test_pointer.py`。專案指標 `.bootstrap/pointer.json` 只是原型裡的路徑，還沒進部署包；部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
@@ -131,8 +133,11 @@
 | 路徑 | 是什麼 | 什麼時候動 |
 |---|---|---|
 | [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **部署包**（發給各專案的產物）：訪談表＋各檔範本＋上 GitHub＋自檢清單＋維持操作卡。2026-11-11 起由 `src/kit/` 生成，仍提交（專案複製它、`sync_project.py` 讀它與它的 Git 歷史） | 不手改；改 `src/kit/` 後跑 `tools/build_kit.py`（鐵律第 1 條） |
-| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；更新方式目前與 `sync_project.py` 的清單逐檔一致，`test_package_repo.py` 守） | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬 |
+| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`release-keys.txt` 是發布公鑰（P2 第 3b 片，空到 E1 建金鑰為止）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；更新方式目前與 `sync_project.py` 的清單逐檔一致，`test_package_repo.py` 守） | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬 |
 | [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `PROJECT-BOOTSTRAP.md`；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
+| [tools/release_package.py](tools/release_package.py) | P2 第 3b 片：CI 用的發布入口。要求 checkout 乾淨、建 debug 包、跑 `verify_bootstrap.py`、全部本輪實查通過才簽章，輸出包壓縮檔、簽過的紀錄與要建的 channel tag；自己不建 tag、不上傳。只用標準函式庫，不部署 | 發布流程改變時 |
+| [tools/install_package.py](tools/install_package.py) | P2 第 3b 片：使用者用的安裝入口。第一次用 `src/kit/release-keys.txt` 的根公鑰、之後沿上一版的 `next_keys` 驗簽，裝進快取並寫專案指標；`--seed` 鋪空專案、`--check` 跑一次寫入檢查。不下載。只用標準函式庫，不部署 | 安裝流程改變時 |
+| [.github/workflows/release.yml](.github/workflows/release.yml) | 本 repo 唯一的 workflow（2026-11-11，Q21）：push `release-request/<channel>` tag 觸發，跑在 macOS、金鑰在要核准的 `release` environment，成功後建 `channel/<channel>/<epoch>-<digest>` tag 與 GitHub Release。不用第三方 action | 發布流程改變時 |
 | [tools/build_package.py](tools/build_package.py) | P2 第一片：由 `src/kit/` 生成正式包資料夾 `dist/package/`（Git 不追蹤）；`--check` 建兩次比 digest、不寫檔。一律 debug，正式版只能經發布步驟（第 3 片）。只用標準函式庫，不部署 | 包格式改變時 |
 | [README.md](README.md) | 人的入口：怎麼用、部署後長什麼樣、跨工具相容性、改這份骨架的開場 prompt | 用法或相容性改變 |
 | [AGENTS.md](AGENTS.md) | AI 的入口：這個 repo 是什麼、鐵律、副本位置、行末規則 | 多一條鐵律、副本位置改變 |
@@ -361,7 +366,7 @@ check_docs.py
 - **跨機器「工作中」標記：2026-10-30 先是接受這個缺口，同一天決定多機維護就補上了。** 當初不裝的理由是它需要 `HANDOFF.md` 當載體，而那一份得每輪交棒維護——只為防呆而裝，就是多一份沒人讀、然後開始腐化的文件；那時 single writer 靠人顧。改成多機維護之後這個理由不成立了：`git log` 與 `git fetch` **看不到別台機器未提交的變更**，而開場那個 ✅ 只證明「本機沒落後 origin」，誤接棒就會整批繞過那些變更。所以補上 `HANDOFF.md`（範本 3.3 的*實例*，不是副本，沒有同步義務），並在 `repo-git-check.sh` 加判讀段——**沿用 3.10 的同一個載體與同一個欄位，沒有發明第二種標記**，那會變成「這裡會擋、別處不會擋」的不對稱。當時為減少維護成本而限制更新欄位，卻仍保留完整狀態段落，導致已完成待辦凍結；2026-11-01 已取消此限制，維護義務與事故見 [AGENTS.md](AGENTS.md)「本 repo 的交接快照」。**天花板要講明白**：標記只告訴你「東西在那台機器上」，東西本身仍得回那台 push，這不是實作缺漏。
 - **`pre-push-handoff.sh`：2026-10-30 決定不裝，2026-11-01 恢復交接快照後重新評估仍不裝。** 原理由是標記之外沒有狀態要寫，推進度時只會逼人編變更或關掉防呆；如今這個前提已取消，不能沿用舊理由。重新評估的限制是：骨架那支 hook 只檢查這批 commit 是否碰過 `HANDOFF.md`，而 A5 的開工標記本來就會碰它；本次三輪 stale 事故正是「檔案都有改、待辦沒改」。因此原樣裝上也攔不住已知故障，還會讓人誤信狀態已被驗證。現階段由 B6 核對整份快照，`verify_bootstrap.py` 檢查版本與已知回歸；不以時間戳或碰過檔案冒充內容正確。若將來有能檢查實質交接的機制再評估。
 - **但有一支自己的 SessionStart hook**（`.claude/hooks/repo-git-check.sh`，2026-10-30 加）：做 git 新鮮度比對、「工作中」判讀（2026-10-30 加）與開工改名提示（2026-11-01 加）。**2026-11-01 起 Codex 這一面也接上了**（`.codex/hooks.json`，掛同一支腳本、不複製第二份）——在此之前只有 Claude Code 會跑它，而這個 repo 本來就在多工具維護；代價是它跟那六個專案一樣進了「Codex 要各審一次」的清單（信任綁 `hooks.json` 的絕對路徑），2026-11-01 已完成現行 hook 的注入與阻擋驗收，本次桌面 session 亦收到開場輸出；檔頭明寫**不是 3.10 的副本、不要同步**。在此之前這個 repo 開場完全沒有提醒，A1 的 fetch 全靠使用者記得打「接棒」把全域 skill 載進來。為什麼不直接抄 3.10——`sync_project.py` 的 `discover()` 靠 handoff skill 發現專案，這個 repo 沒有 skill，`--all` 永遠掃不到它，抄過來就會變成「所有專案都同步了、只有來源自己落後」而且毫無跡象的那一份副本。
-- **沒有 CI。**（2026-09-13 隨本檔首版 `7a5d1ec` 寫入；日期取自 git 首次出現，當時沒有記錄另外的評估）驗證是一個指令（`python -X utf8 tools/verify_bootstrap.py`），跑它是鐵律第 4 條的義務。
+- **沒有把驗證交給 CI。**（2026-09-13 隨本檔首版 `7a5d1ec` 寫入「沒有 CI」；日期取自 git 首次出現，當時沒有記錄另外的評估）驗證是一個指令（`python -X utf8 tools/verify_bootstrap.py`），跑它是鐵律第 4 條的義務。2026-11-11 起有一支 workflow（`.github/workflows/release.yml`，決策書 Q21），但它只在有人 push `release-request/<channel>` tag、而且使用者在 `release` environment 核准後才跑，用途是發布正式包；push 與 PR 不會觸發驗證，鐵律第 4 條照舊。
 - `tools/` 保存來源維護入口：`verify_bootstrap.py` 測試部署包及 v2 原型、`sync_project.py` 同步它；2026-11-06 新增 `verify_v2.py` 執行隔離原型。三支都不部署。`experiments/v2/` 的程式是未部署的候選實作，沒有從部署包移轉任何現行規則權威。
 
 ## 全域約束（誰強制什麼）

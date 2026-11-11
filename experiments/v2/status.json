@@ -1033,6 +1033,18 @@
         {
           "path": "tests/test_channel.py",
           "scope": "未通過、沿用、空報告都拒絕發布；已是正式包、包被改過、錯 channel／epoch／金鑰格式拒絕；他人金鑰、錯 namespace、竄改紀錄、空簽章、紀錄與包不符、debug 包、非正規 JSON 與重複欄位都拒絕安裝；舊金鑰在輪替後簽的新版與鏈外金鑰都拒絕"
+        },
+        {
+          "path": "src/project_bootstrap/distribute.py",
+          "scope": "P2 第 3b 片本機準備（Q21）：驗證器輸出轉成證據報告（每一行與整體都要本輪實查），讀已提交的發布公鑰檔，下一個 epoch，可重現的包壓縮檔與安全解壓，鋪空專案與寫指標；tools/release_package.py 與 install_package.py 只做串接"
+        },
+        {
+          "path": "tests/test_distribute.py",
+          "scope": "報告：失敗、跳過、結束碼不符、無檢查行都不通過；金鑰檔只有註解拒絕；壓縮檔逐位元組可重現、檔頭時間為 0；解壓拒絕絕對路徑、..、空段、反斜線、符號與硬連結、FIFO、重複名稱、不在 package/ 底下與內容被改的包；非空專案不鋪；有 D4 例外不改指標；mutants.json 25 個刪改全部 killed"
+        },
+        {
+          "path": "tests/test_release_tools_repo.py",
+          "scope": "以 src/kit 真實內容端到端：release_package 產生 epoch 1 的資產，install_package 用根公鑰裝進空專案並對本機 bare repo 跑寫入檢查通過；第二版沿金鑰鏈升級；工作樹不乾淨、驗證有失敗或跳過、channel 名稱錯、沒有金鑰都拒絕發布；錯 channel、非空專案、他人根金鑰都拒絕安裝且不留指標"
         }
       ],
       "unknown": "CI 金鑰是測試替身，握有金鑰即可發布；真 CI 身分、GitHub 保護規則與第一次正式發布是 P2 第 3b 片，尚未授權；第一次安裝的根金鑰怎麼交給使用者還沒設計；未接進現行發布流程（現行阻擋仍是 verify_bootstrap 的 ZIP 門檻）；跨工具與跨 OS 尚未驗收",

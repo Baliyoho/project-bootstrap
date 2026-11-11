@@ -1,0 +1,65 @@
+# P2 slice 3b (decision Q21): one release per pushed release-request/<channel> tag.
+#
+# - Runs on macOS: the verifier has macOS-only probes, and a release needs
+#   every check verified this round.
+# - The signing key is a secret of the `release` environment, which needs the
+#   repository owner's approval for every run (set up in step E1).
+# - No third-party actions: the checkout is a plain clone of the public repo,
+#   tags and releases use the gh CLI that the runner image ships.
+# - Values from the triggering tag only reach shell through env variables.
+name: release
+
+on:
+  push:
+    tags:
+      - 'release-request/*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-latest
+    environment: release
+    timeout-minutes: 60
+    steps:
+      - name: Check out the requested commit
+        run: |
+          set -eu
+          git clone --quiet --no-checkout "https://github.com/${GITHUB_REPOSITORY}.git" src
+          git -C src checkout --quiet --detach "${GITHUB_SHA}"
+
+      - name: Build, verify and sign
+        id: release
+        working-directory: src
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          set -eu
+          channel="${GITHUB_REF_NAME#release-request/}"
+          key="${RUNNER_TEMP}/release_key"
+          umask 077
+          printf '%s\n' "${RELEASE_SIGNING_KEY}" > "${key}"
+          trap 'rm -f "${key}"' EXIT
+          python3 -X utf8 tools/release_package.py --channel "${channel}" \
+            --source "https://github.com/${GITHUB_REPOSITORY}.git" \
+            --signing-key "${key}" --out "${RUNNER_TEMP}/out" \
+            --github-output "${GITHUB_OUTPUT}"
+
+      - name: Create the channel tag and the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          ASSETS: ${{ steps.release.outputs.assets }}
+        run: |
+          set -eu
+          name="${TAG#refs/tags/}"
+          gh api "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="${TAG}" -f sha="${GITHUB_SHA}" > /dev/null
+          # ASSETS is a space-separated list of paths under RUNNER_TEMP with no spaces.
+          # shellcheck disable=SC2086
+          gh release create "${name}" ${ASSETS} --repo "${GITHUB_REPOSITORY}" \
+            --verify-tag --prerelease --title "${name}" --notes "commit ${GITHUB_SHA}"
