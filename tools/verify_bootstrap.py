@@ -5052,6 +5052,127 @@ def run_checks(dest, tmp):
     step_architecture_summary(dest)
     step_deployment_lifecycle(tmp)
     step_v2()
+    step_p1_layout()
+
+
+# 鎖檔裡的套件名 → import 名，名字不一樣的才列
+P1_IMPORT_NAMES = {'attrs': ('attr', 'attrs'), 'markdown-it-py': ('markdown_it',),
+                   'pytest': ('pytest', '_pytest'), 'rpds-py': ('rpds',)}
+# A4 會跑到的程式：只能用標準函式庫，沒裝 uv 的機器也要能驗
+P1_STDLIB_ONLY = ('tools', 'experiments/v2')
+
+
+def p1_section(text, header):
+    """回傳 TOML 某個 [header] 底下的 key = value 行（只認本 repo 自己寫的簡單格式）。"""
+    body = text.split('\n[' + header + ']\n', 1)
+    if len(body) != 2:
+        return None
+    rows = {}
+    for line in body[1].split('\n'):
+        if line.startswith('['):
+            break
+        match = re.match(r'([A-Za-z0-9_.-]+)\s*=\s*(.+)$', line)
+        if match:
+            rows[match[1]] = match[2].strip()
+    return rows
+
+
+def p1_layout_problems(pyproject, lock, sources):
+    """2026-11-11 P1 第一片：開發骨架的鎖定與 A4 免安裝。
+
+    只查：最低版本是 3.12、還不是可安裝的包；pyproject 宣告的每個依賴都在 uv.lock；
+    鎖檔每個外部套件都有 sha256；每個鎖住的套件都登記了授權；A4 會跑到的程式不 import
+    鎖檔裡的套件。授權字串對不對、鎖檔是不是 uv 最新解出來的，這裡看不出來（後者用 uv lock --check）。
+    """
+    bad = []
+    project = p1_section(pyproject, 'project') or {}
+    if project.get('requires-python') != '">=3.12"':
+        bad.append('pyproject 的 requires-python 不是 >=3.12')
+    if (p1_section(pyproject, 'tool.uv') or {}).get('package') != 'false':
+        bad.append('pyproject 沒寫 [tool.uv] package = false（打包屬 P2）')
+    declared = set(re.findall(r'^\s+"([A-Za-z0-9_.-]+)[^"]*",$', pyproject, re.M))
+    packages = {}
+    for block in lock.split('\n[[package]]\n')[1:]:
+        name = re.search(r'^name = "([^"]+)"', block, re.M)
+        if name:
+            packages[name[1]] = block
+    if not declared:
+        bad.append('pyproject 沒有宣告任何依賴')
+    for name in sorted(declared - set(packages)):
+        bad.append('依賴沒進 uv.lock：' + name)
+    licenses = p1_section(pyproject, 'tool.project-bootstrap.licenses') or {}
+    external = {name: block for name, block in packages.items()
+                if 'source = { registry = ' in block}
+    if 'project-bootstrap' not in packages:
+        bad.append('uv.lock 沒有本專案自己')
+    for name, block in sorted(external.items()):
+        if 'hash = "sha256:' not in block:
+            bad.append('鎖檔套件沒有 sha256：' + name)
+        if name not in licenses:
+            bad.append('鎖檔套件沒登記授權：' + name)
+    for name in sorted(set(licenses) - set(external)):
+        bad.append('授權表有鎖檔沒有的套件：' + name)
+    forbidden = set()
+    for name in packages:
+        forbidden.update(P1_IMPORT_NAMES.get(name, (name.replace('-', '_'),)))
+    forbidden.discard('project_bootstrap')
+    for path, text in sorted(sources.items()):
+        try:
+            tree = __import__('ast').parse(text)
+        except SyntaxError:
+            bad.append('解析失敗：' + path)
+            continue
+        for node in __import__('ast').walk(tree):
+            names = [alias.name for alias in getattr(node, 'names', [])] \
+                if type(node).__name__ == 'Import' else \
+                [node.module or ''] if type(node).__name__ == 'ImportFrom' and not node.level else []
+            for name in names:
+                if name.split('.')[0] in forbidden:
+                    bad.append('A4 會跑到的程式 import 了外部套件：%s（%s）' % (path, name))
+    return bad
+
+
+def step_p1_layout():
+    try:
+        pyproject = read_lf(ROOT / 'pyproject.toml')
+        lock = read_lf(ROOT / 'uv.lock')
+    except OSError as exc:
+        record('FAIL', 'P1 開發骨架', '讀不到 pyproject.toml 或 uv.lock：%s' % exc)
+        return
+    sources = {}
+    for folder in P1_STDLIB_ONLY:
+        for path in sorted((ROOT / folder).glob('*.py')):
+            if not path.name.startswith('test_'):
+                sources[path.relative_to(ROOT).as_posix()] = read_lf(path)
+    bad = p1_layout_problems(pyproject, lock, sources)
+    cases = []
+    if not bad:
+        first = sorted(sources)[0]
+
+        def lock_block(name, change):
+            start = lock.index('\n[[package]]\nname = "%s"\n' % name)
+            end = lock.find('\n[[package]]\n', start + 1)
+            end = len(lock) if end == -1 else end
+            return lock[:start] + change(lock[start:end]) + lock[end:]
+        cases = [
+            ('依賴沒進鎖檔', p1_layout_problems(pyproject, lock_block('jsonschema', lambda b: ''), sources)),
+            ('鎖檔少 sha256', p1_layout_problems(pyproject, lock_block(
+                'attrs', lambda b: b.replace('sha256:', 'md5:')), sources)),
+            ('授權表少一個', p1_layout_problems(pyproject.replace('\npytest = "MIT"\n', '\n', 1), lock, sources)),
+            ('最低版本改 3.11', p1_layout_problems(pyproject.replace('">=3.12"', '">=3.11"', 1), lock, sources)),
+            ('拿掉 package = false', p1_layout_problems(pyproject.replace('package = false', '', 1), lock, sources)),
+            ('驗證器 import jsonschema', p1_layout_problems(pyproject, lock, dict(
+                sources, **{first: sources[first] + '\nimport jsonschema\n'}))),
+            ('驗證器 from markdown_it import', p1_layout_problems(pyproject, lock, dict(
+                sources, **{first: sources[first] + '\nfrom markdown_it.token import Token\n'}))),
+        ]
+        for name, problems in cases:
+            if not problems:
+                bad.append('負向測試未擋：' + name)
+    record('FAIL' if bad else 'OK', 'P1 開發骨架', '；'.join(bad) if bad else
+           'pyproject 依賴都在 uv.lock、%d 個外部套件都有 sha256 與授權、最低 Python 3.12；'
+           '%d 支 A4 會跑到的程式只用標準函式庫；%d 個負向測試（鎖檔是否最新要另跑 uv lock --check，'
+           '本項不需要 uv）' % (len(re.findall(r'source = \{ registry = ', lock)), len(sources), len(cases)))
 
 
 def main():

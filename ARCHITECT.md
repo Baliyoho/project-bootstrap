@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-10。同日深夜：部署包 3.8 的 `reasons.md` 末尾加「規則 → 理由在哪」對照表（決策書 Q17 (b)），六個 skill 檔與 `VERSION` 跳到 `2026-11-10.2`，這台 Mac 的兩個全域副本一起覆蓋；`verify_bootstrap.py` 新增「skill 規則對照表」。結構沒有新增檔案。同日稍晚：本 repo 新增 `.claude/hooks/repo-action-rules.sh`（決策書 Q6 (a)），只接 Claude Code；`verify_bootstrap.py` 新增「動作當下送規則」，「本 repo 兩份接線」放寬為 Claude Code 可多接這支。這台 Mac 的兩個全域副本換成六檔版（Q11 (a)）。同日稍早：**部署包 3.8 從一個檔變成六個檔**（決策書 Q9／F22）：handoff skill 是一個目錄，入口 `SKILL.md` 加 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`；骨架 22 → 27 檔，`VERSION` `2026-11-10`。`tools/` 新增 `skill_split_baseline.json`；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」三項；兩支開場 hook 多印全綠行。同日 Q11 (a)：只有這台 Mac 的兩個全域副本換成六檔版；各專案尚未同步，`main` 也還沒有這一版。同日稍早：根目錄新增 [skill 拆分設計稿](project-bootstrap-skill-split-design.md)（決策書 Q8 (a)，等 Q9 審閱，未實施）。同日稍早：根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+> 最後更新：2026-11-11。P1 第一片（開發骨架）：根目錄新增 `pyproject.toml`、`uv.lock`、`src/project_bootstrap/`、`tests/`；`.gitignore` 加 `.venv/`；`verify_bootstrap.py` 新增「P1 開發骨架」。用 uv 鎖依賴（版本、sha256、授權），pytest 跑既有 v2 測試與新 `tests/`；最低 Python 3.12。`verify_bootstrap.py`／`verify_v2.py`／v2 原型仍只用標準函式庫，A4 不需要裝 uv。部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
+
+> 2026-11-10 同日深夜：部署包 3.8 的 `reasons.md` 末尾加「規則 → 理由在哪」對照表（決策書 Q17 (b)），六個 skill 檔與 `VERSION` 跳到 `2026-11-10.2`，這台 Mac 的兩個全域副本一起覆蓋；`verify_bootstrap.py` 新增「skill 規則對照表」。結構沒有新增檔案。同日稍晚：本 repo 新增 `.claude/hooks/repo-action-rules.sh`（決策書 Q6 (a)），只接 Claude Code；`verify_bootstrap.py` 新增「動作當下送規則」，「本 repo 兩份接線」放寬為 Claude Code 可多接這支。這台 Mac 的兩個全域副本換成六檔版（Q11 (a)）。同日稍早：**部署包 3.8 從一個檔變成六個檔**（決策書 Q9／F22）：handoff skill 是一個目錄，入口 `SKILL.md` 加 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`；骨架 22 → 27 檔，`VERSION` `2026-11-10`。`tools/` 新增 `skill_split_baseline.json`；`verify_bootstrap.py` 新增「skill 拆分」「同步補齊模式檔」「全綠行」三項；兩支開場 hook 多印全綠行。同日 Q11 (a)：只有這台 Mac 的兩個全域副本換成六檔版；各專案尚未同步，`main` 也還沒有這一版。同日稍早：根目錄新增 [skill 拆分設計稿](project-bootstrap-skill-split-design.md)（決策書 Q8 (a)，等 Q9 審閱，未實施）。同日稍早：根目錄新增 [AGENTS-reasons.md](AGENTS-reasons.md)：AGENTS.md 的事故與理由逐字搬過去，入口只留規則加「為什麼」連結（決策書第 6 節 Q4 第一階段，F22）；`verify_bootstrap.py` 新增「規則理由連結」一項附 7 個負向測試；第二輪複審快照從每輪必讀改成條件式。只動本 repo 自己的檔，部署包、skill／hook／接線與 `VERSION` 未動，不部署、不同步。
 
 > 2026-11-10 新增 `experiments/v2/crash_release.py` 與 `test_crash_release.py`：無共享 guest 的父程序崩潰後，依決策書 Q1 (a) 讀開機前登記在 `guest_runs` 帳本的 runner `.host` 停機紀錄，再要 host 本機終端（`/dev/tty`）照打挑戰碼，兩者都過才退場；缺證據維持阻擋。合成原型，同 UID 偽造不排除。
 
@@ -116,13 +118,16 @@
 | [project-bootstrap-requirements-final-review-2026-11-05-2214.md](project-bootstrap-requirements-final-review-2026-11-05-2214.md) | v3.2 最後審閱與五項直接修改指令；**2026-11-06 已實作為需求 v3.3**，不另寫回覆。不部署、不同步 | 執行結果改需求正文及 HANDOFF |
 | 本檔 | 結構 | 只有結構變動 |
 | [LICENSE](LICENSE) | MIT（2026-09-07 起公開） | 授權改變 |
+| [pyproject.toml](pyproject.toml)、[uv.lock](uv.lock) | **P1 開發骨架**（2026-11-11）：依賴、最低 Python 3.12、pytest 設定，以及鎖檔裡每個套件的授權表；`uv.lock` 鎖版本與 sha256。`[tool.uv] package = false`，打包屬 P2。不部署、不同步；A4 不需要它們 | 加減依賴時兩檔一起改（`uv lock`），新套件同時登記授權 |
+| [src/project_bootstrap/](src/project_bootstrap/__init__.py) | v2 核心的正式位置，第一片只有空的套件；第二片把 `experiments/v2` 的模組搬進來。不部署 | P1 搬模組時 |
+| [tests/](tests/test_layout.py) | pytest 測試；第一片只有開發骨架自己的測試（用 tomllib 對照驗證器的簡易解析）。`experiments/v2` 的測試第二片才搬 | 加測試時 |
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
 | [tools/skill_split_baseline.json](tools/skill_split_baseline.json) | 拆分前單檔 `SKILL.md`（`VERSION` `2026-11-03`）每一行的雜湊，加上 11 行刻意改寫的去處。`verify_bootstrap.py`「skill 拆分」用它確認沒有行被弄丟。不部署、不同步 | 只有刻意改寫或刪掉舊文本的某一行時，並寫明去處 |
 | [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案。`check_docs.py` 的專案設定區塊、兩份 hook 接線裡專案自己加的設定都會原樣保留。只改檔案，不 commit | 骨架多一個要同步的檔時（而且要同時歸類進 `WHOLE`／`WIRING`／`PARTIAL`／`INSTANCE`，否則驗證會 FAIL） |
 | [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
 | `.claude/hooks/repo-action-rules.sh` | 本 repo 自己的動作當下提醒（2026-11-10，決策書 Q6 (a)，F22 第二階段第 (2) 點試行）：只接 `.claude/settings.json` 的 PreToolUse（Bash／Edit／Write／MultiEdit）與 PostToolUse（Bash），準備 push、push 剛完成、改部署包、改 hook 時送對應規則摘要；永遠 exit 0、不擋。Codex 那份刻意不接。看原始 JSON 字串判斷，會誤報（指令文字裡提到 git push 也會送）。不在副本拓撲裡 | 試行結果決定去留 |
 | `.claude/settings.json`＋`.codex/hooks.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart 檢查：git 新鮮度＋`HANDOFF.md` 的「工作中」判讀＋開工改名提示。兩份接線掛的都是**同一支** `repo-git-check.sh`（2026-11-01 補 Codex 這一面），所以它們**不是部署包 3.9／3.17 的副本**，那支 hook 也不是 3.10 的副本——都不在副本拓撲裡、不要用 `sync_project.py` 同步（檔頭寫了為什麼不抄 3.10；2026-11-01 起那支腳本會直接拒絕） | 幾乎不動 |
-| `.gitignore`、`.gitattributes` | `dist/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
+| `.gitignore`、`.gitattributes` | `dist/`、`.venv/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
 | `dist/` | 建置產物（`--zip` 產出的骨架壓縮檔），**不進 Git** | 要發佈就重跑一次，不要留在 repo 裡跟部署包唱反調 |
 
 本 repo 的 `.claude/hooks/codex-hook.cmd` 是 **3.17 啟動器的副本**，跟 `repo-git-check.sh` 的角色不同；更新時從部署包抽取這一檔覆蓋，不把本 repo 當成 `sync_project.py` 的目標。它只尋找 Git Bash、加上避免 JSON 誤判的純文字標頭，並保留 stdin／輸出內容／結束碼，沒有交接規則。既有專案的 Codex 接線升級時會補齊這個新依賴；沒有 Codex 接線的專案仍不自動補裝。`--codex-only` 只同步這兩檔，專案 SKILL 與其他設定不變。
@@ -239,6 +244,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 全綠行 | 兩支開場 hook 在真 Git fixture 上：正常才印含分支與 SHA 的全綠行，10 種不正常狀態都不印；拿掉條件的腳本會被看出來 | 不該綠的時候印了全綠，正常路徑會跳過完整判讀表 |
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
 | 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，mode 100755 與 wrapper 直接執行；7 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit；不測外部 GitHub 或模型行為（F16） |
+| P1 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `experiments/v2` 的非測試程式不 import 鎖檔裡的套件；7 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
 **exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫。

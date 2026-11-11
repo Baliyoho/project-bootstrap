@@ -1,0 +1,46 @@
+# P1 slice 1: development layout only. Nothing here is deployed, and the
+# deployment package (PROJECT-BOOTSTRAP.md) is still the policy authority.
+# tools/verify_bootstrap.py stays standard-library only and does not need uv.
+[project]
+name = "project-bootstrap"
+version = "0.0.0"
+description = "v2 core for the project-bootstrap handoff system (not deployed)"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "jsonschema",
+    "markdown-it-py",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[tool.uv]
+# Not an installable package yet; packaging belongs to P2.
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests", "experiments/v2"]
+python_files = ["test_*.py"]
+addopts = ["-p", "no:cacheprovider"]
+
+# License of every package in uv.lock, read from each package's own metadata
+# on 2026-11-11. verify_bootstrap.py rejects a locked package missing here.
+[tool.project-bootstrap.licenses]
+attrs = "MIT"
+colorama = "BSD-3-Clause (Windows only; not checked on this machine)"
+iniconfig = "MIT"
+jsonschema = "MIT"
+jsonschema-specifications = "MIT"
+markdown-it-py = "MIT"
+mdurl = "MIT"
+packaging = "Apache-2.0 OR BSD-2-Clause"
+pluggy = "MIT"
+pygments = "BSD-2-Clause"
+pytest = "MIT"
+referencing = "MIT"
+rpds-py = "MIT"
+typing-extensions = "PSF-2.0"

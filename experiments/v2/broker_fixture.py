@@ -116,10 +116,13 @@ def sandbox_plan(repo, scratch, program, *args):
         ancestor_rules.append('(literal (param "' + key + '"))')
     profile = PROFILE + '\n(allow file-read* ' + ' '.join(ancestor_rules) + ')\n'
     handshake = "import sys; print('bootstrap-v2-ready', flush=True); assert sys.stdin.readline() == 'bootstrap-v2-go\\n'\n"
+    # Start the resolved base interpreter: a virtualenv's python is a symlink
+    # (and pyvenv.cfg) outside the allowed reads, and the agent needs only stdlib.
+    executable = str(Path(sys.executable).resolve())
     command = [str(SANDBOX_EXEC), '-D', 'REPO=' + str(repo),
         '-D', 'SCRATCH=' + str(scratch), '-D', 'PYTHON_RUNTIME=' + str(runtime),
-        '-D', 'PYTHON_EXECUTABLE=' + str(Path(sys.executable).resolve())] + ancestor_params + [
-        '-p', profile, sys.executable, '-B', '-u', '-c', handshake + program, *map(str, args)]
+        '-D', 'PYTHON_EXECUTABLE=' + executable] + ancestor_params + [
+        '-p', profile, executable, '-B', '-u', '-c', handshake + program, *map(str, args)]
     return LaunchPlan(tuple(command), str(scratch))
 
 

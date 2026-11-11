@@ -23,10 +23,11 @@
 - 2026-11-11 本輪（Q19 採 (b)，使用者原話「先補缺口，然後p0就可以先收尾了」）：
   - **帳本錨點**：`GuestRunLedger(lab, anchor=...)` 第一次開啟先把隨機帳本 id 寫進資料庫以外的錨點檔（fsync 檔與目錄、不覆蓋），再存進資料庫；之後帳本被刪、清空或換掉而錨點還在就拒絕（`ledger-lost`／`ledger-replaced`），錨點不見是 `ledger-anchor-missing`。不給 `anchor=` 行為不變。`test_guest_runs.py` 加 9 個、`test_host_crash.py` 加 1 個離線測試；新增 15 個 mutation。真 VM `guest_parent_sigkill` 的 parent 帶錨點，探針移走帳本檔後重開得到 `ledger-lost`。
   - **P0 Mac 這半邊收尾**：已知缺口清單寫在 v2 說明（錨點那段之後）；實現規劃第 7 節加一段說明 Mac 部分依 Q19 收尾，Windows 照 Q12 留到之後。
+- 2026-11-11 **P1 第一片（開發骨架）**：使用者說「Start P1」，選了四片切法的第一片並授權 `brew install uv` 與下載依賴。新增 `pyproject.toml`（最低 3.12、`package = false`、授權表）、`uv.lock`（14 個外部套件含 sha256）、`src/project_bootstrap/`（空套件）、`tests/test_layout.py`；`verify_bootstrap.py` 新增「P1 開發骨架」附 7 個負向測試。`broker_fixture.sandbox_plan` 改啟動解析後的基底 Python（venv 的連結會被 sandbox 擋）。
 
 ## 未完成／下一步
 
-1. 使用者還沒說何時開始 P1（模組化、鎖 runtime／候選版本／LICENSE／digest）；等使用者指示再開工，不要自己開始。
+1. P1 切成四片（1 開發骨架 → 2 把 `experiments/v2` 模組與測試搬進 `src`／`tests` → 3 來源權威切換：部署包由來源生成、骨架檔等價重建、同批改 AGENTS 鐵律 1 → 4 JSON Schema、Markdown parser、快速只讀入口與 F22 實測）。第一片已做完；第二片等使用者說再開工。第三片改鐵律，要使用者另外同意。
 2. P0 Mac 的已知缺口（不再在 P0 補）：真的斷電與檔案系統耐久性、真的重開機、錨點只擋意外遺失、通用工具進無共享 guest（屬 P3）；清單在 v2 說明。
 3. 簽署金鑰發行／撤銷與額度來源沒做；`release.py`／`publish.py` 的金鑰仍是測試替身。真實工具前補跨機通知／恢復、外部效果冪等及輸入裁剪（要先選定真實工具）。
 4. 六檔版 skill：本 repo 必讀約 15,300 仍超標，使用者說之後回頭修（Q10）。
@@ -49,10 +50,11 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-11 `python3 -X utf8 tools/verify_bootstrap.py --staged`：exit 0，64 項全部通過（含 v2 的 456 個契約／索引測試；F22 與三個預期反例照報不通過）。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
-- 2026-11-11 `python3 -X utf8 experiments/v2/mutants.py`：全量 748 個全部 killed（本輪新增 15 個錨點刪改）。
+- 2026-11-11 `python3 -X utf8 tools/verify_bootstrap.py --staged`：exit 0，65 項全部通過（含 v2 的 456 個契約／索引測試與新增「P1 開發骨架」；F22 與三個預期反例照報不通過）。
+- 2026-11-11 `uv run --locked pytest`：Python 3.15 共 461 個通過（456 個 v2＋5 個 `tests/`）；另以 uv 下載的 CPython 3.12.16 在 scratch venv 跑 v2 的 456 個也全過（`tests/` 加入前跑的）。`uv lock --check` 一致。Windows／Linux 未跑。本 repo 無 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口。
+- 2026-11-11 `python3 -X utf8 experiments/v2/mutants.py`：全量 748 個全部 killed（改 `broker_fixture.py` 之後重跑）。
 - 2026-11-11 `python3 -X utf8 experiments/v2/vm_probe.py` exit 0（本輪改了 `guest_parent_sigkill` 之後跑的，含錨點那一步）。
-- 本 repo 的 hook 與接線、handoff skill 本輪沒改；Codex 接線未改，Codex 信任重審不適用。無額外模型呼叫、候選安裝或真實部署；沒有同步任何專案。
+- 本 repo 的 hook 與接線、handoff skill 本輪沒改；Codex 接線未改，Codex 信任重審不適用。無額外模型呼叫或真實部署；本機用 Homebrew 裝了 uv 0.13.7，依賴只進專案 `.venv` 與 uv 快取；沒有同步任何專案。
 
 ## 懸置事項（AI 勿自行處理）
 

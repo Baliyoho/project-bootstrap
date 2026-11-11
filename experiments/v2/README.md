@@ -310,3 +310,9 @@ HANDOFF 保留 writer、目前行動與此索引的指標；若索引不可讀�
 2. 將合成 supervisor 的停止／排空／重建上下文協定接到實際可控執行介面；不能把程式裡 application=True 當作模型已理解，也不能把 outbox 當即時通知。真實模型探針仍需另行明確授權。
 3. 再鎖定需實際採用的外部元件、驗 Windows／Mac 門檻。未通過前不開始全面搬來源、改現行 A4 或部署專案。
 4. 接棒成本已能逐次量測；短入口及證據失效機制需配套驗收後才切換。常態必讀超額照實報不通過，不藉此省略檢查。
+
+## P1 第一片：用 pytest 跑（2026-11-11）
+
+P1 第一片加了 `pyproject.toml` 與 `uv.lock`（見 [ARCHITECT](../../ARCHITECT.md)）。裝了 uv 的機器可以 `uv run pytest` 跑本目錄與 `tests/` 的全部測試；3.15 與 3.12 實跑結果與 unittest 相同（456 個）。`verify_v2.py` 仍用 unittest、只要標準函式庫，A4 不需要 uv。
+
+pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個連結，sandbox 只放行基底 Python 的路徑，受隔離的合成 agent 因此起不來（`launcher-start-failed`）。`broker_fixture.sandbox_plan` 改成直接啟動解析後的基底直譯器；agent 只用標準函式庫，不需要虛擬環境。
