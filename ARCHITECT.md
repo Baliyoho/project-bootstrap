@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11（P2 第 3b 片收尾）：`tools/release_package.py` 把驗證器完整輸出印進 CI 日誌，並多輸出一個 `*.report.json`（SHA-256 等於簽章紀錄的 `report`），workflow 會一起上傳；`distribute.py` 多一個 `report_bytes`。已發的 `beta` epoch 1 沒有這個檔。
+> 最後更新：2026-11-11（P2 第 4 片能力矩陣，決策書 Q24）：新增 `src/kit/capabilities.json`，部署包「跨工具與跨平台」的兩張表改由它生成（`kit.md` 換成 `<!-- kit-table: … -->` 指令行，`tools/build_kit.py` 展開）；部署包逐位元組不變，skill／hook／接線與 `VERSION` 未動。新增 `src/project_bootstrap/capabilities.py`（驗矩陣、生成表格、逐 surface／版本報缺口與 strict ready）與兩份測試。不部署、不同步。
+
+> 2026-11-11 稍早（P2 第 3b 片收尾）：`tools/release_package.py` 把驗證器完整輸出印進 CI 日誌，並多輸出一個 `*.report.json`（SHA-256 等於簽章紀錄的 `report`），workflow 會一起上傳；`distribute.py` 多一個 `report_bytes`。已發的 `beta` epoch 1 沒有這個檔。
 
 > 2026-11-11 稍早（P2 第 3b 片 E5，決策書 Q23）：乾淨環境驗收通過；同時實測發現 E3 的 tag ruleset（27014223）擋不住移動與刪除，channel 歷史沒有伺服器端保護，照實記錄、靠簽章。測試用的 `channel/e5-test/…` tag 建了、移了、刪了，GitHub 回到只有 `channel/beta/1-…`。使用者同意後已刪掉 ruleset 27014223，免得它在設定頁顯示 active 讓人以為有保護；repo 現在沒有任何 ruleset。repo 檔案只改文件與 `channel.py` 的說明。
 
@@ -145,7 +147,7 @@
 | 路徑 | 是什麼 | 什麼時候動 |
 |---|---|---|
 | [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **部署包**（發給各專案的產物）：訪談表＋各檔範本＋上 GitHub＋自檢清單＋維持操作卡。2026-11-11 起由 `src/kit/` 生成，仍提交（專案複製它、`sync_project.py` 讀它與它的 Git 歷史） | 不手改；改 `src/kit/` 後跑 `tools/build_kit.py`（鐵律第 1 條） |
-| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`release-keys.txt` 是發布公鑰（P2 第 3b 片；2026-11-11 E1 填入 CI 公鑰，指紋也寫在 README）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；更新方式目前與 `sync_project.py` 的清單逐檔一致，`test_package_repo.py` 守） | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬 |
+| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`release-keys.txt` 是發布公鑰（P2 第 3b 片；2026-11-11 E1 填入 CI 公鑰，指紋也寫在 README）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；更新方式目前與 `sync_project.py` 的清單逐檔一致，`test_package_repo.py` 守）；`capabilities.json` 是能力矩陣（2026-11-11 P2 第 4 片，決策書 Q24），「跨工具與跨平台」那兩張表由它生成，`kit.md` 那裡只有一行 `<!-- kit-table: 表名 -->` | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬；改跨工具表要改 `capabilities.json`，不改 `kit.md` |
 | [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `PROJECT-BOOTSTRAP.md`；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
 | [tools/release_package.py](tools/release_package.py) | P2 第 3b 片：CI 用的發布入口。要求 checkout 乾淨、建 debug 包、跑 `verify_bootstrap.py`、全部本輪實查通過才簽章，輸出包壓縮檔、簽過的紀錄與要建的 channel tag；自己不建 tag、不上傳。只用標準函式庫，不部署 | 發布流程改變時 |
 | [tools/install_package.py](tools/install_package.py) | P2 第 3b 片：使用者用的安裝入口。第一次用 `src/kit/release-keys.txt` 的根公鑰、之後沿上一版的 `next_keys` 驗簽，裝進快取並寫專案指標；`--seed` 鋪空專案、`--check` 跑一次寫入檢查。不下載。只用標準函式庫，不部署 | 安裝流程改變時 |

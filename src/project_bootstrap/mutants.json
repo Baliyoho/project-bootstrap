@@ -4778,6 +4778,178 @@
      "new": "    return json.dumps(report, sort_keys=True, ensure_ascii=True).encode('ascii')"
     }
    ]
+  },
+  {
+   "tests": [
+    "tests.test_capabilities"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    _need(surface in data['surfaces'], 'unknown surface: %r' % (surface,))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    _need(not unknown, 'probes for unknown capabilities: ' + ', '.join(unknown))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        if surface in cell['surfaces'] and not cell.get('summary'):\n",
+     "new": "        if surface in cell['surfaces']:\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        if version is not None and version in cell['tested']:\n",
+     "new": "        if True:\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        if live in ('fail', 'error'):\n",
+     "new": "        if live == 'error':\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        return 'pass' if probe() is True else 'fail'\n",
+     "new": "        return 'pass' if probe() else 'fail'\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        elif declared == 'supported' and not cap['strict']:\n",
+     "new": "        elif declared in ('supported', 'documented') and not cap['strict']:\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        elif declared == 'supported' and not cap['strict']:\n",
+     "new": "        elif declared == 'supported':\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        elif declared == 'missing':\n            state = 'missing'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    if _parts(version) < _parts(since):\n        return 'missing', '官方文件說 %s 起才有' % since\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    if version is None or not VERSION_RE.match(version):\n",
+     "new": "    if version is None:\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    if cell['status'] == 'missing':\n        return 'missing', '官方文件說沒有'\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        if state != 'supported':\n",
+     "new": "        if True:\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    _need(set(data) == {'schema', 'surfaces', 'capabilities', 'cells', 'tables'},\n          'top-level keys must be schema, surfaces, capabilities, cells, tables')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        _need(row['strict'] is True or row['strict'] is False,",
+     "new": "        _need(True,"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    _need(any(row['strict'] for row in caps.values()), 'at least one capability must be strict')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        _need(isinstance(cell, dict) and set(cell) <= CELL_KEYS,",
+     "new": "        _need(isinstance(cell, dict),"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        _need(cell.get('capability') in caps, 'cell %s names an unknown capability' % cid)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "\n              and all(n in surfaces for n in names), ",
+     "new": ", "
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    _need('\\n' not in value and '|' not in value, where + ' cannot hold a newline or |')\n",
+     "new": "    _need('\\n' not in value, where + ' cannot hold a newline or |')\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "            _need(cell['summary'] is True, 'cell %s summary must be true' % cid)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "            _need(set(cell) == {'id', 'capability', 'surfaces', 'summary', 'text'},",
+     "new": "            _need(True or set(cell),"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        _need(cell.get('status') in STATUSES, 'cell %s status must be one of %s' % (cid, STATUSES))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        _need(basis in BASES, 'cell %s basis must be one of %s' % (cid, BASES))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "            _need(isinstance(tested, list) and tested,",
+     "new": "            _need(isinstance(tested, list),"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "                _version(v, 'cell %s tested version' % cid)\n",
+     "new": "                pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "            _need('tested' not in cell, '%s cell %s cannot list tested versions' % (basis, cid))\n",
+     "new": "            pass\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "            _need(basis == 'docs', 'only a docs cell can say since')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "            _need(key not in covered,",
+     "new": "            _need(True,"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "            _need(isinstance(row, list) and len(row) == width,",
+     "new": "            _need(isinstance(row, list),"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "                _need(count == 1,",
+     "new": "                _need(count >= 1,"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        _need(name not in used, 'kit-table used twice: ' + name)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    _need(not unused, 'tables not used by kit.md: ' + ', '.join(unused))\n",
+     "new": ""
+    }
+   ]
   }
  ]
 }

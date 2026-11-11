@@ -1,6 +1,6 @@
 # v2 P0：可重跑的契約與架構門檻
 
-> 最後更新：2026-11-11（P1 第四片）
+> 最後更新：2026-11-11（P2 第 4 片）
 > 2026-11-11 P1 第二片：本目錄的程式已搬到 [src/project_bootstrap](../../src/project_bootstrap/__init__.py)、測試搬到 [tests](../../tests/__init__.py)；這裡只留本說明與 [現況索引](status.json)。下文提到的檔名是同一份程式，指令已改成新位置；各節日期的歷史敘述不改。
 > 範圍：v2 分支的合成實驗，沒有部署、模型呼叫、付費服務或正式制度切換。
 
@@ -417,3 +417,23 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 **GitHub 上的 tag 規則沒有作用**（決策書 Q23）：在 `channel/e5-test/` 用 API 建假 tag（預期成功）後，用 API 移到另一個 commit——成功；改用 `git push` 刪除——也成功。規則評估紀錄是空的（連 workflow 建 `beta` tag 那次都沒有），GitHub 卻回報 ruleset 27014223 是 active、擁有者「永遠不能繞過」。原因沒有查明。所以 channel 歷史沒有伺服器端保護：有 push 權限的人能建、移、刪 channel tag。安全那條線仍由簽章守：客戶端只接受 CI 簽過、而且等於已安裝紀錄的 (epoch, digest)，上面的乾淨環境與 3a 的離線測試都驗過，假 tag 或被移走的 tag 只會讓寫入停下。測試 tag 已刪，`beta` 的 tag 沒有被碰過。使用者同意後也刪掉了 ruleset 27014223，免得它看起來有保護。
 
 沒驗的：Windows／Linux；真實專案的遷移（第 5 片）；第二版發布與沿金鑰鏈升級只在本機測過，GitHub 上還沒發過 epoch 2。
+
+## P2 第 4 片：能力矩陣（2026-11-11）
+
+依決策書 Q24 (a)。`src/kit/capabilities.json` 是每個工具 surface 能做什麼的唯一的家。部署包「跨工具與跨平台」那兩張表（四欄的跨工具表、Antigravity 分 surface 的 hook 表）改由它生成：`kit.md` 那兩處只剩 `<!-- kit-table: tools -->`、`<!-- kit-table: antigravity-hooks -->`，`build_kit.py` 的 `load_source` 展開，`build` 遇到沒展開的指令就停。重生出來的部署包逐位元組不變，所以 `VERSION` 不跳，保鮮期與 README 一致性檢查照舊作用在生成結果上。
+
+矩陣一格是一個事實：哪個能力、替哪些 surface 說話、有或沒有、根據是什麼。根據分三種：`tested` 只算列出的那幾個版本；`docs` 是官方文件，可以帶 `since`；`design` 是本專案這一側做了沒有。Antigravity 那一欄在表上是一格摘要，摘要格只給人看，不當證據；分 surface 的結論來自另一張表的各格。同一個 surface、同一個能力只能有一格說話，每一格的文字在表上剛好出現一次。
+
+`capabilities.report(矩陣, surface, 版本, 自測)` 對一個 surface 的一個版本列出每個能力：
+
+- 只用這個 surface 的格；`tested` 的格只在版本完全相同時算數，否則記 `other-version`，不代用。
+- 文件說有只算 `unverified`，文件說某版起才有而版本較舊算 `missing`。
+- 自測（呼叫端給的 probe）回傳不是 `True` 或拋例外，就算 `missing`，蓋過矩陣；例外內容不進報告。
+- 標成 `strict` 的能力只認本次自測通過。現在只有一個：受控寫入閘（M3），所有 surface 都記 `design`／沒有，所以沒有任何 surface 是 strict ready。
+- 不是 `supported` 的能力附上影響與替代做法（F47：缺的要說出來）。
+
+命令列：`PYTHONPATH=src python3 -X utf8 -m project_bootstrap.capabilities <surface> --version <版本>`，印 JSON，不跑自測；strict ready 才 exit 0，否則 1，矩陣壞了是 2。
+
+`test_capabilities.py` 15 個合成測試；`mutants.json` 新群組 33 個刪改全部 killed（寫測試時拿掉兩個互相涵蓋的守門：tested 格不能帶 `since` 已由「只有 docs 格能帶 since」涵蓋，design 格不能有文字已由「每格文字剛好出現一次」涵蓋）。`test_capabilities_repo.py` 5 個測試：`build` 拒絕沒展開的指令、壞矩陣讓部署包生不出來，以及對本 repo 的部署包由矩陣生成且相同、改矩陣沒重生會不同、目前沒有 strict ready、Antigravity 四個 surface 分開判。
+
+沒做的：真實工具上的安裝／啟動自測（probe 目前只有測試替身）；版本怎麼偵測；矩陣還不在正式包裡，客戶端讀不到；F14 的共用 CLI 契約與「相同案例每個 surface 等價」；`PreToolUse` 能擋與受控寫入閘的差別只寫在 `strict` 上，沒有另列能力。

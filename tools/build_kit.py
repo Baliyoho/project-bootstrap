@@ -8,6 +8,11 @@ Source layout:
   .tmpl suffix keeps a template .gitignore, .gitattributes, skill or hook config
   from taking effect inside this repo.
 
+- src/kit/capabilities.json: the capability matrix (P2 slice 4). A line
+  ``<!-- kit-table: <name> -->`` in kit.md stands for that rendered table, so
+  the cross-tool tables have one home. Rendering lives in
+  src/project_bootstrap/capabilities.py.
+
 PROJECT-BOOTSTRAP.md stays committed: projects copy it, and sync_project.py
 reads it and its Git history. It is a build output; edit the source and rerun:
 
@@ -22,6 +27,10 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+if str(ROOT / 'src') not in sys.path:
+    sys.path.insert(0, str(ROOT / 'src'))
+from project_bootstrap import capabilities  # noqa: E402
+
 SOURCE = ROOT / 'src' / 'kit'
 PROSE = SOURCE / 'kit.md'
 FILES = SOURCE / 'files'
@@ -98,6 +107,8 @@ def build(prose, files):
     lines = prose.split('\n')
     out, used, fence = [], [], None
     for line in lines:
+        if capabilities.TABLE_RE.match(line):
+            raise KitError('kit-table not expanded (load_source renders it): ' + line)
         match = FENCE_RE.match(line)
         directive = DIRECTIVE_RE.match(line)
         if directive:
@@ -127,7 +138,21 @@ def build(prose, files):
     return '\n'.join(out)
 
 
+def expand_tables(prose, matrix_text):
+    """Render every kit-table line from capabilities.json text."""
+    try:
+        return capabilities.render_tables(prose, capabilities.load(matrix_text))
+    except capabilities.MatrixError as exc:
+        raise KitError('capabilities.json: %s' % exc)
+
+
 def load_source(source=SOURCE):
+    prose, files = load_raw(source)
+    return expand_tables(prose, read_lf(source / 'capabilities.json')), files
+
+
+def load_raw(source=SOURCE):
+    """kit.md with its kit-table lines still in place, and the templates."""
     files = {}
     root = source / 'files'
     for path in sorted(root.rglob('*')):

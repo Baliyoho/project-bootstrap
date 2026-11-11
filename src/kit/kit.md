@@ -100,12 +100,7 @@
 
 **2026-10-30 的實測給了這個分層一個硬證據**：在一個 Codex 沒有信任過的資料夾裡，`AGENTS.md` 照樣被讀進 prompt（`codex debug prompt-input` 看得到），但 `.codex/hooks.json` 整層被跳過，**而且 stderr 一個字都沒有**。可攜層在未信任的專案成立，工具層不成立。這不是哪一家的實作瑕疵，是信任模型的必然——讀一份 Markdown 沒有風險，跑一支腳本有。
 
-| | Claude Code | Codex CLI | Codex 桌面 App | Antigravity |
-|---|---|---|---|---|
-| 讀 `AGENTS.md` | ✅ 原生（v2.1.277 起），**但有 `CLAUDE.md` 就不讀**，見下 | ✅ 原生（未信任的專案也讀，2026-10-30 實測） | ✅ 原生（與 CLI 共用 `~/.codex`） | ✅ 原生（與 `GEMINI.md` 的優先序官方沒排，見下） |
-| 自動載入程序檔 | ✅ `.claude/skills/`，可打 `/handoff` | ✅ `~/.codex/skills/` ＋ repo 的 `.agents/skills/`（2026-10-30 實測，見 3.16） | ✅ 同 CLI | ✅ 原生讀 `.agents/skills/` |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，**2026-10-31 在 `0.164.0` 端到端實測過**；但要專案被信任＋**每個專案各審一次**（信任綁 `hooks.json` 絕對路徑，不是內容），見下 | ✅ **有**（App `26.506` 起有 in-app 信任審核） | ✅ `<repo>/.agents/hooks.json`（3.20），**CLI（`1.4.7`／`1.4.12`）與 2.0 `2.28.2` 都端到端實測過**；Windows 要經 3.19 的 `.cmd` shim。IDE `1.107.0` 沒觸發（原因未解，不再追），見下 |
-| 關閉 session 時有事件 | ✅ `SessionEnd`（不能擋、1.5 秒預算） | ✅ `SessionEnd`（含閒置 30 分鐘） | ✅ 同 CLI | ❌ 沒有這個事件 |
+<!-- kit-table: tools -->
 
 ### Claude Code：`CLAUDE.md` 會擋住 `AGENTS.md`
 
@@ -153,11 +148,7 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 
 **結論先講：Antigravity CLI（`1.4.7`／`1.4.12`）與 Antigravity 2.0（`2.28.2`）的專案層 `.agents/hooks.json` 都會被讀、而且真的觸發**（2026-10-31 實測）。所以「Antigravity 沒有 hook 這一層」是錯的——錯在把**一個 surface 的結果當成整個產品的性質**，而當初那個 surface（IDE）剛好是四個裡唯一不觸發的那一個。目前狀態分 surface 看：
 
-| Surface | 專案層 `.agents/hooks.json` | 證據 |
-|---|---|---|
-| **Antigravity CLI `1.4.7`／`1.4.12`** | ✅ **會讀、會觸發** | 2026-10-31 實測（`agy -p` headless），六個事件逐一確認，契約見下；`1.4.12` 上重跑同一份接線沒壞 |
-| **Antigravity IDE `1.107.0`** | ❌ 沒觸發 | 2026-10-31 探針，四個事件都沒觸發、log 檔沒產生 |
-| **Antigravity 2.0 `2.28.2`** | ✅ **會讀、會觸發** | 2026-10-31 實測：`SessionStart`／`PreInvocation`／`PostInvocation`／`Stop` 四個都進 log，cwd 同樣是 `.agents/`，而且沒有出現任何信任／審核提示。接著在裝了 3.18–3.20 的真專案上開一次 session，agent 把 `[git-check]` 開場原文背了出來——注入確實進到 context。測法見下 |
+<!-- kit-table: antigravity-hooks -->
 
 **骨架 2026-10-31 起附了接線**（3.18 轉接層 ＋ 3.19 Windows shim ＋ 3.20 `.agents/hooks.json`），而且是**端到端實測過的**：在重生出來的骨架上跑 `agy -p`，agent 把 `[git-check]` 那句原文背了出來——注入真的進到模型的 context，不是「設定長得像對的」。
 

@@ -496,7 +496,12 @@
       "result": "未驗證",
       "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
-      "evidence": [],
+      "evidence": [
+        {
+          "path": "src/project_bootstrap/capabilities.py",
+          "scope": "F14 的能力矩陣部分：不支援的能力逐 surface 明示；「相同案例在每個 surface 等價」沒有做，沒有共用 CLI 契約與 adapter"
+        }
+      ],
       "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
       "next": "相同案例在每個受支援 surface 有等價結果，不支援明示"
     },
@@ -1396,6 +1401,18 @@
         {
           "path": "tests/test_tree_probe.py",
           "scope": "POSIX 程序群組候選的正反例與失效變異；不是 Windows Job Object 或真實工具驗收"
+        },
+        {
+          "path": "src/project_bootstrap/capabilities.py",
+          "scope": "P2 第 4 片能力矩陣：src/kit/capabilities.json 是唯一的家，部署包兩張跨工具表由它生成；report 只用同一 surface、同一個實測版本的紀錄，文件說有只算未驗證，必要能力（受控寫入閘）只認本次自測通過，缺口附影響與替代做法；不是真實工具上的自測"
+        },
+        {
+          "path": "tests/test_capabilities.py",
+          "scope": "合成矩陣：跨 surface／跨版本不代用、摘要格不當證據、文件不升級成已驗、自測失敗或出錯蓋過矩陣且不洩漏例外、strict ready 要本次自測通過、格式與交叉引用負向；mutants.json 33 個刪改全部 killed"
+        },
+        {
+          "path": "tests/test_capabilities_repo.py",
+          "scope": "本 repo：部署包的跨工具表由矩陣生成且逐位元組相同、改矩陣沒重生會不同、目前沒有任何 surface 是 strict ready、Antigravity 各 surface 分開判"
         }
       ],
       "unknown": "Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收",

@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "surfaces": {
+    "claude-code": {"tool": "Claude Code", "label": "Claude Code"},
+    "codex-cli": {"tool": "Codex", "label": "Codex CLI"},
+    "codex-app": {"tool": "Codex", "label": "Codex 桌面 App"},
+    "antigravity-cli": {"tool": "Antigravity", "label": "Antigravity CLI"},
+    "antigravity-2": {"tool": "Antigravity", "label": "Antigravity 2.0"},
+    "antigravity-ide": {"tool": "Antigravity", "label": "Antigravity IDE"},
+    "antigravity-sdk": {"tool": "Antigravity", "label": "Antigravity SDK"}
+  },
+  "capabilities": {
+    "reads-agents-md": {
+      "label": "讀 `AGENTS.md`",
+      "strict": false,
+      "impact": "agent 開場不知道要先走交接程序",
+      "alternative": "使用者開場明講「接棒」，或在工具自己的指示檔放指向 AGENTS.md 的 import"
+    },
+    "loads-skill": {
+      "label": "自動載入程序檔",
+      "strict": false,
+      "impact": "交接程序不會自己出現，要靠 agent 照 AGENTS.md 去開檔",
+      "alternative": "照 AGENTS.md「開工第一件事」手動讀全域 handoff 程序檔"
+    },
+    "hooks": {
+      "label": "Hooks",
+      "strict": false,
+      "impact": "開場沒有 git 新鮮度與「工作中」判讀，push 前沒有提醒",
+      "alternative": "A1／A2.5 照 mode-a-stop.md 手動判讀；push 前手動走 B"
+    },
+    "session-end-event": {
+      "label": "關閉 session 時有事件",
+      "strict": false,
+      "impact": "關掉 session 時沒有最後提醒，漏交棒要等下一棒才發現",
+      "alternative": "收工時手動走 B；下一棒照 mode-a-stop.md 的漏交棒補救"
+    },
+    "managed-write-gate": {
+      "label": "受控寫入閘",
+      "strict": true,
+      "impact": "agent 可以直接寫正式工作樹，規則只能提醒、不能阻擋",
+      "alternative": "只能用相容模式：提示與事後偵測，阻擋類需求標未達成"
+    }
+  },
+  "cells": [
+    {"id": "claude-code/reads-agents-md", "capability": "reads-agents-md", "surfaces": ["claude-code"],
+     "status": "supported", "basis": "docs", "since": "2.1.277",
+     "text": "✅ 原生（v2.1.277 起），**但有 `CLAUDE.md` 就不讀**，見下"},
+    {"id": "codex-cli/reads-agents-md", "capability": "reads-agents-md", "surfaces": ["codex-cli"],
+     "status": "supported", "basis": "tested", "tested": ["0.164.0"],
+     "text": "✅ 原生（未信任的專案也讀，2026-10-30 實測）"},
+    {"id": "codex-app/reads-agents-md", "capability": "reads-agents-md", "surfaces": ["codex-app"],
+     "status": "supported", "basis": "docs",
+     "text": "✅ 原生（與 CLI 共用 `~/.codex`）"},
+    {"id": "antigravity/reads-agents-md", "capability": "reads-agents-md",
+     "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"],
+     "status": "supported", "basis": "docs",
+     "text": "✅ 原生（與 `GEMINI.md` 的優先序官方沒排，見下）"},
+
+    {"id": "claude-code/loads-skill", "capability": "loads-skill", "surfaces": ["claude-code"],
+     "status": "supported", "basis": "docs",
+     "text": "✅ `.claude/skills/`，可打 `/handoff`"},
+    {"id": "codex-cli/loads-skill", "capability": "loads-skill", "surfaces": ["codex-cli"],
+     "status": "supported", "basis": "tested", "tested": ["0.164.0"],
+     "text": "✅ `~/.codex/skills/` ＋ repo 的 `.agents/skills/`（2026-10-30 實測，見 3.16）"},
+    {"id": "codex-app/loads-skill", "capability": "loads-skill", "surfaces": ["codex-app"],
+     "status": "supported", "basis": "docs",
+     "text": "✅ 同 CLI"},
+    {"id": "antigravity/loads-skill", "capability": "loads-skill",
+     "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"],
+     "status": "supported", "basis": "docs",
+     "text": "✅ 原生讀 `.agents/skills/`"},
+
+    {"id": "claude-code/hooks", "capability": "hooks", "surfaces": ["claude-code"],
+     "status": "supported", "basis": "docs",
+     "text": "✅ `.claude/settings.json`"},
+    {"id": "codex-cli/hooks", "capability": "hooks", "surfaces": ["codex-cli"],
+     "status": "supported", "basis": "tested", "tested": ["0.164.0", "0.166.0"],
+     "text": "✅ `<repo>/.codex/hooks.json`，**2026-10-31 在 `0.164.0` 端到端實測過**；但要專案被信任＋**每個專案各審一次**（信任綁 `hooks.json` 絕對路徑，不是內容），見下"},
+    {"id": "codex-app/hooks", "capability": "hooks", "surfaces": ["codex-app"],
+     "status": "supported", "basis": "docs", "since": "26.506",
+     "text": "✅ **有**（App `26.506` 起有 in-app 信任審核）"},
+    {"id": "antigravity/hooks-summary", "capability": "hooks",
+     "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"], "summary": true,
+     "text": "✅ `<repo>/.agents/hooks.json`（3.20），**CLI（`1.4.7`／`1.4.12`）與 2.0 `2.28.2` 都端到端實測過**；Windows 要經 3.19 的 `.cmd` shim。IDE `1.107.0` 沒觸發（原因未解，不再追），見下"},
+    {"id": "antigravity-cli/hooks", "capability": "hooks", "surfaces": ["antigravity-cli"],
+     "status": "supported", "basis": "tested", "tested": ["1.4.7", "1.4.12"],
+     "text": "✅ **會讀、會觸發**",
+     "evidence": "2026-10-31 實測（`agy -p` headless），六個事件逐一確認，契約見下；`1.4.12` 上重跑同一份接線沒壞"},
+    {"id": "antigravity-ide/hooks", "capability": "hooks", "surfaces": ["antigravity-ide"],
+     "status": "missing", "basis": "tested", "tested": ["1.107.0"],
+     "text": "❌ 沒觸發",
+     "evidence": "2026-10-31 探針，四個事件都沒觸發、log 檔沒產生"},
+    {"id": "antigravity-2/hooks", "capability": "hooks", "surfaces": ["antigravity-2"],
+     "status": "supported", "basis": "tested", "tested": ["2.28.2"],
+     "text": "✅ **會讀、會觸發**",
+     "evidence": "2026-10-31 實測：`SessionStart`／`PreInvocation`／`PostInvocation`／`Stop` 四個都進 log，cwd 同樣是 `.agents/`，而且沒有出現任何信任／審核提示。接著在裝了 3.18–3.20 的真專案上開一次 session，agent 把 `[git-check]` 開場原文背了出來——注入確實進到 context。測法見下"},
+
+    {"id": "claude-code/session-end-event", "capability": "session-end-event", "surfaces": ["claude-code"],
+     "status": "supported", "basis": "docs",
+     "text": "✅ `SessionEnd`（不能擋、1.5 秒預算）"},
+    {"id": "codex-cli/session-end-event", "capability": "session-end-event", "surfaces": ["codex-cli"],
+     "status": "supported", "basis": "docs",
+     "text": "✅ `SessionEnd`（含閒置 30 分鐘）"},
+    {"id": "codex-app/session-end-event", "capability": "session-end-event", "surfaces": ["codex-app"],
+     "status": "supported", "basis": "docs",
+     "text": "✅ 同 CLI"},
+    {"id": "antigravity/session-end-event", "capability": "session-end-event",
+     "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"],
+     "status": "missing", "basis": "docs",
+     "text": "❌ 沒有這個事件"},
+
+    {"id": "all/managed-write-gate", "capability": "managed-write-gate",
+     "surfaces": ["claude-code", "codex-cli", "codex-app", "antigravity-cli", "antigravity-2", "antigravity-ide", "antigravity-sdk"],
+     "status": "missing", "basis": "design",
+     "note": "受控執行代理（M3）是 P3 的工作，還沒有任何 surface 接上"}
+  ],
+  "tables": {
+    "tools": {
+      "header": ["", {"surface": "claude-code"}, {"surface": "codex-cli"}, {"surface": "codex-app"}, "Antigravity"],
+      "rows": [
+        [{"capability": "reads-agents-md"}, {"cell": "claude-code/reads-agents-md"}, {"cell": "codex-cli/reads-agents-md"}, {"cell": "codex-app/reads-agents-md"}, {"cell": "antigravity/reads-agents-md"}],
+        [{"capability": "loads-skill"}, {"cell": "claude-code/loads-skill"}, {"cell": "codex-cli/loads-skill"}, {"cell": "codex-app/loads-skill"}, {"cell": "antigravity/loads-skill"}],
+        [{"capability": "hooks"}, {"cell": "claude-code/hooks"}, {"cell": "codex-cli/hooks"}, {"cell": "codex-app/hooks"}, {"cell": "antigravity/hooks-summary"}],
+        [{"capability": "session-end-event"}, {"cell": "claude-code/session-end-event"}, {"cell": "codex-cli/session-end-event"}, {"cell": "codex-app/session-end-event"}, {"cell": "antigravity/session-end-event"}]
+      ]
+    },
+    "antigravity-hooks": {
+      "header": ["Surface", "專案層 `.agents/hooks.json`", "證據"],
+      "rows": [
+        ["**Antigravity CLI `1.4.7`／`1.4.12`**", {"cell": "antigravity-cli/hooks"}, {"cell": "antigravity-cli/hooks", "field": "evidence"}],
+        ["**Antigravity IDE `1.107.0`**", {"cell": "antigravity-ide/hooks"}, {"cell": "antigravity-ide/hooks", "field": "evidence"}],
+        ["**Antigravity 2.0 `2.28.2`**", {"cell": "antigravity-2/hooks"}, {"cell": "antigravity-2/hooks", "field": "evidence"}]
+      ]
+    }
+  }
+}
