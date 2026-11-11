@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-11 13:11（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（F22 第二輪：常態必讀壓到上限內）
+- **交接時間**：2026-11-11 13:32（+08）
+- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（F22 量接棒時間）
 
 ## 任務目標
 
@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111113｜待指派｜工作中｜交棒0次`，2026-11-11 13:22 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-10.2`
 - 本機：macOS 27.2、Python 3.15.2、bash 3.2、uv 0.13.7；Windows／Linux 未驗。
 
@@ -19,11 +19,11 @@
 
 P0 原型與 P1 四片（開發骨架、原型搬進 `src/`、部署包由 `src/kit` 生成、狀態卡／schema／連結檢查）都在本分支，逐模組見 [v2 說明](experiments/v2/README.md)，P1 退出條件對照在實現規劃第 7 節。決策書第 6 節 Q1–Q19 都已裁定。
 
-2026-11-11 F22 第二輪（使用者指示「先修 F22 超標」）：AGENTS 規則縮成短句，壓縮前原文逐條補進 `AGENTS-reasons.md`；條件式文件表與 HANDOFF 的地雷搬到 ARCHITECT；開場 hook 末行縮短。常態必讀約 17,600 → 約 11,100 字元。skill 與部署包沒動，`VERSION` 不跳、不同步。
+2026-11-11 F22：第二輪壓縮讓常態必讀約 11,100 字元（≤12,000）；同日在這台 Mac 的 Claude Code 量接棒時間約 101 秒（≤300），細節與未量的平台在現況索引 F22，整體仍未驗證。skill 與部署包沒動，`VERSION` 不跳。
 
 ## 未完成／下一步
 
-1. 下一階段（P2 正式包與遷移）等使用者指示，不要自己開始。F22 剩「5 分鐘」那一半沒量（索引記未驗證）；HANDOFF 字元餘量約 900，寫長了會再超標。P1 沒做的：A4 改用外部套件、模組分組、Windows／Linux 跑 pytest。
+1. 下一階段（P2 正式包與遷移）等使用者指示，不要自己開始。F22 剩 Windows／Linux 與 Codex 的接棒時間沒量；兩個優化使用者指示先不動（記在索引）。HANDOFF 字元餘量約 700，寫長了會再超標。P1 沒做的：A4 改用外部套件、模組分組、Windows／Linux 跑 pytest。
 2. P0 Mac 已知缺口（真斷電、真重開機、錨點只擋意外遺失、通用工具進無共享 guest）清單在 v2 說明，不在 P0 補。
 3. 簽署金鑰發行／撤銷與額度來源沒做；接真實工具前要補跨機通知／恢復、外部效果冪等與輸入裁剪。
 4. 動作提醒 hook 試行中：`bash -c "git push"` 會漏報，沒有 python 時退回字串比對會誤報。
@@ -37,7 +37,7 @@ P0 原型與 P1 四片（開發骨架、原型搬進 `src/`、部署包由 `src/
 
 ## 服務查證與期望快照
 
-- 2026-11-11 `python3 -X utf8 tools/verify_bootstrap.py --staged`：exit 0，66 項全部通過；`uv run --locked pytest` 476 個通過（Python 3.15）；`baseline.py` 常態必讀 10,462 字元。
+- 2026-11-11 13:30 `python3 -X utf8 tools/verify_bootstrap.py --staged`：exit 0，全部通過、單跑 71 秒；`uv run --locked pytest` 476 個通過（Python 3.15）。
 - 2026-11-11 稍早（P1 收尾，這輪沒動程式）：`mutants.py` 756 個全部 killed；`vm_probe.py` exit 0；3.12.16 也是 476 通過。Windows／Linux 未跑。無額外模型呼叫；本 repo hook 只改提示文字，接線未改，Codex 重審不適用。
 
 ## 懸置事項（AI 勿自行處理）
