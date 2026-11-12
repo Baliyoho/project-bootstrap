@@ -754,6 +754,40 @@ def step_hook(dest, tmp):
     write_lf(handoff, read_lf(handoff).replace('無（已交棒）', '`fixture` ／ `Codex CLI`'))
     git(['commit', '-qam', 'chore: claim'], work)
     cases.append(('開工標記已提交（不等於交棒）', 0, fire(push)))
+    # Q31（2026-11-12）：origin 上已有開工標記，中途安全點不必更新 HANDOFF。
+    git(['push', '-q', 'origin', 'main'], work)
+    (work / 'README.md').open('a', encoding='utf-8', newline='').write('\n中途安全點\n')
+    git(['commit', '-qam', 'docs: safe point'], work)
+    cases.append(('origin 有開工標記的中途安全點（Q31 放行）', 0, fire(push)))
+    allow = "git show \"origin/$branch:HANDOFF.md\" 2>/dev/null | grep -F '**工作中**' | grep -vqF '無（已交棒）' && exit 0\n"
+    current = read_lf(hook_path)
+    if current.count(allow) != 1:
+        cases.append(('負向：hook 沒有唯一的開工標記放行', 'present', 'missing'))
+    else:
+        try:
+            write_lf(hook_path, current.replace(allow, ''))
+            cases.append(('負向：拿掉標記放行就擋回中途安全點', 2, fire(push)))
+        finally:
+            write_lf(hook_path, current)
+    git(['push', '-q', 'origin', 'main'], work)
+    write_lf(handoff, read_lf(handoff).replace('`fixture` ／ `Codex CLI`', '無（已交棒）'))
+    git(['commit', '-qam', 'chore: release'], work)
+    git(['push', '-q', 'origin', 'main'], work)
+    (work / 'README.md').open('a', encoding='utf-8', newline='').write('\n交棒後又改\n')
+    git(['commit', '-qam', 'docs: after release'], work)
+    cases.append(('origin 已交棒、沒更新 HANDOFF（Q31 仍擋）', 2, fire(push)))
+    write_lf(handoff, read_lf(handoff).replace('**工作中**', '**佔用**'))
+    git(['commit', '-qam', 'chore: drop field'], work)
+    git(['push', '-q', 'origin', 'main'], work)
+    (work / 'README.md').open('a', encoding='utf-8', newline='').write('\n沒有工作中欄\n')
+    git(['commit', '-qam', 'docs: no field'], work)
+    cases.append(('origin 沒有工作中欄（Q31 仍擋）', 2, fire(push)))
+    # 還原成 Q31 之前這一步結束時的狀態：origin 已交棒、本機多一個未推的開工標記，後面的步驟沿用。
+    write_lf(handoff, read_lf(handoff).replace('**佔用**', '**工作中**'))
+    git(['commit', '-qam', 'chore: restore field'], work)
+    git(['push', '-q', 'origin', 'main'], work)
+    write_lf(handoff, read_lf(handoff).replace('無（已交棒）', '`fixture` ／ `Codex CLI`'))
+    git(['commit', '-qam', 'chore: claim'], work)
 
     git(['checkout', '-q', '-b', 'feature/x'], work)
     (work / 'README.md').open('a', encoding='utf-8', newline='').write('\nwip\n')
@@ -4049,8 +4083,10 @@ def flow_contract_problems(skill):
         if heading not in skill or token not in part:
             bad.append(heading + '缺契約：' + token)
     mode = skill.split('## 判斷模式', 1)[-1].split('### A／B／C', 1)[0]
-    if '只有 **A5 開工標記**與 **C 中途安全點**例外' not in mode:
-        bad.append('push 模式缺 A5／C 例外')
+    # 2026-11-12（Q31）：舊句「準備 push 預設先做 B；只有 A5／C 例外」改成交棒只由使用者決定。
+    for token in ('使用者沒要求就不得自行交棒', 'A5 開工標記與 C 中途安全點都不宣稱交棒'):
+        if token not in mode:
+            bad.append('入口缺：' + token)
     b7 = skill.split('### B7 ', 1)[-1].split('### B8 ', 1)[0]
     stage_pos = b7.find('git diff --cached --name-only')
     verify_pos = b7.find('tools/check_docs.py --staged')
@@ -4069,14 +4105,14 @@ def step_flow_contract(dest, tmp):
                  '這是開工 push 例外', 'push 成功後重讀 origin', 'B6 覆寫完成後',
                  'B3 後改過，連 B3 也重跑', 'fetch 失敗 → **停下**',
                  '保留本 session 的「工作中」標記', '不走 B6 的釋出標記與 B9 的交棒計數',
-                 '只有 **A5 開工標記**與 **C 中途安全點**例外')
+                 '使用者沒要求就不得自行交棒', 'A5 開工標記與 C 中途安全點都不宣稱交棒')
     mutations += ('tools/check_docs.py --staged', 'git diff --cached --name-only')
     for token in mutations:
         mutated = skill.replace(token, '移除契約')
         if mutated == skill or not flow_contract_problems(mutated):
             bad.append('負向測試未擋：' + token)
     record('FAIL' if bad else 'OK', '協作狀態契約', '；'.join(bad) if bad else
-           '六狀態與 A1／A2／A4／A5／B7／B8／C 契約齊備；20 個負向測試通過，含 R07 stage 順序（不代表模型遵循）')
+           '六狀態與 A1／A2／A4／A5／B7／B8／C 契約齊備；21 個負向測試通過，含 R07 stage 順序（不代表模型遵循）')
 
     bash = find_bash()
     if not bash:
@@ -4701,6 +4737,7 @@ ENTRY_MUST = (
     '功能分支要併進 `main`', '憑證缺失', 'HANDOFF 沒授權的破壞性操作', '建 GitHub repo 與第一次 push',
     'A1–A4 不修改專案檔案', '~/.claude/skills/handoff/', '找不到模式檔就停下回報',
     '每則使用者新訊息都先看 session 狀態', '續聊要改檔前重新走 A1–A5', '必須有 `session：` 一行',
+    '使用者沒要求就不得自行交棒',
 )
 MODE_A_MUST = (
     '] 全綠 ', 'bash .claude/hooks/git-freshness.sh', '不要自己判斷「大概沒事」', '`mode-a-stop.md`',

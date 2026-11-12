@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-10.2**（**handoff skill 的 `reasons.md` 末尾加一張「規則 → 理由在哪」對照表**，決策書 Q17 (b)：入口與 `mode-a.md` 不逐條加連結（常態必讀不增加），改由對照表列出入口與四個模式檔每個段落的理由在哪；拆分前就沒寫理由的段落照實標「沒有寫下理由」。守門人：`verify_bootstrap.py` 的「skill 規則對照表」（每個段落標題都在左欄、右欄指到的段落存在，附負向測試；不判斷理由內容）。六個檔一起跳到 `v2026-11-10.2`。）
+> 版本：**2026-11-12.4**（**交棒只在使用者要求時做**，決策書 Q31 (a)：入口模式表的 B 改成「使用者要求交棒／收工／換人接手」，告一段落走 C、commit／push 時機由 agent 判斷；C 的 push 在 origin「工作中」仍是本 session 時不必更新 HANDOFF；一段工作做完時讀得到上下文用量就讀，70% 建議交棒一次、85% 再一次，讀不到不估算；3.11 push 提醒在 origin「工作中」不是「無（已交棒）」時放行。守門人：入口必備句加「使用者沒要求就不得自行交棒」，「AI push 提醒情境」加放行、已交棒仍擋、沒有欄位仍擋與拿掉放行的負向測試。六個檔、3.11 與 3.16 指標一起跳到 `v2026-11-12.4`。**沒有驗證的**：模型會不會照著只建議不交棒。）
+> 前一版 **2026-11-10.2**（**handoff skill 的 `reasons.md` 末尾加一張「規則 → 理由在哪」對照表**，決策書 Q17 (b)：入口與 `mode-a.md` 不逐條加連結（常態必讀不增加），改由對照表列出入口與四個模式檔每個段落的理由在哪；拆分前就沒寫理由的段落照實標「沒有寫下理由」。守門人：`verify_bootstrap.py` 的「skill 規則對照表」（每個段落標題都在左欄、右欄指到的段落存在，附負向測試；不判斷理由內容）。六個檔一起跳到 `v2026-11-10.2`。）
 > 前一版 **2026-11-10**（**handoff skill 從單檔拆成一個目錄、六個檔**，決策書 F22／Q9：單檔 22,040 字元，正常接棒只需要其中一小部分。3.8 現在產出入口 `SKILL.md`、`mode-a.md`（正常接棒）、`mode-a-stop.md`（完整判讀表與異常）、`mode-b.md`（交棒與中途同步）、`mode-0.md`（建制）、`reasons.md`（理由、事故與命名細則）；入口與 `mode-a.md` 是新寫的摘要，合計 5,380 字元，其餘四個檔逐字搬自單檔。3.10 `git-freshness.sh` 在 fetch 成功、不是 detached、upstream 是 `origin/<當前分支>`、沒有領先落後、工作樹乾淨、origin 的「工作中」是 `無（已交棒）` 全部成立時多印一行「全綠」，少一項就不印並指向 `mode-a-stop.md`。守門人：`verify_bootstrap.py` 新增「skill 拆分」（檔案齊全、六檔同版本、常態必讀 ≤6,000、入口與 mode-a 必備句、拆分前每一行逐字留存或列入已改寫清單）與「全綠行」（真 Git fixture 逐項打破條件）。`sync_project.py` 會替已有入口的專案補上五個新檔，並列出 skill 目錄裡不認得的檔。**沒有驗證的**：模型會不會真的從入口走到模式檔。）
 > 再前一版 **2026-11-03**（複審 R04／R07–R09：先遮罩再摘要；先 stage 並拒絕文件／檢查器部分 stage；空工具欄與角括號 title 組合修正。R03 同步資格檢查在維護工具，依 README 逐專案 A1–A5。）
 > 2026-11-12 第三次（**刻意不跳版**：`.claude/skills/handoff/` 一個字沒動，所以 `VERSION` 不動；3.10 改了，`source:` 標記跳到 `v2026-11-12.3`）：**3.10 `git-freshness.sh` 在家目錄 `~/.claude/skills/handoff/` 跟專案那份不同時印一行 🟡**（決策書 Q28 (a)）。2026-11-12 在 Claude Code 2.1.321 實測：兩處都有同名 skill 時，Claude Code 載入的是家目錄那份，專案那份被蓋掉；全域副本若舊到沒有「專案有就讀那裡」那句，Claude Code 就照舊程序做，而 Codex 照專案那份做。逐檔比內容（含只有一邊有的檔），相同或沒有全域副本就安靜。3.8 同步規則照實補上這件事。🔴 **代價**同前兩條：各專案要逐專案跑 `sync_project.py` 才拿得到，另行授權。
@@ -396,7 +397,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ## 開工第一件事（任何工具、任何模型都適用）
 
-**先讀 [`.claude/skills/handoff/SKILL.md`](.claude/skills/handoff/SKILL.md)，照 A 模式接棒；A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。** 收工時走 B 模式交棒，中途要拉最新或推安全點走 C 模式。
+**先讀 [`.claude/skills/handoff/SKILL.md`](.claude/skills/handoff/SKILL.md)，照 A 模式接棒；A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。** 使用者要求交棒／收工才走 B 模式；工作告一段落時自行判斷 commit／push，走 C 模式（含拉最新、推安全點與依上下文用量建議交棒），不得自行交棒。
 
 那份檔案是純 Markdown，路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置——**其他工具直接讀它就好**，不要因為資料夾名字而略過。部分工具有自動化輔助（Claude Code 可打 `/handoff`、session 開始會自動檢查 git；Codex 可掛同樣的 hooks；Antigravity 原生讀 `.agents/skills/`），但**有沒有自動化都不改變義務**：沒有被自動提醒，就自己走。
 
@@ -896,10 +897,10 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 ````markdown
 ---
 name: handoff
-description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
+description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when the user asks to wrap up or hand work over, when a chunk of work is done (commit/push at your own discretion via mode C, read context usage and suggest a handoff, but never hand off unless the user asks), when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（入口）
 
@@ -921,12 +922,12 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 |---|---|---|
 | 這個資料夾還沒有這套制度，使用者要求建起來 | **0 建制** | `mode-0.md` |
 | session 剛開始／要續作／換機器／換模型；已交棒後又要改檔 | **A 接棒** | `mode-a.md` |
-| 工作告一段落、要收工或換人接手；準備 `git push` | **B 交棒** | `mode-b.md` |
-| 工作中想拉最新或推一個安全點，還沒要交棒 | **C 同步** | `mode-b.md` 的 C 節 |
+| **使用者要求**交棒／收工／換人接手 | **B 交棒** | `mode-b.md` |
+| 工作告一段落；想拉最新或推一個安全點 | **C 同步** | `mode-b.md` 的 C 節 |
 
 不確定就走 A（不是 0）。**A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。**
 
-- 準備 push 預設先做 B；只有 **A5 開工標記**與 **C 中途安全點**例外，不宣稱交棒、不增加次數。
+- **使用者沒要求就不得自行交棒**：告一段落時自己判斷要不要 commit／push（走 C），依 C 節讀上下文用量、必要時建議交棒；不走 B6／B9、不改 `↗`、不加次數。A5 開工標記與 C 中途安全點都不宣稱交棒。
 - **模式檔與本檔同目錄**：專案有 `.claude/skills/handoff/` 就讀那裡，沒有就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）。找不到模式檔就停下回報，不要憑記憶走程序。
 - `mode-a.md` 只寫正常路徑；異常讀 `mode-a-stop.md`。要改、質疑或想繞過任何一條規則之前先讀 `reasons.md`。摘要與原文衝突時以 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 為準。
 
@@ -968,7 +969,7 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
@@ -1035,7 +1036,7 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場沒有「全綠」行時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
@@ -1215,7 +1216,7 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -1231,6 +1232,8 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
 ---
 
 ## B. 交棒
+
+**只有使用者要求交棒／收工／換人接手才走 B**；agent 自己覺得告一段落時走 C，不得自行交棒（理由見 `reasons.md` 的「交棒由使用者決定」）。
 
 九步，**順序就是執行順序**，做完一步再下一步。
 
@@ -1371,7 +1374,8 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 ## C. 中途同步（還沒要交棒）
 
 - 拉最新：照 A1 判讀表走，異常一樣停。
-- 推安全點：這是中途 push 例外，走 B7 → B8；補齊 HANDOFF 的當下現況與風險，保留本 session 的「工作中」標記，不走 B6 的釋出標記與 B9 的交棒計數。更新後照 B7 驗最終文件，成功後重讀 origin 標記仍是本 session。不得把中途同步說成已交棒。
+- 推安全點：這是中途 push 例外，**時機由 agent 自行判斷**，走 B7 → B8；保留本 session 的「工作中」標記，不走 B6 的釋出標記與 B9 的交棒計數。origin 的「工作中」仍是本 session 時，**不必為這次 push 更新 HANDOFF**；只有做了破壞性或高風險的改動、中途斷線會讓下一棒誤判時，才補一行風險，並照 B7 驗最終文件。成功後重讀 origin 標記仍是本 session。不得把中途同步說成已交棒。
+- **建議交棒（只建議，不動手）**：一段工作做完、回報之前，工具讀得到上下文用量（例如 Claude Code 桌面 App 的 `get_usage`）就讀一次，照實寫出數字；達 70% 在回覆加一行「上下文 <N>%，建議交棒；要交棒請說『交棒』」，然後照常續作或等指示，不自行走 B。同一門檻只提一次，使用者沒要交棒，到 85% 再提一次。讀不到用量就不拿用量當理由，**不要估算**。
 - **換機器前一定要 push，下一台機器一定要先 fetch。**
 - **single writer**：同一時間只有一個 agent／一台機器可以改 `main` 與 `HANDOFF.md`。要換手就先交棒。
 ````
@@ -1379,7 +1383,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -1452,7 +1456,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
@@ -1530,6 +1534,13 @@ python -X utf8 tools/check_docs.py
 
 ---
 
+## 交棒由使用者決定（2026-11-12／Q31）
+
+- **起因**：舊入口把「工作告一段落」與「準備 `git push`」都導向 B，push 提醒 hook 又在 `main` 沒更新 HANDOFF 時擋下並叫 agent 走 B。結果 agent 每做完一段就跑 B1–B9、覆寫整份 HANDOFF 並改成 `↗`；使用者還在同一個 session 對話，token 卻花在重複的收尾上。2026-11-12 使用者指示：commit／push 時機由 agent 自行判斷，可以主動看上下文用量建議交棒，但沒要求就不能交棒。
+- **中途 push 為什麼可以不更新 HANDOFF**：origin 上的「工作中」仍是本 session，下一棒會在 A2.5 被這個標記擋下，不會拿暫時過期的快照當現況；session 中斷沒交棒時，A2.5／A6 的漏交棒補救本來就以 Git 實況為準。破壞性或高風險改動仍要補一行風險，因為那正是斷線後下一棒最容易誤判的地方。
+- **為什麼門檻是 70%／85%、而且一定要讀數字**：Claude Code 桌面 App 的上下文視窗是 1M tokens，97% 才自動壓縮；70% 留得下一次完整的 B。2026-11-10 有 session 憑感覺說「接近 70%」就收工，實際只有 38%。讀不到就不拿用量當理由；同一門檻只提一次，避免提醒本身又變成消耗。
+- **只建議不動手**：交棒會釋出分支、改 session 狀態，是使用者對「這段工作結束了」的判斷，agent 不代為決定。
+
 ## 反例（真的發生過，別重演）
 
 - ❌ 開工沒 fetch，對著落後數十個 commit 的本機 HANDOFF 工作數小時 → 分岔，收拾一整天。
@@ -1558,7 +1569,7 @@ python -X utf8 tools/check_docs.py
 | 規則（檔案 § 段落） | 理由在哪 |
 |---|---|
 | SKILL.md § 適用判斷（先做這一步） | reasons.md § 適用判斷：為什麼沒人提就不建<br>reasons.md § 反例（真的發生過，別重演） |
-| SKILL.md § 選模式，然後讀對應的檔 | reasons.md § 前言原文<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
+| SKILL.md § 選模式，然後讀對應的檔 | reasons.md § 前言原文<br>reasons.md § 交棒由使用者決定（2026-11-12／Q31）<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
 | SKILL.md § 全程禁令 | 沒有寫下理由 |
 | SKILL.md § 必須停下來問使用者（不得自行決定） | reasons.md § 停下來問人時為什麼要改名<br>mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>mode-0.md § 0-1 先確認你在對的資料夾、對的情境 |
 | SKILL.md § session 命名（每則訊息都適用） | reasons.md § session 命名（每輪必做；工具做不到就在回報裡寫「不適用」）<br>reasons.md § 已交棒後續聊（每則新訊息的入口）<br>reasons.md § 其他命名規則<br>reasons.md § 反例（真的發生過，別重演） |
@@ -1577,7 +1588,7 @@ python -X utf8 tools/check_docs.py
 | mode-a-stop.md § A5 回報後才動手（3–5 行） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-a-stop.md § A6 回推補交接（只有在 A1 判定「前一輪漏交棒」時才走） | 本段內文 |
 | mode-b.md § 同一 session 的交棒計數 | 本段內文 |
-| mode-b.md § B. 交棒 | 分節標題 |
+| mode-b.md § B. 交棒 | reasons.md § 交棒由使用者決定（2026-11-12／Q31） |
 | mode-b.md § B1 收斂到安全點 | 沒有寫下理由 |
 | mode-b.md § B2 持久知識落地（今天學到的寫進 repo，不要留在對話裡） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-b.md § B3 服務驗證 | reasons.md § 反例（真的發生過，別重演） |
@@ -1587,7 +1598,7 @@ python -X utf8 tools/check_docs.py
 | mode-b.md § B7 安全提交 | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-b.md § B8 發布 | 本段內文 |
 | mode-b.md § B9 收尾與回報（≤5 行） | 本段內文<br>reasons.md § session 命名（每輪必做；工具做不到就在回報裡寫「不適用」） |
-| mode-b.md § C. 中途同步（還沒要交棒） | reasons.md § 反例（真的發生過，別重演） |
+| mode-b.md § C. 中途同步（還沒要交棒） | reasons.md § 交棒由使用者決定（2026-11-12／Q31）<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-0.md § 0. 建制（這個資料夾還沒有這套制度） | reasons.md § 模式 0 為什麼留在每一份副本裡 |
 | mode-0.md § 0-1 先確認你在對的資料夾、對的情境 | 本段內文<br>reasons.md § 適用判斷：為什麼沒人提就不建<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-0.md § 0-2 取得部署包（沒有它就停） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
@@ -1914,7 +1925,7 @@ exit 0
 # 其他情況（非 push 指令、非殼層工具、feature 分支中途推進度、判斷不了）一律放行——寧可漏擋，不要誤擋。
 # 退出碼：0＝放行；2＝擋下並把 stderr 交給模型（模型會看到訊息並改走交棒程序）。
 # 臨時停用：HANDOFF_HOOK=off
-# source: PROJECT-BOOTSTRAP.md v2026-11-12 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 
 [ "$HANDOFF_HOOK" = "off" ] && exit 0
 
@@ -1945,10 +1956,14 @@ main=${main#origin/}
 git rev-parse --quiet --verify "refs/remotes/origin/$branch" >/dev/null 2>&1 || exit 0
 [ -n "$(git rev-list "origin/$branch..HEAD" 2>/dev/null)" ] || exit 0   # 沒有要推的 commit
 git diff --name-only "origin/$branch..HEAD" 2>/dev/null | grep -qx 'HANDOFF.md' && exit 0
+# 2026-11-12（決策書 Q31）：origin 上的「工作中」不是「無（已交棒）」＝有人開工、還沒交棒，
+# 這次 push 是中途安全點，不必更新 HANDOFF。看不出是哪個 session，別台機器的標記也會放行——
+# 那種情況本該在 A2.5 停下，這支只是提醒，寧可漏擋。沒有這一欄或讀不到 origin 的檔都照舊擋。
+git show "origin/$branch:HANDOFF.md" 2>/dev/null | grep -F '**工作中**' | grep -vqF '無（已交棒）' && exit 0
 # F06：未提交的 staged／unstaged 修改不會隨 push 上傳，不可據此放行。
 
 >&2 echo "[handoff-check] AI push 提醒：目前 $branch 相對 origin 的已提交差異沒有更新 HANDOFF.md（未提交修改不算）。"
->&2 echo "[handoff-check] 收工 push 先跑 handoff skill 的 B 模式並在 B7 驗最終快照；開工標記與中途安全點是例外，分別照 A5／C，不宣稱交棒。"
+>&2 echo "[handoff-check] origin 的「工作中」是「無（已交棒）」：中途 push 先照 A5 寫開工標記再推；使用者要求交棒才走 handoff skill 的 B 模式並在 B7 驗最終快照。"
 >&2 echo "[handoff-check] 若真的只是中途推進度：改推 feature 分支，或本次設 HANDOFF_HOOK=off。"
 exit 2
 ````
@@ -2636,10 +2651,10 @@ if __name__ == '__main__':
 ````markdown
 ---
 name: handoff
-description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when wrapping up or handing work over, when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
+description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when the user asks to wrap up or hand work over, when a chunk of work is done (commit/push at your own discretion via mode C, read context usage and suggest a handoff, but never hand off unless the user asks), when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.2 — 本檔只是指標，改內容請改權威版 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 本檔只是指標，改內容請改權威版 -->
 
 # 本檔只是指標，請讀權威版
 

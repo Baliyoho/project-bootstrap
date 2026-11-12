@@ -1,4 +1,4 @@
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-10.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
@@ -76,6 +76,13 @@
 
 ---
 
+## 交棒由使用者決定（2026-11-12／Q31）
+
+- **起因**：舊入口把「工作告一段落」與「準備 `git push`」都導向 B，push 提醒 hook 又在 `main` 沒更新 HANDOFF 時擋下並叫 agent 走 B。結果 agent 每做完一段就跑 B1–B9、覆寫整份 HANDOFF 並改成 `↗`；使用者還在同一個 session 對話，token 卻花在重複的收尾上。2026-11-12 使用者指示：commit／push 時機由 agent 自行判斷，可以主動看上下文用量建議交棒，但沒要求就不能交棒。
+- **中途 push 為什麼可以不更新 HANDOFF**：origin 上的「工作中」仍是本 session，下一棒會在 A2.5 被這個標記擋下，不會拿暫時過期的快照當現況；session 中斷沒交棒時，A2.5／A6 的漏交棒補救本來就以 Git 實況為準。破壞性或高風險改動仍要補一行風險，因為那正是斷線後下一棒最容易誤判的地方。
+- **為什麼門檻是 70%／85%、而且一定要讀數字**：Claude Code 桌面 App 的上下文視窗是 1M tokens，97% 才自動壓縮；70% 留得下一次完整的 B。2026-11-10 有 session 憑感覺說「接近 70%」就收工，實際只有 38%。讀不到就不拿用量當理由；同一門檻只提一次，避免提醒本身又變成消耗。
+- **只建議不動手**：交棒會釋出分支、改 session 狀態，是使用者對「這段工作結束了」的判斷，agent 不代為決定。
+
 ## 反例（真的發生過，別重演）
 
 - ❌ 開工沒 fetch，對著落後數十個 commit 的本機 HANDOFF 工作數小時 → 分岔，收拾一整天。
@@ -104,7 +111,7 @@
 | 規則（檔案 § 段落） | 理由在哪 |
 |---|---|
 | SKILL.md § 適用判斷（先做這一步） | reasons.md § 適用判斷：為什麼沒人提就不建<br>reasons.md § 反例（真的發生過，別重演） |
-| SKILL.md § 選模式，然後讀對應的檔 | reasons.md § 前言原文<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
+| SKILL.md § 選模式，然後讀對應的檔 | reasons.md § 前言原文<br>reasons.md § 交棒由使用者決定（2026-11-12／Q31）<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
 | SKILL.md § 全程禁令 | 沒有寫下理由 |
 | SKILL.md § 必須停下來問使用者（不得自行決定） | reasons.md § 停下來問人時為什麼要改名<br>mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>mode-0.md § 0-1 先確認你在對的資料夾、對的情境 |
 | SKILL.md § session 命名（每則訊息都適用） | reasons.md § session 命名（每輪必做；工具做不到就在回報裡寫「不適用」）<br>reasons.md § 已交棒後續聊（每則新訊息的入口）<br>reasons.md § 其他命名規則<br>reasons.md § 反例（真的發生過，別重演） |
@@ -123,7 +130,7 @@
 | mode-a-stop.md § A5 回報後才動手（3–5 行） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-a-stop.md § A6 回推補交接（只有在 A1 判定「前一輪漏交棒」時才走） | 本段內文 |
 | mode-b.md § 同一 session 的交棒計數 | 本段內文 |
-| mode-b.md § B. 交棒 | 分節標題 |
+| mode-b.md § B. 交棒 | reasons.md § 交棒由使用者決定（2026-11-12／Q31） |
 | mode-b.md § B1 收斂到安全點 | 沒有寫下理由 |
 | mode-b.md § B2 持久知識落地（今天學到的寫進 repo，不要留在對話裡） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-b.md § B3 服務驗證 | reasons.md § 反例（真的發生過，別重演） |
@@ -133,7 +140,7 @@
 | mode-b.md § B7 安全提交 | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-b.md § B8 發布 | 本段內文 |
 | mode-b.md § B9 收尾與回報（≤5 行） | 本段內文<br>reasons.md § session 命名（每輪必做；工具做不到就在回報裡寫「不適用」） |
-| mode-b.md § C. 中途同步（還沒要交棒） | reasons.md § 反例（真的發生過，別重演） |
+| mode-b.md § C. 中途同步（還沒要交棒） | reasons.md § 交棒由使用者決定（2026-11-12／Q31）<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-0.md § 0. 建制（這個資料夾還沒有這套制度） | reasons.md § 模式 0 為什麼留在每一份副本裡 |
 | mode-0.md § 0-1 先確認你在對的資料夾、對的情境 | 本段內文<br>reasons.md § 適用判斷：為什麼沒人提就不建<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-0.md § 0-2 取得部署包（沒有它就停） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |

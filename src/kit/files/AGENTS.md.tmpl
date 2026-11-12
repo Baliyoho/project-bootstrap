@@ -6,7 +6,7 @@
 
 ## 開工第一件事（任何工具、任何模型都適用）
 
-**先讀 [`.claude/skills/handoff/SKILL.md`](.claude/skills/handoff/SKILL.md)，照 A 模式接棒；A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。** 收工時走 B 模式交棒，中途要拉最新或推安全點走 C 模式。
+**先讀 [`.claude/skills/handoff/SKILL.md`](.claude/skills/handoff/SKILL.md)，照 A 模式接棒；A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。** 使用者要求交棒／收工才走 B 模式；工作告一段落時自行判斷 commit／push，走 C 模式（含拉最新、推安全點與依上下文用量建議交棒），不得自行交棒。
 
 那份檔案是純 Markdown，路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置——**其他工具直接讀它就好**，不要因為資料夾名字而略過。部分工具有自動化輔助（Claude Code 可打 `/handoff`、session 開始會自動檢查 git；Codex 可掛同樣的 hooks；Antigravity 原生讀 `.agents/skills/`），但**有沒有自動化都不改變義務**：沒有被自動提醒，就自己走。
 
