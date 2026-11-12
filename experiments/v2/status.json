@@ -1437,10 +1437,22 @@
         {
           "path": "tests/test_capabilities_repo.py",
           "scope": "本 repo：部署包的跨工具表由矩陣生成且逐位元組相同、改矩陣沒重生會不同、目前沒有任何 surface 是 strict ready、Antigravity 各 surface 分開判"
+        },
+        {
+          "path": "src/project_bootstrap/selftest.py",
+          "scope": "2026-11-12：版本偵測（surface 自己的 --version 或 App 的 Info.plist，找不到就是 None，不猜）與專案的安裝自測（指示檔、skill、SessionStart 接線與它指向的檔）；矩陣讀專案已安裝的包（manifest 裡、隨簽章），舊包沒有矩陣就停；只看檔案，不跑 hook、不問工具本身"
+        },
+        {
+          "path": "tests/test_selftest.py",
+          "scope": "合成：版本偵測失敗、逾時、非零結束、非數字版本都回 None；Antigravity App 以主版號分 IDE／2.0；接線自測各種壞接線與缺檔；接線自測沒過讓能力變成沒有、通過不升級、不讓 strict ready；包帶矩陣進 digest、壞矩陣建不出包也過不了檢查、舊包與壞包被拒；mutants.json 30 個刪改全部 killed"
+        },
+        {
+          "path": "tests/test_selftest_repo.py",
+          "scope": "本 repo：真的包帶的矩陣等於來源；用包鋪的專案在六個有接線的 surface 自測全過；本 repo 自己（已宣告例外：repo-*.sh、沒有專案 skill）判成 hooks 與 skill 沒接"
         }
       ],
-      "unknown": "Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收",
-      "next": "分工具／surface／版本報支援與缺口，缺攔截就不能顯示 strict ready"
+      "unknown": "Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收。安裝自測只看檔案；工具是否真的讀指示檔、跑 hook 的啟動自測要模型呼叫，未做；Codex 的專案信任不在檔案裡，查不到",
+      "next": "取得授權後做每個 surface 的啟動自測（真的觸發 hook 並讀回）；受控寫入閘要到 P3，之前沒有 strict ready"
     },
     {
       "id": "F48",

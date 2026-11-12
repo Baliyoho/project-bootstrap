@@ -33,6 +33,7 @@ import shutil
 import stat
 import tempfile
 
+from project_bootstrap import capabilities
 from project_bootstrap.contracts import Denied
 from project_bootstrap.release import build_manifest, manifest_digest
 
@@ -91,14 +92,22 @@ def _write(root, relative, data):
     path.chmod(0o755 if relative.endswith(EXECUTABLE_SUFFIX) else 0o644)
 
 
-def build(prose, files, owners, kit_text):
+def build(prose, files, owners, kit_text, matrix=None):
     """Write a debug package into a fresh temporary folder; return (folder, manifest).
 
     ``kit_text`` is the built PROJECT-BOOTSTRAP.md, recorded by digest so a
     package can be traced to the document generated from the same source.
+    ``matrix`` is the capability matrix (``src/kit/capabilities.json``). It goes
+    into the manifest, so the manifest digest, and with it the release
+    signature, covers it; it is not a file deployed into projects.
     """
     version = kit_version(prose)
     data = contents(files, owners)
+    if matrix is not None:
+        try:
+            capabilities.validate(matrix)
+        except capabilities.MatrixError:
+            raise Denied('invalid-capabilities') from None
     folder = tempfile.mkdtemp(prefix='bootstrap-package-')
     try:
         os.chmod(folder, 0o755)
@@ -108,6 +117,8 @@ def build(prose, files, owners, kit_text):
         manifest['owners'] = {path: dict(owners[path]) for path in sorted(data)}
         manifest['executable'] = sorted(p for p in data if p.endswith(EXECUTABLE_SUFFIX))
         manifest['kit'] = hashlib.sha256(kit_text.encode('utf-8')).hexdigest()
+        if matrix is not None:
+            manifest['capabilities'] = matrix
         _write(folder, MANIFEST, _dump(manifest))
     except BaseException:
         shutil.rmtree(folder, ignore_errors=True)
@@ -139,6 +150,11 @@ def check(folder):
                     or entry['owner'] not in OWNERS
                     or entry['update'] not in OWNERS[entry['owner']]):
                 problems.append('invalid-owner:' + path)
+    if 'capabilities' in manifest:
+        try:
+            capabilities.validate(manifest['capabilities'])
+        except capabilities.MatrixError:
+            problems.append('capabilities-invalid')
     present = set()
     for path in sorted(root.rglob('*')):
         relative = path.relative_to(root).as_posix()

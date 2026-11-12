@@ -226,16 +226,28 @@ def _probe(probe):
         return 'error'
 
 
-def report(data, surface, version=None, probes=None):
+def _check(entry):
+    _need(isinstance(entry, dict) and set(entry) == {'ok', 'detail'}
+          and (entry['ok'] is True or entry['ok'] is False) and isinstance(entry['detail'], str),
+          'a check must be {ok: true|false, detail: text}')
+    return 'pass' if entry['ok'] else 'fail'
+
+
+def report(data, surface, version=None, probes=None, checks=None):
     """Capability rows for one surface at one version.
 
-    ``probes``: {capability: callable() -> bool}, the install/startup self-test.
+    ``probes``: {capability: callable() -> bool}, the runtime self-test.
     A probe that returns anything but ``True`` or raises makes the capability
     missing for this run, whatever the matrix says.
+
+    ``checks``: {capability: {'ok': bool, 'detail': text}}, the install
+    self-test of one project (``selftest.install_checks``). It only looks at
+    files, so a failed check makes the capability missing in this project, but
+    a passed one never upgrades it: the tool calling the wiring is not shown.
     """
     _need(surface in data['surfaces'], 'unknown surface: %r' % (surface,))
-    probes = probes or {}
-    unknown = sorted(set(probes) - set(data['capabilities']))
+    probes, checks = probes or {}, checks or {}
+    unknown = sorted((set(probes) | set(checks)) - set(data['capabilities']))
     _need(not unknown, 'probes for unknown capabilities: ' + ', '.join(unknown))
     cells = {}
     for cell in data['cells']:
@@ -245,7 +257,10 @@ def report(data, surface, version=None, probes=None):
     for name, cap in data['capabilities'].items():
         declared, why = _declared(cells.get(name), version)
         live = _probe(probes[name]) if name in probes else 'not-run'
-        if live in ('fail', 'error'):
+        wired = _check(checks[name]) if name in checks else 'not-run'
+        if wired == 'fail':
+            state, why = 'missing', '本專案接線自測沒通過：' + checks[name]['detail']
+        elif live in ('fail', 'error'):
             state, why = 'missing', '本次自測%s' % ('沒通過' if live == 'fail' else '出錯')
         elif live == 'pass':
             state, why = 'supported', '本次自測通過'
@@ -258,7 +273,7 @@ def report(data, surface, version=None, probes=None):
             if declared == 'supported':
                 why = '必要能力只認本次自測；' + why
         row = {'capability': name, 'label': cap['label'], 'strict': cap['strict'],
-               'state': state, 'declared': declared, 'probe': live, 'why': why}
+               'state': state, 'declared': declared, 'probe': live, 'check': wired, 'why': why}
         if cells.get(name) is not None:
             row['cell'] = cells[name]['id']
         if state != 'supported':
@@ -271,6 +286,13 @@ def report(data, surface, version=None, probes=None):
             'version': version, 'strict_ready': strict_ready,
             'gaps': [row['capability'] for row in rows if row['state'] != 'supported'],
             'rows': rows}
+
+
+def from_manifest(manifest):
+    """The matrix a package carries in its manifest (signed with it); never the source copy."""
+    _need(isinstance(manifest, dict) and 'capabilities' in manifest,
+          'the package carries no capability matrix (built before the matrix went into packages)')
+    return validate(manifest['capabilities'])
 
 
 def read_matrix(path=MATRIX):

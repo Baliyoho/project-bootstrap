@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / 'src'))
 sys.path.insert(0, str(ROOT / 'tools'))
 
 import build_kit  # noqa: E402
-from project_bootstrap import package  # noqa: E402
+from project_bootstrap import capabilities, package  # noqa: E402
 from project_bootstrap.contracts import Denied  # noqa: E402
 
 OWNERS = ROOT / 'src' / 'kit' / 'owners.json'
@@ -34,7 +34,8 @@ def build_once():
     prose, files = build_kit.load_source()
     kit_text = build_kit.build(prose, files)
     owners = package.load_owners(build_kit.read_lf(OWNERS))
-    return package.build(prose, files, owners, kit_text)
+    matrix = capabilities.load(build_kit.read_lf(capabilities.MATRIX))
+    return package.build(prose, files, owners, kit_text, matrix)
 
 
 def main(argv=None):
@@ -65,7 +66,7 @@ def main(argv=None):
             target, manifest['version'], manifest['kind'], len(manifest['components']),
             package.digest(manifest)))
         return 0
-    except (build_kit.KitError, Denied, OSError) as exc:
+    except (build_kit.KitError, capabilities.MatrixError, Denied, OSError) as exc:
         print('build_package: ' + str(exc))
         return 2
     finally:

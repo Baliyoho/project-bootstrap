@@ -436,7 +436,24 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 
 `test_capabilities.py` 15 個合成測試；`mutants.json` 新群組 33 個刪改全部 killed（寫測試時拿掉兩個互相涵蓋的守門：tested 格不能帶 `since` 已由「只有 docs 格能帶 since」涵蓋，design 格不能有文字已由「每格文字剛好出現一次」涵蓋）。`test_capabilities_repo.py` 5 個測試：`build` 拒絕沒展開的指令、壞矩陣讓部署包生不出來，以及對本 repo 的部署包由矩陣生成且相同、改矩陣沒重生會不同、目前沒有 strict ready、Antigravity 四個 surface 分開判。
 
-沒做的：真實工具上的安裝／啟動自測（probe 目前只有測試替身）；版本怎麼偵測；矩陣還不在正式包裡，客戶端讀不到；F14 的共用 CLI 契約與「相同案例每個 surface 等價」；`PreToolUse` 能擋與受控寫入閘的差別只寫在 `strict` 上，沒有另列能力。
+沒做的：真實工具上的安裝／啟動自測（probe 目前只有測試替身）；版本怎麼偵測；矩陣還不在正式包裡，客戶端讀不到；F14 的共用 CLI 契約與「相同案例每個 surface 等價」；`PreToolUse` 能擋與受控寫入閘的差別只寫在 `strict` 上，沒有另列能力。（前三項 2026-11-12 補了離線做得到的部分，見下一段。）
+
+## P2 第 4 片補缺口：版本偵測、安裝自測、矩陣進包（2026-11-12）
+
+**矩陣進包**：`tools/build_package.py` 把 `src/kit/capabilities.json` 放進 manifest 的 `capabilities` 欄。manifest digest 涵蓋整份 manifest，所以矩陣跟著發布簽章走，不需要為它另開一種「不部署的檔」歸屬，也不會被鋪進專案。壞矩陣建不出包（`invalid-capabilities`），快取裡的包矩陣被改就過不了 `package.check`（`capabilities-invalid`）或 digest 對不上。`capabilities.from_manifest` 只從包讀，沒有矩陣的舊包（含 `beta` epoch 1）直接停，不退回讀來源那份。包的 digest 因此改變；`PROJECT-BOOTSTRAP.md` 不變，`VERSION` 不跳。
+
+**`selftest.py`**：
+
+- 版本偵測：CLI surface 跑自己的 `--version`（`claude`／`codex`／`agy`；Claude Code 找不到 PATH 上的就用執行中那個的執行檔），App surface 讀 `/Applications/<App>/Contents/Info.plist`。Antigravity IDE（1.x）與 2.0（2.x）都叫 `Antigravity.app`，只能以主版號分，輸出會寫明來源。逾時、非零結束、沒有數字版本、讀不到都回 `None`；`report` 拿到 `None` 就不用任何實測格。不呼叫模型、不連網。
+- 安裝自測（只看檔案）：`reads-agents-md` 要 `AGENTS.md` 在，Claude Code 有 `CLAUDE.md` 時要有單獨一行 `@AGENTS.md`，Antigravity 有 `GEMINI.md` 時要提到 `AGENTS.md`；`loads-skill` 找專案或該工具家目錄的 handoff skill（Antigravity 只認專案的 `.agents/skills/`）；`hooks` 要接線檔的 SessionStart 接到 `git-freshness.sh` 且檔案在，Antigravity 另要經可執行的 `ag-wrap.sh`。
+- `capabilities.report` 多一個 `checks` 參數：自測沒過讓能力在這個專案變成 `missing`，蓋過矩陣與執行期 probe；通過**不升級**（檔案在不代表工具真的會呼叫），strict 能力仍只認執行期 probe。
+- 命令列：`PYTHONPATH=src python3 -X utf8 -m project_bootstrap.selftest <surface> --project DIR [--cache DIR] [--version V]`；有 `--cache` 就讀專案指標指向的已安裝包，沒有就讀來源並在輸出標明。
+
+`test_selftest.py` 18 個合成測試；`mutants.json` 新群組 30 個刪改全部 killed（首跑存活 4 個：Antigravity 非數字版本會當掉、`@AGENTS.md` 只出現在句中、包內矩陣本身壞掉沒測，三個已補測試；另一個是變異寫在錯誤訊息而不是條件上，已改寫）。`capabilities` 群組有一條因 `if` 改成 `elif` 更新原文，33 個仍全部 killed。`test_selftest_repo.py` 3 個測試：真的包帶的矩陣等於來源，用包鋪的專案在六個有接線的 surface 自測全過，本 repo 自己（已宣告的例外）判成 hooks 與 skill 沒接。
+
+本機實跑（2026-11-12）：Claude Code 偵測到 `2.1.321`，矩陣只有文件根據；Antigravity.app `2.31.0` 歸到 2.0，矩陣只實測過 `2.28.2`，不代用；這台 PATH 上沒有 `codex`／`agy`，版本是 `None`。
+
+沒做的：啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫，要另行授權；Codex 的專案信任不在專案檔案裡，查不到；Windows 的 `commandWindows`／`.cmd` 接線沒查；F14 共用 CLI 契約與等價案例。
 
 ## P2 第 5 片：遷移器（2026-11-11）
 

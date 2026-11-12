@@ -4826,8 +4826,8 @@
     },
     {
      "file": "src/project_bootstrap/capabilities.py",
-     "old": "        if live in ('fail', 'error'):\n",
-     "new": "        if live == 'error':\n"
+     "old": "        elif live in ('fail', 'error'):\n",
+     "new": "        elif live == 'error':\n"
     },
     {
      "file": "src/project_bootstrap/capabilities.py",
@@ -5080,6 +5080,163 @@
      "file": "src/project_bootstrap/migrate.py",
      "old": "            'manual_prompts': totals['manual'],",
      "new": "            'manual_prompts': 0,"
+    }
+   ]
+  },
+  {
+   "tests": [
+    "tests.test_selftest"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    if done.returncode != 0:\n        return None\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "            if version:\n                return",
+     "new": "            if True:\n                return"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if surface == 'claude-code' and environ.get('CLAUDE_CODE_EXECPATH'):",
+     "new": "        if environ.get('CLAUDE_CODE_EXECPATH'):"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if majors is not None and int(version.split('.')[0]) not in majors:",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if version is None:\n            return {'version': None, 'source': '%s 沒有版本字串' % bundle}\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    except (OSError, plistlib.InvalidFileException, ValueError):",
+     "new": "    except OSError:"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    if not (project / 'AGENTS.md').is_file():\n        return _fail('沒有 AGENTS.md')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if text is None or '@AGENTS.md' not in [line.strip() for line in text.split('\\n')]:",
+     "new": "        if text is None or '@AGENTS.md' not in text:"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if text is None or 'AGENTS.md' not in text:\n            return _fail('GEMINI.md",
+     "new": "        if False:\n            return _fail('GEMINI.md"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if path.is_file() and (_read(path) or '').strip():",
+     "new": "        if path.is_file():"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        groups = [v for v in data.values() if isinstance(v, dict) and v.get('enabled') is True]",
+     "new": "        groups = [v for v in data.values() if isinstance(v, dict)]"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "            if e.get('type') == 'command' and isinstance(e.get('command'), str)]",
+     "new": "            if isinstance(e.get('command'), str)]"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    if not wired:\n",
+     "new": "    if not commands:\n"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    if not (project / FRESHNESS).is_file():\n        return _fail('接線指向的 %s 不在' % FRESHNESS)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if not any(c.split()[0] == '../' + AG_WRAP for c in wired):\n            return _fail(wiring + ' 的 SessionStart 沒有經 ' + AG_WRAP)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if not _runnable(project / AG_WRAP):",
+     "new": "        if not (project / AG_WRAP).is_file():"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    if surface.startswith('antigravity-'):\n        # Antigravity runs",
+     "new": "    if True:\n        # Antigravity runs"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    problems = package.check(folder)\n    if problems:\n        raise Denied('package-damaged:' + ','.join(problems))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    if package.digest(manifest) != record['installed']:\n        raise Denied('package-mismatch')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    unused = sorted(set(checks) - set(matrix['capabilities']))",
+     "new": "    unused = []"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    found = {'version': version, 'source': '呼叫端指定'} if version else detect(surface)",
+     "new": "    found = {'version': version, 'source': '呼叫端指定'}"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "        if wired == 'fail':\n            state, why = 'missing', '本專案接線自測沒通過：' + checks[name]['detail']\n        elif live in ('fail', 'error'):",
+     "new": "        if live in ('fail', 'error'):"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    unknown = sorted((set(probes) | set(checks)) - set(data['capabilities']))",
+     "new": "    unknown = sorted(set(probes) - set(data['capabilities']))"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "          and (entry['ok'] is True or entry['ok'] is False) and isinstance(entry['detail'], str),",
+     "new": "          and isinstance(entry['detail'], str),"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    _need(isinstance(entry, dict) and set(entry) == {'ok', 'detail'}\n",
+     "new": "    _need(isinstance(entry, dict)\n"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    _need(isinstance(manifest, dict) and 'capabilities' in manifest,",
+     "new": "    _need(isinstance(manifest, dict),"
+    },
+    {
+     "file": "src/project_bootstrap/capabilities.py",
+     "old": "    return validate(manifest['capabilities'])\n",
+     "new": "    return manifest.get('capabilities')\n"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if matrix is not None:\n        try:\n            capabilities.validate(matrix)\n        except capabilities.MatrixError:\n            raise Denied('invalid-capabilities') from None\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    if 'capabilities' in manifest:\n        try:\n            capabilities.validate(manifest['capabilities'])\n        except capabilities.MatrixError:\n            problems.append('capabilities-invalid')\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "        if matrix is not None:\n            manifest['capabilities'] = matrix\n",
+     "new": ""
     }
    ]
   }

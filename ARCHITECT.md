@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-12（決策書 Q26 (a)）：`package.py` 新增 `copy_digest`（CRLF 當 LF），寫入檢查、遷移器與 F39 盤點用它比專案副本，包本身仍逐位元組比；遷移器拿掉 `eol` 狀態。部署包與 `VERSION` 未動。
+> 最後更新：2026-11-12（P2 第 4 片補缺口：版本偵測、安裝自測、矩陣進包）：`tools/build_package.py` 把 `src/kit/capabilities.json` 放進包的 manifest（隨 digest 與簽章，不部署進專案），`package.check` 一併驗它；新增 `src/project_bootstrap/selftest.py` 與兩份測試，讀專案已安裝的包的矩陣、偵測 surface 版本、只看檔案做安裝自測。包的 digest 因此改變，部署包 `PROJECT-BOOTSTRAP.md` 與 `VERSION` 不變；`beta` epoch 1 是之前發的，沒有矩陣。
+
+> 2026-11-12 稍早（決策書 Q26 (a)）：`package.py` 新增 `copy_digest`（CRLF 當 LF），寫入檢查、遷移器與 F39 盤點用它比專案副本，包本身仍逐位元組比；遷移器拿掉 `eol` 狀態。部署包與 `VERSION` 未動。
 
 > 2026-11-11（P2 第 5 片遷移器，決策書 Q25）：`tools/sync_project.py` 的檔案清單改由 `src/kit/owners.json` 算出，同步行為不變，`owners.json` 出現同步器不會處理的混合檔就拒絕啟動；新增 `src/project_bootstrap/migrate.py`（遷移判斷與報告）、`tools/migrate_project.py`（預演只讀、寫入一次一個專案並寫指標）與兩份測試。不部署、不同步，部署包與 `VERSION` 未動。
 
