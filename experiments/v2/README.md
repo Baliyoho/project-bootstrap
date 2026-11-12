@@ -447,13 +447,14 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 - 版本偵測：CLI surface 跑自己的 `--version`（`claude`／`codex`／`agy`；Claude Code 找不到 PATH 上的就用執行中那個的執行檔），App surface 讀 `/Applications/<App>/Contents/Info.plist`。Antigravity IDE（1.x）與 2.0（2.x）都叫 `Antigravity.app`，只能以主版號分，輸出會寫明來源。逾時、非零結束、沒有數字版本、讀不到都回 `None`；`report` 拿到 `None` 就不用任何實測格。不呼叫模型、不連網。
 - 安裝自測（只看檔案）：`reads-agents-md` 要 `AGENTS.md` 在，Claude Code 有 `CLAUDE.md` 時要有單獨一行 `@AGENTS.md`，Antigravity 有 `GEMINI.md` 時要提到 `AGENTS.md`；`loads-skill` 找專案或該工具家目錄的 handoff skill（Antigravity 只認專案的 `.agents/skills/`）；`hooks` 要接線檔的 SessionStart 接到 `git-freshness.sh` 且檔案在，Antigravity 另要經可執行的 `ag-wrap.sh`。
 - `capabilities.report` 多一個 `checks` 參數：自測沒過讓能力在這個專案變成 `missing`，蓋過矩陣與執行期 probe；通過**不升級**（檔案在不代表工具真的會呼叫），strict 能力仍只認執行期 probe。
-- 命令列：`PYTHONPATH=src python3 -X utf8 -m project_bootstrap.selftest <surface> --project DIR [--cache DIR] [--version V]`；有 `--cache` 就讀專案指標指向的已安裝包，沒有就讀來源並在輸出標明。
+- 兩個平台（同日稍後補）：同一個專案會在 Windows 與 Mac 之間交接，所以 hooks 的自測可以指定平台，預設是本機。Windows 那條要 Codex 的 SessionStart 有經 `codex-hook.cmd` 跑 `git-freshness.sh` 的 `commandWindows`、啟動器在；Antigravity 要有 `.\ag-hook.cmd git-freshness.sh` 這條 handler，`.agents/ag-hook.cmd` 與 `ag-wrap.sh` 都在（Windows 經 Git Bash 跑，不看執行位元）；Claude Code 兩邊是同一條命令。Windows 那條壞了只算 Windows 的缺口，不會讓 Mac 上的 hooks 被判成沒有。只看檔案，`.cmd` 本身在 Windows 能不能跑仍沒驗。
+- 命令列：`PYTHONPATH=src python3 -X utf8 -m project_bootstrap.selftest <surface> --project DIR [--cache DIR] [--version V] [--os posix|windows]`；有 `--cache` 就讀專案指標指向的已安裝包，沒有就讀來源並在輸出標明。
 
-`test_selftest.py` 18 個合成測試；`mutants.json` 新群組 30 個刪改全部 killed（首跑存活 4 個：Antigravity 非數字版本會當掉、`@AGENTS.md` 只出現在句中、包內矩陣本身壞掉沒測，三個已補測試；另一個是變異寫在錯誤訊息而不是條件上，已改寫）。`capabilities` 群組有一條因 `if` 改成 `elif` 更新原文，33 個仍全部 killed。`test_selftest_repo.py` 3 個測試：真的包帶的矩陣等於來源，用包鋪的專案在六個有接線的 surface 自測全過，本 repo 自己（已宣告的例外）判成 hooks 與 skill 沒接。
+`test_selftest.py` 23 個合成測試；`mutants.json` 新群組 40 個刪改全部 killed（Windows 那條另加 10 個，首跑存活一個：`run` 沒把平台傳給自測時，兩邊都接好的專案分不出來，已改成拿掉 Windows 啟動器；第一批首跑存活 4 個：Antigravity 非數字版本會當掉、`@AGENTS.md` 只出現在句中、包內矩陣本身壞掉沒測，三個已補測試；另一個是變異寫在錯誤訊息而不是條件上，已改寫）。`capabilities` 群組有一條因 `if` 改成 `elif` 更新原文，33 個仍全部 killed。`test_selftest_repo.py` 3 個測試：真的包帶的矩陣等於來源，用包鋪的專案在六個有接線的 surface、兩個平台自測全過，本 repo 自己（已宣告的例外）判成 hooks 與 skill 沒接。
 
 本機實跑（2026-11-12）：Claude Code 偵測到 `2.1.321`，矩陣只有文件根據；Antigravity.app `2.31.0` 歸到 2.0，矩陣只實測過 `2.28.2`，不代用；這台 PATH 上沒有 `codex`／`agy`，版本是 `None`。
 
-沒做的：啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫，要另行授權；Codex 的專案信任不在專案檔案裡，查不到；Windows 的 `commandWindows`／`.cmd` 接線沒查。F14 見下一段。
+沒做的：啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫，要另行授權；Codex 的專案信任不在專案檔案裡，查不到；Windows 的 `.cmd` 在 Windows 上真的跑不跑（接線檔與檔案在不在已查）。F14 見下一段。
 
 ## F14：開場檢查的共用契約與薄 adapter（2026-11-12）
 

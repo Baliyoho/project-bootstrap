@@ -55,6 +55,10 @@ WIRING = {'claude-code': '.claude/settings.json', 'codex-cli': '.codex/hooks.jso
           'antigravity-2': '.agents/hooks.json', 'antigravity-ide': '.agents/hooks.json'}
 FRESHNESS = '.claude/hooks/git-freshness.sh'
 AG_WRAP = '.claude/hooks/ag-wrap.sh'
+AG_SHIM = '.agents/ag-hook.cmd'
+CODEX_SHIM = '.claude/hooks/codex-hook.cmd'
+PLATFORMS = ('posix', 'windows')
+THIS_PLATFORM = 'windows' if os.name == 'nt' else 'posix'
 
 
 def _first_version(text):
@@ -143,19 +147,25 @@ def _skill(surface, project, home):
     return _fail('找不到 handoff skill：' + '、'.join(tried))
 
 
-def session_commands(surface, data):
-    """POSIX commands wired to SessionStart, or None when the shape is wrong."""
+def session_entries(surface, data):
+    """The handler objects wired to SessionStart, or None when the shape is wrong."""
     if not isinstance(data, dict):
         return None
     if surface.startswith('antigravity-'):
         groups = [v for v in data.values() if isinstance(v, dict) and v.get('enabled') is True]
-        entries = [e for g in groups for e in (g.get('SessionStart') or []) if isinstance(e, dict)]
-    else:
-        hooks = data.get('hooks')
-        if not isinstance(hooks, dict):
-            return None
-        entries = [h for g in (hooks.get('SessionStart') or []) if isinstance(g, dict)
-                   for h in (g.get('hooks') or []) if isinstance(h, dict)]
+        return [e for g in groups for e in (g.get('SessionStart') or []) if isinstance(e, dict)]
+    hooks = data.get('hooks')
+    if not isinstance(hooks, dict):
+        return None
+    return [h for g in (hooks.get('SessionStart') or []) if isinstance(g, dict)
+            for h in (g.get('hooks') or []) if isinstance(h, dict)]
+
+
+def session_commands(surface, data):
+    """POSIX commands wired to SessionStart, or None when the shape is wrong."""
+    entries = session_entries(surface, data)
+    if entries is None:
+        return None
     return [e['command'] for e in entries
             if e.get('type') == 'command' and isinstance(e.get('command'), str)]
 
@@ -164,7 +174,26 @@ def _runnable(path):
     return path.is_file() and os.access(path, os.X_OK)
 
 
-def _hooks(surface, project):
+def _windows(surface, project, wiring, data):
+    """The Windows handler: Codex's commandWindows via codex-hook.cmd, Antigravity's .\\ag-hook.cmd (3.17, 3.19)."""
+    wired = [e for e in session_entries(surface, data)
+             if e.get('type') == 'command' and 'git-freshness.sh' in str(e.get('command', ''))]
+    if surface.startswith('codex-'):
+        if not any('codex-hook.cmd' in str(e.get('commandWindows', ''))
+                   and 'git-freshness.sh' in str(e.get('commandWindows', '')) for e in wired):
+            return _fail(wiring + ' 的 SessionStart 沒有經 codex-hook.cmd 的 commandWindows')
+        if not (project / CODEX_SHIM).is_file():
+            return _fail('%s 不在' % CODEX_SHIM)
+    elif surface.startswith('antigravity-'):
+        if not any(str(e['command']).split()[0] == '.\\ag-hook.cmd' for e in wired):
+            return _fail(wiring + ' 的 SessionStart 沒有 Windows 的 ag-hook.cmd handler')
+        for needed in (AG_SHIM, AG_WRAP):
+            if not (project / needed).is_file():
+                return _fail('%s 不在' % needed)
+    return _ok('%s 的 SessionStart 在 Windows 也接到 %s，檔案都在' % (wiring, FRESHNESS))
+
+
+def _hooks(surface, project, platform='posix'):
     wiring = WIRING[surface]
     text = _read(project / wiring)
     if text is None:
@@ -181,6 +210,8 @@ def _hooks(surface, project):
         return _fail(wiring + ' 的 SessionStart 沒有接 git-freshness.sh')
     if not (project / FRESHNESS).is_file():
         return _fail('接線指向的 %s 不在' % FRESHNESS)
+    if platform == 'windows':
+        return _windows(surface, project, wiring, data)
     if surface.startswith('antigravity-'):
         # Antigravity runs the command itself from .agents/, so the wrapper must be executable.
         if not any(c.split()[0] == '../' + AG_WRAP for c in wired):
@@ -190,15 +221,23 @@ def _hooks(surface, project):
     return _ok('%s 的 SessionStart 接到 %s，檔案都在' % (wiring, FRESHNESS))
 
 
-def install_checks(surface, project, home=None):
-    """{capability: {'ok', 'detail'}} for what one project's files can show."""
+def install_checks(surface, project, home=None, platform=None):
+    """{capability: {'ok', 'detail'}} for what one project's files can show.
+
+    ``platform`` is ``posix`` or ``windows`` (default: this machine). A project
+    moves between machines, so the other side can be checked from here; the
+    result is about that platform's handler only.
+    """
     project = Path(project)
     home = Path(home) if home is not None else Path.home()
+    platform = platform or THIS_PLATFORM
+    if platform not in PLATFORMS:
+        raise ValueError('platform must be one of %s' % (PLATFORMS,))
     if surface not in SKILLS:
         return {}
     return {'reads-agents-md': _instructions(surface, project),
             'loads-skill': _skill(surface, project, home),
-            'hooks': _hooks(surface, project)}
+            'hooks': _hooks(surface, project, platform)}
 
 
 def installed_matrix(project, cache):
@@ -225,14 +264,14 @@ def installed_matrix(project, cache):
         raise Denied('package-without-capabilities') from None
 
 
-def run(surface, project, cache=None, version=None, home=None, detect=detect_version):
+def run(surface, project, cache=None, version=None, home=None, detect=detect_version, platform=None):
     if cache is None:
         matrix, origin = capabilities.read_matrix(), 'source（src/kit/capabilities.json，不是已安裝的包）'
     else:
         matrix, digest = installed_matrix(project, cache)
         origin = 'installed ' + digest
     found = {'version': version, 'source': '呼叫端指定'} if version else detect(surface)
-    checks = install_checks(surface, project, home)
+    checks = install_checks(surface, project, home, platform)
     unused = sorted(set(checks) - set(matrix['capabilities']))
     result = capabilities.report(matrix, surface, found['version'],
                                  checks={k: v for k, v in checks.items() if k not in unused})
@@ -240,6 +279,7 @@ def run(surface, project, cache=None, version=None, home=None, detect=detect_ver
         result['checks_without_capability'] = unused
     result['version_source'] = found['source']
     result['matrix'] = origin
+    result['platform'] = platform or THIS_PLATFORM
     result['not_tested'] = '沒有跑 hook、沒有問工具本身（啟動自測要模型呼叫，另行授權）'
     return result
 
@@ -250,9 +290,10 @@ def main(argv=None):
     parser.add_argument('--project', default='.')
     parser.add_argument('--cache', help='package cache; the matrix then comes from the installed package')
     parser.add_argument('--version', help='use this version instead of detecting one')
+    parser.add_argument('--os', choices=PLATFORMS, help='check that platform\'s hook handler (default: this machine)')
     args = parser.parse_args(argv)
     try:
-        result = run(args.surface, args.project, args.cache, args.version)
+        result = run(args.surface, args.project, args.cache, args.version, platform=args.os)
     except (capabilities.MatrixError, Denied, OSError) as exc:
         print('selftest: %s' % exc, file=sys.stderr)
         return 2

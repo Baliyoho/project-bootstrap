@@ -1456,11 +1456,11 @@
         },
         {
           "path": "tests/test_selftest.py",
-          "scope": "合成：版本偵測失敗、逾時、非零結束、非數字版本都回 None；Antigravity App 以主版號分 IDE／2.0；接線自測各種壞接線與缺檔；接線自測沒過讓能力變成沒有、通過不升級、不讓 strict ready；包帶矩陣進 digest、壞矩陣建不出包也過不了檢查、舊包與壞包被拒；mutants.json 30 個刪改全部 killed"
+          "scope": "合成：版本偵測失敗、逾時、非零結束、非數字版本都回 None；Antigravity App 以主版號分 IDE／2.0；接線自測各種壞接線與缺檔；接線自測沒過讓能力變成沒有、通過不升級、不讓 strict ready；包帶矩陣進 digest、壞矩陣建不出包也過不了檢查、舊包與壞包被拒；Windows 那條（Codex commandWindows 經 codex-hook.cmd、Antigravity 的 ag-hook.cmd handler）壞了只算 Windows 的缺口；mutants.json 40 個刪改全部 killed"
         },
         {
           "path": "tests/test_selftest_repo.py",
-          "scope": "本 repo：真的包帶的矩陣等於來源；用包鋪的專案在六個有接線的 surface 自測全過；本 repo 自己（已宣告例外：repo-*.sh、沒有專案 skill）判成 hooks 與 skill 沒接"
+          "scope": "本 repo：真的包帶的矩陣等於來源；用包鋪的專案在六個有接線的 surface、posix 與 windows 兩個平台自測全過；本 repo 自己（已宣告例外：repo-*.sh、沒有專案 skill）判成 hooks 與 skill 沒接"
         }
       ],
       "unknown": "Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收。安裝自測只看檔案；工具是否真的讀指示檔、跑 hook 的啟動自測要模型呼叫，未做；Codex 的專案信任不在檔案裡，查不到",

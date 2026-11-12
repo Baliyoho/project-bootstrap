@@ -5237,6 +5237,56 @@
      "file": "src/project_bootstrap/package.py",
      "old": "        if matrix is not None:\n            manifest['capabilities'] = matrix\n",
      "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    if platform == 'windows':\n        return _windows(surface, project, wiring, data)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if not any('codex-hook.cmd' in str(e.get('commandWindows', ''))\n                   and 'git-freshness.sh' in str(e.get('commandWindows', '')) for e in wired):",
+     "new": "        if not any('codex-hook.cmd' in str(e.get('commandWindows', '')) for e in wired):"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if not (project / CODEX_SHIM).is_file():\n            return _fail('%s 不在' % CODEX_SHIM)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        if not any(str(e['command']).split()[0] == '.\\\\ag-hook.cmd' for e in wired):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        for needed in (AG_SHIM, AG_WRAP):",
+     "new": "        for needed in (AG_SHIM,):"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "        for needed in (AG_SHIM, AG_WRAP):",
+     "new": "        for needed in (AG_WRAP,):"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    if platform not in PLATFORMS:\n        raise ValueError",
+     "new": "    if False:\n        raise ValueError"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    platform = platform or THIS_PLATFORM\n",
+     "new": "    platform = platform or 'windows'\n"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    checks = install_checks(surface, project, home, platform)",
+     "new": "    checks = install_checks(surface, project, home)"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "    result['platform'] = platform or THIS_PLATFORM\n",
+     "new": "    result['platform'] = platform\n"
     }
    ]
   },

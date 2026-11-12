@@ -193,6 +193,80 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(self.failed('claude-code'), [])
 
 
+WIN_SETTINGS = {'hooks': {'SessionStart': [{'hooks': [dict(
+    SETTINGS['hooks']['SessionStart'][0]['hooks'][0],
+    commandWindows='cmd /d /c ".claude\\hooks\\codex-hook.cmd" git-freshness.sh')]}]}}
+WIN_AG = {'handoff-git-check': dict(AG['handoff-git-check'], SessionStart=AG['handoff-git-check']['SessionStart'] + [
+    {'type': 'command', 'command': '.\\ag-hook.cmd git-freshness.sh'}])}
+
+
+class WindowsCheckTests(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        wired_project(self.root)
+        write(self.root, '.codex/hooks.json', json.dumps(WIN_SETTINGS))
+        write(self.root, '.agents/hooks.json', json.dumps(WIN_AG))
+        write(self.root, '.claude/hooks/codex-hook.cmd', '@echo off\n')
+        write(self.root, '.agents/ag-hook.cmd', '@echo off\n')
+
+    def tearDown(self):
+        shutil.rmtree(self.root)
+
+    def failed(self, surface, platform='windows'):
+        checks = selftest.install_checks(surface, self.root, self.root, platform)
+        return sorted(k for k, v in checks.items() if not v['ok'])
+
+    def test_both_platforms_pass_on_full_wiring(self):
+        for surface in selftest.SKILLS:
+            self.assertEqual(self.failed(surface), [], surface)
+            self.assertEqual(self.failed(surface, 'posix'), [], surface)
+        with self.assertRaises(ValueError):
+            selftest.install_checks('codex-cli', self.root, self.root, 'beos')
+
+    def test_codex_needs_command_windows_and_launcher(self):
+        write(self.root, '.codex/hooks.json', json.dumps(SETTINGS))
+        self.assertEqual(self.failed('codex-cli'), ['hooks'])
+        self.assertEqual(self.failed('codex-cli', 'posix'), [])
+        bad = json.loads(json.dumps(WIN_SETTINGS))
+        bad['hooks']['SessionStart'][0]['hooks'][0]['commandWindows'] = 'cmd /d /c ".claude\\hooks\\codex-hook.cmd" pre-push-handoff.sh'
+        write(self.root, '.codex/hooks.json', json.dumps(bad))
+        self.assertEqual(self.failed('codex-app'), ['hooks'])
+        write(self.root, '.codex/hooks.json', json.dumps(WIN_SETTINGS))
+        (self.root / '.claude/hooks/codex-hook.cmd').unlink()
+        self.assertEqual(self.failed('codex-cli'), ['hooks'])
+        self.assertEqual(self.failed('codex-cli', 'posix'), [])
+
+    def test_antigravity_needs_the_shim_handler_and_files(self):
+        write(self.root, '.agents/hooks.json', json.dumps(AG))
+        self.assertEqual(self.failed('antigravity-2'), ['hooks'])
+        self.assertEqual(self.failed('antigravity-2', 'posix'), [])
+        write(self.root, '.agents/hooks.json', json.dumps(WIN_AG))
+        (self.root / '.claude/hooks/ag-wrap.sh').chmod(0o644)
+        # Windows runs ag-wrap.sh through Git Bash: the mode bit is not needed there.
+        self.assertEqual(self.failed('antigravity-cli'), [])
+        self.assertEqual(self.failed('antigravity-cli', 'posix'), ['hooks'])
+        for needed in ('.agents/ag-hook.cmd', '.claude/hooks/ag-wrap.sh'):
+            moved = self.root / (needed + '.bak')
+            (self.root / needed).rename(moved)
+            self.assertEqual(self.failed('antigravity-ide'), ['hooks'], needed)
+            moved.rename(self.root / needed)
+
+    def test_claude_code_has_one_command_for_both(self):
+        self.assertEqual(self.failed('claude-code'), [])
+        (self.root / '.claude/hooks/git-freshness.sh').unlink()
+        self.assertEqual(self.failed('claude-code'), ['hooks'])
+
+    def test_run_reports_the_platform(self):
+        (self.root / '.claude/hooks/codex-hook.cmd').unlink()
+        result = selftest.run('codex-cli', self.root, version='0.164.0', home=self.root, platform='windows')
+        self.assertEqual(result['platform'], 'windows')
+        self.assertIn('hooks', result['gaps'])
+        result = selftest.run('codex-cli', self.root, version='0.164.0', home=self.root, platform='posix')
+        self.assertNotIn('hooks', result['gaps'])
+        self.assertEqual(selftest.run('codex-cli', self.root, version='1', home=self.root)['platform'],
+                         selftest.THIS_PLATFORM)
+
+
 class ReportWithChecksTests(unittest.TestCase):
     def setUp(self):
         self.data = cap.validate(synthetic())

@@ -42,8 +42,9 @@ class RepoSelftestTests(unittest.TestCase):
 
     def test_every_surface_with_wiring_passes_on_a_seeded_project(self):
         home = self.tmp / 'empty-home'
-        for surface in selftest.SKILLS:
-            result = selftest.run(surface, self.project, self.tmp / 'cache', version='0', home=home)
+        for surface, platform in [(s, p) for s in selftest.SKILLS for p in selftest.PLATFORMS]:
+            result = selftest.run(surface, self.project, self.tmp / 'cache', version='0', home=home,
+                                  platform=platform)
             self.assertEqual(result['matrix'], 'installed ' + self.digest)
             failed = {r['capability']: r['why'] for r in result['rows'] if r['check'] == 'fail'}
             self.assertEqual(failed, {}, surface)
