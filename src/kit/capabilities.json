@@ -64,8 +64,9 @@
      "text": "✅ 原生（與 `GEMINI.md` 的優先序官方沒排，見下）"},
 
     {"id": "claude-code/loads-skill", "capability": "loads-skill", "surfaces": ["claude-code"],
-     "status": "supported", "basis": "docs",
-     "text": "✅ `.claude/skills/`，可打 `/handoff`"},
+     "status": "supported", "basis": "tested", "tested": ["2.1.321"],
+     "text": "✅ `.claude/skills/`，可打 `/handoff`",
+     "note": "2026-11-12 在 macOS 實測（claude -p 說「接棒」，禁用 Bash）：模型自己呼叫 Skill 工具載入 handoff，再照入口讀 mode-a.md；但家目錄 ~/.claude/skills/handoff 也在時，skill 清單與 Skill 工具用的是家目錄那份，專案那份被蓋掉，是入口文字叫模型改讀專案那份"},
     {"id": "codex-cli/loads-skill", "capability": "loads-skill", "surfaces": ["codex-cli"],
      "status": "supported", "basis": "tested", "tested": ["0.164.0"],
      "text": "✅ `~/.codex/skills/` ＋ repo 的 `.agents/skills/`（2026-10-30 實測，見 3.16）"},

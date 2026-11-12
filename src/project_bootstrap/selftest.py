@@ -44,7 +44,10 @@ APPS = {'codex-app': ('Codex.app', None),
         'antigravity-2': ('Antigravity.app', (2,))}
 VERSION_IN = re.compile(r'(?<![\d.])(\d+(?:\.\d+)+)(?![\d.])')
 SKILL = 'skills/handoff/SKILL.md'
-SKILLS = {'claude-code': ('project:.claude/' + SKILL, 'home:.claude/' + SKILL),
+# In the order each loader prefers them. Claude Code 2.1.321 was measured on 2026-11-12:
+# with a handoff skill in both places, the Skill tool and the skill list use the home
+# copy. The Codex order is the documented one, not measured.
+SKILLS = {'claude-code': ('home:.claude/' + SKILL, 'project:.claude/' + SKILL),
           'codex-cli': ('project:.agents/' + SKILL, 'home:.codex/' + SKILL),
           'codex-app': ('project:.agents/' + SKILL, 'home:.codex/' + SKILL),
           'antigravity-cli': ('project:.agents/' + SKILL,),

@@ -305,9 +305,15 @@ class ProcedureTests(unittest.TestCase):
         with self.assertRaisesRegex(AdapterError, '找不到 handoff skill'):
             self.compare(['antigravity-cli'])
 
-    def test_project_skill_wins_over_home(self):
+    def test_claude_code_home_skill_shadows_the_project_one(self):
+        # Measured on Claude Code 2.1.321 (2026-11-12): the home copy wins.
         self.put('.claude/skills/handoff/SKILL.md', skill('Triggers on 舊。'), root=self.home)
-        self.assertEqual(self.compare(['claude-code'])['runs']['claude-code']['description'], AUTH)
+        out = self.compare(['claude-code', 'codex-cli'])
+        self.assertEqual(out['runs']['claude-code']['entry'], '家目錄 ~/.claude/skills/handoff/SKILL.md')
+        self.assertEqual(out['runs']['claude-code']['description'], 'Triggers on 舊。')
+        self.assertEqual(out['differ'], ['description', 'files'])
+        # Codex still reaches the project copy through its pointer.
+        self.assertEqual(out['runs']['codex-cli']['description'], AUTH)
 
     def test_instruction_files_must_lead_to_agents_md(self):
         self.put('CLAUDE.md', '請去讀 AGENTS.md\n')

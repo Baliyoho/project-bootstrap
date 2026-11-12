@@ -47,4 +47,4 @@ P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)。2026-11-1
 
 ## 懸置事項（AI 勿自行處理）
 
-- 無。
+- 決策書 Q28：Claude Code 家目錄 handoff skill 蓋掉專案那份，要不要改部署包或 hook（AI 建議 (a)），待使用者決定。

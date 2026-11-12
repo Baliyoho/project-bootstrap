@@ -5494,6 +5494,11 @@
      "file": "src/project_bootstrap/surfaces.py",
      "old": "    instructions = selftest._read(project / 'AGENTS.md')\n",
      "new": "    instructions = ''\n"
+    },
+    {
+     "file": "src/project_bootstrap/selftest.py",
+     "old": "SKILLS = {'claude-code': ('home:.claude/' + SKILL, 'project:.claude/' + SKILL),\n",
+     "new": "SKILLS = {'claude-code': ('project:.claude/' + SKILL, 'home:.claude/' + SKILL),\n"
     }
    ]
   }

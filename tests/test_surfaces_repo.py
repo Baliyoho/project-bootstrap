@@ -220,3 +220,15 @@ class RepoProcedureTests(Fixture):
         (stale / 'mode-a.md').write_text('# 舊版\n', encoding='utf-8')
         result = surfaces.compare_procedure(self.work, ('claude-code', 'codex-cli', 'codex-app'), self.tmp / 'home')
         self.assertEqual((result['equal'], result['differ']), (False, ['files']))
+
+    def test_a_different_global_claude_skill_shadows_the_project(self):
+        # Measured 2026-11-12 on Claude Code 2.1.321: with a handoff skill in both
+        # ~/.claude/skills/ and the project, the Skill tool loaded the home copy.
+        home = self.tmp / 'home' / '.claude' / 'skills' / 'handoff'
+        shutil.copytree(self.work / '.claude' / 'skills' / 'handoff', home)
+        result = surfaces.compare_procedure(self.work, ALL, self.tmp / 'home')
+        self.assertTrue(result['equal'], result['differ'])
+        (home / 'mode-b.md').write_text('# 別版\n', encoding='utf-8')
+        result = surfaces.compare_procedure(self.work, ALL, self.tmp / 'home')
+        self.assertEqual((result['equal'], result['differ']), (False, ['files']))
+        self.assertEqual(result['runs']['claude-code']['entry'], '家目錄 ~/.claude/skills/handoff/SKILL.md')
