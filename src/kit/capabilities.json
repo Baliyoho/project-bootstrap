@@ -34,6 +34,12 @@
       "impact": "關掉 session 時沒有最後提醒，漏交棒要等下一棒才發現",
       "alternative": "收工時手動走 B；下一棒照 mode-a-stop.md 的漏交棒補救"
     },
+    "push-reminder": {
+      "label": "push 前提醒（PreToolUse）",
+      "strict": false,
+      "impact": "push 前沒有自動提醒，收工可能漏寫 HANDOFF 就推上去",
+      "alternative": "收工照 handoff skill 的 B 模式手動走，push 前自己核對 HANDOFF"
+    },
     "managed-write-gate": {
       "label": "受控寫入閘",
       "strict": true,
@@ -108,6 +114,17 @@
      "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"],
      "status": "missing", "basis": "docs",
      "text": "❌ 沒有這個事件"},
+
+    {"id": "claude-code/push-reminder", "capability": "push-reminder", "surfaces": ["claude-code"],
+     "status": "supported", "basis": "design",
+     "note": "3.9 接在 .claude/settings.json 的 PreToolUse，matcher 只比對 Bash 與 PowerShell 兩個工具"},
+    {"id": "codex/push-reminder", "capability": "push-reminder", "surfaces": ["codex-cli", "codex-app"],
+     "status": "supported", "basis": "design",
+     "note": "3.17 接在 .codex/hooks.json 的 PreToolUse，沒有 matcher，每個工具呼叫都跑"},
+    {"id": "antigravity/push-reminder", "capability": "push-reminder",
+     "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"],
+     "status": "missing", "basis": "design",
+     "note": "刻意不接（3.20）：PreToolUse 不明確允許就擋掉全部工具，轉接層一失敗就整個 session 不能用"},
 
     {"id": "all/managed-write-gate", "capability": "managed-write-gate",
      "surfaces": ["claude-code", "codex-cli", "codex-app", "antigravity-cli", "antigravity-2", "antigravity-ide", "antigravity-sdk"],

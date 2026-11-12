@@ -25,7 +25,7 @@ ALL = ('claude-code', 'codex-cli', 'codex-app', 'antigravity-cli', 'antigravity-
 FREE = '- **工作中**：無（已交棒）\n'
 
 
-class RepoSurfaceTests(unittest.TestCase):
+class Fixture(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         folder, manifest = build_package.build_once()
@@ -77,6 +77,8 @@ class RepoSurfaceTests(unittest.TestCase):
         self.assertEqual(set(result['runs']) | set(result['unsupported']), set(ALL))
         return next(iter(texts.values()))
 
+
+class RepoSurfaceTests(Fixture):
     def test_green(self):
         text = self.compare()
         self.assertIn('[git-check] 全綠 <time>', text)
@@ -131,3 +133,64 @@ class RepoSurfaceTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+PUSH_SURFACES = ('claude-code', 'codex-cli', 'codex-app', 'antigravity-cli', 'antigravity-2', 'antigravity-ide')
+
+
+class RepoPushTests(Fixture):
+    """The push reminder (3.11) on the same states; Antigravity is named unsupported (3.20)."""
+
+    def unpushed(self, touch_handoff=False):
+        self.commits = getattr(self, 'commits', 0) + 1
+        (self.work / 'work.txt').write_text('%d\n' % self.commits, encoding='utf-8')
+        if touch_handoff:
+            self.handoff('- **工作中**：無（已交棒）\n\n交棒\n')
+        self.git('add', '-A')
+        self.git('commit', '-q', '-m', 'work')
+
+    def push_compare(self, payload):
+        result = surfaces.compare_push(self.work, PUSH_SURFACES, self.env, payload, subdir='docs')
+        self.assertEqual(sorted(result['unsupported']), ['antigravity-2', 'antigravity-cli', 'antigravity-ide'])
+        return result
+
+    def bash(self, command):
+        return {'tool_name': 'Bash', 'tool_input': {'command': command}}
+
+    def test_push_without_handoff_is_blocked_the_same_way(self):
+        self.unpushed()
+        result = self.push_compare(self.bash('git push'))
+        self.assertTrue(result['equal'], result['runs'])
+        self.assertEqual({r['exit'] for r in result['runs'].values()}, {2})
+        self.assertIn('[handoff-check]', result['runs']['claude-code']['stderr'])
+
+    def test_allowed_cases_are_the_same(self):
+        self.unpushed()
+        for payload in (self.bash('git status -sb'), dict(self.bash('git push'))):
+            env = dict(self.env, HANDOFF_HOOK='off') if payload['tool_input']['command'] == 'git push' else self.env
+            result = surfaces.compare_push(self.work, PUSH_SURFACES, env, payload, subdir='docs')
+            self.assertTrue(result['equal'], payload)
+            self.assertEqual({r['exit'] for r in result['runs'].values()}, {0})
+
+    def test_handoff_in_the_commits_and_feature_branch_pass(self):
+        self.unpushed(touch_handoff=True)
+        result = self.push_compare(self.bash('git push'))
+        self.assertEqual(({r['exit'] for r in result['runs'].values()}, result['equal']), ({0}, True))
+        self.git('switch', '-q', '-c', 'feature')
+        self.unpushed()
+        self.git('push', '-q', '-u', 'origin', 'feature')
+        self.unpushed()
+        result = self.push_compare(self.bash('git push'))
+        self.assertEqual(({r['exit'] for r in result['runs'].values()}, result['equal']), ({0}, True))
+
+    def test_known_divergence_non_shell_tool_mentioning_git_push(self):
+        # Found 2026-11-12: Codex wires PreToolUse without a matcher (3.17, kept on purpose),
+        # and the hook matches the literal text anywhere in the payload. A patch whose text
+        # mentions git push is blocked on Codex but never reaches the hook on Claude Code.
+        # Pinned here so a fix (or a decision to keep it) shows up as a change.
+        self.unpushed()
+        payload = {'tool_name': 'apply_patch', 'tool_input': {'input': '*** 說明：收工再 git push\n'}}
+        result = self.push_compare(payload)
+        self.assertFalse(result['equal'])
+        self.assertEqual((result['runs']['claude-code']['ran'], result['runs']['claude-code']['exit']), (False, 0))
+        self.assertEqual((result['runs']['codex-cli']['ran'], result['runs']['codex-cli']['exit']), (True, 2))

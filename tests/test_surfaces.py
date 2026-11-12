@@ -153,3 +153,67 @@ class CompareTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+PUSH_SETTINGS = {'hooks': {'PreToolUse': [{'matcher': 'Bash|PowerShell', 'hooks': [
+    {'type': 'command', 'command': 'bash "$(git rev-parse --show-cdup).claude/hooks/pre-push-handoff.sh"'}]}]}}
+PUSH_CODEX = {'hooks': {'PreToolUse': [{'hooks': [
+    {'type': 'command', 'command': 'bash "$(git rev-parse --show-cdup).claude/hooks/pre-push-handoff.sh"'}]}]}}
+
+
+class PushAdapterTests(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        write(self.root, '.claude/settings.json', json.dumps(PUSH_SETTINGS))
+        write(self.root, '.codex/hooks.json', json.dumps(PUSH_CODEX))
+
+    def tearDown(self):
+        shutil.rmtree(self.root)
+
+    def test_one_handler_with_its_matcher(self):
+        self.assertEqual(surfaces._push_handler('claude-code', self.root)[0], 'Bash|PowerShell')
+        self.assertIsNone(surfaces._push_handler('codex-cli', self.root)[0])
+        for broken in ({'hooks': {}}, {'hooks': {'PreToolUse': {}}}, [],
+                       {'hooks': {'PreToolUse': PUSH_CODEX['hooks']['PreToolUse'] * 2}},
+                       {'hooks': {'PreToolUse': [{'hooks': [{'type': 'prompt', 'command': 'pre-push-handoff.sh'}]}]}}):
+            write(self.root, '.codex/hooks.json', json.dumps(broken))
+            with self.assertRaises(AdapterError, msg=broken):
+                surfaces._push_handler('codex-cli', self.root)
+        write(self.root, '.codex/hooks.json', '{')
+        with self.assertRaises(AdapterError):
+            surfaces._push_handler('codex-cli', self.root)
+
+    def test_matcher_is_a_whole_name_regex(self):
+        for matcher in (None, '', '*'):
+            self.assertTrue(surfaces._matches(matcher, 'apply_patch'))
+        self.assertTrue(surfaces._matches('Bash|PowerShell', 'PowerShell'))
+        self.assertFalse(surfaces._matches('Bash|PowerShell', 'apply_patch'))
+        self.assertFalse(surfaces._matches('Bash', 'BashOutput'))
+
+    def test_skipped_by_matcher_is_not_run(self):
+        calls = []
+
+        def fake(argv, **kwargs):
+            calls.append(kwargs['input'])
+            return mock.Mock(returncode=2, stderr='blocked')
+        with mock.patch('subprocess.run', fake):
+            skipped = surfaces.pre_tool_use('claude-code', self.root, {}, {'tool_name': 'Edit'})
+            ran = surfaces.pre_tool_use('codex-cli', self.root, {}, {'tool_name': 'Edit'})
+        self.assertEqual(skipped, {'ran': False, 'exit': 0, 'stderr': ''})
+        self.assertEqual(ran, {'ran': True, 'exit': 2, 'stderr': 'blocked'})
+        self.assertEqual(json.loads(calls[0])['hook_event_name'], 'PreToolUse')
+
+    def test_compare_push_needs_same_exit_and_stderr(self):
+        def run_with(results, versions=None):
+            def fake(surface, project, env, payload, subdir=''):
+                exit_code, stderr = results[surface]
+                return {'ran': True, 'exit': exit_code, 'stderr': stderr}
+            with mock.patch.object(surfaces, 'pre_tool_use', fake):
+                return surfaces.compare_push('/p', list(results), {}, {}, matrix(), versions)
+        self.assertTrue(run_with({'claude-code': (2, 'x'), 'codex-cli': (2, 'x')})['equal'])
+        self.assertFalse(run_with({'claude-code': (2, 'x'), 'codex-cli': (0, '')})['equal'])
+        self.assertFalse(run_with({'claude-code': (2, 'x'), 'codex-cli': (2, 'y')})['equal'])
+        out = run_with({'claude-code': (0, ''), 'antigravity-2': (2, 'never run')})
+        self.assertTrue(out['equal'])
+        self.assertEqual(list(out['unsupported']), ['antigravity-2'])
+        self.assertIn('刻意不接', out['unsupported']['antigravity-2'])

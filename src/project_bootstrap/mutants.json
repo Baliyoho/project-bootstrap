@@ -5337,8 +5337,8 @@
     },
     {
      "file": "src/project_bootstrap/surfaces.py",
-     "old": "    except (OSError, ValueError, UnicodeDecodeError):\n        raise AdapterError('%s: %s 讀不到或不是 JSON'",
-     "new": "    except OSError:\n        raise AdapterError('%s: %s 讀不到或不是 JSON'"
+     "old": "    except (OSError, ValueError, UnicodeDecodeError):\n        raise AdapterError('%s: %s 讀不到或不是 JSON' % (surface, WIRING[surface]))",
+     "new": "    except OSError:\n        raise AdapterError('%s: %s 讀不到或不是 JSON' % (surface, WIRING[surface]))"
     },
     {
      "file": "src/project_bootstrap/surfaces.py",
@@ -5367,8 +5367,8 @@
     },
     {
      "file": "src/project_bootstrap/surfaces.py",
-     "old": "        if row['state'] == 'missing':\n            unsupported[surface] = row['why']\n            continue\n",
-     "new": ""
+     "old": "    return row['why'] if row['state'] == 'missing' else None\n",
+     "new": "    return None\n"
     },
     {
      "file": "src/project_bootstrap/surfaces.py",
@@ -5384,6 +5384,51 @@
      "file": "src/project_bootstrap/surfaces.py",
      "old": "    for name in TOOL_VARS:\n        env.pop(name, None)\n",
      "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "             if handler.get('type') == 'command' and PUSH in str(handler.get('command', ''))]",
+     "new": "             if PUSH in str(handler.get('command', ''))]"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if len(found) != 1:\n        raise AdapterError('%s: PreToolUse",
+     "new": "    if not found:\n        raise AdapterError('%s: PreToolUse"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if matcher in (None, '', '*'):\n        return True\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    return re.fullmatch(matcher, tool) is not None",
+     "new": "    return re.search(matcher, tool) is not None"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if not _matches(matcher, str(payload.get('tool_name', ''))):",
+     "new": "    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    body = json.dumps(dict(payload, hook_event_name='PreToolUse', cwd=str(cwd)), ensure_ascii=False)",
+     "new": "    body = json.dumps(dict(payload, cwd=str(cwd)), ensure_ascii=False)"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    outcomes = {(r['exit'], r['stderr']) for r in runs.values()}",
+     "new": "    outcomes = {r['exit'] for r in runs.values()}"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "        why = _unsupported(matrix, surface, versions.get(surface), 'push-reminder')",
+     "new": "        why = _unsupported(matrix, surface, versions.get(surface), 'hooks')"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    groups = hooks.get('PreToolUse') if isinstance(hooks, dict) else None",
+     "new": "    groups = hooks.get('PreToolUse')"
     }
    ]
   }

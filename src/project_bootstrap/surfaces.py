@@ -115,16 +115,21 @@ def neutral_env(base=None):
     return env
 
 
+def _unsupported(matrix, surface, version, capability):
+    """The matrix's reason when this surface at this version does not have the capability, else None."""
+    row = next(r for r in capabilities.report(matrix, surface, version)['rows'] if r['capability'] == capability)
+    return row['why'] if row['state'] == 'missing' else None
+
+
 def compare(project, surfaces, env, matrix=None, versions=None, subdir=''):
     """Run every supported surface on the same project state; equal means identical decoded text."""
     matrix = matrix if matrix is not None else capabilities.read_matrix()
     versions = versions or {}
     runs, unsupported = {}, {}
     for surface in surfaces:
-        row = next(r for r in capabilities.report(matrix, surface, versions.get(surface))['rows']
-                   if r['capability'] == 'hooks')
-        if row['state'] == 'missing':
-            unsupported[surface] = row['why']
+        why = _unsupported(matrix, surface, versions.get(surface), 'hooks')
+        if why:
+            unsupported[surface] = why
             continue
         result = session_start(surface, project, env, subdir)
         result['text'] = normalise(result['text'])
@@ -132,3 +137,64 @@ def compare(project, surfaces, env, matrix=None, versions=None, subdir=''):
     texts = {r['text'] for r in runs.values()}
     exits = {r['exit'] for r in runs.values()}
     return {'equal': len(texts) <= 1 and exits <= {0}, 'runs': runs, 'unsupported': unsupported}
+
+
+# The push reminder (3.11) is the second shared check. Its contract is the exit
+# code (2 blocks the tool call) and stderr (what the model is shown). Claude Code
+# and Codex wire it to PreToolUse; Antigravity deliberately does not (3.20).
+PUSH = 'pre-push-handoff.sh'
+
+
+def _push_handler(surface, project):
+    """(matcher or None, command) of the one PreToolUse handler that runs the push reminder."""
+    wiring = WIRING[surface]
+    try:
+        data = json.loads((Path(project) / wiring).read_text(encoding='utf-8'))
+    except (OSError, ValueError, UnicodeDecodeError):
+        raise AdapterError('%s: %s 讀不到或不是 JSON' % (surface, wiring))
+    hooks = data.get('hooks') if isinstance(data, dict) else None
+    groups = hooks.get('PreToolUse') if isinstance(hooks, dict) else None
+    found = [(group.get('matcher'), handler['command'])
+             for group in (groups if isinstance(groups, list) else []) if isinstance(group, dict)
+             for handler in (group.get('hooks') or []) if isinstance(handler, dict)
+             if handler.get('type') == 'command' and PUSH in str(handler.get('command', ''))]
+    if len(found) != 1:
+        raise AdapterError('%s: PreToolUse 接到 %s 的命令有 %d 條，要恰好 1 條' % (surface, PUSH, len(found)))
+    return found[0]
+
+
+def _matches(matcher, tool):
+    """Both tools: no matcher, "" or "*" is every call; otherwise a regex on the whole tool name."""
+    if matcher in (None, '', '*'):
+        return True
+    return re.fullmatch(matcher, tool) is not None
+
+
+def pre_tool_use(surface, project, env, payload, subdir=''):
+    """Run one surface's push-reminder wiring for one tool call; {'ran', 'exit', 'stderr'}."""
+    matcher, command = _push_handler(surface, project)
+    if not _matches(matcher, str(payload.get('tool_name', ''))):
+        return {'ran': False, 'exit': 0, 'stderr': ''}
+    cwd = Path(project) / subdir
+    body = json.dumps(dict(payload, hook_event_name='PreToolUse', cwd=str(cwd)), ensure_ascii=False)
+    try:
+        done = subprocess.run(['/bin/sh', '-c', command], cwd=cwd, env=env, input=body,
+                              capture_output=True, text=True, timeout=60)
+    except subprocess.TimeoutExpired:
+        raise AdapterError('%s: 逾時' % surface)
+    return {'ran': True, 'exit': done.returncode, 'stderr': done.stderr}
+
+
+def compare_push(project, surfaces, env, payload, matrix=None, versions=None, subdir=''):
+    """The same tool call on every supported surface; equal means the same exit code and stderr."""
+    matrix = matrix if matrix is not None else capabilities.read_matrix()
+    versions = versions or {}
+    runs, unsupported = {}, {}
+    for surface in surfaces:
+        why = _unsupported(matrix, surface, versions.get(surface), 'push-reminder')
+        if why:
+            unsupported[surface] = why
+            continue
+        runs[surface] = pre_tool_use(surface, project, env, payload, subdir)
+    outcomes = {(r['exit'], r['stderr']) for r in runs.values()}
+    return {'equal': len(outcomes) <= 1, 'runs': runs, 'unsupported': unsupported}
