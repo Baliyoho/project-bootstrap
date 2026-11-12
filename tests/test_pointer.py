@@ -144,6 +144,19 @@ class PointerTests(unittest.TestCase):
         self.check().confirm(OP, 'AGENTS.md')
 
     @needs_signer
+    def test_crlf_copy_of_a_shared_file_passes_but_other_bytes_do_not(self):
+        hook = self.project / '.claude/hooks/check.sh'
+        original = FILES['.claude/hooks/check.sh'].encode('utf-8')
+        hook.write_bytes(original.replace(b'\n', b'\r\n'))  # Q26 (a): Git may check out CRLF
+        self.check().confirm(OP, 'x.md')
+        hook.write_bytes(original.replace(b'\n', b'\r'))  # a lone CR is still a change
+        self.denied('component-drift:.claude/hooks/check.sh', self.check().confirm, OP, 'x.md')
+        hook.write_bytes(original.replace(b'echo', b'ec\rho'))  # so is a stray CR inside a line
+        self.denied('component-drift:.claude/hooks/check.sh', self.check().confirm, OP, 'x.md')
+        hook.write_bytes(original + b'\r\n')  # an extra line, even an empty one, is a change
+        self.denied('component-drift:.claude/hooks/check.sh', self.check().confirm, OP, 'x.md')
+
+    @needs_signer
     def test_local_edit_of_shared_files_stops(self):
         (self.project / '.claude/hooks/check.sh').write_text('#!/bin/sh\necho edited\n')
         self.denied('component-drift:.claude/hooks/check.sh', self.check().confirm, OP, 'x.md')

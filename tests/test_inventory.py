@@ -44,6 +44,14 @@ class InventoryTests(unittest.TestCase):
         self.assertNotIn('notes.md', report['clean']['files'])
         self.assertEqual({p: p.read_bytes() for p in self.base.rglob('*') if p.is_file()}, before)
 
+    def test_crlf_copy_is_ok_but_a_lone_cr_is_an_edit(self):
+        (self.base / 'clean/hook.sh').write_bytes(b'echo\r\n')
+        row = scan({'c': self.projects['clean']}, {'v1': self.manifest}, OWNERS)[0]
+        self.assertEqual((row['state'], row['files']['hook.sh']), ('clean', 'ok'))
+        (self.base / 'clean/hook.sh').write_bytes(b'echo\r')
+        row = scan({'c': self.projects['clean']}, {'v1': self.manifest}, OWNERS)[0]
+        self.assertEqual((row['state'], row['files']['hook.sh']), ('edited', 'edited'))
+
     def test_edit_wins_over_missing_and_empty_release_is_not_clean(self):
         (self.base / 'edited/hook.sh').unlink()
         row = scan({'e': self.projects['edited']}, {'v1': self.manifest}, OWNERS)[0]

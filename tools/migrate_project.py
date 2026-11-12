@@ -58,14 +58,13 @@ def observe(project, rel):
         return 'missing'
     try:
         data = path.read_bytes()
-        kind = 'eol' if b'\r\n' in data else 'digest'
         if rel != sp.SURGICAL:
-            return (kind, hashlib.sha256(data.replace(b'\r\n', b'\n')).hexdigest())
+            return ('digest', package.copy_digest(data))  # CRLF counts as LF (Q26 (a))
         text = data.decode('utf-8').replace('\r\n', '\n')
     except (OSError, UnicodeDecodeError):
         return 'unreadable'
     try:
-        return (kind, sp.shared_digest(rel, text))
+        return ('digest', sp.shared_digest(rel, text))
     except ValueError:
         # The shared region cannot be found: nobody published that shape.
         return ('digest', 'unsplit:' + hashlib.sha256(data).hexdigest())
@@ -122,7 +121,16 @@ def assess(project, folder, manifest, known):
     row = migrate.target(str(project), observed, package_digests(folder, manifest), known,
                          package.digest(manifest), installed, problems, len(merges))
     row['notes'] = [m.strip() for m in plan.msgs if 'MIGRATE' in m or 'EXTRA' in m]
+    row['notes'] += ['crlf:' + rel for rel in RELEASED if crlf(project / rel)]
     return row, merges
+
+
+def crlf(path):
+    """Shown, not decisive: the comparison counts CRLF as LF (Q26 (a))."""
+    try:
+        return not path.is_symlink() and path.is_file() and b'\r\n' in path.read_bytes()
+    except OSError:
+        return False
 
 
 def decisions(args):
@@ -239,7 +247,7 @@ def write_one(args, run=None):
 def show(result):
     for row in result['results']:
         print('%-8s %s' % (row['action'].upper(), row['target']))
-        for key in ('replace', 'add', 'compare', 'eol', 'problems', 'notes'):
+        for key in ('replace', 'add', 'compare', 'problems', 'notes'):
             if row.get(key):
                 print('         %s: %s' % (key, ', '.join(row[key])))
         if row.get('merges'):

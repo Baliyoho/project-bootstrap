@@ -1548,7 +1548,7 @@
     },
     {
      "file": "src/project_bootstrap/inventory.py",
-     "old": "            files[relative] = 'ok' if hashlib.sha256(data).hexdigest() == digest else 'edited'",
+     "old": "            files[relative] = 'ok' if package.copy_digest(data) == digest else 'edited'",
      "new": "            files[relative] = 'ok'"
     },
     {
@@ -1560,6 +1560,11 @@
      "file": "src/project_bootstrap/inventory.py",
      "old": "                 else 'clean' if files else 'nothing-to-check')",
      "new": "                 else 'clean')"
+    },
+    {
+     "file": "src/project_bootstrap/inventory.py",
+     "old": "            files[relative] = 'ok' if package.copy_digest(data) == digest else 'edited'\n",
+     "new": "            files[relative] = 'ok' if __import__('hashlib').sha256(data).hexdigest() == digest else 'edited'\n"
     }
    ]
   },
@@ -4420,8 +4425,23 @@
     },
     {
      "file": "src/project_bootstrap/pointer.py",
-     "old": "        if hashlib.sha256(data).hexdigest() != manifest['components'][path]:\n            raise Denied('component-drift:' + path)",
+     "old": "        if package.copy_digest(data) != manifest['components'][path]:\n            raise Denied('component-drift:' + path)",
      "new": "        if False:\n            raise Denied('component-drift:' + path)"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    return hashlib.sha256(data.replace(b'\\r\\n', b'\\n')).hexdigest()\n",
+     "new": "    return hashlib.sha256(data).hexdigest()\n"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    return hashlib.sha256(data.replace(b'\\r\\n', b'\\n')).hexdigest()\n",
+     "new": "    return hashlib.sha256(data.replace(b'\\r', b'')).hexdigest()\n"
+    },
+    {
+     "file": "src/project_bootstrap/package.py",
+     "old": "    return hashlib.sha256(data.replace(b'\\r\\n', b'\\n')).hexdigest()\n",
+     "new": "    return hashlib.sha256(data.rstrip(b'\\r\\n') + b'\\n').hexdigest()\n"
     }
    ]
   },
@@ -4958,33 +4978,8 @@
    "mutants": [
     {
      "file": "src/project_bootstrap/migrate.py",
-     "old": "    if (not isinstance(observed, tuple) or len(observed) != 2\n            or observed[0] not in ('digest', 'eol') or not isinstance(observed[1], str)):\n        raise Denied('invalid-observation')\n",
-     "new": ""
-    },
-    {
-     "file": "src/project_bootstrap/migrate.py",
-     "old": "observed[0] not in ('digest', 'eol')",
-     "new": "observed[0] not in ('digest', 'eol', 'hash')"
-    },
-    {
-     "file": "src/project_bootstrap/migrate.py",
      "old": "len(observed) != 2\n",
      "new": "len(observed) < 2\n"
-    },
-    {
-     "file": "src/project_bootstrap/migrate.py",
-     "old": "        return 'eol' if digest == target or digest in known else 'customised'\n",
-     "new": "        return 'eol'\n"
-    },
-    {
-     "file": "src/project_bootstrap/migrate.py",
-     "old": "        return 'eol' if digest == target or digest in known else 'customised'\n",
-     "new": "        return 'eol' if digest == target else 'customised'\n"
-    },
-    {
-     "file": "src/project_bootstrap/migrate.py",
-     "old": "    if kind == 'eol':\n",
-     "new": "    if False:\n"
     },
     {
      "file": "src/project_bootstrap/migrate.py",
@@ -4999,16 +4994,6 @@
     {
      "file": "src/project_bootstrap/migrate.py",
      "old": "    if set(observed) != set(package):\n        raise Denied('observation-mismatch')\n",
-     "new": ""
-    },
-    {
-     "file": "src/project_bootstrap/migrate.py",
-     "old": "s in ('customised', 'eol')",
-     "new": "s == 'customised'"
-    },
-    {
-     "file": "src/project_bootstrap/migrate.py",
-     "old": "    if eol:\n        row['eol'] = eol\n",
      "new": ""
     },
     {

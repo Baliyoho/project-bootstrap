@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-11（P2 第 5 片遷移器，決策書 Q25）：`tools/sync_project.py` 的檔案清單改由 `src/kit/owners.json` 算出，同步行為不變，`owners.json` 出現同步器不會處理的混合檔就拒絕啟動；新增 `src/project_bootstrap/migrate.py`（遷移判斷與報告）、`tools/migrate_project.py`（預演只讀、寫入一次一個專案並寫指標）與兩份測試。不部署、不同步，部署包與 `VERSION` 未動。
+> 最後更新：2026-11-12（決策書 Q26 (a)）：`package.py` 新增 `copy_digest`（CRLF 當 LF），寫入檢查、遷移器與 F39 盤點用它比專案副本，包本身仍逐位元組比；遷移器拿掉 `eol` 狀態。部署包與 `VERSION` 未動。
+
+> 2026-11-11（P2 第 5 片遷移器，決策書 Q25）：`tools/sync_project.py` 的檔案清單改由 `src/kit/owners.json` 算出，同步行為不變，`owners.json` 出現同步器不會處理的混合檔就拒絕啟動；新增 `src/project_bootstrap/migrate.py`（遷移判斷與報告）、`tools/migrate_project.py`（預演只讀、寫入一次一個專案並寫指標）與兩份測試。不部署、不同步，部署包與 `VERSION` 未動。
 
 > 2026-11-11 稍早（P2 第 4 片能力矩陣，決策書 Q24）：新增 `src/kit/capabilities.json`，部署包「跨工具與跨平台」的兩張表改由它生成（`kit.md` 換成 `<!-- kit-table: … -->` 指令行，`tools/build_kit.py` 展開）；部署包逐位元組不變，skill／hook／接線與 `VERSION` 未動。新增 `src/project_bootstrap/capabilities.py`（驗矩陣、生成表格、逐 surface／版本報缺口與 strict ready）與兩份測試。不部署、不同步。
 
@@ -187,7 +189,7 @@
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
 | [tools/skill_split_baseline.json](tools/skill_split_baseline.json) | 拆分前單檔 `SKILL.md`（`VERSION` `2026-11-03`）每一行的雜湊，加上 11 行刻意改寫的去處。`verify_bootstrap.py`「skill 拆分」用它確認沒有行被弄丟。不部署、不同步 | 只有刻意改寫或刪掉舊文本的某一行時，並寫明去處 |
 | [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案。`check_docs.py` 的專案設定區塊、兩份 hook 接線裡專案自己加的設定都會原樣保留。只改檔案，不 commit。檔案清單（`WHOLE`／`WIRING`／`PARTIAL`／`INSTANCE`）2026-11-11 起由 `src/kit/owners.json` 算出 | 骨架多一個要同步的檔時：在 `owners.json` 登記；如果是 `region`／`key`／`lines`／`wiring` 這四種，要先替它寫處理程式並更新 `HANDLED`，否則同步器拒絕啟動 |
-| [tools/migrate_project.py](tools/migrate_project.py) | P2 第 5 片（決策書 Q25）：把舊專案一次搬到包＋指標。預演只讀（不 fetch、不刷新 index），逐專案列要換、要補、要合併與要人工比對的檔；寫入只能單一專案、要 `--owner` 與一次正式發布，只換本 repo 發過的舊版，客製或行末不同就整個專案不寫。重用 `sync_project.py` 的合併與占用檢查。不 commit、不部署 | 遷移規則改變時；真實專案寫入要逐專案授權 |
+| [tools/migrate_project.py](tools/migrate_project.py) | P2 第 5 片（決策書 Q25）：把舊專案一次搬到包＋指標。預演只讀（不 fetch、不刷新 index），逐專案列要換、要補、要合併與要人工比對的檔；寫入只能單一專案、要 `--owner` 與一次正式發布，只換本 repo 發過的舊版，客製就整個專案不寫（CRLF 當 LF 比，Q26）。重用 `sync_project.py` 的合併與占用檢查。不 commit、不部署 | 遷移規則改變時；真實專案寫入要逐專案授權 |
 | [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
 | `.claude/hooks/repo-action-rules.sh` | 本 repo 自己的動作當下提醒（2026-11-10，決策書 Q6 (a)，F22 第二階段第 (2) 點試行）：只接 `.claude/settings.json` 的 PreToolUse（Bash／Edit／Write／MultiEdit）與 PostToolUse（Bash），準備 push、push 剛完成、改部署包、改 hook 時送對應規則摘要；永遠 exit 0、不擋。Codex 那份刻意不接。看原始 JSON 字串判斷，會誤報（指令文字裡提到 git push 也會送）。不在副本拓撲裡 | 試行結果決定去留 |
 | `.claude/settings.json`＋`.codex/hooks.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart 檢查：git 新鮮度＋`HANDOFF.md` 的「工作中」判讀＋開工改名提示。兩份接線掛的都是**同一支** `repo-git-check.sh`（2026-11-01 補 Codex 這一面），所以它們**不是部署包 3.9／3.17 的副本**，那支 hook 也不是 3.10 的副本——都不在副本拓撲裡、不要用 `sync_project.py` 同步（檔頭寫了為什麼不抄 3.10；2026-11-01 起那支腳本會直接拒絕） | 幾乎不動 |

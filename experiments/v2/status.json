@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-11-11",
+  "updated": "2026-11-12",
   "authority": "全部 51 ID 與 F11／F13／F43 子項的持續實作狀態；需求仍以決策書為準",
   "transfer": {
     "from": "fdc0bbd:HANDOFF.md",
@@ -601,6 +601,10 @@
         {
           "path": "tests/test_channel.py",
           "scope": "本機 bare repo：新版 tag 出現後舊專案 release-mismatch；偽造更大 epoch 指向已安裝版是 channel-epoch-mismatch；同 epoch 兩個 digest 是 channel-conflict；格式錯的 tag 拒絕，其他 tag 忽略；本機改 hook 先擋、不連網；mutants.json 41 個刪改全部 killed（另一個等價刪改未列入）"
+        },
+        {
+          "path": "src/project_bootstrap/package.py",
+          "scope": "決策書 Q26 (a)（2026-11-12）：copy_digest 把 CRLF 當 LF，寫入檢查比專案副本時用它，專案 .gitattributes 強制 CRLF 不會被當成漂移；單獨的 CR 或行中多一個 CR 仍是 component-drift（test_pointer.py），包本身仍逐位元組比對"
         }
       ],
       "unknown": "Windows 部署專案尚未同步 bash 3.2 hook 修正；M1 原型與 P2 指標檢查都未接進現行部署包、sync_project 或任何工具，無遷移流程；指標檢查只比整份的 core／adapter 檔，check_docs.py 的共用區段與接線還沒比；最高 epoch 只記在記憶體；跨工具與跨 OS 尚未驗收",
@@ -732,7 +736,7 @@
         },
         {
           "path": "src/project_bootstrap/migrate.py",
-          "scope": "P2 第 5 片（Q25）遷移報告：每個要求的目標恰好一列（已是目標版／遷移／人工比對／失敗／排除），有客製或行末不同的專案各算一次人工比對；有失敗或需人工比對就不是 ok。只算比對次數，不是真人確認次數的實測"
+          "scope": "P2 第 5 片（Q25）遷移報告：每個要求的目標恰好一列（已是目標版／遷移／人工比對／失敗／排除），有客製的專案各算一次人工比對；有失敗或需人工比對就不是 ok。只算比對次數，不是真人確認次數的實測"
         }
       ],
       "unknown": "確認次數是規劃值，未量真人實際操作與時間；impact 專案名到批次目標的對應由呼叫端提供；遷移器（P2 第 5 片）只算人工比對次數，真實專案沒有寫入；跨工具與跨 OS 尚未驗收",
@@ -1091,14 +1095,14 @@
         },
         {
           "path": "tools/migrate_project.py",
-          "scope": "P2 第 5 片（Q25）：舊專案搬到包＋指標，只換本 repo 部署包歷史裡發過的舊版、補缺的共用檔、合併混合檔保留專案部分；客製或 CRLF 行末不同就整個專案不寫；寫入要單一專案、占用檢查與驗過簽的正式發布，寫完用寫入檢查的元件比對確認"
+          "scope": "P2 第 5 片（Q25）：舊專案搬到包＋指標，只換本 repo 部署包歷史裡發過的舊版、補缺的共用檔、合併混合檔保留專案部分；客製就整個專案不寫，CRLF 當 LF 比（Q26 (a)）；寫入要單一專案、占用檢查與驗過簽的正式發布，寫完用寫入檢查的元件比對確認"
         },
         {
           "path": "tests/test_migrate.py",
-          "scope": "合成觀察：六種檔案狀態、客製或行末讓專案停下、已是目標版的條件、20 目標報告與重複／缺漏／多出的目標；mutants.json 28 個刪改全部 killed"
+          "scope": "合成觀察：五種檔案狀態、客製讓專案停下、已是目標版的條件、20 目標報告與重複／缺漏／多出的目標；mutants.json 21 個刪改全部 killed"
         }
       ],
-      "unknown": "sync_project.py 的清單 2026-11-11 起由 owners.json 算出；遷移器只換本 repo 發過的舊版、客製停下，但 policy.plan_update 仍只吃整份的 core／adapter 檔，客製沒有搬進覆寫位置的工具；寫入檢查逐位元組比對，專案 .gitattributes 強制 CRLF 的 .cmd 會被擋（待決）；真實專案沒有寫入；跨工具與跨 OS 尚未驗收",
+      "unknown": "sync_project.py 的清單 2026-11-11 起由 owners.json 算出；遷移器只換本 repo 發過的舊版、客製停下，但 policy.plan_update 仍只吃整份的 core／adapter 檔，客製沒有搬進覆寫位置的工具；真實專案沒有寫入；跨工具與跨 OS 尚未驗收",
       "next": "保留專案自訂內容；未知所有權停止"
     },
     {
@@ -1153,7 +1157,7 @@
         },
         {
           "path": "tools/migrate_project.py",
-          "scope": "P2 第 5 片預演對使用者真實專案只讀跑一次（Q25）：本機一層目錄 4 個有骨架的專案，3 個可遷移、1 個因 .cmd 的 CRLF 行末停下（內容與發布版相同）；報告只留本機"
+          "scope": "P2 第 5 片預演對使用者真實專案只讀跑（Q25）：本機一層目錄 4 個有骨架的專案；第一次 3 個可遷移、1 個因 .cmd 的 CRLF 行末停下，Q26 (a) 後重跑 4 個都可遷移；報告只留本機"
         }
       ],
       "unknown": "清單由呼叫端提供，不掃整顆磁碟；不判斷修改是否該搬進覆寫；真實只讀跑只涵蓋本機一層目錄的 4 個專案；跨工具與跨 OS 尚未驗收",

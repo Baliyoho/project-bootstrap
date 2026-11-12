@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-11 17:26（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（P2 第 5 片：遷移器）
+- **交接時間**：2026-11-12 17:41（+08）
+- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（P2 第 5 片遷移器＋Q26 行末）
 
 ## 任務目標
 
@@ -11,13 +11,13 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111117｜做遷移器｜工作中｜交棒1次`，2026-11-12 17:32 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-10.2`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；`gh` 已登入且有 `workflow` 權限。Windows／Linux 未驗。
 
 ## 已完成
 
-P0、P1 與 F22 見 [v2 說明](experiments/v2/README.md)。2026-11-11 P2（使用者逐片指示，決策書 Q20–Q25）：第 1 片包格式與歸屬、第 2 片專案指標與寫入檢查、第 3 片簽章發布與 Git tag channel（已發 `channel/beta/1-ed31ffed…`）、第 4 片能力矩陣（Q24：`src/kit/capabilities.json` 生成兩張跨工具表）、第 5 片遷移器（Q25：`sync_project.py` 清單改由 `owners.json` 算出、行為不變；`tools/migrate_project.py` 預演只讀、寫入一次一個專案，只換發過的舊版，客製或行末不同就整個專案停下）。細節在 v2 說明 P2 各節。
+P0、P1 與 F22 見 [v2 說明](experiments/v2/README.md)。2026-11-11 P2（使用者逐片指示，決策書 Q20–Q26）：第 1 片包格式與歸屬、第 2 片專案指標與寫入檢查、第 3 片簽章發布與 Git tag channel（已發 `channel/beta/1-ed31ffed…`）、第 4 片能力矩陣（Q24：`src/kit/capabilities.json` 生成兩張跨工具表）、第 5 片遷移器（Q25：`sync_project.py` 清單改由 `owners.json` 算出、行為不變；`tools/migrate_project.py` 預演只讀、寫入一次一個專案，只換發過的舊版，客製就整個專案停下；Q26 (a) 2026-11-12：寫入檢查、遷移器與 F39 盤點比專案副本時 CRLF 當 LF，包本身仍逐位元組比）。細節在 v2 說明 P2 各節。
 
 ## 未完成／下一步
 
@@ -35,8 +35,8 @@ P0、P1 與 F22 見 [v2 說明](experiments/v2/README.md)。2026-11-11 P2（使�
 
 ## 服務查證與期望快照
 
-- 2026-11-11 `verify_bootstrap.py --staged`：exit 0；`uv run --locked pytest` 591 通過（3.15）。新 `migrate` mutation 群組 28 個全 killed，全量沒重跑。B5：Codex hook 接線未改，不適用。無額外模型呼叫。
+- 2026-11-12 17:41 `verify_bootstrap.py --staged`：exit 0；`uv run --locked pytest` 591 通過（3.15）。mutation 只跑 migrate 21、pointer 44、inventory 9 三組，全 killed，全量沒重跑。B5：Codex hook 接線未改，不適用。無額外模型呼叫。
 
 ## 懸置事項（AI 勿自行處理）
 
-- 決策書 Q26：`.cmd` 行末。有專案用 `.gitattributes` 強制 CRLF，寫入檢查逐位元組比對會擋；選項與 AI 建議在決策書。
+- 無。

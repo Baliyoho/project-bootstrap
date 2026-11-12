@@ -160,13 +160,16 @@ class MigrateRepoTests(unittest.TestCase):
         rows = {Path(r['target']).name: r for r in result['results']}
         self.assertEqual(sorted(rows), ['p%02d' % i for i in range(20)])
         self.assertEqual(result['targets'], 20)
-        self.assertEqual(result['totals'], {'current': 2, 'migrate': 12, 'manual': 3,
+        self.assertEqual(result['totals'], {'current': 2, 'migrate': 13, 'manual': 2,
                                             'failed': 2, 'excluded': 1})
-        self.assertEqual(result['manual_prompts'], 3)
+        self.assertEqual(result['manual_prompts'], 2)
         self.assertEqual(rows['p00']['replace'], [HOOK])
         self.assertEqual(rows['p00']['add'], [])
         self.assertEqual(rows['p13']['compare'], [SKILL])
-        self.assertEqual(rows['p15']['eol'], [LAUNCHER])
+        # Q26 (a): a CRLF copy of the package file counts as the same file, shown as a note only.
+        self.assertEqual((rows['p15']['action'], rows['p15']['replace'], rows['p15']['add']),
+                         ('migrate', [], []))
+        self.assertIn('crlf:' + LAUNCHER, rows['p15']['notes'])
         self.assertEqual(rows['p16']['add'], [LAUNCHER])
         self.assertTrue(rows['p18']['problems'][0].startswith('inventory active'))
         self.assertTrue(rows['p19']['problems'][0].startswith('inventory active'))
@@ -234,6 +237,8 @@ class MigrateRepoTests(unittest.TestCase):
             settings['permissions'] = {'allow': ['Bash(ls)']}
             (project / '.claude/settings.json').write_text(json.dumps(settings))
             (project / LAUNCHER).unlink()
+            crlf = project / '.claude/hooks/codex-hook.cmd'
+            crlf.write_bytes(crlf.read_bytes().replace(b'\n', b'\r\n'))
         project = self.project('target', origin=True, tweak=own)
         self.claim(project)
         with mock.patch.object(migrate_project.install_package, 'KEYS', keys):

@@ -30,7 +30,6 @@ highest seen epoch is kept per ``WriteCheck`` object, not on disk; the
 ``region``／``wiring``／``key`` parts of mixed files are not compared yet; who
 declared an exception is a recorded name, not a verified identity.
 """
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -120,7 +119,7 @@ def exception_allows(exception, now, target):
 
 
 def check_components(project, manifest):
-    """Whole core／adapter files in the project must equal the installed package."""
+    """Whole core／adapter files in the project must equal the installed package (CRLF counts as LF)."""
     for path in sorted(package.whole_owned(manifest)):
         try:
             data = (Path(project) / path).read_bytes()
@@ -128,7 +127,7 @@ def check_components(project, manifest):
             raise Denied('component-missing:' + path) from None
         except OSError:
             raise Denied('component-unreadable:' + path) from None
-        if hashlib.sha256(data).hexdigest() != manifest['components'][path]:
+        if package.copy_digest(data) != manifest['components'][path]:
             raise Denied('component-drift:' + path)
 
 

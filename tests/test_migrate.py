@@ -28,13 +28,9 @@ class ClassifyTests(unittest.TestCase):
         self.assertEqual(migrate.classify('missing', A, {OLD}), 'missing')
         self.assertEqual(migrate.classify('unreadable', A, {OLD}), 'unreadable')
 
-    def test_crlf_copy_of_a_published_version_is_its_own_state(self):
-        self.assertEqual(migrate.classify(('eol', A), A, set()), 'eol')
-        self.assertEqual(migrate.classify(('eol', OLD), A, {OLD}), 'eol')
-        self.assertEqual(migrate.classify(('eol', CUSTOM), A, {OLD}), 'customised')
-
     def test_malformed_observations_are_refused(self):
-        for bad in (None, 'gone', ('digest',), ('digest', A, 1), ('hash', A), ('digest', 1), ['digest', A]):
+        for bad in (None, 'gone', ('digest',), ('digest', A, 1), ('hash', A), ('eol', A), ('digest', 1),
+                    ['digest', A]):
             denied(self, 'invalid-observation', migrate.classify, bad, A, set())
 
 
@@ -60,10 +56,6 @@ class TargetTests(unittest.TestCase):
     def test_one_customised_file_among_known_ones_still_stops(self):
         r = row({'skill.md': ('digest', OLD), 'hook.sh': ('digest', CUSTOM)}, pointer=None)
         self.assertEqual((r['action'], r['compare']), ('manual', ['hook.sh']))
-
-    def test_line_endings_only_stop_and_are_named(self):
-        r = row({'skill.md': ('eol', A), 'hook.sh': ('digest', B)})
-        self.assertEqual((r['action'], r['compare'], r['eol']), ('manual', ['skill.md'], ['skill.md']))
 
     def test_current_needs_every_file_no_merge_and_the_same_pointer(self):
         same = {'skill.md': ('digest', A), 'hook.sh': ('digest', B)}

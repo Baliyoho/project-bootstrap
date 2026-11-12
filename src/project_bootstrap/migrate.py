@@ -9,9 +9,8 @@ This module decides; ``tools/migrate_project.py`` observes the project and
 writes. For each released file the tool reports what it saw:
 
 - ``('digest', d)``: the file's shared content hashes to ``d`` (for a
-  ``region`` file only the shared region counts);
-- ``('eol', d)``: the raw bytes have CRLF line endings and ``d`` is the hash
-  after turning them into LF;
+  ``region`` file only the shared region counts), with CRLF counted as LF
+  like the per-write check (decision Q26 (a));
 - ``'missing'`` or ``'unreadable'``.
 
 ``classify`` compares that with the target package and with every version
@@ -21,10 +20,6 @@ this repository has published:
 - ``known``: an earlier published version, safe to replace;
 - ``missing``: will be added, because the per-write check requires every
   whole core／adapter file;
-- ``eol``: a published version except for CRLF line endings (a project
-  ``.gitattributes`` may force them). The per-write check compares bytes, so
-  writing LF would only last until Git checks the file out again; a person
-  decides, and the project stops like a customised one;
 - ``customised``: content nobody published. It may be a project's own change
   that belongs in a declared override, so the migrator never replaces it;
 - ``unreadable``: cannot be judged.
@@ -39,7 +34,7 @@ Standard library only.
 """
 from project_bootstrap.contracts import Denied
 
-STATES = ('current', 'known', 'missing', 'eol', 'customised', 'unreadable')
+STATES = ('current', 'known', 'missing', 'customised', 'unreadable')
 ACTIONS = ('current', 'migrate', 'manual', 'failed', 'excluded')
 
 
@@ -48,11 +43,9 @@ def classify(observed, target, known):
     if observed in ('missing', 'unreadable'):
         return observed
     if (not isinstance(observed, tuple) or len(observed) != 2
-            or observed[0] not in ('digest', 'eol') or not isinstance(observed[1], str)):
+            or observed[0] != 'digest' or not isinstance(observed[1], str)):
         raise Denied('invalid-observation')
-    kind, digest = observed
-    if kind == 'eol':
-        return 'eol' if digest == target or digest in known else 'customised'
+    digest = observed[1]
     if digest == target:
         return 'current'
     if digest in known:
@@ -77,12 +70,9 @@ def target(name, observed, package, known, package_digest, pointer_digest, probl
              for path in sorted(observed)}
     row = {'target': name, 'files': files, 'problems': list(problems)}
     unreadable = sorted(p for p, s in files.items() if s == 'unreadable')
-    customised = sorted(p for p, s in files.items() if s in ('customised', 'eol'))
+    customised = sorted(p for p, s in files.items() if s == 'customised')
     if customised:
         row['compare'] = customised
-    eol = sorted(p for p, s in files.items() if s == 'eol')
-    if eol:
-        row['eol'] = eol
     if row['problems'] or unreadable:
         row['problems'] += ['unreadable:' + p for p in unreadable]
         row['action'] = 'failed'

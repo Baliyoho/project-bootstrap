@@ -201,3 +201,14 @@ def whole_owned(manifest):
 
 def digest(manifest):
     return manifest_digest(manifest)
+
+
+def copy_digest(data):
+    """Digest of a project's copy of a package file, with CRLF counted as LF (decision Q26 (a)).
+
+    A project's ``.gitattributes`` may make Git check text files out with CRLF
+    (``*.cmd eol=crlf``); writing LF would only last until the next checkout.
+    The content is what is compared, not the line endings. A lone CR is still
+    a difference. The package itself (``check``) is still compared byte for byte.
+    """
+    return hashlib.sha256(data.replace(b'\r\n', b'\n')).hexdigest()
