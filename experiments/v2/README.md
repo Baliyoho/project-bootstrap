@@ -454,7 +454,7 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 
 本機實跑（2026-11-12）：Claude Code 偵測到 `2.1.321`，矩陣只有文件根據；Antigravity.app `2.31.0` 歸到 2.0，矩陣只實測過 `2.28.2`，不代用；這台 PATH 上沒有 `codex`／`agy`，版本是 `None`。
 
-沒做的：啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫，要另行授權；2026-11-12 使用者授權只對 Claude Code 做一次（拋棄式專案用真包鋪、`claude -p` 請它逐字列出開場的 `[git-check]` 行），但這台 PATH 上沒有獨立 CLI，桌面 App 內附的執行檔拿掉宿主 session 的變數單獨跑，回 `Not logged in`（登入是經宿主傳進來的；借用宿主通道等於把探針掛在當前 session 底下，沒有做），沒有用到模型額度，要做得先在終端機登入 CLI；Codex 的專案信任不在專案檔案裡，查不到；Windows 的 `.cmd` 在 Windows 上真的跑不跑（接線檔與檔案在不在已查）。F14 見下一段。
+沒做的：啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫，要另行授權；2026-11-12 使用者授權只對 Claude Code 做一次（拋棄式專案用真包鋪、`claude -p` 請它逐字列出開場的 `[git-check]` 行），但這台 PATH 上沒有獨立 CLI，桌面 App 內附的執行檔拿掉宿主 session 的變數單獨跑，回 `Not logged in`（登入是經宿主傳進來的；借用宿主通道等於把探針掛在當前 session 底下，沒有做），沒有用到模型額度。同日使用者在終端機登入 CLI（`claude auth login`，Pro 訂閱）後重跑一次：模型逐字列出三行 `[git-check]`（本機沒落後、「工作中」無人、全綠），全綠行帶著拋棄式專案 origin 的 SHA 與當下時間，這兩個值只有專案的開場 hook 算得出來，所以 Claude Code `2.1.321` 在 macOS 上會跑專案的 SessionStart hook，輸出進到模型的 context。矩陣的 `claude-code/hooks` 據此從 `docs` 改成 `tested: [2.1.321]`（表上文字不變，部署包不變，包的 digest 會變）。只測了這一個 surface、這一個版本、這一個事件；有沒有讀 `AGENTS.md`、push 提醒的 exit 2 會不會真的擋下工具呼叫都沒測；Codex 的專案信任不在專案檔案裡，查不到；Windows 的 `.cmd` 在 Windows 上真的跑不跑（接線檔與檔案在不在已查）。F14 見下一段。
 
 ## F14：開場檢查的共用契約與薄 adapter（2026-11-12）
 

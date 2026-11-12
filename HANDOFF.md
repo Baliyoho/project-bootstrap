@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-12 19:30（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（Q27 (a) 修 push 提醒、發布 `beta` epoch 2 並驗收；前一次交棒寫的 20:05 是錯的，實際約 19:05）
+- **交接時間**：2026-11-12 19:41（+08）
+- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（使用者登入 CLI 後跑 Claude Code 啟動自測一次，通過；矩陣該格改為實測）
 
 ## 任務目標
 
@@ -11,9 +11,9 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111218｜待指派｜工作中｜交棒2次`，2026-11-12 19:39 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-10.2`
-- 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；`gh` 已登入且有 `workflow` 權限。PATH 上沒有 `claude`／`codex`／`agy`，桌面 App 內附的 Claude Code 2.1.321 單獨跑會回 `Not logged in`；Antigravity.app 2.31.0。Windows／Linux 未驗。
+- 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；`gh` 已登入且有 `workflow` 權限。PATH 上沒有 `claude`／`codex`／`agy`；桌面 App 內附的 Claude Code 2.1.321 已用 `claude auth login` 登入（Pro，到 2026-12-12），拿掉宿主 session 的變數就能單獨跑；Antigravity.app 2.31.0。Windows／Linux 未驗。
 
 ## 已完成
 
@@ -23,11 +23,12 @@ P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)。2026-11-1
 - Q27 (a)：部署包 3.11 push 提醒只看 `command` 欄位，`source:` `v2026-11-12`，`VERSION` 不動。
 - 發布 `channel/beta/2-b2878c41…`（`8bcdbb1`）：本機重建 digest 相同、報告檔對得上、乾淨環境安裝放行、沿金鑰鏈從 epoch 1 升級。
 - 本 repo 的動作提醒 hook 會看進 `bash -c`／`eval`。
+- Claude Code 2.1.321 啟動自測（一次 `claude -p`）：開場 hook 的輸出確實進到模型 context；矩陣 `claude-code/hooks` 改為 `tested`，包的 digest 會變，下次發布才帶出去。
 
 ## 未完成／下一步
 
 1. P2 退出條件未全達成：真實專案遷移與另外 20 個專案的私人清單。2026-11-12 預演：從 v2 同步會帶出六檔版 skill，與 Q14 (b) 衝突，使用者選先不同步；`鍵鼠同部署_mac` 與 upstream 沒對齊。等 v2 上 main 時一起處理。
-2. Claude Code 啟動自測已授權一次，卡在 CLI 沒登入；使用者在終端機登入 `claude` 後再跑（拋棄式專案的作法寫在 v2 說明 F47 段）。
+2. 啟動自測只做了 Claude Code 的 SessionStart；有沒有讀 `AGENTS.md`、push 提醒的 exit 2 是否真的擋下、Codex／Antigravity 都沒測，每次模型呼叫要另行授權。
 3. F14 其他程序步驟沒有等價案例；`ag-wrap.sh` 會把 stderr 併進訊息，hook 若開始寫 stderr 就不等價。
 4. channel tag 沒有伺服器端保護（Q23）；每次發布要先刪舊的 `release-request/<channel>` 觸發 tag（見 ARCHITECT）。
 5. F22 剩 Windows／Linux 與 Codex 沒量；P3／P4、Windows hook 同步、R01–R09 複審、Codex 真實注入、F28 探針維持暫緩（2026-11-12 使用者再確認）。
@@ -41,7 +42,7 @@ P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)。2026-11-1
 
 ## 服務查證與期望快照
 
-- 2026-11-12 19:30 `verify_bootstrap.py --staged`：exit 0；`uv run --locked pytest` 639 通過（3.15）。mutation 只跑 selftest 40、surfaces 27、capabilities 33、package 27 四組，全 killed，全量沒重跑。B4：本 repo 沒有 `check_docs.py`（已宣告例外）。B5：Codex hook 接線未改，不適用。模型呼叫：探針一次因未登入沒有送出。
+- 2026-11-12 19:41 `verify_bootstrap.py --staged`：exit 0；`uv run --locked pytest` 639 通過（3.15）。mutation 只跑 selftest 40、surfaces 27、capabilities 33、package 27 四組，全 killed，全量沒重跑。B4：本 repo 沒有 `check_docs.py`（已宣告例外）。B5：Codex hook 接線未改，不適用。模型呼叫：Claude Code 探針一次（已授權）。
 
 ## 懸置事項（AI 勿自行處理）
 

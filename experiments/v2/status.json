@@ -1463,7 +1463,7 @@
           "scope": "本 repo：真的包帶的矩陣等於來源；用包鋪的專案在六個有接線的 surface、posix 與 windows 兩個平台自測全過；本 repo 自己（已宣告例外：repo-*.sh、沒有專案 skill）判成 hooks 與 skill 沒接"
         }
       ],
-      "unknown": "Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收。安裝自測只看檔案；工具是否真的讀指示檔、跑 hook 的啟動自測要模型呼叫，未做；Codex 的專案信任不在檔案裡，查不到",
+      "unknown": "2026-11-12 只有 Claude Code 2.1.321（macOS）做過一次真實啟動自測：SessionStart hook 輸出確實進到模型 context，矩陣該格改為 tested；其他 surface、其他能力仍未實測。Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收。安裝自測只看檔案；工具是否真的讀指示檔、跑 hook 的啟動自測要模型呼叫，未做；Codex 的專案信任不在檔案裡，查不到",
       "next": "取得授權後做每個 surface 的啟動自測（真的觸發 hook 並讀回）；受控寫入閘要到 P3，之前沒有 strict ready"
     },
     {

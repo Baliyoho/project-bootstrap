@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-12（決策書 Q27 (a)）：部署包 3.11 `pre-push-handoff.sh` 只看 payload 的 `command` 欄位（字串或字串陣列），不再拿整段 payload 比對；`source:` 標記 `v2026-11-12`，`VERSION` 不動，各專案副本未同步。`verify_bootstrap.py` 的 push 提醒情境加三條與一個負向儀器。
+> 最後更新：2026-11-12（Claude Code 啟動自測）：使用者登入 CLI 後跑一次 `claude -p`，開場 hook 的輸出確實進到模型 context；`src/kit/capabilities.json` 的 `claude-code/hooks` 從 `docs` 改成 `tested: [2.1.321]`，表上文字與部署包不變，包的 digest 會變（下次發布才帶出去）。
+
+> 2026-11-12 稍早（決策書 Q27 (a)）：部署包 3.11 `pre-push-handoff.sh` 只看 payload 的 `command` 欄位（字串或字串陣列），不再拿整段 payload 比對；`source:` 標記 `v2026-11-12`，`VERSION` 不動，各專案副本未同步。`verify_bootstrap.py` 的 push 提醒情境加三條與一個負向儀器。
 
 > 2026-11-12 稍早（本 repo 的動作提醒 hook 第三版）：`.claude/hooks/repo-action-rules.sh` 對 `bash`／`sh`／`zsh`／`dash -c` 與 `eval` 裡的指令再解析一層（最多三層），補上 `bash -c "git push"` 的漏報；`verify_bootstrap.py` 加 10 個案例與一個拿掉這條規則就要回到漏報的負向測試。仍只提醒、不擋；本 repo 專屬，不同步。
 

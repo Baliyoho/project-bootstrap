@@ -77,8 +77,9 @@
      "text": "✅ 原生讀 `.agents/skills/`"},
 
     {"id": "claude-code/hooks", "capability": "hooks", "surfaces": ["claude-code"],
-     "status": "supported", "basis": "docs",
-     "text": "✅ `.claude/settings.json`"},
+     "status": "supported", "basis": "tested", "tested": ["2.1.321"],
+     "text": "✅ `.claude/settings.json`",
+     "note": "2026-11-12 在 macOS 實測：用正式包鋪的拋棄式專案跑一次 claude -p，模型逐字列出開場 hook 的三行 [git-check]，含只有 hook 算得出的 origin SHA 與時間"},
     {"id": "codex-cli/hooks", "capability": "hooks", "surfaces": ["codex-cli"],
      "status": "supported", "basis": "tested", "tested": ["0.164.0", "0.166.0"],
      "text": "✅ `<repo>/.codex/hooks.json`，**2026-10-31 在 `0.164.0` 端到端實測過**；但要專案被信任＋**每個專案各審一次**（信任綁 `hooks.json` 絕對路徑，不是內容），見下"},
