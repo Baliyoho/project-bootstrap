@@ -217,3 +217,114 @@ class PushAdapterTests(unittest.TestCase):
         self.assertTrue(out['equal'])
         self.assertEqual(list(out['unsupported']), ['antigravity-2'])
         self.assertIn('刻意不接', out['unsupported']['antigravity-2'])
+
+
+class StderrTests(unittest.TestCase):
+    def test_hook_stderr_breaks_equivalence_except_on_antigravity(self):
+        # ag-wrap.sh folds stderr into the message (2>&1); Claude Code and Codex do not show it.
+        for errors, equal in (({}, True), ({'codex-cli': 'warn\n'}, False), ({'antigravity-cli': 'warn\n'}, True)):
+            def fake(surface, project, env, subdir=''):
+                return {'exit': 0, 'raw': 'x\n', 'text': 'x\n', 'stderr': errors.get(surface, '')}
+            with mock.patch.object(surfaces, 'session_start', fake):
+                out = surfaces.compare('/p', ['claude-code', 'codex-cli', 'antigravity-cli'], {}, matrix())
+            self.assertEqual(out['equal'], equal, errors)
+
+
+AUTH = 'Triggers on 接棒、建立交接機制。'
+LEAD = '指標檔，權威版在 .claude/skills/handoff/SKILL.md——'
+POINTER_BODY = '**權威版：[`.claude/skills/handoff/SKILL.md`](../../../.claude/skills/handoff/SKILL.md)**\n'
+
+
+def skill(description, body='# 入口\n'):
+    return '---\nname: handoff\ndescription: %s\n---\n\n%s' % (description, body)
+
+
+class ProcedureTests(unittest.TestCase):
+    """Which instruction text and which skill files each surface reaches."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.project, self.home = self.tmp / 'p', self.tmp / 'home'
+        self.put('AGENTS.md', '# AGENTS\n')
+        self.put('CLAUDE.md', '@AGENTS.md\n')
+        self.put('GEMINI.md', '請讀 [AGENTS.md](AGENTS.md)\n')
+        self.put('.claude/skills/handoff/SKILL.md', skill(AUTH))
+        self.put('.claude/skills/handoff/mode-a.md', 'A\n')
+        self.put('.agents/skills/handoff/SKILL.md', skill(LEAD + AUTH, POINTER_BODY))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def put(self, relative, text, root=None):
+        path = (root or self.project) / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding='utf-8')
+
+    def compare(self, names=('claude-code', 'codex-cli', 'antigravity-cli'), data=None):
+        return surfaces.compare_procedure(self.project, list(names), self.home, data or matrix())
+
+    def test_pointer_is_followed_and_its_lead_dropped(self):
+        out = self.compare()
+        self.assertTrue(out['equal'], out['differ'])
+        codex = out['runs']['codex-cli']
+        self.assertEqual(codex['entry'], '專案 .agents/skills/handoff/SKILL.md')
+        self.assertEqual(codex['description'], AUTH)
+        self.assertEqual(sorted(codex['files']), ['SKILL.md', 'mode-a.md'])
+        self.assertEqual(codex['files']['SKILL.md'], skill(AUTH))
+        self.assertEqual(codex['instructions'], '# AGENTS\n')
+
+    def test_pointer_missing_a_trigger_differs(self):
+        self.put('.agents/skills/handoff/SKILL.md', skill(LEAD + 'Triggers on 接棒。', POINTER_BODY))
+        out = self.compare()
+        self.assertEqual((out['equal'], out['differ']), (False, ['description']))
+
+    def test_pointer_needs_its_lead_and_an_existing_target(self):
+        self.put('.agents/skills/handoff/SKILL.md', skill(AUTH, POINTER_BODY))
+        with self.assertRaisesRegex(AdapterError, '指標開頭'):
+            self.compare()
+        self.put('.agents/skills/handoff/SKILL.md',
+                 skill(LEAD + AUTH, POINTER_BODY.replace('(../../../.claude/skills/handoff/', '(../../../.claude/skills/gone/')))
+        with self.assertRaisesRegex(AdapterError, '不存在'):
+            self.compare()
+
+    def test_frontmatter_must_name_handoff(self):
+        self.put('.claude/skills/handoff/SKILL.md', skill(AUTH).replace('name: handoff', 'name: other'))
+        with self.assertRaisesRegex(AdapterError, 'frontmatter'):
+            self.compare(['claude-code'])
+        self.put('.claude/skills/handoff/SKILL.md', '# no frontmatter\n')
+        with self.assertRaisesRegex(AdapterError, 'frontmatter'):
+            self.compare(['claude-code'])
+
+    def test_codex_falls_back_to_home_and_a_stale_copy_differs(self):
+        shutil.rmtree(self.project / '.agents')
+        self.put('.codex/skills/handoff/SKILL.md', skill(AUTH), root=self.home)
+        out = self.compare(['claude-code', 'codex-cli'])
+        self.assertEqual(out['runs']['codex-cli']['entry'], '家目錄 ~/.codex/skills/handoff/SKILL.md')
+        self.assertEqual(out['differ'], ['files'])
+        # Antigravity has no home location to fall back to.
+        with self.assertRaisesRegex(AdapterError, '找不到 handoff skill'):
+            self.compare(['antigravity-cli'])
+
+    def test_project_skill_wins_over_home(self):
+        self.put('.claude/skills/handoff/SKILL.md', skill('Triggers on 舊。'), root=self.home)
+        self.assertEqual(self.compare(['claude-code'])['runs']['claude-code']['description'], AUTH)
+
+    def test_instruction_files_must_lead_to_agents_md(self):
+        self.put('CLAUDE.md', '請去讀 AGENTS.md\n')
+        with self.assertRaisesRegex(AdapterError, '@AGENTS.md'):
+            self.compare(['claude-code'])
+        self.put('CLAUDE.md', '@AGENTS.md\n')
+        self.put('GEMINI.md', '# 自己的規則\n')
+        with self.assertRaisesRegex(AdapterError, 'GEMINI.md'):
+            self.compare(['antigravity-cli'])
+        self.put('AGENTS.md', '# changed\n')
+        self.assertEqual(self.compare(['claude-code', 'codex-cli'])['runs']['codex-cli']['instructions'], '# changed\n')
+
+    def test_matrix_missing_skill_loader_is_reported_not_run(self):
+        data = matrix()
+        cell = next(c for c in data['cells'] if c['id'] == 'codex-cli/loads-skill')
+        cell.update(status='missing', basis='design', why='測試用')
+        cell.pop('tested', None)
+        shutil.rmtree(self.project / '.agents')
+        out = self.compare(['claude-code', 'codex-cli'], data)
+        self.assertEqual((list(out['runs']), list(out['unsupported'])), (['claude-code'], ['codex-cli']))

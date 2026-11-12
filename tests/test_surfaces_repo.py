@@ -194,3 +194,29 @@ class RepoPushTests(Fixture):
         self.assertTrue(result['equal'], result['runs'])
         self.assertEqual((result['runs']['claude-code']['ran'], result['runs']['claude-code']['exit']), (False, 0))
         self.assertEqual((result['runs']['codex-cli']['ran'], result['runs']['codex-cli']['exit']), (True, 0))
+
+
+class RepoProcedureTests(Fixture):
+    """The instruction text and handoff skill each surface reaches, on the real package."""
+
+    def test_every_surface_reaches_the_same_procedure(self):
+        result = surfaces.compare_procedure(self.work, ALL, self.tmp / 'home')
+        self.assertEqual((result['equal'], result['differ'], result['unsupported']), (True, [], {}))
+        claude, codex = result['runs']['claude-code'], result['runs']['codex-cli']
+        self.assertEqual(claude['entry'], '專案 .claude/skills/handoff/SKILL.md')
+        self.assertEqual(codex['entry'], '專案 .agents/skills/handoff/SKILL.md')
+        self.assertEqual(sorted(codex['files']), ['SKILL.md', 'mode-0.md', 'mode-a-stop.md', 'mode-a.md',
+                                                  'mode-b.md', 'reasons.md'])
+        # Found 2026-11-12: the pointer's description had lost the mode 0 sentence and
+        # three trigger words the authoritative one gained, so Codex and Antigravity
+        # would not load the procedure on words that load it in Claude Code.
+        self.assertIn('幫我建 HANDOFF', codex['description'])
+
+    def test_a_stale_global_copy_is_not_the_same_procedure(self):
+        # Without the project pointer Codex falls back to ~/.codex/skills/handoff/.
+        shutil.rmtree(self.work / '.agents' / 'skills')
+        stale = self.tmp / 'home' / '.codex' / 'skills' / 'handoff'
+        shutil.copytree(self.work / '.claude' / 'skills' / 'handoff', stale)
+        (stale / 'mode-a.md').write_text('# 舊版\n', encoding='utf-8')
+        result = surfaces.compare_procedure(self.work, ('claude-code', 'codex-cli', 'codex-app'), self.tmp / 'home')
+        self.assertEqual((result['equal'], result['differ']), (False, ['files']))

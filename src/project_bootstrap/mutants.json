@@ -5357,13 +5357,13 @@
     },
     {
      "file": "src/project_bootstrap/surfaces.py",
-     "old": "    return {'equal': len(texts) <= 1 and exits <= {0},",
-     "new": "    return {'equal': len(texts) <= 1,"
+     "old": "    return {'equal': len(texts) <= 1 and exits <= {0} and quiet,",
+     "new": "    return {'equal': len(texts) <= 1 and quiet,"
     },
     {
      "file": "src/project_bootstrap/surfaces.py",
-     "old": "    return {'equal': len(texts) <= 1 and exits <= {0},",
-     "new": "    return {'equal': exits <= {0},"
+     "old": "    return {'equal': len(texts) <= 1 and exits <= {0} and quiet,",
+     "new": "    return {'equal': exits <= {0} and quiet,"
     },
     {
      "file": "src/project_bootstrap/surfaces.py",
@@ -5429,6 +5429,71 @@
      "file": "src/project_bootstrap/surfaces.py",
      "old": "    groups = hooks.get('PreToolUse') if isinstance(hooks, dict) else None",
      "new": "    groups = hooks.get('PreToolUse')"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    quiet = all(not r.get('stderr') for s, r in runs.items() if s not in CWD)\n",
+     "new": "    quiet = True\n"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    quiet = all(not r.get('stderr') for s, r in runs.items() if s not in CWD)\n",
+     "new": "    quiet = all(not r.get('stderr') for s, r in runs.items())\n"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if not check['ok']:\n        raise AdapterError('%s: %s' % (surface, check['detail']))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if not meta or meta.get('name') != 'handoff' or not meta.get('description'):\n",
+     "new": "    if not meta or not meta.get('description'):\n"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if not lines or lines[0].strip() != '---' or '---' not in [l.strip() for l in lines[1:]]:\n        return None\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "        if not target.is_file():\n            raise AdapterError('%s: %s 指向的 %s 不存在' % (surface, label, link.group(1)))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "        if not POINTER_LEAD.match(description):\n            raise AdapterError('%s: %s 是指標，但 description 沒有指標開頭' % (surface, label))\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "        description = POINTER_LEAD.sub('', description)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "        path = target\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    for entry in SKILLS[surface]:\n",
+     "new": "    for entry in reversed(SKILLS[surface]):\n"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    differ = [part for part in ('instructions', 'description', 'files')\n",
+     "new": "    differ = [part for part in ('instructions', 'description')\n"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "               or _unsupported(matrix, surface, versions.get(surface), 'loads-skill'))\n",
+     "new": "               or None)\n"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    instructions = selftest._read(project / 'AGENTS.md')\n",
+     "new": "    instructions = ''\n"
     }
    ]
   }

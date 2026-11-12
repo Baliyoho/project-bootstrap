@@ -17,6 +17,10 @@ and an adapter only moves bytes:
 must be identical. A surface the capability matrix marks as having no hooks
 is not run; it is reported as unsupported with the matrix's reason.
 
+Two more shared contracts follow below: the push reminder (exit code and stderr)
+and the procedure entry (the instruction text and handoff skill each surface's
+loader reaches, ``compare_procedure``).
+
 What this does not show: that the tool itself fires the hook and puts the text
 in front of the model (that needs the tool and a model call), and the Windows
 ``commandWindows``／``.cmd`` path. The run fetches from the project's origin.
@@ -30,7 +34,8 @@ import re
 import subprocess
 
 from project_bootstrap import capabilities
-from project_bootstrap.selftest import WIRING, session_commands
+from project_bootstrap import selftest
+from project_bootstrap.selftest import SKILLS, WIRING, session_commands
 
 FRESHNESS = 'git-freshness.sh'
 # Antigravity runs project hooks with .agents/ as the working directory.
@@ -98,7 +103,8 @@ def session_start(surface, project, env, subdir=''):
     if len(runs) > 1 and len(spoke) != 1:
         raise AdapterError('%s: %d 條命令有輸出，要恰好 1 條' % (surface, len(spoke)))
     done = spoke[0] if len(runs) > 1 else runs[0]
-    return {'exit': done.returncode, 'raw': done.stdout, 'text': _decode(surface, done.stdout)}
+    return {'exit': done.returncode, 'raw': done.stdout, 'stderr': done.stderr,
+            'text': _decode(surface, done.stdout)}
 
 
 def normalise(text):
@@ -136,7 +142,10 @@ def compare(project, surfaces, env, matrix=None, versions=None, subdir=''):
         runs[surface] = result
     texts = {r['text'] for r in runs.values()}
     exits = {r['exit'] for r in runs.values()}
-    return {'equal': len(texts) <= 1 and exits <= {0}, 'runs': runs, 'unsupported': unsupported}
+    # ag-wrap.sh folds stderr into the injected message (2>&1); the other surfaces do not
+    # show it to the model. A hook that writes stderr is therefore not equivalent.
+    quiet = all(not r.get('stderr') for s, r in runs.items() if s not in CWD)
+    return {'equal': len(texts) <= 1 and exits <= {0} and quiet, 'runs': runs, 'unsupported': unsupported}
 
 
 # The push reminder (3.11) is the second shared check. Its contract is the exit
@@ -198,3 +207,79 @@ def compare_push(project, surfaces, env, payload, matrix=None, versions=None, su
         runs[surface] = pre_tool_use(surface, project, env, payload, subdir)
     outcomes = {(r['exit'], r['stderr']) for r in runs.values()}
     return {'equal': len(outcomes) <= 1, 'runs': runs, 'unsupported': unsupported}
+
+
+# The procedure itself is the third shared thing. Every surface must reach the same
+# instruction text (AGENTS.md, through CLAUDE.md's import or GEMINI.md's pointer)
+# and, through its own skill loader, the same handoff skill: the same description the
+# loader matches against, and the same entry and mode files. A pointer skill
+# (.agents/skills/) is followed to the file it names; its description is the
+# authoritative one with a fixed lead in front (3.16: written out in full).
+POINTER = re.compile(r'權威版：\*{0,2}\[[^\]]*\]\(([^)\s]+)\)')
+POINTER_LEAD = re.compile(r'^指標檔，權威版在 \S+——')
+
+
+def _frontmatter(text):
+    lines = text.split('\n')
+    if not lines or lines[0].strip() != '---' or '---' not in [l.strip() for l in lines[1:]]:
+        return None
+    end = [l.strip() for l in lines[1:]].index('---') + 1
+    fields = {}
+    for line in lines[1:end]:
+        key, sep, value = line.partition(':')
+        if sep and key.strip():
+            fields[key.strip()] = value.strip()
+    return fields
+
+
+def _skill_entry(surface, project, home):
+    """(label, path) of the first handoff skill the surface's loader finds."""
+    for entry in SKILLS[surface]:
+        where, relative = entry.split(':', 1)
+        path = (project if where == 'project' else home) / relative
+        if path.is_file():
+            return ('專案 ' if where == 'project' else '家目錄 ~/') + relative, path
+    raise AdapterError('%s: 找不到 handoff skill' % surface)
+
+
+def procedure(surface, project, home):
+    """What one surface reaches: {'entry', 'instructions', 'description', 'files'}."""
+    project, home = Path(project), Path(home)
+    check = selftest._instructions(surface, project)
+    if not check['ok']:
+        raise AdapterError('%s: %s' % (surface, check['detail']))
+    instructions = selftest._read(project / 'AGENTS.md')
+    label, path = _skill_entry(surface, project, home)
+    text = selftest._read(path)
+    meta = _frontmatter(text or '')
+    if not meta or meta.get('name') != 'handoff' or not meta.get('description'):
+        raise AdapterError('%s: %s 的 frontmatter 沒有 name: handoff 與 description' % (surface, label))
+    description = meta['description']
+    link = POINTER.search(text)
+    if link:
+        target = (path.parent / link.group(1)).resolve()
+        if not target.is_file():
+            raise AdapterError('%s: %s 指向的 %s 不存在' % (surface, label, link.group(1)))
+        if not POINTER_LEAD.match(description):
+            raise AdapterError('%s: %s 是指標，但 description 沒有指標開頭' % (surface, label))
+        description = POINTER_LEAD.sub('', description)
+        path = target
+    files = {f.name: selftest._read(f) for f in sorted(path.parent.glob('*.md'))}
+    return {'entry': label, 'instructions': instructions, 'description': description, 'files': files}
+
+
+def compare_procedure(project, surfaces, home, matrix=None, versions=None):
+    """Every supported surface on the same project; 'differ' names the parts that are not identical."""
+    matrix = matrix if matrix is not None else capabilities.read_matrix()
+    versions = versions or {}
+    runs, unsupported = {}, {}
+    for surface in surfaces:
+        why = (_unsupported(matrix, surface, versions.get(surface), 'reads-agents-md')
+               or _unsupported(matrix, surface, versions.get(surface), 'loads-skill'))
+        if why:
+            unsupported[surface] = why
+            continue
+        runs[surface] = procedure(surface, project, home)
+    differ = [part for part in ('instructions', 'description', 'files')
+              if len({json.dumps(r[part], sort_keys=True, ensure_ascii=False) for r in runs.values()}) > 1]
+    return {'equal': not differ, 'differ': differ, 'runs': runs, 'unsupported': unsupported}
