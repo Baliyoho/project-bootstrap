@@ -183,14 +183,14 @@ class RepoPushTests(Fixture):
         result = self.push_compare(self.bash('git push'))
         self.assertEqual(({r['exit'] for r in result['runs'].values()}, result['equal']), ({0}, True))
 
-    def test_known_divergence_non_shell_tool_mentioning_git_push(self):
-        # Found 2026-11-12: Codex wires PreToolUse without a matcher (3.17, kept on purpose),
-        # and the hook matches the literal text anywhere in the payload. A patch whose text
-        # mentions git push is blocked on Codex but never reaches the hook on Claude Code.
-        # Pinned here so a fix (or a decision to keep it) shows up as a change.
+    def test_non_shell_tool_mentioning_git_push_is_allowed_everywhere(self):
+        # Found 2026-11-12 (decision Q27): Codex wires PreToolUse without a matcher (3.17),
+        # and the hook used to match the literal text anywhere in the payload, so a patch
+        # mentioning git push was blocked on Codex only. Since Q27 (a) the hook reads only
+        # the command field: Codex runs it and allows, Claude Code never runs it.
         self.unpushed()
         payload = {'tool_name': 'apply_patch', 'tool_input': {'input': '*** 說明：收工再 git push\n'}}
         result = self.push_compare(payload)
-        self.assertFalse(result['equal'])
+        self.assertTrue(result['equal'], result['runs'])
         self.assertEqual((result['runs']['claude-code']['ran'], result['runs']['claude-code']['exit']), (False, 0))
-        self.assertEqual((result['runs']['codex-cli']['ran'], result['runs']['codex-cli']['exit']), (True, 2))
+        self.assertEqual((result['runs']['codex-cli']['ran'], result['runs']['codex-cli']['exit']), (True, 0))

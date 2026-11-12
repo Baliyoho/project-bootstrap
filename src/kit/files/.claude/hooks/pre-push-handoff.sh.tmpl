@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # PreToolUse hook：AI push 提醒（不是 Git 原生 pre-push／發布保證）
 # 起因：push 完才想起沒寫 HANDOFF，下一棒拿到過期狀態。
-# 只看字面 git push、目前分支與 origin 追蹤 ref，不解析選項／remote／refspec。
-# GUI／script 可能漏判，僅提到 git push 也可能誤擋；檢查已提交的 HANDOFF 差異。
-# 其他情況（非 push 指令、feature 分支中途推進度、判斷不了）一律放行——寧可漏擋，不要誤擋。
+# 只看殼層指令（tool_input.command）裡的字面 git push、目前分支與 origin 追蹤 ref，不解析選項／remote／refspec。
+# GUI／script 可能漏判，指令裡僅提到 git push 也可能誤擋；檢查已提交的 HANDOFF 差異。
+# 其他情況（非 push 指令、非殼層工具、feature 分支中途推進度、判斷不了）一律放行——寧可漏擋，不要誤擋。
 # 退出碼：0＝放行；2＝擋下並把 stderr 交給模型（模型會看到訊息並改走交棒程序）。
 # 臨時停用：HANDOFF_HOOK=off
-# source: PROJECT-BOOTSTRAP.md v2026-11-02.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-12 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 
 [ "$HANDOFF_HOOK" = "off" ] && exit 0
 
@@ -15,6 +15,14 @@ case "$payload" in
   *'git push'*) ;;
   *) exit 0 ;;
 esac
+# 2026-11-12（決策書 Q27）：只看 "command" 這個欄位，不看整段 payload。Codex 的 PreToolUse
+# 沒有 matcher（3.17），每個工具呼叫都會跑到這裡；舊版拿整段 stdin 比對，編輯工具的內容只要
+# 提到 git push 就被擋，Claude Code（matcher 只放殼層工具）卻不會，兩個工具結果不同。
+# 欄位值可能是 JSON 字串或字串陣列，兩種都收；JSON 字串裡的 \" 跳脫不會讓比對提早結束。
+# 只用 grep、不另外依賴直譯器：這支會被抄進各專案，Git Bash 只保證有 grep。
+printf '%s' "$payload" \
+  | grep -oE '"command"[[:space:]]*:[[:space:]]*("([^"\\]|\\.)*"|\[([^]"]|"([^"\\]|\\.)*")*\])' \
+  | grep -qF 'git push' || exit 0
 
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$root" || exit 0

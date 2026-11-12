@@ -26,7 +26,7 @@ P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)。2026-11-1
 
 1. P2 退出條件未全達成：真實專案遷移（逐專案授權）、另外 20 個專案的私人清單、發布 `beta` epoch 2（第一個帶矩陣與報告檔的正式包，要在 GitHub 核准 release environment）。
 2. 啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫；Codex 專案信任不在檔案裡；`.cmd` 在 Windows 上真的跑沒驗。
-3. push 提醒不等價（Q27）；F14 其他程序步驟沒有等價案例；`ag-wrap.sh` 會把 stderr 併進訊息，hook 若開始寫 stderr 就不等價，目前沒有案例守。
+3. Q27 (a) 已在部署包修好（3.11 只看 `command` 欄位，`VERSION` 不動），各專案副本還沒同步、要另行授權；F14 其他程序步驟沒有等價案例；`ag-wrap.sh` 會把 stderr 併進訊息，hook 若開始寫 stderr 就不等價，目前沒有案例守。
 4. channel tag 沒有伺服器端保護（Q23）；安全靠簽章。
 5. F22 剩 Windows／Linux 與 Codex 沒量；金鑰撤銷、跨機通知與外部效果冪等屬 P3／P4。Windows hook 同步、R01–R09 複審、Codex 真實注入、F28 探針先不做（2026-11-10 裁定）。
 
@@ -43,4 +43,4 @@ P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)。2026-11-1
 
 ## 懸置事項（AI 勿自行處理）
 
-- 決策書 Q27（待決）：push 提醒在非殼層工具上 Codex 擋、Claude Code 不擋，修法三選一；測試已釘住現況。
+- 無。

@@ -711,6 +711,13 @@ def step_hook(dest, tmp):
     cases.append(('僅提到 push（已知誤擋）', 2, command('echo git push')))
     cases.append(('script 間接 push（刻意漏判）', 0, command('./publish.sh')))
     cases.append(('GUI 無命令 payload（不覆蓋）', 0, fire('{}')))
+    # Q27（2026-11-12）：只看 command 欄位。非殼層工具的內容提到 git push 不擋（舊版會，Codex 沒有 matcher）。
+    patch_payload = json.dumps({'tool_name': 'apply_patch', 'tool_input': {'input': '*** 說明：收工再 git push\n'}},
+                               ensure_ascii=False)
+    cases.append(('非殼層工具內容提到 push（Q27 放行）', 0, fire(patch_payload)))
+    cases.append(('command 是字串陣列', 2, fire(json.dumps({'tool_input': {'command': ['bash', '-lc', 'git push']}}))))
+    cases.append(('push 只出現在 command 以外的欄位', 0,
+                  fire(json.dumps({'tool_input': {'command': 'git status', 'description': 'then git push'}}))))
     cases.append(('停用開關確實繞過阻擋', 0, fire(push, env=dict(GIT_ENV, HANDOFF_HOOK='off'))))
 
     (work / 'HANDOFF.md').open('a', encoding='utf-8', newline='').write('\n- 驗證用\n')
@@ -730,6 +737,16 @@ def step_hook(dest, tmp):
         cases.append(('負向：舊捷徑重現錯誤放行', 0, fire(push)))
     finally:
         write_lf(hook_path, fixed)
+    # 負向儀器（Q27）：拿掉只看 command 欄位那一道，非殼層工具的內容必須重現舊版的誤擋。
+    field = "  | grep -qF 'git push' || exit 0\n"
+    if fixed.count(field) != 1:
+        cases.append(('負向：hook 沒有唯一的 command 欄位過濾', 'present', 'missing'))
+    else:
+        try:
+            write_lf(hook_path, fixed.replace(field, "  >/dev/null; true\n"))
+            cases.append(('負向：拿掉欄位過濾重現舊誤擋', 2, fire(patch_payload)))
+        finally:
+            write_lf(hook_path, fixed)
     git(['commit', '-qam', 'chore: handoff'], work)
     cases.append(('交棒快照已提交', 0, fire(push)))
     git(['push', '-q', 'origin', 'main'], work)
