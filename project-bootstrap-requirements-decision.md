@@ -304,6 +304,7 @@ F16b、F27、F39、F41 保留為想要，不設定必要門檻。F41 的七項�
   - 未選 (b) 包改發 CRLF：要改現行部署包、跳版並同步所有專案，而且 LF 的專案反過來會被擋（出處：本條選項說明；後半是推論）
   - 未選 (c) 逐一人工改專案：每個這樣設定的專案都要人改，專案自己的行末規則被迫讓步（出處：本條選項說明）
   - 結果：`package.copy_digest` 把 CRLF 當 LF 算 digest，寫入檢查、遷移器與 F39 盤點共用；單獨的 CR 仍算不同，包本身（`package.check`）仍逐位元組比對。遷移器拿掉 `eol` 狀態，CRLF 只在報告裡列成備註；真實只讀跑原本停下的專案改為可遷移
+- **Q27**（2026-11-12 登記）：push 前提醒（部署包 3.11 `pre-push-handoff.sh`）在 Claude Code 與 Codex 上不等價。F14 的跨 surface 比較發現：main 上有未推 commit、已提交差異沒動 HANDOFF 時，`apply_patch` 這類非殼層工具的內容只要提到 `git push`，Codex 會擋（3.17 刻意不加 matcher，每個工具呼叫都跑 hook，而 hook 在整段 payload 找字面 `git push`），Claude Code 不會（3.9 的 matcher 只放 Bash 與 PowerShell）。部署包 3.17 寫「它自己對非 push 的呼叫是 `exit 0` 立刻收手，功能上沒問題」，這個情境下不成立。影響 F14，連帶 3.11、3.17 與所有專案的副本。選項：(a) hook 只看 `tool_input.command`（殼層指令），其他工具一律放行，兩個 surface 都改由 hook 自己分辨，代價是改部署 hook、要同步所有專案，而且 hook 要解析 JSON；(b) Codex 的接線加 `"matcher": "Bash"`，代價就是 3.17 原本不加的理由：拿一次實測的工具名去賭所有情境，MCP 等工具名不同會漏報；(c) 不改行為，只把 3.17 那句改成照實寫（非殼層工具內容提到 `git push` 也會被擋），代價是誤擋留著。AI 建議 (a)：push 的判斷本來就只該看殼層指令，誤擋與漏報兩邊一起收；改部署 hook 屬鐵律 1 的正常流程，但同步各專案要另行授權。`tests/test_surfaces_repo.py` 已把現在的行為釘住，改了測試會跟著變。需使用者決定。狀態：待決
 
 ## 7. 本次整理的決策與理由（2026-11-06）
 

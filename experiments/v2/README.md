@@ -468,7 +468,7 @@ F14 是「換工具不改變程序」，驗收寫「相同案例在每個受支�
 
 **push 前提醒（同日稍後補）**：第二個共用檢查是 `pre-push-handoff.sh`，契約是結束碼（2 擋下工具呼叫）與 stderr（給模型看的訊息）。能力矩陣新增 `push-reminder`（根據都是 design，格子不帶文字，部署包的表不變）：Claude Code 與 Codex 有，Antigravity 刻意不接（3.20）。`pre_tool_use` 照各自的 PreToolUse 接線跑，遵守 matcher（沒有、空字串、`*` 是每次都跑，否則是整個工具名的正規式）；`compare_push` 要求結束碼與 stderr 都相同。`test_surfaces_repo.py` 加 4 個：main 上有未推 commit、沒動 HANDOFF 時 `git push` 三個 surface 一樣擋（exit 2、同一段訊息）；`git status`、`HANDOFF_HOOK=off`、commit 裡有 HANDOFF、feature 分支都一樣放行；Antigravity 三個 surface 列為不支援。
 
-**找到一個不等價**：同樣在 main 上有未推 commit、沒動 HANDOFF，`apply_patch` 這類非殼層工具的內容只要提到 `git push`，Codex 會擋（沒有 matcher，每個工具呼叫都跑 hook，而 hook 在整段 payload 裡找字面 `git push`），Claude Code 不會（matcher 只放 Bash 與 PowerShell）。部署包 3.17 那段寫「它自己對非 push 的呼叫是 `exit 0` 立刻收手，功能上沒問題」，這個情境下不成立。測試把現在的行為釘住（`test_known_divergence_non_shell_tool_mentioning_git_push`），修不修、怎麼修列為待決，沒有改部署包。新增 9 條刪改，`surfaces` 群組共 27 個全部 killed。
+**找到一個不等價**：同樣在 main 上有未推 commit、沒動 HANDOFF，`apply_patch` 這類非殼層工具的內容只要提到 `git push`，Codex 會擋（沒有 matcher，每個工具呼叫都跑 hook，而 hook 在整段 payload 裡找字面 `git push`），Claude Code 不會（matcher 只放 Bash 與 PowerShell）。部署包 3.17 那段寫「它自己對非 push 的呼叫是 `exit 0` 立刻收手，功能上沒問題」，這個情境下不成立。測試把現在的行為釘住（`test_known_divergence_non_shell_tool_mentioning_git_push`），修不修、怎麼修登記為決策書 Q27（待決），沒有改部署包。新增 9 條刪改，`surfaces` 群組共 27 個全部 killed。
 
 沒做的：工具本身是否觸發 hook、把文字放進模型上下文；Windows 的 `commandWindows`／`.cmd` 路徑；其他程序步驟的等價案例；`ag-wrap.sh` 會把 stderr 併進訊息、Claude Code／Codex 不注入 stderr，這七種狀態下 hook 沒有 stderr 所以相同，hook 若開始寫 stderr 就會不等價，目前沒有案例守。
 
