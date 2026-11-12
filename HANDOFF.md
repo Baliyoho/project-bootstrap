@@ -5,12 +5,12 @@
 
 ## 任務目標
 
-依[需求決策書](project-bootstrap-requirements-decision.md)決策版本 2 與[實現規劃](project-bootstrap-implementation-plan.md)續作 v2；已授權分支實作，未授權切換現行程序或合併 main。逐 ID 狀態唯一權威是 [v2 現況索引](experiments/v2/status.json)，索引不可讀就停止判定。
+依[需求決策書](project-bootstrap-requirements-decision.md)決策版本 2 與[實現規劃](project-bootstrap-implementation-plan.md)續作 v2；2026-11-12 使用者指示把 v2 併進 main（決策書 Q30，快轉），之後在 main 上做；同步各專案仍要另行授權。逐 ID 狀態唯一權威是 [v2 現況索引](experiments/v2/status.json)，索引不可讀就停止判定。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
-- **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
+- **待續分支**：無，在 `main` 上做（2026-11-12 `main` 快轉到 `codex/project-bootstrap_v2`，那條分支保留不刪）。
 - **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111219｜補F14等價案例｜工作中｜交棒2次`，2026-11-12 20:17 (+08) 開工
 - **骨架版本**：`2026-11-10.2`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；`gh` 已登入且有 `workflow` 權限。PATH 上沒有 `claude`／`codex`／`agy`；桌面 App 內附的 Claude Code 2.1.321 已用 `claude auth login` 登入（Pro，到 2026-12-12），拿掉宿主 session 的變數就能單獨跑；Antigravity.app 2.31.0。Windows／Linux 未驗。
@@ -29,9 +29,9 @@ P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)。2026-11-1
 
 ## 未完成／下一步
 
-1. P2 退出條件未全達成：真實專案遷移與另外 20 個專案的私人清單。2026-11-12 預演：從 v2 同步會帶出六檔版 skill，與 Q14 (b) 衝突，使用者選先不同步；`鍵鼠同部署_mac` 與 upstream 沒對齊。等 v2 上 main 時一起處理。
+1. P2 退出條件未全達成：真實專案遷移與另外 20 個專案的私人清單。2026-11-12 v2 已上 main（Q30 推翻 Q14 (b)），各專案開場會提醒骨架落後；`鍵鼠同部署_mac` 與 upstream 沒對齊。逐專案同步（含 Q27 (a)、3.16 指標、Q28 (a)）等使用者授權，2026-11-12 使用者回答先不要。
 2. 啟動自測只做了 Claude Code（開場 hook、push 擋下、AGENTS.md import、skill 載入）；Codex 真實注入照舊暫緩；部署包沒接 SessionEnd。Antigravity 依決策書 Q29 (a) 凍結：不測、不追、不移除。
-3. F14 只到「讀得到的文字與 hook 輸出相同」；SessionEnd、模型是否真的載入 skill 並照做沒有等價案例。Q27 (a)、3.16 指標、Q28 (a) 三處部署包修正要同步各專案，另行授權。
+3. F14 只到「讀得到的文字與 hook 輸出相同」；SessionEnd、模型是否真的載入 skill 並照做沒有等價案例。
 4. channel tag 沒有伺服器端保護（Q23）；每次發布要先刪舊的 `release-request/<channel>` 觸發 tag（見 ARCHITECT）。
 5. F22 剩 Windows／Linux 與 Codex 沒量；P3／P4、Windows hook 同步、R01–R09 複審、Codex 真實注入、F28 探針維持暫緩（2026-11-12 使用者再確認）。
 
