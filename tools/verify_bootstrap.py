@@ -2113,6 +2113,17 @@ def step_action_rules(tmp):
         ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'FOO=1 git -c a.b=c push origin x'}}, '準備 push'),
         ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo "沒關的引號 && git status'}}, None),
         ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo "沒關的引號\ngit push'}}, '準備 push'),
+        # 2026-11-12 第三版：shell -c 與 eval 裡的指令再看一層（第二版對這幾條漏報）。
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash -c "git push"'}}, '準備 push'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': "cd x && /bin/sh -lc 'git add a && git push -q'"}}, '準備 push'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'zsh -c "bash -c \\"git push\\""'}}, '準備 push'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'eval "git push origin x"'}}, '準備 push'),
+        ('post', {'tool_name': 'Bash', 'tool_input': {'command': 'bash -c "git push"'}}, 'push 指令剛執行完'),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash -c "git status" && echo "git push"'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash -c "echo git push"'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash script.sh "git push"'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo bash -c "git push"'}}, None),
+        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash --norc -c'}}, None),
     ]
     if not bash:
         issues.append('缺少可用 bash，腳本沒有實跑')
@@ -2161,6 +2172,21 @@ def step_action_rules(tmp):
                 if r.returncode or bool(r.stdout.strip()) != want:
                     issues.append('退路（原始字串比對）對 %s 的結果不符預期'
                                   % json.dumps(payload['tool_input'], ensure_ascii=False))
+
+        # 負向測試（2026-11-12）：拿掉 shell -c／eval 再看一層，這兩條必須回到第二版的漏報，
+        # 證明上面的案例真的在測第三版的規則，不是被別的路徑剛好接住。
+        nested = 'shells = {"bash", "sh", "zsh", "dash"}\n'
+        if text.count(nested) != 1 or text.count('elif name == "eval" and depth < 3:') != 1:
+            issues.append('腳本沒有唯一的 shells 清單或 eval 分支，第三版的負向測試做不了')
+        else:
+            flat = tmp / 'action-rules-flat.sh'
+            flat.write_text(text.replace(nested, 'shells = set()\n').replace(
+                'elif name == "eval" and depth < 3:', 'elif False:'), encoding='utf-8', newline='')
+            for command in ('bash -c "git push"', 'eval "git push origin x"'):
+                payload = {'tool_name': 'Bash', 'tool_input': {'command': command}}
+                r = run([bash, str(flat), 'pre'], stdin=json.dumps(payload, ensure_ascii=False))
+                if r.returncode or r.stdout.strip():
+                    issues.append('拿掉第三版規則後 %s 仍送出提醒，案例沒有測到它' % command)
 
     # 接線守門的負向測試：每一種錯接都要被 repo_wiring_problems 看出來。
     good = {rel: (ROOT / rel).read_text(encoding='utf-8') for rel in REPO_ACTION_EVENTS}

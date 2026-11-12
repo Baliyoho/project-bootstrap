@@ -13,8 +13,10 @@
 # 並把指令照 shell 規則切詞——引號裡與 heredoc 內文的 git push 不算，git 的子指令要真的是 push。
 # 為什麼改：第一版拿整段原始 JSON 去比對，PostToolUse 的輸入含指令的「輸出」，輸出裡換行後
 # 出現 git push（例如 git 自己的 hint）就誤報，試行第一天約五次；指令內引號裡的
-# 「&& git push」與字面 \n 後的 git push 也誤報。已知漏報：bash -c "git push" 這類包在引號裡
-# 再執行的寫法、指令註解後面同一行的內容不特別處理。
+# 「&& git push」與字面 \n 後的 git push 也誤報。2026-11-12 第三版：命令字是 bash／sh／zsh／dash
+# 而且帶 -c（含 -lc 這類合併旗標）時，把 -c 後面那個字串當成一段指令再看一次；eval 後面的字
+# 也一樣；最多往下三層。原因：第二版對 bash -c "git push" 漏報，HANDOFF 一直掛著這個已知缺口。
+# 仍然不處理：指令註解後面同一行的內容、python／node 等其他直譯器裡的 git push、變數展開出來的指令。
 # 沒有 python 或解析失敗時退回第一版的原始字串比對（會有上述誤報，但誤報只多一段提醒）。
 #
 # 用法：bash repo-action-rules.sh pre|post   （stdin 是 Claude Code 的 hook JSON）
@@ -42,43 +44,67 @@ try:
     cmd = str(ti.get("command") or "")
 except Exception:
     sys.exit(3)
-cmd = re.sub(r"<<-?[ \t]*([\"\x27]?)(\w+)\1([^\n]*)\n(?:.*?\n)?[ \t]*\2[ \t]*(?=\n|$)", r" \3", cmd, flags=re.S)
-try:
-    lex = shlex.shlex(cmd.replace("\n", " ; "), posix=True, punctuation_chars=True)
-    lex.whitespace_split = True
-    lex.commenters = ""
-    toks = list(lex)
-except ValueError:
-    hit = re.search(r"(^|&&|;|\|\||\n)\s*git(\s+[^\s;&|]+)*\s+push([^A-Za-z0-9_-]|$)", cmd)
-    print("push" if hit else "none")
-    sys.exit(0)
 sep = set(";&|()")
 skip = {"then", "do", "else", "elif", "if", "while", "until", "!", "{", "time", "command", "exec", "sudo", "env", "nohup"}
 valopt = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
-start, hit, i = True, False, 0
-while i < len(toks):
-    t = toks[i]
-    i += 1
-    if t and set(t) <= sep:
-        start = True
-        continue
-    if not start:
-        continue
-    if t in skip or re.match(r"[A-Za-z_]\w*=", t):
-        continue
-    start = False
-    if t == "git" or t.endswith("/git"):
-        j = i
-        while j < len(toks) and not (toks[j] and set(toks[j]) <= sep):
-            u = toks[j]
-            if u in valopt:
-                j += 2
-            elif u.startswith("-"):
+shells = {"bash", "sh", "zsh", "dash"}
+
+def ends(tok):
+    return bool(tok) and set(tok) <= sep
+
+def scan(cmd, depth):
+    cmd = re.sub(r"<<-?[ \t]*([\"\x27]?)(\w+)\1([^\n]*)\n(?:.*?\n)?[ \t]*\2[ \t]*(?=\n|$)", r" \3", cmd, flags=re.S)
+    try:
+        lex = shlex.shlex(cmd.replace("\n", " ; "), posix=True, punctuation_chars=True)
+        lex.whitespace_split = True
+        lex.commenters = ""
+        toks = list(lex)
+    except ValueError:
+        return bool(re.search(r"(^|&&|;|\|\||\n)\s*git(\s+[^\s;&|]+)*\s+push([^A-Za-z0-9_-]|$)", cmd))
+    start, i = True, 0
+    while i < len(toks):
+        t = toks[i]
+        i += 1
+        if ends(t):
+            start = True
+            continue
+        if not start:
+            continue
+        if t in skip or re.match(r"[A-Za-z_]\w*=", t):
+            continue
+        start = False
+        name = t.rsplit("/", 1)[-1]
+        if name == "git":
+            j = i
+            while j < len(toks) and not ends(toks[j]):
+                u = toks[j]
+                if u in valopt:
+                    j += 2
+                elif u.startswith("-"):
+                    j += 1
+                else:
+                    if u == "push":
+                        return True
+                    break
+        elif name in shells and depth < 3:
+            # bash -c "git push"、sh -lc ...：-c 後面那個字串本身就是一段指令，再照同樣規則看一次。
+            j = i
+            while j < len(toks) and toks[j].startswith("-") and not ends(toks[j]):
+                if not toks[j].startswith("--") and "c" in toks[j][1:]:
+                    if j + 1 < len(toks) and not ends(toks[j + 1]) and scan(toks[j + 1], depth + 1):
+                        return True
+                    break
                 j += 1
-            else:
-                hit = hit or u == "push"
-                break
-print("push" if hit else "none")
+        elif name == "eval" and depth < 3:
+            words = []
+            while i < len(toks) and not ends(toks[i]):
+                words.append(toks[i])
+                i += 1
+            if scan(" ".join(words), depth + 1):
+                return True
+    return False
+
+print("push" if scan(cmd, 0) else "none")
 '
 
 kind=''
