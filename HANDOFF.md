@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`codex/project-bootstrap_v2`（從 `main @ 40a2d02` 建立）；main 尚未合入 v2。
-- **工作中**：無（已交棒）
+- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111218｜待指派｜工作中｜交棒1次`，2026-11-12 19:10 (+08) 開工
 - **骨架版本**：`2026-11-10.2`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；`gh` 已登入且有 `workflow` 權限。PATH 上沒有 `claude`／`codex`／`agy`；Claude Code 2.1.321（桌面 App 內附）、Antigravity.app 2.31.0。Windows／Linux 未驗。
 
