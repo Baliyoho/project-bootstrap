@@ -509,6 +509,20 @@ F14 是「換工具不改變程序」，驗收寫「相同案例在每個受支�
 
 沒做的：真實專案沒有寫入，要逐專案授權；20 個真實目標的報告只有找到的 4 個，其他專案在哪裡要使用者給私人清單；客製檔沒有搬進覆寫位置的工具（F37 只有原型）；批次寫入沒做，寫入一次一個專案；`install.py`（F17）仍沒讀這個包；只在這台 macOS 跑過。
 
+## 第三次正式發布：`beta` epoch 3（2026-11-12）
+
+使用者指示發佈新版。v2 已快轉進 `main`（決策書 Q30），在 `main` 的 `cf58954` 刪掉舊觸發 tag `release-request/beta`（指向 `8bcdbb1`）後重推；使用者在 GitHub 核准 [run 43221031777](https://github.com/Baliyoho/project-bootstrap/actions/runs/43221031777) 後成功，建 `channel/beta/3-ad6948d1c5d8ee531cae815251e650fc637f59e2deedb5c650448ecf03e1ca72` 與同名 prerelease，四個檔：包 64,910、紀錄 279、簽章 326、報告 15,304 bytes。epoch 1、2 的 channel tag 沒有被碰。這一版帶出 epoch 2 之後的改動：3.16 指標的 description 補齊、3.10 全域 skill 不同時的提醒（Q28 (a)）、能力矩陣的 Claude Code 實測格。
+
+本機獨立核對：報告檔的 SHA-256 等於紀錄的 `report`；`next_keys` 與 epoch 2 相同，沒換金鑰；解壓後 `package.check` 乾淨、正式版、版本 `2026-11-10.2`、27 個檔；本機在同一份來源重建、只把 `kind` 換成正式，digest 與 CI 發的相同；manifest 裡的能力矩陣等於 `src/kit/capabilities.json`。
+
+乾淨環境（空家目錄、不讀 git 設定、不帶 GitHub 登入，匿名 clone 到 `cf58954`）：
+
+- 空專案直接裝 epoch 3：根公鑰驗簽、鋪 27 個檔，對真的 GitHub 跑寫入檢查放行（最新與已安裝都是 epoch 3）。
+- 同一個專案先裝 epoch 2：寫入檢查 `release-mismatch`（舊版停下）。再裝 epoch 3：指標換到 epoch 3（沿 epoch 2 的 `next_keys` 驗簽）；寫入檢查 `component-drift: .agents/skills/handoff/SKILL.md`——專案裡還是 epoch 2 的指標檔（這版正好改了它），換專案檔是遷移器的事，照設計停下。
+- `selftest.py --cache` 讀已安裝的 epoch 3：矩陣來源 `installed ad6948d1…`；Claude Code `2.1.321` 的 hooks、loads-skill、push-reminder 都是 supported，Codex CLI `0.164.0` 接線自測過；沒有 strict ready。
+
+沒驗的：遷移器把真實專案換成 epoch 3（各專案同步使用者 2026-11-12 回答先不要）；Windows／Linux 上的安裝。
+
 ## 第二次正式發布：`beta` epoch 2（2026-11-12）
 
 使用者同意後，先刪掉遠端 epoch 1 留下的觸發 tag `release-request/beta`（workflow 從 tag 名取 channel，只能重用同一個名字；刪之前問過使用者），在 `8bcdbb1`（含 Q27 修正）重推；使用者在 GitHub 核准 [run 43208616478](https://github.com/Baliyoho/project-bootstrap/actions/runs/43208616478) 後一次跑完，建 `channel/beta/2-b2878c41432a8431671a2772b9336bdbda57b05d63e7857eedf844dcc3e20226` 與同名 prerelease，四個檔：包 64,036、紀錄 279、簽章 326、報告 15,304 bytes。`channel/beta/1-…` 沒有被碰。

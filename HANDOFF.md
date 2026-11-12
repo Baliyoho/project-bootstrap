@@ -21,7 +21,7 @@ P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)。2026-11-1
 - P2 第 4 片缺口：包的 manifest 帶能力矩陣；`selftest.py` 偵測版本、做只看檔案的安裝自測（含 `--os windows`）。
 - F14：`surfaces.py` 讓兩支 hook 在每個 surface 照自己的接線跑；開場檢查與 push 提醒都等價，Antigravity 不接 push 提醒時明示不支援。
 - Q27 (a)：部署包 3.11 push 提醒只看 `command` 欄位，`source:` `v2026-11-12`，`VERSION` 不動。
-- 發布 `channel/beta/2-b2878c41…`（`8bcdbb1`）：本機重建 digest 相同、報告檔對得上、乾淨環境安裝放行、沿金鑰鏈從 epoch 1 升級。
+- 發布 `channel/beta/3-ad6948d1…`（`main @ cf58954`，v2 快轉進 main 後）：本機重建 digest 相同、報告檔對得上、乾淨環境安裝放行、沿金鑰鏈從 epoch 2 升級；細節見 v2 說明。
 - 本 repo 的動作提醒 hook 會看進 `bash -c`／`eval`。
 - Claude Code 啟動自測第三次：skill 由模型用 Skill 工具載入，但家目錄同名 skill 蓋掉專案那份；`selftest.SKILLS` 的 Claude Code 順序改家目錄優先，`compare_procedure` 能抓出兩份不同。Q28 (a)：3.10 開場 hook 在全域副本與專案不同時印 🟡 列出檔名（`source:` `v2026-11-12.3`，`VERSION` 不動）。
 - Claude Code 2.1.321 啟動自測兩次（各一次 `claude -p`）：開場 hook 輸出進到 context；push 提醒 exit 2 真的擋下 Bash 的 `git push`；`AGENTS.md` 經 `CLAUDE.md` import 進到 context（原生讀取沒測）。矩陣 `hooks`、`push-reminder` 改為 `tested`，包的 digest 會變，下次發布才帶出去。
@@ -30,10 +30,10 @@ P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)。2026-11-1
 ## 未完成／下一步
 
 1. P2 退出條件未全達成：真實專案遷移與另外 20 個專案的私人清單。2026-11-12 v2 已上 main（Q30 推翻 Q14 (b)），各專案開場會提醒骨架落後；`鍵鼠同部署_mac` 與 upstream 沒對齊。逐專案同步（含 Q27 (a)、3.16 指標、Q28 (a)）等使用者授權，2026-11-12 使用者回答先不要。
-2. 啟動自測只做了 Claude Code（開場 hook、push 擋下、AGENTS.md import、skill 載入）；Codex 真實注入照舊暫緩；部署包沒接 SessionEnd。Antigravity 依決策書 Q29 (a) 凍結：不測、不追、不移除。
+2. 啟動自測只做了 Claude Code（開場 hook、push 擋下、AGENTS.md import、skill 載入）；Codex 等使用者額度在 2026-11-14（週六）重置後再處理；部署包沒接 SessionEnd。Antigravity 依決策書 Q29 (a) 凍結：不測、不追、不移除。
 3. F14 只到「讀得到的文字與 hook 輸出相同」；SessionEnd、模型是否真的載入 skill 並照做沒有等價案例。
 4. channel tag 沒有伺服器端保護（Q23）；每次發布要先刪舊的 `release-request/<channel>` 觸發 tag（見 ARCHITECT）。
-5. F22 剩 Windows／Linux 與 Codex 沒量；P3／P4、Windows hook 同步、R01–R09 複審、Codex 真實注入、F28 探針維持暫緩（2026-11-12 使用者再確認）。
+5. F22 剩 Windows／Linux 與 Codex 沒量；P3／P4、Windows hook 同步、R01–R09 複審、F28 探針維持暫緩（2026-11-12 使用者再確認）。
 
 ## 地雷與注意事項
 
@@ -44,7 +44,7 @@ P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)。2026-11-1
 
 ## 服務查證與期望快照
 
-- 2026-11-12 20:08 `verify_bootstrap.py --staged`：exit 0；`uv run --locked pytest` 650 通過（3.15）。mutation 只跑 surfaces 一組 40 個，全 killed，全量沒重跑。B4：本 repo 沒有 `check_docs.py`（已宣告例外）。B5：Codex hook 接線未改，不適用。模型呼叫：Claude Code 探針一次（已授權，2 turn）。
+- 2026-11-12 21:00 `verify_bootstrap.py --staged`：exit 0；`uv run --locked pytest` 652 通過（3.15）。mutation 只跑 surfaces 一組 41 個，全 killed，全量沒重跑。B4：本 repo 沒有 `check_docs.py`（已宣告例外）。B5：Codex hook 接線未改，不適用。模型呼叫：本 session Claude Code 探針兩次（各經授權）。發布 epoch 3：本機核對與乾淨環境安裝都過。
 
 ## 懸置事項（AI 勿自行處理）
 

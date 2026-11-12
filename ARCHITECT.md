@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-12（Claude Code skill 載入與 Q28／Q29）：第三次 `claude -p` 量到家目錄 handoff skill 蓋掉專案那份；決策書 Q28 (a) 讓部署包 3.10 開場 hook 在兩份不同時印 🟡（`source:` `v2026-11-12.3`，`VERSION` 不動，各專案未同步），`selftest.SKILLS` 的 Claude Code 改家目錄優先。Q29 (a)：Antigravity 凍結，不測、不追、不移除。
+> 最後更新：2026-11-12（v2 併進 main 與 `beta` epoch 3）：`main` 快轉到 `cf58954`（決策書 Q30），在那裡發 `channel/beta/3-ad6948d1…`；核對與乾淨環境安裝紀錄在 v2 說明。
+
+> 2026-11-12 稍早（Claude Code skill 載入與 Q28／Q29）：第三次 `claude -p` 量到家目錄 handoff skill 蓋掉專案那份；決策書 Q28 (a) 讓部署包 3.10 開場 hook 在兩份不同時印 🟡（`source:` `v2026-11-12.3`，`VERSION` 不動，各專案未同步），`selftest.SKILLS` 的 Claude Code 改家目錄優先。Q29 (a)：Antigravity 凍結，不測、不追、不移除。
 
 > 2026-11-12 稍早（Claude Code 啟動自測第二次）：一次 `claude -p`，push 提醒的 exit 2 確實擋下 Bash 的 `git push`、`AGENTS.md` 經 `CLAUDE.md` 的 import 進到 context；`src/kit/capabilities.json` 的 `claude-code/push-reminder` 改成 `tested: [2.1.321]`，`reads-agents-md` 加註，部署包不變，包的 digest 會變。
 
