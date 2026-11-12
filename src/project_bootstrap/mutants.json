@@ -5239,6 +5239,103 @@
      "new": ""
     }
    ]
+  },
+  {
+   "tests": [
+    "tests.test_surfaces"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if surface not in CWD:\n        return stdout\n",
+     "new": "    if True:\n        return stdout\n"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if data == {}:\n        return ''\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if (set(data) != {'injectSteps'} or not isinstance(steps, list) or len(steps) != 1",
+     "new": "    if (not isinstance(steps, list) or len(steps) != 1"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "not isinstance(steps, list) or len(steps) != 1\n",
+     "new": "not isinstance(steps, list)\n"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "            or not isinstance(steps[0], dict) or set(steps[0]) != {'ephemeralMessage'}",
+     "new": "            or not isinstance(steps[0], dict)"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "            or not isinstance(steps[0]['ephemeralMessage'], str)):",
+     "new": "            or False):"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    found = [c for c in (session_commands(surface, data) or []) if FRESHNESS in c]",
+     "new": "    found = list(session_commands(surface, data) or [])"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if not found or (surface not in CWD and len(found) != 1):",
+     "new": "    if not found:"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    except (OSError, ValueError, UnicodeDecodeError):\n        raise AdapterError('%s: %s 讀不到或不是 JSON'",
+     "new": "    except OSError:\n        raise AdapterError('%s: %s 讀不到或不是 JSON'"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    cwd = project / (CWD.get(surface) or subdir)",
+     "new": "    cwd = project / subdir"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    if len(runs) > 1 and len(spoke) != 1:",
+     "new": "    if len(runs) > 1 and not spoke:"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    done = spoke[0] if len(runs) > 1 else runs[0]",
+     "new": "    done = runs[0]"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    return {'equal': len(texts) <= 1 and exits <= {0},",
+     "new": "    return {'equal': len(texts) <= 1,"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    return {'equal': len(texts) <= 1 and exits <= {0},",
+     "new": "    return {'equal': exits <= {0},"
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "        if row['state'] == 'missing':\n            unsupported[surface] = row['why']\n            continue\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "        result['text'] = normalise(result['text'])\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "        text = pattern.sub(stamp, text)\n",
+     "new": ""
+    },
+    {
+     "file": "src/project_bootstrap/surfaces.py",
+     "old": "    for name in TOOL_VARS:\n        env.pop(name, None)\n",
+     "new": ""
+    }
+   ]
   }
  ]
 }

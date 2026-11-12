@@ -143,7 +143,7 @@ def _skill(surface, project, home):
     return _fail('找不到 handoff skill：' + '、'.join(tried))
 
 
-def _commands(surface, data):
+def session_commands(surface, data):
     """POSIX commands wired to SessionStart, or None when the shape is wrong."""
     if not isinstance(data, dict):
         return None
@@ -173,7 +173,7 @@ def _hooks(surface, project):
         data = json.loads(text)
     except ValueError:
         return _fail(wiring + ' 不是 JSON')
-    commands = _commands(surface, data)
+    commands = session_commands(surface, data)
     if commands is None:
         return _fail(wiring + ' 的形狀不對')
     wired = [c for c in commands if 'git-freshness.sh' in c]

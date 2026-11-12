@@ -453,7 +453,19 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 
 本機實跑（2026-11-12）：Claude Code 偵測到 `2.1.321`，矩陣只有文件根據；Antigravity.app `2.31.0` 歸到 2.0，矩陣只實測過 `2.28.2`，不代用；這台 PATH 上沒有 `codex`／`agy`，版本是 `None`。
 
-沒做的：啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫，要另行授權；Codex 的專案信任不在專案檔案裡，查不到；Windows 的 `commandWindows`／`.cmd` 接線沒查；F14 共用 CLI 契約與等價案例。
+沒做的：啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫，要另行授權；Codex 的專案信任不在專案檔案裡，查不到；Windows 的 `commandWindows`／`.cmd` 接線沒查。F14 見下一段。
+
+## F14：開場檢查的共用契約與薄 adapter（2026-11-12）
+
+F14 是「換工具不改變程序」，驗收寫「相同案例在每個受支援 surface 有等價結果，不支援明示」。真的開工具要模型呼叫，所以這一段只做到接線與 adapter 層，但用的是部署包真的接線：
+
+- **契約**：`.claude/hooks/git-freshness.sh` 在專案根目錄印出的文字就是開場檢查的全部結果；規則只在這支腳本裡。
+- **adapter**（`surfaces.py`）：照每個 surface 的接線檔（`.claude/settings.json`、`.codex/hooks.json`、`.agents/hooks.json`）取出 SessionStart 接到 `git-freshness.sh` 的命令，從該 surface 的工作目錄用 shell 跑。Claude Code／Codex 從專案根目錄或任一子目錄跑、stdout 原樣；Antigravity 從 `.agents/` 跑，解開 `ag-wrap.sh` 的 `injectSteps[0].ephemeralMessage`。Antigravity 接線有兩條（Unix 與 Windows），照部署包 3.20：兩條都跑，恰好一條有輸出才算數，兩條都有輸出就是重複注入、都沒有就是沒注入，都報錯。專案自己另掛的 SessionStart hook 不算這個檢查。
+- **比較**（`compare`）：同一個專案狀態，每個 surface 跑一次，時間戳正規化後文字必須逐字相同、結束碼都是 0。能力矩陣說這個 surface、這個版本沒有 hooks 的不跑，結果裡列在 `unsupported` 並附矩陣的理由。工具身分的環境變數（`CLAUDECODE`、`CODEX_*`、`GEMINI_CLI`）是 hook 可以拿來區分的東西，比較時每個 surface 給同一份環境，adapter 不能改變它看到的身分。
+
+`test_surfaces.py` 9 個合成測試；`mutants.json` 新群組 18 個刪改全部 killed（首跑存活一個：專案自己的 SessionStart hook 會被當成這個檢查，已補案例）。`test_surfaces_repo.py` 8 個測試用 `src/kit` 建的真包鋪成 git 專案、配本機 bare origin，跑全綠、落後、未提交、別台機器占用、同機另一工具（三個 surface 同一身分）、沒有 upstream、fetch 失敗，六個 surface 文字都相同；Antigravity IDE 給實測版本 `1.107.0` 時列為不支援、不跑。repo 測試要 import `tools/`，不能放進 mutation（`mutants.py` 只複製 `src` 與 `tests`），所以手動反證兩次：`ag-wrap.sh` 改成在 `.claude/hooks/` 跑 hook，測試仍通過，因為 hook 自己會 `cd` 到 repo 根目錄，屬等價變異；改成把換行換成空白，測試失敗。兩次都已還原。
+
+沒做的：工具本身是否觸發 hook、把文字放進模型上下文；Windows 的 `commandWindows`／`.cmd` 路徑；`PreToolUse`（push 提醒）與其他程序步驟的等價案例；`ag-wrap.sh` 會把 stderr 併進訊息、Claude Code／Codex 不注入 stderr，這七種狀態下 hook 沒有 stderr 所以相同，hook 若開始寫 stderr 就會不等價，目前沒有案例守。
 
 ## P2 第 5 片：遷移器（2026-11-11）
 

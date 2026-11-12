@@ -499,10 +499,22 @@
       "evidence": [
         {
           "path": "src/project_bootstrap/capabilities.py",
-          "scope": "F14 的能力矩陣部分：不支援的能力逐 surface 明示；「相同案例在每個 surface 等價」沒有做，沒有共用 CLI 契約與 adapter"
+          "scope": "F14 的能力矩陣部分：不支援的能力逐 surface 明示"
+        },
+        {
+          "path": "src/project_bootstrap/surfaces.py",
+          "scope": "2026-11-12：開場檢查的共用契約（git-freshness.sh 在專案根目錄印出的文字）與每個 surface 的薄 adapter：照該 surface 的接線檔與工作目錄跑真的命令，Antigravity 解開 ag-wrap 的 JSON、兩條 OS handler 恰好一條有輸出；矩陣說沒有 hooks 的 surface 不跑、標明理由。只到接線與 adapter 層，不是工具本身"
+        },
+        {
+          "path": "tests/test_surfaces.py",
+          "scope": "合成：Antigravity 契約的各種壞輸出、接線命令挑選（專案自己的 hook 不算）、工作目錄、兩條 handler 的四種組合、比較要求文字相同且結束碼 0、矩陣說沒有就不跑；mutants.json 18 個刪改全部 killed"
+        },
+        {
+          "path": "tests/test_surfaces_repo.py",
+          "scope": "真的包鋪成 git 專案（本機 bare origin），全綠、落後、未提交、別台機器占用、同機另一工具（三個 surface 同一身分）、沒有 upstream、fetch 失敗七種狀態，六個 surface 從各自的工作目錄跑出相同文字；Antigravity IDE 給實測版本 1.107.0 時標明不支援。手動反證：ag-wrap 把換行換成空白時測試失敗"
         }
       ],
-      "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
+      "unknown": "等價只驗到接線與 adapter 層：工具是否真的觸發 hook、把文字放進模型上下文要真實工具與模型呼叫；Windows 的 commandWindows／.cmd 路徑、PreToolUse 與其他程序步驟沒有等價案例；跨 OS 尚未驗收",
       "next": "相同案例在每個受支援 surface 有等價結果，不支援明示"
     },
     {

@@ -276,7 +276,7 @@ P2 第三片前半（3a，2026-11-11，依決策書 Q20）：channel 改成來�
 
 3b 的本機準備（2026-11-11，依決策書 Q21）：發布與安裝兩個命令列入口、`release-request/<channel>` tag 觸發且要使用者核准的 workflow、空的發布公鑰檔。碰 GitHub 的五步（建金鑰與 environment、push、tag 保護規則、第一次發到 `beta`、乾淨環境驗收）每一步單獨問使用者。
 
-P2 第四片（2026-11-11，使用者指示，決策書 Q24）：能力矩陣。`src/kit/capabilities.json` 是唯一的家，部署包的跨工具表由它生成；`capabilities.py` 逐 surface、逐版本報支援與缺口，不拿別的 surface 或別的版本代用，必要能力只認本次自測。這只是 F47 的資料與判斷層：真實工具上的安裝／啟動自測、F14 的共用 CLI 契約與等價案例都還沒做；受控寫入閘要到 P3，所以目前沒有任何 surface 是 strict ready。2026-11-12 補上三個缺口的可離線部分：矩陣放進包的 manifest（隨簽章），`selftest.py` 偵測版本（surface 自己的 `--version` 或 App 的 Info.plist，找不到不猜）並對專案做只看檔案的安裝自測；自測沒過讓能力變成沒有，通過不升級。啟動自測（真的觸發 hook、問工具）要模型呼叫，與 F14 共用 CLI 契約都還沒做。
+P2 第四片（2026-11-11，使用者指示，決策書 Q24）：能力矩陣。`src/kit/capabilities.json` 是唯一的家，部署包的跨工具表由它生成；`capabilities.py` 逐 surface、逐版本報支援與缺口，不拿別的 surface 或別的版本代用，必要能力只認本次自測。這只是 F47 的資料與判斷層：真實工具上的安裝／啟動自測、F14 的共用 CLI 契約與等價案例都還沒做；受控寫入閘要到 P3，所以目前沒有任何 surface 是 strict ready。2026-11-12 補上三個缺口的可離線部分：矩陣放進包的 manifest（隨簽章），`selftest.py` 偵測版本（surface 自己的 `--version` 或 App 的 Info.plist，找不到不猜）並對專案做只看檔案的安裝自測；自測沒過讓能力變成沒有，通過不升級。啟動自測（真的觸發 hook、問工具）要模型呼叫，還沒做。F14 同日做了開場檢查這一段：`surfaces.py` 把 `git-freshness.sh` 的輸出當共用契約，每個 surface 的 adapter 只照接線檔與工作目錄跑、Antigravity 解開 JSON；七種 git 狀態在六個 surface 跑出相同文字，矩陣說沒有 hooks 的明示不支援。只到接線層，工具本身、Windows 路徑與其他程序步驟沒有等價案例。
 
 P2 第五片（2026-11-11，使用者指示，決策書 Q25）：遷移器。`sync_project.py` 改讀 `owners.json`、行為不變，仍是現行同步工具；新的 `tools/migrate_project.py` 把舊專案搬到包＋指標，只換本 repo 發過的舊版、補缺的共用檔、合併混合檔，客製的專案整個停下交人比對。退出條件對照：客製保留在合成與真實只讀跑都成立；20 目標完整報告在合成 fixture 成立，真實只讀跑只找到 4 個專案；真實專案沒有寫入。真實只讀跑另發現 `.cmd` 行末與逐位元組寫入檢查衝突，依決策書 Q26 (a) 改成比對時把 CRLF 當 LF（2026-11-12）。
 
