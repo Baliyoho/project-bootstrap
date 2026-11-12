@@ -454,7 +454,7 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 
 本機實跑（2026-11-12）：Claude Code 偵測到 `2.1.321`，矩陣只有文件根據；Antigravity.app `2.31.0` 歸到 2.0，矩陣只實測過 `2.28.2`，不代用；這台 PATH 上沒有 `codex`／`agy`，版本是 `None`。
 
-沒做的：啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫，要另行授權；Codex 的專案信任不在專案檔案裡，查不到；Windows 的 `.cmd` 在 Windows 上真的跑不跑（接線檔與檔案在不在已查）。F14 見下一段。
+沒做的：啟動自測（真的觸發 hook 並讀回、問工具有沒有讀到指示檔）要模型呼叫，要另行授權；2026-11-12 使用者授權只對 Claude Code 做一次（拋棄式專案用真包鋪、`claude -p` 請它逐字列出開場的 `[git-check]` 行），但這台 PATH 上沒有獨立 CLI，桌面 App 內附的執行檔拿掉宿主 session 的變數單獨跑，回 `Not logged in`（登入是經宿主傳進來的；借用宿主通道等於把探針掛在當前 session 底下，沒有做），沒有用到模型額度，要做得先在終端機登入 CLI；Codex 的專案信任不在專案檔案裡，查不到；Windows 的 `.cmd` 在 Windows 上真的跑不跑（接線檔與檔案在不在已查）。F14 見下一段。
 
 ## F14：開場檢查的共用契約與薄 adapter（2026-11-12）
 
@@ -502,3 +502,17 @@ F14 是「換工具不改變程序」，驗收寫「相同案例在每個受支�
 **行末（決策書 Q26 (a)，2026-11-12）**：`package.copy_digest` 先把 CRLF 換成 LF 再算 SHA-256，寫入檢查（`pointer.check_components`）、遷移器與 F39 盤點（`inventory.scan`）都用它比專案裡的副本；單獨的 CR（含行中間多一個 CR）仍算不同，包本身（`package.check`）仍逐位元組比對。`test_pointer.py` 加 1 個（CRLF 副本放行、單獨 CR、行中 CR、多一行都擋）、`test_inventory.py` 加 1 個；`mutants.json` 在 pointer 群組加 3 個、inventory 群組加 1 個刪改，連同兩個因改寫而更新原文的舊刪改，pointer 44 個、inventory 9 個全部 killed（首跑存活一個：「刪掉所有 CR」跟真規則在原有案例上分不出來，加了行中 CR 的案例）。
 
 沒做的：真實專案沒有寫入，要逐專案授權；20 個真實目標的報告只有找到的 4 個，其他專案在哪裡要使用者給私人清單；客製檔沒有搬進覆寫位置的工具（F37 只有原型）；批次寫入沒做，寫入一次一個專案；`install.py`（F17）仍沒讀這個包；只在這台 macOS 跑過。
+
+## 第二次正式發布：`beta` epoch 2（2026-11-12）
+
+使用者同意後，先刪掉遠端 epoch 1 留下的觸發 tag `release-request/beta`（workflow 從 tag 名取 channel，只能重用同一個名字；刪之前問過使用者），在 `8bcdbb1`（含 Q27 修正）重推；使用者在 GitHub 核准 [run 43208616478](https://github.com/Baliyoho/project-bootstrap/actions/runs/43208616478) 後一次跑完，建 `channel/beta/2-b2878c41432a8431671a2772b9336bdbda57b05d63e7857eedf844dcc3e20226` 與同名 prerelease，四個檔：包 64,036、紀錄 279、簽章 326、報告 15,304 bytes。`channel/beta/1-…` 沒有被碰。
+
+本機獨立核對：報告檔的 SHA-256 等於紀錄的 `report`；`next_keys` 沒換金鑰；解壓後 `package.check` 乾淨、正式版、版本 `2026-11-10.2`、27 個檔；本機在同一份來源重建、只把 `kind` 換成正式，digest 與 CI 發的相同；manifest 裡的能力矩陣等於 `src/kit/capabilities.json`。
+
+乾淨環境（空家目錄、不讀 git 設定、不帶 GitHub 登入，匿名 clone 到 `8bcdbb1`）：
+
+- 空專案直接裝 epoch 2：根公鑰驗簽、鋪 27 個檔，對真的 GitHub 跑寫入檢查放行（最新與已安裝都是 epoch 2）。
+- 同一個專案先裝 epoch 1：寫入檢查 `release-mismatch`（channel 最新已是 epoch 2，舊版停下）。再裝 epoch 2：沿 epoch 1 的 `next_keys` 驗簽，指標換到 epoch 2；寫入檢查 `component-drift: .claude/hooks/pre-push-handoff.sh`——安裝器只換快取與指標，專案裡的共用檔還是 epoch 1 的舊 hook（Q27 正好改了它），把專案檔案換新是遷移器的事，照設計停下。這是第一次在 GitHub 上沿金鑰鏈升級。
+- `selftest.py --cache` 讀已安裝的 epoch 2 包：矩陣來源標 `installed b2878c41…`，Codex CLI `0.164.0` 在 posix 與 windows 兩邊的接線自測都過；沒有 strict ready。
+
+沒驗的：遷移器把舊專案的共用檔換成 epoch 2（真實專案依 Q14 不同步，合成專案的寫入端在 `test_migrate_repo.py`）；Windows／Linux 上的安裝。

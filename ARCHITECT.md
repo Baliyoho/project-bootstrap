@@ -152,7 +152,7 @@
 - 帳本列未 `retired` 時重啟一律阻擋，不要人工改列；解除走 `PYTHONPATH=src python3 -X utf8 -m project_bootstrap.crash_release DB RUN_ID`，必須人在 host 本機終端。
 - 僅合成暫存 fixture；原檔、票據、金鑰與合成 Git object 不進本 repo。
 - 推含 `.github/workflows/` 改動的 commit，`gh` 權杖要有 `workflow` 權限，否則 GitHub 拒收（2026-11-11 E2 踩到）；補權限要使用者自己跑 `gh auth refresh -h github.com -s workflow`。
-- 發正式包：在要發的 commit 上 push `release-request/<channel>` tag，使用者在 GitHub 核准 `release` environment；不要代按核准。channel tag 沒有伺服器端保護（決策書 Q23），不要為了測試在 `beta`／`stable` 建、移或刪 tag。
+- 發正式包：在要發的 commit 上 push `release-request/<channel>` tag，使用者在 GitHub 核准 `release` environment；不要代按核准。workflow 從 tag 名取 channel，所以每次發布都用同一個觸發 tag：第二次起要先刪掉遠端舊的 `release-request/<channel>` 再重推（2026-11-12 發 `beta` epoch 2 時第一次碰到，刪之前問過使用者）；它只是觸發器，刪掉不影響 `channel/…` 發布紀錄。channel tag 沒有伺服器端保護（決策書 Q23），不要為了測試在 `beta`／`stable` 建、移或刪 tag。
 
 ## 根目錄
 
