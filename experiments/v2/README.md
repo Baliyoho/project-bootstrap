@@ -476,7 +476,7 @@ F14 是「換工具不改變程序」，驗收寫「相同案例在每個受支�
 
 **Claude Code 啟動自測第二次（2026-11-12，使用者授權一次模型呼叫）**：拋棄式專案用真包鋪，`AGENTS.md` 末尾加一行隨機暗號，main 上留一個沒動 HANDOFF 的未推 commit；`claude -p`（2.1.321，拿掉宿主 session 變數、禁用 Read／Grep／Glob、只放行 `Bash(git push)`）請模型不用工具寫出暗號，再跑一次 `git push`。結果：模型答出暗號的隨機部分（漏了前綴，不是逐字），證明 `AGENTS.md` 經 `CLAUDE.md` 的 import 進到 context；push 被 hook 以 exit 2 擋下，模型逐字收到 `[handoff-check]` 三行，bare origin 沒有前進。矩陣 `claude-code/push-reminder` 從 design 改成 `tested: [2.1.321]`；`claude-code/reads-agents-md` 測的是 import 路徑不是原生讀取，維持 docs 並加註。2 個 turn。沒測：skill 有沒有自動載入、SessionEnd、Codex 與 Antigravity。
 
-**Claude Code 啟動自測第三次：skill 載入（2026-11-12，使用者授權）**：拋棄式專案的 skill description、入口內文、`mode-a.md` 各放一個隨機暗號，`claude -p` 只說「接棒」並禁用 Bash。模型自己呼叫 Skill 工具載入 handoff，但 skill 清單與載入的內容是家目錄 `~/.claude/skills/handoff/` 那份（沒有暗號），是入口文字叫它改用 Read 讀專案那份，才拿到入口與 `mode-a.md` 的暗號。`selftest.SKILLS` 的 Claude Code 順序改成家目錄優先，`compare_procedure` 因此能抓到「家目錄那份與專案不同」的不等價；矩陣 `claude-code/loads-skill` 改 `tested: [2.1.321]` 並加註。怎麼處理登記為決策書 Q28（待決）。5 個 turn。
+**Claude Code 啟動自測第三次：skill 載入（2026-11-12，使用者授權）**：拋棄式專案的 skill description、入口內文、`mode-a.md` 各放一個隨機暗號，`claude -p` 只說「接棒」並禁用 Bash。模型自己呼叫 Skill 工具載入 handoff，但 skill 清單與載入的內容是家目錄 `~/.claude/skills/handoff/` 那份（沒有暗號），是入口文字叫它改用 Read 讀專案那份，才拿到入口與 `mode-a.md` 的暗號。`selftest.SKILLS` 的 Claude Code 順序改成家目錄優先，`compare_procedure` 因此能抓到「家目錄那份與專案不同」的不等價；矩陣 `claude-code/loads-skill` 改 `tested: [2.1.321]` 並加註。使用者選決策書 Q28 (a)：3.10 開場 hook 逐檔比對全域副本與專案那份，不同就印 🟡 列出檔名；`test_surfaces_repo.py` 驗六個 surface 印出相同警告，手動反證：拿掉比對那行測試失敗。5 個 turn。
 
 ## P2 第 5 片：遷移器（2026-11-11）
 

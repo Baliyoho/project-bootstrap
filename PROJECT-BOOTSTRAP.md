@@ -13,6 +13,7 @@
 > 版本：**2026-11-10.2**（**handoff skill 的 `reasons.md` 末尾加一張「規則 → 理由在哪」對照表**，決策書 Q17 (b)：入口與 `mode-a.md` 不逐條加連結（常態必讀不增加），改由對照表列出入口與四個模式檔每個段落的理由在哪；拆分前就沒寫理由的段落照實標「沒有寫下理由」。守門人：`verify_bootstrap.py` 的「skill 規則對照表」（每個段落標題都在左欄、右欄指到的段落存在，附負向測試；不判斷理由內容）。六個檔一起跳到 `v2026-11-10.2`。）
 > 前一版 **2026-11-10**（**handoff skill 從單檔拆成一個目錄、六個檔**，決策書 F22／Q9：單檔 22,040 字元，正常接棒只需要其中一小部分。3.8 現在產出入口 `SKILL.md`、`mode-a.md`（正常接棒）、`mode-a-stop.md`（完整判讀表與異常）、`mode-b.md`（交棒與中途同步）、`mode-0.md`（建制）、`reasons.md`（理由、事故與命名細則）；入口與 `mode-a.md` 是新寫的摘要，合計 5,380 字元，其餘四個檔逐字搬自單檔。3.10 `git-freshness.sh` 在 fetch 成功、不是 detached、upstream 是 `origin/<當前分支>`、沒有領先落後、工作樹乾淨、origin 的「工作中」是 `無（已交棒）` 全部成立時多印一行「全綠」，少一項就不印並指向 `mode-a-stop.md`。守門人：`verify_bootstrap.py` 新增「skill 拆分」（檔案齊全、六檔同版本、常態必讀 ≤6,000、入口與 mode-a 必備句、拆分前每一行逐字留存或列入已改寫清單）與「全綠行」（真 Git fixture 逐項打破條件）。`sync_project.py` 會替已有入口的專案補上五個新檔，並列出 skill 目錄裡不認得的檔。**沒有驗證的**：模型會不會真的從入口走到模式檔。）
 > 再前一版 **2026-11-03**（複審 R04／R07–R09：先遮罩再摘要；先 stage 並拒絕文件／檢查器部分 stage；空工具欄與角括號 title 組合修正。R03 同步資格檢查在維護工具，依 README 逐專案 A1–A5。）
+> 2026-11-12 第三次（**刻意不跳版**：`.claude/skills/handoff/` 一個字沒動，所以 `VERSION` 不動；3.10 改了，`source:` 標記跳到 `v2026-11-12.3`）：**3.10 `git-freshness.sh` 在家目錄 `~/.claude/skills/handoff/` 跟專案那份不同時印一行 🟡**（決策書 Q28 (a)）。2026-11-12 在 Claude Code 2.1.321 實測：兩處都有同名 skill 時，Claude Code 載入的是家目錄那份，專案那份被蓋掉；全域副本若舊到沒有「專案有就讀那裡」那句，Claude Code 就照舊程序做，而 Codex 照專案那份做。逐檔比內容（含只有一邊有的檔），相同或沒有全域副本就安靜。3.8 同步規則照實補上這件事。🔴 **代價**同前兩條：各專案要逐專案跑 `sync_project.py` 才拿得到，另行授權。
 > 2026-11-12 第二次（**刻意不跳版**：`.claude/skills/handoff/` 一個字沒動，所以 `VERSION` 不動；3.16 指標改了，`source:` 標記跳到 `v2026-11-12.2`）：**`.agents/skills/handoff/SKILL.md` 指標的 `description` 補回權威版後來加的模式 0 句子與三個觸發詞**（建立交接機制、幫我建 HANDOFF、新專案骨架）。Codex 與 Antigravity 的 skill 載入器看的是這份指標的 `description`，權威版加了觸發詞、指標沒跟，同一句話在 Claude Code 會載入程序、在另外兩個工具不會。現在指標的 `description` 一律是「指標檔，權威版在 …——」加上權威版的原文，F14 的程序入口等價案例（`surfaces.compare_procedure`）會擋兩者分岔。🔴 **代價**同上一條：各專案要逐專案跑 `sync_project.py` 才拿得到，另行授權。
 > 2026-11-12（**刻意不跳版**：`SKILL.md` 一個字沒動，所以 `VERSION` 不動；3.11 範本改了，`source:` 標記跳到 `v2026-11-12`）：**3.11 `pre-push-handoff.sh` 只看殼層指令（`tool_input.command`），不再拿整段 payload 找 `git push`**（決策書 Q27 (a)）。Codex 的 `PreToolUse` 沒有 matcher（3.17 刻意不加），每個工具呼叫都會跑到這支；舊版在 main 上有未推 commit、已提交差異沒動 HANDOFF 時，編輯工具的內容只要提到 `git push` 就被擋，Claude Code（matcher 只放殼層工具）卻不會——同一個動作在兩個工具結果不同，3.17 寫的「功能上沒問題」在這個情境不成立。`command` 的值是字串或字串陣列都收，不用 python。殼層指令裡只是提到 `git push`（例如 `echo`）仍會誤擋，跟以前一樣。🔴 **代價**：`VERSION` 沒跳，各專案的落後偵測不會提醒這件事；要讓專案拿到新版得逐專案跑 `sync_project.py`，這一步另行授權。
 >
@@ -1599,6 +1600,7 @@ python -X utf8 tools/check_docs.py
 ````
 
 **同步規則（重要）**：這個 skill 目錄（六個檔）會同時存在於 ①本部署包 ②每個專案的 `.claude/skills/handoff/` ③（選用）全域 `~/.claude/skills/handoff/`。
+⚠️ **在 Claude Code 裡，③ 會蓋掉 ②**（2026-11-12 在 2.1.321 實測，決策書 Q28）：兩處都有同名 skill 時，skill 清單與 Skill 工具用的是家目錄那份，專案那份只靠入口一句「專案有就讀那裡」救回來。所以全域副本一定要跟部署包同版；不同時 3.10 的開場 hook 會印一行 🟡 列出哪些檔不一樣。
 **權威版是本部署包**；要改就改這裡，再覆蓋下去，不要在單一專案裡就地改——那正是「同一個事實有多個家」的典型失控起點。
 
 ### 3.9 `.claude/settings.json`
@@ -1644,7 +1646,7 @@ python -X utf8 tools/check_docs.py
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-10 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-12.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：git 新鮮度檢查（多機分岔防呆）
 # 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
 # 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
@@ -1859,6 +1861,26 @@ if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
       echo "[git-check]    這不是落後——可能是權威版還沒 push，或有人就地改了這個專案的副本（鐵律 1 禁止）。"
       echo "[git-check]    不要跑 sync_project.py，那會把新的蓋成舊的；先確認權威版推上去了沒。"
     fi
+  fi
+fi
+
+# 家目錄的 handoff skill 蓋掉專案那份（2026-11-12，決策書 Q28 (a)）
+# 實測 Claude Code 2.1.321：~/.claude/skills/handoff/ 與專案都有同名 skill 時，skill 清單與
+# Skill 工具用的是家目錄那份；專案那份只靠入口一句「專案有就讀那裡」救回來，而全域副本
+# 舊到沒有那句時就救不回來，Claude Code 照舊程序、Codex 照專案程序。所以逐檔比內容，
+# 只要有一個檔不同（含只有一邊有的檔）就提醒；兩份相同或沒有全域副本就安靜。只讀不寫。
+home_skill=${HOME:-}/.claude/skills/handoff
+if [ -f .claude/skills/handoff/SKILL.md ] && [ -n "${HOME:-}" ] && [ -d "$home_skill" ]; then
+  skill_diff=''
+  for f in .claude/skills/handoff/*.md "$home_skill"/*.md; do
+    [ -f "$f" ] || continue
+    name=${f##*/}
+    case " $skill_diff " in *" $name "*) continue ;; esac
+    cmp -s ".claude/skills/handoff/$name" "$home_skill/$name" || skill_diff="$skill_diff $name"
+  done
+  if [ -n "$skill_diff" ]; then
+    echo "[git-check] 🟡 家目錄 ~/.claude/skills/handoff/ 跟本專案的 handoff skill 不一樣（${skill_diff# }）：Claude Code 會載入家目錄那份、蓋掉專案那份。"
+    echo "[git-check]    這次照本專案 .claude/skills/handoff/ 的檔案走；要消掉差異，用 project-bootstrap 部署包的版本覆蓋全域副本。"
   fi
 fi
 

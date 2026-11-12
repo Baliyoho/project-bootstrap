@@ -130,6 +130,20 @@ class RepoSurfaceTests(Fixture):
         self.git('remote', 'set-url', 'origin', str(self.tmp / 'gone.git'))
         self.assertIn('無法 fetch origin', self.compare())
 
+    def test_global_claude_skill_warning(self):
+        # Decision Q28 (a): Claude Code loads ~/.claude/skills/handoff/ over the project's,
+        # so the session-start check names the files that differ, on every surface alike.
+        self.assertNotIn('家目錄 ~/.claude/skills/handoff/', self.compare())
+        home = self.tmp / '.claude' / 'skills' / 'handoff'
+        shutil.copytree(self.work / '.claude' / 'skills' / 'handoff', home)
+        self.assertNotIn('家目錄 ~/.claude/skills/handoff/', self.compare())
+        (home / 'mode-b.md').write_text('# 舊版\n', encoding='utf-8')
+        (home / 'mode-a-stop.md').unlink()
+        (home / 'extra.md').write_text('x\n', encoding='utf-8')
+        text = self.compare()
+        self.assertIn('🟡 家目錄 ~/.claude/skills/handoff/ 跟本專案的 handoff skill 不一樣（mode-a-stop.md mode-b.md extra.md）', text)
+        self.assertIn('[git-check] 全綠', text)
+
 
 if __name__ == '__main__':
     unittest.main()

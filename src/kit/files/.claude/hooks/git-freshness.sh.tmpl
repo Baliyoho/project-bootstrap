@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-10 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-12.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：git 新鮮度檢查（多機分岔防呆）
 # 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
 # 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
@@ -214,6 +214,26 @@ if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
       echo "[git-check]    這不是落後——可能是權威版還沒 push，或有人就地改了這個專案的副本（鐵律 1 禁止）。"
       echo "[git-check]    不要跑 sync_project.py，那會把新的蓋成舊的；先確認權威版推上去了沒。"
     fi
+  fi
+fi
+
+# 家目錄的 handoff skill 蓋掉專案那份（2026-11-12，決策書 Q28 (a)）
+# 實測 Claude Code 2.1.321：~/.claude/skills/handoff/ 與專案都有同名 skill 時，skill 清單與
+# Skill 工具用的是家目錄那份；專案那份只靠入口一句「專案有就讀那裡」救回來，而全域副本
+# 舊到沒有那句時就救不回來，Claude Code 照舊程序、Codex 照專案程序。所以逐檔比內容，
+# 只要有一個檔不同（含只有一邊有的檔）就提醒；兩份相同或沒有全域副本就安靜。只讀不寫。
+home_skill=${HOME:-}/.claude/skills/handoff
+if [ -f .claude/skills/handoff/SKILL.md ] && [ -n "${HOME:-}" ] && [ -d "$home_skill" ]; then
+  skill_diff=''
+  for f in .claude/skills/handoff/*.md "$home_skill"/*.md; do
+    [ -f "$f" ] || continue
+    name=${f##*/}
+    case " $skill_diff " in *" $name "*) continue ;; esac
+    cmp -s ".claude/skills/handoff/$name" "$home_skill/$name" || skill_diff="$skill_diff $name"
+  done
+  if [ -n "$skill_diff" ]; then
+    echo "[git-check] 🟡 家目錄 ~/.claude/skills/handoff/ 跟本專案的 handoff skill 不一樣（${skill_diff# }）：Claude Code 會載入家目錄那份、蓋掉專案那份。"
+    echo "[git-check]    這次照本專案 .claude/skills/handoff/ 的檔案走；要消掉差異，用 project-bootstrap 部署包的版本覆蓋全域副本。"
   fi
 fi
 
