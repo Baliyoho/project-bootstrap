@@ -50,7 +50,8 @@
   "cells": [
     {"id": "claude-code/reads-agents-md", "capability": "reads-agents-md", "surfaces": ["claude-code"],
      "status": "supported", "basis": "docs", "since": "2.1.277",
-     "text": "✅ 原生（v2.1.277 起），**但有 `CLAUDE.md` 就不讀**，見下"},
+     "text": "✅ 原生（v2.1.277 起），**但有 `CLAUDE.md` 就不讀**，見下",
+     "note": "2026-11-12 在 macOS 2.1.321 實測的是部署包的 import 路徑（CLAUDE.md 只有 @AGENTS.md）：AGENTS.md 末尾加一行隨機暗號，禁用 Read／Grep／Glob 後模型答出暗號的隨機部分；原生讀 AGENTS.md（沒有 CLAUDE.md）沒測，所以這格仍以文件為據"},
     {"id": "codex-cli/reads-agents-md", "capability": "reads-agents-md", "surfaces": ["codex-cli"],
      "status": "supported", "basis": "tested", "tested": ["0.164.0"],
      "text": "✅ 原生（未信任的專案也讀，2026-10-30 實測）"},
@@ -117,8 +118,8 @@
      "text": "❌ 沒有這個事件"},
 
     {"id": "claude-code/push-reminder", "capability": "push-reminder", "surfaces": ["claude-code"],
-     "status": "supported", "basis": "design",
-     "note": "3.9 接在 .claude/settings.json 的 PreToolUse，matcher 只比對 Bash 與 PowerShell 兩個工具"},
+     "status": "supported", "basis": "tested", "tested": ["2.1.321"],
+     "note": "3.9 接在 .claude/settings.json 的 PreToolUse，matcher 只比對 Bash 與 PowerShell 兩個工具；2026-11-12 在 macOS 實測：拋棄式專案 main 上有沒動 HANDOFF 的未推 commit，claude -p 請模型用 Bash 跑 git push，hook exit 2 擋下，模型逐字收到 [handoff-check] 三行，bare origin 沒有前進"},
     {"id": "codex/push-reminder", "capability": "push-reminder", "surfaces": ["codex-cli", "codex-app"],
      "status": "supported", "basis": "design",
      "note": "3.17 接在 .codex/hooks.json 的 PreToolUse，沒有 matcher，每個工具呼叫都跑"},

@@ -514,7 +514,7 @@
           "scope": "真的包鋪成 git 專案（本機 bare origin），全綠、落後、未提交、別台機器占用、同機另一工具（三個 surface 同一身分）、沒有 upstream、fetch 失敗七種狀態，六個 surface 從各自的工作目錄跑出相同文字；Antigravity IDE 給實測版本 1.107.0 時標明不支援。手動反證：ag-wrap 把換行換成空白時測試失敗。push 前提醒（PreToolUse）同樣比結束碼與 stderr：Claude Code 與 Codex 在擋與放行的五種情境相同，Antigravity 刻意不接列為不支援；找到一個不等價（非殼層工具內容提到 git push 時 Codex 擋、Claude Code 不擋），依決策書 Q27 (a) 改 3.11 只看 command 欄位後兩邊都放行。程序入口：真的包在六個 surface 讀到相同的 AGENTS.md、description 與六個 skill 檔；移除專案指標、家目錄放舊副本時判為不同。這個案例找到 3.16 指標的 description 少了模式 0 那句與三個觸發詞，已補；手動反證：放回舊指標時測試失敗"
         }
       ],
-      "unknown": "Q27 (a) 與 3.16 指標的 description 只改了部署包，各專案副本還是舊版，要另行授權同步。等價只驗到接線與 adapter 層：工具是否真的觸發 hook、把文字放進模型上下文要真實工具與模型呼叫；Windows 的 commandWindows／.cmd 路徑、程序入口只比到「讀得到的文字相同」，工具是否真的載入 skill、照文字做是模型行為；SessionEnd 與 A／B／C 各步驟的實際執行沒有等價案例；跨 OS 尚未驗收",
+      "unknown": "Q27 (a) 與 3.16 指標的 description 只改了部署包，各專案副本還是舊版，要另行授權同步。等價只驗到接線與 adapter 層；工具本身只有 Claude Code 2.1.321 實測過開場 hook、push 擋下與 AGENTS.md import，Codex／Antigravity 要真實工具與模型呼叫；Windows 的 commandWindows／.cmd 路徑、程序入口只比到「讀得到的文字相同」，工具是否真的載入 skill、照文字做是模型行為；SessionEnd 與 A／B／C 各步驟的實際執行沒有等價案例；跨 OS 尚未驗收",
       "next": "相同案例在每個受支援 surface 有等價結果，不支援明示"
     },
     {
@@ -1463,7 +1463,7 @@
           "scope": "本 repo：真的包帶的矩陣等於來源；用包鋪的專案在六個有接線的 surface、posix 與 windows 兩個平台自測全過；本 repo 自己（已宣告例外：repo-*.sh、沒有專案 skill）判成 hooks 與 skill 沒接"
         }
       ],
-      "unknown": "2026-11-12 只有 Claude Code 2.1.321（macOS）做過一次真實啟動自測：SessionStart hook 輸出確實進到模型 context，矩陣該格改為 tested；其他 surface、其他能力仍未實測。Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收。安裝自測只看檔案；工具是否真的讀指示檔、跑 hook 的啟動自測要模型呼叫，未做；Codex 的專案信任不在檔案裡，查不到",
+      "unknown": "2026-11-12 只有 Claude Code 2.1.321（macOS）做過真實啟動自測（兩次 claude -p）：SessionStart hook 輸出確實進到模型 context，矩陣該格改為 tested；push 提醒的 exit 2 確實擋下 Bash 的 git push，push-reminder 改為 tested；AGENTS.md 經 CLAUDE.md 的 import 進到 context（原生讀取沒測）。skill 自動載入、SessionEnd 與其他 surface 仍未實測。Mac 單程序合成管道已接監護／票據庫及禁 fork／spawn／signal；非多程序工具或真實桌面／模型接線，Windows/Linux 與 Mac Codex 注入未驗收。安裝自測只看檔案；Claude Code 以外的工具是否真的讀指示檔、跑 hook 要模型呼叫，未做；Codex 的專案信任不在檔案裡，查不到",
       "next": "取得授權後做每個 surface 的啟動自測（真的觸發 hook 並讀回）；受控寫入閘要到 P3，之前沒有 strict ready"
     },
     {

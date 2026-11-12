@@ -1,6 +1,8 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-12（F14 程序入口等價）：`surfaces.compare_procedure` 比對每個 surface 讀到的指示檔（經 `CLAUDE.md` import／`GEMINI.md` 指標都要到 `AGENTS.md`）與 skill 載入器找到的 handoff skill（指標照連結追到權威版，比 `description` 與整個目錄的檔）；開場檢查另要求 Claude Code／Codex 那幾條的 stderr 是空的（`ag-wrap.sh` 會把 stderr 併進訊息）。因此找到部署包 3.16 指標的 `description` 少了模式 0 那句與三個觸發詞，已補齊，`source:` `v2026-11-12.2`，`VERSION` 不動，各專案副本未同步。
+> 最後更新：2026-11-12（Claude Code 啟動自測第二次）：一次 `claude -p`，push 提醒的 exit 2 確實擋下 Bash 的 `git push`、`AGENTS.md` 經 `CLAUDE.md` 的 import 進到 context；`src/kit/capabilities.json` 的 `claude-code/push-reminder` 改成 `tested: [2.1.321]`，`reads-agents-md` 加註，部署包不變，包的 digest 會變。
+
+> 2026-11-12 稍早（F14 程序入口等價）：`surfaces.compare_procedure` 比對每個 surface 讀到的指示檔（經 `CLAUDE.md` import／`GEMINI.md` 指標都要到 `AGENTS.md`）與 skill 載入器找到的 handoff skill（指標照連結追到權威版，比 `description` 與整個目錄的檔）；開場檢查另要求 Claude Code／Codex 那幾條的 stderr 是空的（`ag-wrap.sh` 會把 stderr 併進訊息）。因此找到部署包 3.16 指標的 `description` 少了模式 0 那句與三個觸發詞，已補齊，`source:` `v2026-11-12.2`，`VERSION` 不動，各專案副本未同步。
 
 > 2026-11-12 稍早（Claude Code 啟動自測）：使用者登入 CLI 後跑一次 `claude -p`，開場 hook 的輸出確實進到模型 context；`src/kit/capabilities.json` 的 `claude-code/hooks` 從 `docs` 改成 `tested: [2.1.321]`，表上文字與部署包不變，包的 digest 會變（下次發布才帶出去）。
 

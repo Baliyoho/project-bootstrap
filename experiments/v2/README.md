@@ -472,6 +472,10 @@ F14 是「換工具不改變程序」，驗收寫「相同案例在每個受支�
 
 沒做的：工具本身是否觸發 hook、把文字放進模型上下文；Windows 的 `commandWindows`／`.cmd` 路徑；其他程序步驟的等價案例；`ag-wrap.sh` 會把 stderr 併進訊息、Claude Code／Codex 不注入 stderr，這七種狀態下 hook 沒有 stderr 所以相同，hook 若開始寫 stderr 就會不等價，目前沒有案例守。
 
+**程序入口與 stderr（2026-11-12 再補）**：第三個共用檢查是程序入口。`compare_procedure` 對每個 surface 解出它讀到的指示檔（`CLAUDE.md` 的 `@AGENTS.md`、`GEMINI.md` 的指標都要通到 `AGENTS.md`）與 skill 載入器找到的 handoff skill（專案優先、再家目錄；`.agents/` 指標照連結追到權威版，description 去掉固定開頭），三樣東西（`AGENTS.md` 文字、description、整個 skill 目錄的檔）逐字相同才算等價；矩陣說沒有 `reads-agents-md` 或 `loads-skill` 的不跑。開場檢查另要求 Claude Code／Codex 的 stderr 是空的，因為 `ag-wrap.sh` 用 `2>&1` 把 stderr 併進 Antigravity 的訊息。這個案例在真包上找到一個不等價：3.16 指標的 description 少了權威版後來加的模式 0 那句與三個觸發詞，Codex 與 Antigravity 聽到「幫我建 HANDOFF」不會載入程序；已在部署包補齊（`source:` `v2026-11-12.2`，`VERSION` 不動，各專案未同步）。手動反證：放回舊指標，真包測試失敗。
+
+**Claude Code 啟動自測第二次（2026-11-12，使用者授權一次模型呼叫）**：拋棄式專案用真包鋪，`AGENTS.md` 末尾加一行隨機暗號，main 上留一個沒動 HANDOFF 的未推 commit；`claude -p`（2.1.321，拿掉宿主 session 變數、禁用 Read／Grep／Glob、只放行 `Bash(git push)`）請模型不用工具寫出暗號，再跑一次 `git push`。結果：模型答出暗號的隨機部分（漏了前綴，不是逐字），證明 `AGENTS.md` 經 `CLAUDE.md` 的 import 進到 context；push 被 hook 以 exit 2 擋下，模型逐字收到 `[handoff-check]` 三行，bare origin 沒有前進。矩陣 `claude-code/push-reminder` 從 design 改成 `tested: [2.1.321]`；`claude-code/reads-agents-md` 測的是 import 路徑不是原生讀取，維持 docs 並加註。2 個 turn。沒測：skill 有沒有自動載入、SessionEnd、Codex 與 Antigravity。
+
 ## P2 第 5 片：遷移器（2026-11-11）
 
 依決策書 Q25 三題都選 (a)。現行同步器 `sync_project.py` 繼續是現行工具（過渡保障），這一片另做一個把舊專案一次搬到「包＋指標」的遷移器，重用同步器的合併、歷史版本掃描與占用檢查，不複製一份。
