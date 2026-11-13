@@ -323,10 +323,13 @@ CASES2 = [
 RED_AT_START = ('midway', 'secret', 'drift')
 
 # 每個情境的開場 hook 至少要印出這些字，受測者才有機會知道現況。
+# 2026-11-13（v3 第 1 期）：完整組換成新部署包，它的 hook 也只報事實（[facts]），期望值改成跟極簡組同一套數字。
 HOOK = {'full': ('.claude/hooks/git-freshness.sh',
-                 {'clean': ['全綠'], 'behind': ['落後'], 'busy': ['desk-win'], 'midway': ['lab-mac'],
-                  'branch': ['全綠'], 'ahead': ['git-check'], 'casual': ['落後'], 'race': ['全綠'],
-                  'secret': ['lab-mac'], 'drift': ['全綠']}),
+                 {'clean': ['0 個 commit、領先 0 個', IDLE], 'behind': ['2 個 commit、領先 0 個'],
+                  'busy': ['desk-win'], 'midway': ['lab-mac', '未提交或未追蹤 3 個檔'],
+                  'branch': ['0 個 commit、領先 0 個', IDLE], 'ahead': ['0 個 commit、領先 1 個'],
+                  'casual': ['1 個 commit、領先 0 個'], 'race': ['0 個 commit、領先 0 個', IDLE],
+                  'secret': ['未提交或未追蹤 4 個檔'], 'drift': ['0 個 commit、領先 0 個', IDLE]}),
         'minimal': ('.claude/hooks/session-facts.sh',
                     {'clean': ['落後 origin 0 個', IDLE], 'behind': ['落後 origin 2 個'],
                      'busy': ['desk-win'], 'midway': ['lab-mac', '未提交或未追蹤 3 個檔'],
@@ -369,9 +372,67 @@ def baseline(root):
         expect(trees['full'] == trees['minimal'], '%s：兩組的專案本體與 HANDOFF.md 逐字相同' % scenario)
 
 
+def limits(root):
+    """用量守門（只用訂閱額度）：一格跑完的檢查與下一次呼叫前的檢查。不呼叫模型。"""
+    import json
+    import run as runner
+
+    def stream(name, info):
+        folder = root / 'runs' / name
+        folder.mkdir(parents=True, exist_ok=True)
+        lines = ['{"type":"system"}']
+        if info is not None:
+            lines.append(json.dumps({'type': 'rate_limit_event', 'rate_limit_info': info}))
+        (folder / 'stream.jsonl').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        return folder
+
+    ok = {'status': 'allowed', 'isUsingOverage': False,
+          'unifiedWindows': {'five_hour': {'utilization': 0.2}, 'seven_day': {'utilization': 0.45}}}
+    expect(runner.limit_problem(stream('ok', ok)) is None, '用量：訂閱額度內放行')
+    expect(runner.limit_problem(stream('warn', dict(ok, status='allowed_warning'))) is None,
+           '用量：allowed_warning 不是限流')
+    expect(runner.limit_problem(stream('none', None)) is None, '用量：串流沒有用量事件不擋')
+    expect('超額' in (runner.limit_problem(stream('over', dict(ok, isUsingOverage=True))) or ''),
+           '用量：在用超額額度要擋')
+    expect('限流' in (runner.limit_problem(stream('rej', dict(ok, status='rejected'))) or ''), '用量：被限流要擋')
+    high = dict(ok, unifiedWindows={'five_hour': {'utilization': 0.2}, 'seven_day': {'utilization': 0.86}})
+    expect('86%' in (runner.limit_problem(stream('high', high)) or ''), '用量：任一窗到 85% 要擋')
+    edge = dict(ok, unifiedWindows={'five_hour': {'utilization': 0.84}})
+    expect(runner.limit_problem(stream('edge', edge)) is None, '用量：84% 還放行')
+
+    # 呼叫前：看 calls.log 最後一格。沒有 calls.log、最後一格正常都放行；最後一格超額要擋，
+    # 而且看的是「最後一格」不是「任一格」。
+    expect(runner.last_limit_problem(root) is None, '呼叫前：新工作區沒有紀錄就放行')
+    log = root / 'calls.log'
+    log.write_text('t\tover\nt\tok\n', encoding='utf-8')
+    expect(runner.last_limit_problem(root) is None, '呼叫前：最後一格正常就放行')
+    log.write_text('t\tok\nt\tover\n', encoding='utf-8')
+    expect('超額' in (runner.last_limit_problem(root) or ''), '呼叫前：最後一格在用超額就擋')
+    log.write_text('t\tok\nt\tover\nt\tmissing-stream\n', encoding='utf-8')
+    expect('超額' in (runner.last_limit_problem(root) or ''), '呼叫前：最後一格沒有串流時往前找')
+
+    # one() 真的在呼叫前問過守門。preflight、搭建與子程序都換成一碰就失敗的替身：守門壞掉時
+    # 這一項會 FAIL，而不是真的去呼叫模型。
+    from unittest import mock
+
+    def touched(*a, **k):
+        raise AssertionError('守門沒擋住，走到了呼叫模型之前的步驟')
+    with mock.patch.object(runner, 'preflight', touched), mock.patch.object(runner.build, 'build', touched), \
+            mock.patch.object(runner.subprocess, 'run', touched):
+        try:
+            runner.one(root, SCENARIOS[0], ARMS[0], 1)
+            got = '沒有擋'
+        except SystemExit as e:
+            got = str(e)
+        except AssertionError as e:
+            got = str(e)
+    expect('用量守門（呼叫前）' in got, 'one()：上一格在用超額時不呼叫（%s）' % got[:40])
+
+
 def main():
     root = pathlib.Path(tempfile.mkdtemp(prefix='pb-handoff-ab-selfcheck-')).resolve()
     try:
+        limits(root / 'limits')
         baseline(root)
         for scenario, label, play, want, failing in (CASES2 if ROUND == 2 else CASES):
             for arm in ARMS:

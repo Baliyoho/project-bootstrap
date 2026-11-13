@@ -151,9 +151,27 @@ def limit_problem(run):
     return None
 
 
+def last_limit_problem(root):
+    """呼叫前把關（2026-11-13 第 1 期加）：limit_problem 只在一格跑完後看，所以下一次呼叫
+    前再看一次 calls.log 最後一格的用量。上一格已經在用超額、被限流或到 85%，這一次就不打。
+    工作區還沒有任何一格（新一輪的第一格）就沒有資料可看，回 None；那一格跑完照常檢查。"""
+    log = root / 'calls.log'
+    if not log.exists():
+        return None
+    names = [line.split('\t', 1)[1].strip() for line in log.read_text(encoding='utf-8').splitlines() if '\t' in line]
+    for name in reversed(names):
+        stream = root / 'runs' / name / 'stream.jsonl'
+        if stream.exists():
+            return limit_problem(root / 'runs' / name)
+    return None
+
+
 def one(root, scenario, arm, n, extra=0):
     if calls(root) >= BUDGET + extra:
         raise SystemExit('呼叫次數已到 %s；加跑要 --extra N 並取得批准' % (BUDGET + extra))
+    before = last_limit_problem(root)
+    if before:
+        raise SystemExit('用量守門（呼叫前）：上一格%s，這一次不呼叫。' % before)
     problems = preflight(root, quiet=True)
     if problems:
         raise SystemExit('preflight 沒過：\n' + '\n'.join(problems))
