@@ -7,6 +7,7 @@
   python3 -X utf8 run.py plan                          印出 24 格的固定順序
   python3 -X utf8 run.py one <情境> <組別> <次> --approved
   python3 -X utf8 run.py all --approved                依固定順序跑還沒跑的格子
+  python3 -X utf8 run.py all --approved --arm full     只跑其中一組（2026-11-13 第 1 期：另一組沿用上一輪）
 
 沒有 --approved 一律不呼叫模型。呼叫次數記在 <工作區>/calls.log，超過 24 次就拒絕，
 要加跑得明確給 --extra N（每次加跑都要使用者另外批准）。
@@ -14,6 +15,7 @@
 環境變數：
   HANDOFF_AB_ROOT   工作區（預設系統暫存目錄下的 pb-handoff-ab；必須在任何 repo 之外）
   HANDOFF_AB_HOME   real＝沿用真的家目錄（預設用工作區裡的空家目錄）
+  HANDOFF_AB_CONFIG 受測用的設定目錄（讓另開工作區的兩輪共用一次登入）
   CLAUDE_BIN        claude 執行檔（預設 CLAUDE_CODE_EXECPATH，再來是 PATH 上的 claude）
 """
 import json
@@ -200,15 +202,19 @@ def main(argv):
     root = lab_root()
     approved = '--approved' in argv
     extra = int(argv[argv.index('--extra') + 1]) if '--extra' in argv else 0
+    only = argv[argv.index('--arm') + 1] if '--arm' in argv else None
+    if only is not None and only not in ARMS:
+        raise SystemExit('--arm 只能是 %s' % '、'.join(ARMS))
     args = [a for i, a in enumerate(argv)
-            if not a.startswith('--') and (i == 0 or argv[i - 1] != '--extra')]
+            if not a.startswith('--') and (i == 0 or argv[i - 1] not in ('--extra', '--arm'))]
+    cells = [c for c in order() if only is None or c[1] == only]
     if not args:
         print(__doc__)
         return 2
     if args[0] == 'preflight':
         return 1 if preflight(root) else 0
     if args[0] == 'plan':
-        for i, cell in enumerate(order(), 1):
+        for i, cell in enumerate(cells, 1):
             done = (root / 'runs' / ('%s-%s-%s' % cell)).exists()
             print('%2d  %-8s %-8s %s%s' % (i, *cell, '　已跑' if done else ''))
         return 0
@@ -219,7 +225,7 @@ def main(argv):
         one(root, args[1], args[2], args[3], extra)
         return 0
     if args[0] == 'all':
-        for i, cell in enumerate(order()):
+        for i, cell in enumerate(cells):
             if (root / 'runs' / ('%s-%s-%s' % cell)).exists():
                 continue
             row = one(root, *cell, extra=extra)
@@ -230,6 +236,9 @@ def main(argv):
                 # 不算數的那一次仍然花了一次呼叫。停下來讓人看原因，不自動重跑。
                 print('這一次不算數，先停：%s' % row['invalid'])
                 return 4
+        if only is not None:
+            print('只跑了 %s 這一組，共 %d 格；不在這裡下兩組比較的結論。' % (only, len(cells)))
+            return 0
         return score.main(['--all'])
     print(__doc__)
     return 2

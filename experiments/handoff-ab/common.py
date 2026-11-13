@@ -53,7 +53,10 @@ def lab_root():
 
 def config_dir(root):
     """受測用的 Claude Code 設定目錄。兩輪共用第一輪登入過的那一個，免得每輪都要重新登入；
-    它只放登入狀態與 Claude Code 自己同步的通用 skill，preflight 每次都會查裡面沒有交接程序。"""
+    它只放登入狀態與 Claude Code 自己同步的通用 skill，preflight 每次都會查裡面沒有交接程序。
+    HANDOFF_AB_CONFIG（2026-11-13 第 1 期加）指定一個設定目錄，讓另開工作區的兩輪也只登入一次。"""
+    if os.environ.get('HANDOFF_AB_CONFIG'):
+        return pathlib.Path(os.environ['HANDOFF_AB_CONFIG']).resolve()
     if os.environ.get('HANDOFF_AB_ROOT'):
         return root / 'claude-config'
     return (pathlib.Path(tempfile.gettempdir()) / 'pb-handoff-ab' / 'claude-config').resolve()
