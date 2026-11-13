@@ -4755,6 +4755,8 @@ SHARED_MUST = (
     '<符號>　YYMMDDHH｜<主題>｜<狀態>｜交棒<N>次', '`㊣` 工作中、`※` 待你決定、`↗` 已交棒',
     '交棒的 push 成功後才改 `↗`，N 加 1', '是 `↗` 或 `※` 時收到任何新訊息，先改回 `㊣`',
     '各寫一行 `session：<實際標題>`', '`session：不適用：<原因>；交棒<N>次`',
+    # 2026-11-13 F50 互動驗證：用選項卡片停下時三次漏了兩次 `session：` 行（experiments/handoff-ab/F50.md）。
+    '用選項卡片發問也算停下來等決定，卡片之前先寫這一行',
 )
 MODE_A_MUST = (
     '印出幾行 `[facts]`', 'bash .claude/hooks/git-freshness.sh', '不要自己判斷「大概沒事」', '`mode-a-stop.md`',
