@@ -384,7 +384,8 @@ def validity(run_path, arm):
         problems.append('極簡組載到了 handoff skill（隔離失效）')
     if arm == 'full' and not has_skill:
         problems.append('完整組沒有載到專案的 handoff skill')
-    mark = '[git-check]' if arm == 'full' else '[facts]'
+    # 2026-11-13（v3 第 1 期）：完整組換成新部署包，它的開場 hook 也只印 [facts]。
+    mark = '[facts]'
     head = []
     for event in events:
         if event.get('type') == 'assistant':
