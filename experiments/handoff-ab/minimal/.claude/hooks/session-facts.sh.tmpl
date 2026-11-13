@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# SessionStart hook（極簡版）：fetch 一次，只報事實，不下指示。只讀，不 pull、不 push。
+# 輸出到 stdout 的內容會進到 session 開頭的 context。
+
+cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
+me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
+
+echo "[facts] 時間 $(date '+%Y-%m-%d %H:%M %z')；本機 ${me}；分支 ${branch}"
+
+if ! git fetch --quiet origin 2>/dev/null; then
+  echo "[facts] fetch origin 失敗：不知道本機是不是最新"
+  exit 0
+fi
+
+counts=$(git rev-list --left-right --count "origin/${branch}...HEAD" 2>/dev/null)
+if [ -z "$counts" ]; then
+  echo "[facts] origin 上沒有分支 ${branch}"
+  exit 0
+fi
+behind=$(echo "$counts" | awk '{print $1}')
+ahead=$(echo "$counts" | awk '{print $2}')
+dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+echo "[facts] 已 fetch：本機落後 origin ${behind} 個 commit、領先 ${ahead} 個；未提交或未追蹤 ${dirty} 個檔"
+
+busy=$(git show "origin/${branch}:HANDOFF.md" 2>/dev/null | grep -F -m1 '**工作中**')
+echo "[facts] origin 上的 HANDOFF：${busy:-讀不到「工作中」那一行}"

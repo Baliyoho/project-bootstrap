@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-12.4**（**交棒只在使用者要求時做**，決策書 Q31 (a)：入口模式表的 B 改成「使用者要求交棒／收工／換人接手」，告一段落走 C、commit／push 時機由 agent 判斷；C 的 push 在 origin「工作中」仍是本 session 時不必更新 HANDOFF；一段工作做完時讀得到上下文用量就讀，70% 建議交棒一次、85% 再一次，讀不到不估算；3.11 push 提醒在 origin「工作中」不是「無（已交棒）」時放行。守門人：入口必備句加「使用者沒要求就不得自行交棒」，「AI push 提醒情境」加放行、已交棒仍擋、沒有欄位仍擋與拿掉放行的負向測試。六個檔、3.11 與 3.16 指標一起跳到 `v2026-11-12.4`。**沒有驗證的**：模型會不會照著只建議不交棒。）
+> 版本：**2026-11-13**（**需求決策書 v3 第 1 期：共用制度縮成 `AGENTS.md` 裡的一節，開場 hook 只報事實，handoff skill 降為碰到才讀的參考，Antigravity 移出部署包**。3.1 `AGENTS.md` 範本的共用制度夾在開始與結束標記之間，32 行（v3 D11 上限 40），起點是 handoff-ab 的極簡版，補上「待續分支」、不提交祕密與不整批加入、F50 session 命名三條。3.10 `git-freshness.sh` 檔名不變（Codex 與 Windows 接線不用動），內容改成最多五行 `[facts]`：時間與 `YYMMDDHH`、與 origin 的落後與領先、未提交檔數、origin 的「工作中」原文，有差異才印的共用制度版本與家目錄 skill 差異；判讀表、全綠行、工具身分猜測與「先走 skill」的提醒移除。共用制度版本改從 `AGENTS.md` 開始標記讀。3.8 入口與 `mode-a.md` 改寫成參考，其餘四個檔只加一段 2026-11-13 註記。舊 3.18–3.20（Antigravity 轉接層、Windows shim、`.agents/hooks.json`）移除。同日補一句（F50 互動驗證重現：用選項卡片停下時漏了 `session：` 行）：共用制度的「session 名稱」加「用選項卡片發問也算停下來等決定，卡片之前先寫這一行」；這一版還沒發布到任何專案，所以版本號不跳。handoff-ab 兩輪 18／18 與 v2 完整版相同，結果在 `experiments/handoff-ab/RESULTS.md`；F50 在 `experiments/handoff-ab/F50.md`。）
+> 前一版 **2026-11-12.4**（**交棒只在使用者要求時做**，決策書 Q31 (a)：入口模式表的 B 改成「使用者要求交棒／收工／換人接手」，告一段落走 C、commit／push 時機由 agent 判斷；C 的 push 在 origin「工作中」仍是本 session 時不必更新 HANDOFF；一段工作做完時讀得到上下文用量就讀，70% 建議交棒一次、85% 再一次，讀不到不估算；3.11 push 提醒在 origin「工作中」不是「無（已交棒）」時放行。守門人：入口必備句加「使用者沒要求就不得自行交棒」，「AI push 提醒情境」加放行、已交棒仍擋、沒有欄位仍擋與拿掉放行的負向測試。六個檔、3.11 與 3.16 指標一起跳到 `v2026-11-12.4`。**沒有驗證的**：模型會不會照著只建議不交棒。）
 > 前一版 **2026-11-10.2**（**handoff skill 的 `reasons.md` 末尾加一張「規則 → 理由在哪」對照表**，決策書 Q17 (b)：入口與 `mode-a.md` 不逐條加連結（常態必讀不增加），改由對照表列出入口與四個模式檔每個段落的理由在哪；拆分前就沒寫理由的段落照實標「沒有寫下理由」。守門人：`verify_bootstrap.py` 的「skill 規則對照表」（每個段落標題都在左欄、右欄指到的段落存在，附負向測試；不判斷理由內容）。六個檔一起跳到 `v2026-11-10.2`。）
 > 前一版 **2026-11-10**（**handoff skill 從單檔拆成一個目錄、六個檔**，決策書 F22／Q9：單檔 22,040 字元，正常接棒只需要其中一小部分。3.8 現在產出入口 `SKILL.md`、`mode-a.md`（正常接棒）、`mode-a-stop.md`（完整判讀表與異常）、`mode-b.md`（交棒與中途同步）、`mode-0.md`（建制）、`reasons.md`（理由、事故與命名細則）；入口與 `mode-a.md` 是新寫的摘要，合計 5,380 字元，其餘四個檔逐字搬自單檔。3.10 `git-freshness.sh` 在 fetch 成功、不是 detached、upstream 是 `origin/<當前分支>`、沒有領先落後、工作樹乾淨、origin 的「工作中」是 `無（已交棒）` 全部成立時多印一行「全綠」，少一項就不印並指向 `mode-a-stop.md`。守門人：`verify_bootstrap.py` 新增「skill 拆分」（檔案齊全、六檔同版本、常態必讀 ≤6,000、入口與 mode-a 必備句、拆分前每一行逐字留存或列入已改寫清單）與「全綠行」（真 Git fixture 逐項打破條件）。`sync_project.py` 會替已有入口的專案補上五個新檔，並列出 skill 目錄裡不認得的檔。**沒有驗證的**：模型會不會真的從入口走到模式檔。）
 > 再前一版 **2026-11-03**（複審 R04／R07–R09：先遮罩再摘要；先 stage 並拒絕文件／檢查器部分 stage；空工具欄與角括號 title 組合修正。R03 同步資格檢查在維護工具，依 README 逐專案 A1–A5。）
@@ -82,8 +83,8 @@
 
 | 層 | 檔案 | 什麼時候動 |
 |---|---|---|
-| **觸發** | `.claude/hooks/git-freshness.sh`（SessionStart hook） | 每次 session 開始自動 fetch、報告落後／分岔、**讀 origin 的「工作中」標記揭露別台機器正在動同一條分支**，並提醒「接棒先走 handoff skill」 |
-| **程序** | `.claude/skills/handoff/SKILL.md` | agent 判斷要接棒／交棒／同步時自動載入；使用者也可打 `/handoff` 直接叫它 |
+| **事實** | `.claude/hooks/git-freshness.sh`（SessionStart hook） | 每次 session 開始自動 fetch 一次，印出最多五行 `[facts]`：時間、與 origin 的落後與領先、未提交檔數、origin 的「工作中」原文。**只報事實，不下指示**（2026-11-13 起，v3 D12） |
+| **參考** | `.claude/skills/handoff/SKILL.md` | 碰到才讀：異常判讀、交棒步驟、建制、理由。必守的條件在 `AGENTS.md` 的共用制度一節（2026-11-13 起，v3 第 5 節） |
 | **AI push 提醒** | `.claude/hooks/pre-push-handoff.sh`（PreToolUse hook） | 有限字面判讀，缺已提交 HANDOFF 差異時提醒並阻擋；保障範圍見 3.11 |
 
 **分工**：`docs/ai-notes/handover-protocol.md`＝**規則與理由**（為什麼、什麼算對）；skill＝**怎麼做**（指令、判讀表、模板）。
@@ -138,103 +139,13 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 - **skill 來源看得到，不必猜**：`codex debug prompt-input` 會印一張「Skill roots」表。2026-10-30 實測 0.164.0 列出 `~/.codex/skills`（**官方文件已經不列這個路徑，但實際仍然讀**）**與 repo 的 `.agents/skills`**。官方另外列 `$CWD/../.agents/skills`、`$HOME/.agents/skills`、`/etc/codex/skills`。
 - `project_doc_max_bytes` 會截 `AGENTS.md`，所以**「開工第一件事」那一段必須待在 `AGENTS.md` 最上面**。
 
-### Antigravity：四個 surface，骨架已附接線（CLI 與 2.0 實測通，IDE 沒觸發）
+### Antigravity：2026-11-13 起不支援
 
-🔴 **先認清一件事：「Antigravity」不是一個產品，是四個。** 官方 blog「Choosing your surface」並排列出：
+需求決策書 v3 的 D8 放棄 Antigravity：轉接層、Windows shim 與 `.agents/hooks.json`（舊 3.18–3.20）移出部署包。2026-10-31 量到的 hook 契約、四個 surface 的差異與 Windows 死結的解法留在本檔 Git 歷史（`2026-11-12.4` 以前的版本），要重新支援時從那裡讀起，不要憑記憶重刻。
 
-| Surface | 是什麼 | `applicationName`／設定目錄 |
-|---|---|---|
-| **Antigravity 2.0** | 獨立桌面 App，**沒有編輯器**，平行跑多個 agent、可排程。官方稱 the default recommendation | `antigravity` |
-| **Antigravity CLI** | 終端 TUI（Go 寫的），headless 執行、SSH／容器內用。執行檔是 `agy` | `antigravity-cli` |
-| **Antigravity IDE** | 原本那個 VS Code fork，agent 跑在工作區裡、逐行 accept／reject | `antigravity-ide` |
-| **Antigravity SDK** | Python（`google.antigravity`），自己組 agent | 不適用 |
-
-官方明講**沒有** deprecate IDE，並建議兩個都裝——所以**同一台機器上同時有多個 surface 是常態**，不是過渡狀態。問「你用 Antigravity 嗎」得不到夠用的答案，要問**哪一個**。
-
-**結論先講：Antigravity CLI（`1.4.7`／`1.4.12`）與 Antigravity 2.0（`2.28.2`）的專案層 `.agents/hooks.json` 都會被讀、而且真的觸發**（2026-10-31 實測）。所以「Antigravity 沒有 hook 這一層」是錯的——錯在把**一個 surface 的結果當成整個產品的性質**，而當初那個 surface（IDE）剛好是四個裡唯一不觸發的那一個。目前狀態分 surface 看：
+當時量到的專案層 hook 觸發情況（只作紀錄，部署包已不附接線）：
 
 <!-- kit-table: antigravity-hooks -->
-
-**骨架 2026-10-31 起附了接線**（3.18 轉接層 ＋ 3.19 Windows shim ＋ 3.20 `.agents/hooks.json`），而且是**端到端實測過的**：在重生出來的骨架上跑 `agy -p`，agent 把 `[git-check]` 那句原文背了出來——注入真的進到模型的 context，不是「設定長得像對的」。
-
-#### 怎麼測的：CLI 有 IDE 沒有的東西
-
-`agy` 有 `--print`／`-p`（headless 單輪），所以**不必拿「畫面上看不看得到訊息」當偵測器**——那正是前兩次 IDE 測不準的原因（混進了「沒跑」與「跑了但輸出被丟掉」）。探針讓 hook 自己 append 一行 log（事件名、label、`%CD%`），並在工作區根與 `.agents/` 各放一份同名但 label 不同的腳本，**用哪一份跑起來反推 cwd**。
-
-#### 2.0 怎麼測的：沒有 headless，但偵測器照樣不靠畫面
-
-2.0 的安裝目錄底下只有 `Antigravity.exe`，沒有任何命令列入口（`bin/` 根本不存在），所以 `agy -p` 那一招用不上——這一面只能由人或桌面自動化開一個 session。**但「要用畫面開 session」不等於「要用畫面判讀」**：探針仍然是 hook 自己往 `.agents/_probe.log` 追加一行（事件名、cwd、參數），所以結果不受「訊息有沒有顯示出來」影響。測法是另開一個乾淨資料夾當工作區，只放 `.agents/hooks.json` 與一支全 ASCII 的 `.cmd` 探針，掛五個事件（`PreToolUse` 刻意不掛，理由見上），開一次對話，然後讀 log。
-
-🔴 **先驗儀器，再測受測物。** 第一版探針的 `command` 在寫入時被轉義吃掉一個字元（`.\ag-probe.cmd` 變成 `.` ＋ BEL ＋ `g-probe.cmd`），而這種壞法在**已知會觸發**的 CLI 上同樣一聲不響。要是直接拿去測 2.0，就會把「我的檔寫壞了」寫成「2.0 不支援專案層 hook」——那正是 IDE 前兩輪誤判的同一個形狀。所以同一份接線先在 CLI 上跑一次，log 出來了才拿去測 2.0。**沒有驗過的儀器量不出陰性結果**，只量得出「沒看到東西」。
->
-> 2026-10-31 在 Codex 上又踩到同一條規則的另一種形狀：**把「建設定檔」與「跑受測物」寫在同一個指令裡，那個指令被權限層整個拒絕，於是設定檔根本沒生成**，接下來三次「hook 沒觸發」全部無效——不是受測物的性質，是儀器不在場。徵兆跟上面那次一樣：結果看起來完全合理。**所以佈置與測量要分開兩步，而且測量前先確認佈置真的落地了**（`ls` 一下就夠）。
-
-#### 量到的契約（CLI `1.4.7`／Windows）
-
-| 項目 | 實際 |
-|---|---|
-| 設定檔形狀 | 頂層 key 是 **hook 名稱**：`{"<名稱>":{"enabled":true,"<事件>":[…]}}`——與從 IDE 執行檔挖出的官方契約一致，這份形狀在 CLI 上**實測可用** |
-| 結構 | `PreToolUse`／`PostToolUse` 要包 `matcher` ＋ `hooks`；`SessionStart`／`PreInvocation`／`PostInvocation`／`Stop` 是**扁平**陣列 |
-| 觸發的事件 | `SessionStart`、`PreInvocation`、`PreToolUse`、`PostToolUse`、`PostInvocation`、`Stop` **六個全部實測觸發**。`PreInvocation` 在 CLI **沒有失效**——IDE 執行檔裡那句 `deprecated and has no effect` 不適用於這個 surface |
-| cwd | **`hooks.json` 所在的目錄**（即 `.agents/`），與官方契約一致。實測兩次：`.\x.cmd` 跑到 `.agents/` 那份、`..\x.cmd` 跑到工作區根那份 |
-| 相對路徑 | ✅ **可用**，而且是 Windows 上唯一可靠的形式（見下一列）。第三方指南說「`command` 必須絕對路徑、相對會對著啟動目錄解析」——**對 CLI `1.4.7` 不成立** |
-| 絕對路徑 | ⚠️ **只有「不含空白且不加引號」才跑得起來。** 實測四種：不加引號＋無空白（8.3 短名）→ ✅；加引號＋無空白 → ❌；不加引號＋含空白 → ❌；加引號＋含空白 → ❌。所以 `command` 是**照空白切 token、不解析引號**的，第一個 token 必須是能直接執行的路徑 |
-| `PreToolUse` 的回傳 | 🔴 **不明確允許就等於拒絕。** hook 回 `{}` 的那一輪，agy 直接回報 `tool calls were blocked by a pre-tool hook`，`read_file` 與 `run_command` 全被擋掉；改成回 `{"allow_tool": true}` 之後工具呼叫才通過，`PostToolUse` 也才跟著觸發 |
-| 執行殼層 | Windows 走 `cmd /c`，所以 `.sh` **不能**直接當 `command` |
-
-#### Windows 的死結，與 shim 怎麼解掉它
-
-骨架的 hook 是 `.sh`（只有一份腳本，這是鐵律），而上面兩列合起來本來是個死結：
-
-- `cmd /c` 跑不了 `.sh`，要寫成 `bash <script>`；
-- PATH 上的 `bash` 通常是 **WSL 的** `C:\WINDOWS\system32\bash.exe`（2026-10-31 那台機器上它連 `/bin/bash` 都找不到），路徑語意跟 Git Bash 不同，不能用；
-- 真正要用的 Git Bash 在 `Program Files` 底下——**路徑含空白**，而 `command` 不吃空白也不吃引號，所以**在 `hooks.json` 裡根本寫不出來**。
-
-解法是 3.19 那支 `.cmd`：`command` 只寫 `.\ag-hook.cmd git-freshness.sh`（相對、不含空白），由它自己去找 Git Bash，再跑 3.18 的轉接層——**shim 內部的引號是正常的，限制只在 agy 的 `command` 欄位**。三件原本列為「接之前要先解決」的事，現在的答案是：
-
-1. **shim 怎麼跨機器找到 Git Bash**：先問 `where git` 再推 `..\bin\bash.exe`，退路是 `%ProgramFiles%` 與 `%ProgramFiles(x86)%`。全程沒有寫死的絕對路徑（`verify_bootstrap.py` 的跨平台防呆會擋）。都找不到就**注入一句 `[ag-hook] WARN`**，不安靜放過。
-2. **Unix 不需要 shim，所以接線是兩個 handler**：3.20 同時放 Unix 與 Windows 兩條，不合用的那一條失敗而無害（實測只往 stderr 噴一行、不產生 stdout，session 照樣完成）。這是 `hooks.json` 這一個檔裡的兩行，不是「程序有兩個家」——規則仍然只在被包的那支 `.sh` 裡。
-3. **`PreToolUse` 刻意不接**：實測不明確回 `{"allow_tool": true}` 就等於拒絕，接上之後轉接層任何一次失敗都會擋掉使用者全部的工具呼叫。第一版只接 `SessionStart`。
-
-#### 還沒解決的
-
-- **IDE `1.107.0` 為什麼沒觸發，仍然沒有解釋**——同一種形狀、同樣的相對路徑，CLI 會跑、2.0 也會跑（2026-10-31 兩面都實測過），只有 IDE 沒動。四個 surface 裡它是唯一的例外，而**例外沒有解釋就是沒有解釋**，不要替它編一個。**2026-10-31 已決定不再追查**：使用者不再使用這個 surface，未解問題已沒有讀者；保留測量結果，不把重跑 IDE 列為下一步。
-- **專案自己的 `.agents/hooks.json` 內容**：骨架只擁有 `handoff-git-check` 這個頂層 key，同步只換它。但 Antigravity 的 hook 設定**只有專案層**這一份進 Git，全域那一份跟著機器走——所以跨機器的一致性靠的仍然是這個檔，不是人的記性。
-
-#### 一個已經收回的推論（鐵律 3）
-
-同日稍早寫過：「探針的 `command` 必然是相對的，而第三方指南說必須絕對——骨架自己的不變量可能保證了那支探針測不出東西」。**這個推論被實測推翻**：CLI 上相對路徑**正常工作**，反而絕對路徑才脆弱。所以鐵律 5「接線路徑一律相對」跟 Antigravity **沒有衝突**，它在 Windows 上甚至是唯一寫得出來的形式。
-
-**IDE `1.107.0` 那次為什麼沒觸發，到現在仍然沒有解釋**——CLI 與 2.0 都能跑的同一種形狀、同樣的相對路徑，在 IDE 上就是沒動。留著當未解問題，**不要再替它編一個理由**；是否追查的決定見上方「還沒解決的」。
-
-**怎麼測才測得準**——這一段比結論重要，因為前兩次都測不準：前兩次用的偵測器是「對話開頭看不看得到 `[git-check]`」，而那同時混進了「hook 沒跑」與「hook 跑了但輸出被丟掉」兩種可能，**兩者在畫面上長得一模一樣**。第三次改成**讓 hook 自己寫檔**（觸發就往 `.agents/_probe.log` 追加一行，記下事件名、cwd 與 stdin），一次掛四個探針：`SessionStart` 扁平、`SessionStart` 包 `matcher`／`hooks`、`PreToolUse` 配 `matcher: "*"`、`Stop`。完全關閉 IDE 重開、開新對話、讓它實際呼叫一次工具之後，**log 檔根本沒有產生**。
-
-關鍵是 `PreToolUse` 那一個對照組：它是 Antigravity 自己的 Hooks UI 就列得出來的事件，**連它都沒觸發**，所以結論不是「`SessionStart` 這一版還沒接上」，而是整個專案層設定檔沒被讀。
-
-**當時排除掉的兩個混淆**（保留實測邊界，不代表要重開追查）：
-
-- **不是信任閘**：`~/.gemini/trustedFolders.json` 裡家目錄是 `TRUST_FOLDER`，涵蓋受測專案。跟 Codex 那道信任不是同一回事。
-- **不是沒重啟**：四個探針是在完全關閉 IDE、重新啟動之後才測的。
-
-**查到的真實契約**，從 `resources/app/extensions/antigravity/bin/language_server_windows_x64.exe` 內嵌的官方文件與 proto 字串挖出來（比官網完整）。保留這些當時花最多力氣取得的證據，讓 IDE 的測量結果與 CLI／2.0 的實測能分開判讀：
-
-| 項目 | 實際 |
-|---|---|
-| 設定檔形狀 | 頂層 key 是 **hook 名稱**，不是事件名：`{"<名稱>":{"enabled":true,"<事件>":[…]}}`。骨架舊版照 Claude Code 寫成 `{"hooks":{"SessionStart":[…]}}`，**從一開始就是錯的** |
-| 結構 | 工具事件（`PreToolUse`／`PostToolUse`）要包 `matcher` ＋ `hooks`；其餘事件是**扁平**的 handler 陣列 |
-| cwd | **`hooks.json` 所在的目錄**（官方明定）。所以 `command` 裡相對路徑的基準是 `.agents/`，不是專案根——少一層 `../` 就是靜默失敗 |
-| 執行方式 | Unix 走 `sh -c`、Windows 走 `cmd /c`；`~` 會展開；`timeout` 預設 30 秒 |
-| stdin | 共同欄位有 `conversationId`、`workspacePaths`、`transcriptPath`、`artifactDirectoryPath`、`modelName`，全部 camelCase（protojson） |
-| `PreInvocation` | 執行檔裡有這句：`Pre-invocation hook %q is deprecated and has no effect`。而內嵌文件還在推薦它——**那份文件自己過時了**，別照著接 |
-| `SessionStart` | 內嵌文件的事件表**沒有列**它，但 proto 裡有 `SessionStartHookArgs`／`SessionStartHookResult`。存在於協定層 ≠ 這一版接得上 |
-| 輸出契約 | `{"injectSteps":[{"ephemeralMessage":"…"}]}`（裸文字會被丟掉）。骨架舊版的轉接層這部分**是對的**，只是沒機會被呼叫 |
-| 全域路徑 | Hooks UI 讀寫 `<home>/.gemini/<applicationName>/hooks.json`。**`applicationName` 跟著 surface 走**：IDE 是 `antigravity-ide`、CLI 是 `antigravity-cli`、2.0 是 `antigravity`（本機三個目錄並存）。所以**不能**從這一列推論「Antigravity 的 hook 是機器層設定」——它只說明全域那一份在哪。另有第三方實測指向共用的 `~/.gemini/config/hooks.json` |
-
-全域那一列**不能**被讀成「所以它只有機器層、專案層不存在」——那是舊版犯的錯。`applicationName` 隨 surface 變，這一列講的是「全域那一份放哪」，而專案層 `.agents/hooks.json` 官方與第三方都明確寫著存在。骨架要的是「clone 下來就有防護」，所以專案層能不能用才是關鍵，**CLI 與 2.0 已在 2026-10-31 實測成立**（證據見本節開頭的 surface 表）。想自己在機器上補一層的人，把設定放進對應 surface 的 `~/.gemini/<applicationName>/hooks.json`、並自己處理 stdout 必須是 JSON——**全域那條路徑骨架沒測過，所以這裡不寫成建議**。
-
-**可攜層在 Antigravity 這一面是獨立成立的**（就算 hook 那層壞掉也還在），而且是**實測成立**：2026-10-31 在完全沒有接線的狀態下，它自己發現了 `.agents/skills/handoff/`，照 A 模式跑完接棒並回報了 Git 狀態與「工作中」欄位。這是 3.16 那個指標檔第一次拿到 Antigravity 這一面的證據——也是為什麼它的 `description` 必須寫滿觸發詞：**agent 靠它決定要不要讀程序檔**，寫短等於無聲地關掉這個入口；CLI／2.0 的 hook 是另外一層提醒，不能取代這條可攜路徑。
-
-指示檔方面：Antigravity 讀 `AGENTS.md`、`GEMINI.md`、`.agents/rules/*.md`（**必須有合法 `trigger` frontmatter，否則整份丟棄**）、`.agents/AGENTS.md`，以及 legacy `.agent/rules/`，從檔案所在資料夾往上載到工作區根。**`AGENTS.md` 與 `GEMINI.md` 的優先序官方沒有排**——舊表寫「優先於 `GEMINI.md`」是沒有依據的斷言，已經改掉。骨架的 `GEMINI.md` 只是指標，實務上誰贏都不影響，但「查不到卻寫成確定」正是鐵律 3 要防的東西。
 
 ### `SessionEnd`：「關掉視窗就沒有下一個動作」現在只對一半的工具成立
 
@@ -271,6 +182,8 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 🔴 **最重要的坑是反過來的：在一個工具的殼層裡啟動另一個工具，變數會被繼承。** 從 Claude Code 的殼層跑 `codex sandbox cmd /c set`，112 個變數裡 `CLAUDECODE=1` 與 `AI_AGENT=claude-code_…` 整批都在——Codex 的 session 會自稱 Claude Code。而 agent 互相呼叫正是最容易發生這件事的場景，也就是說這個誤判不是邊角案例。
 
 所以結論：**環境變數只能用來加嚴，不能用來放寬。** 身分的權威來源是寫「工作中」標記的那一棒自己填的工具名（模型知道自己是誰，三個平台一致，不依賴任何變數）；變數只拿來交叉檢查「標記說是 A、但我看到 B」這種不一致，而且偵測不出來就退回只比機器名，**永遠不因為偵測失敗而放行**。
+
+> 2026-11-13：開場 hook 不再解析「工作中」也不猜工具身分，只印原文，由模型判讀（v3 D12）。下面這段是 2026-10-31 的落地紀錄，保留作為「環境變數只能加嚴」的理由。
 
 **落地在哪（2026-10-31，跳版 `2026-10-31`）**：
 
@@ -339,7 +252,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ```text
 {{GH_REPO}}/
 ├─ README.md                        ← 人的入口（第一次接觸專案看這份）
-├─ AGENTS.md                        ← AI 的入口（唯一權威來源）
+├─ AGENTS.md                        ← AI 的入口：共用制度一節（≤40 行）＋專案鐵律與連線資料
 ├─ CLAUDE.md                        ← 指標，指向 AGENTS.md
 ├─ GEMINI.md                        ← 指標，指向 AGENTS.md
 ├─ HANDOFF.md                       ← 當下工作狀態（≤80 行，不累積歷史）
@@ -349,17 +262,14 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ├─ .claude/                         ← Claude Code 讀這裡
 │   ├─ settings.json                ← hook 設定（進 Git）
 │   ├─ settings.local.json          ← 各機器本地設定（不進 Git）
-│   ├─ hooks/git-freshness.sh       ← SessionStart：git 新鮮度檢查＋提醒走交接程序
+│   ├─ hooks/git-freshness.sh       ← SessionStart：fetch 一次，只報事實（最多五行 [facts]）
 │   ├─ hooks/pre-push-handoff.sh    ← PreToolUse：AI push 提醒（有限覆蓋，見 3.11）
-│   ├─ hooks/ag-wrap.sh             ← Antigravity 轉接層：只做管線，把 stdout 包成 JSON
 │   ├─ hooks/codex-hook.cmd         ← Codex 的 Windows 啟動器：找 Git Bash、加純文字標頭、保留結束碼
-│   ├─ skills/handoff/SKILL.md      ← 交接與同步程序的入口（本骨架的核心、權威版）
-│   ├─ skills/handoff/mode-*.md、reasons.md ← 入口指過去的模式檔與理由檔（共五個，與入口同版本）
+│   ├─ skills/handoff/SKILL.md      ← 交接程序的參考入口（碰到才讀；必守條件在 AGENTS.md）
+│   ├─ skills/handoff/mode-*.md、reasons.md ← 參考檔：模式步驟與理由（共五個，與入口同版本）
 │   └─ skills/<其他>/SKILL.md       ← 需要時才建：可重複使用的操作食譜（權威版）
 ├─ .codex/hooks.json                ← Codex 讀這裡：掛上面同樣那兩個腳本，不另寫一份
-├─ .agents/hooks.json              ← Antigravity 讀這裡：經轉接層掛同一支 git-freshness.sh
-├─ .agents/ag-hook.cmd              ← Windows shim：找 Git Bash 再交給 ag-wrap.sh
-├─ .agents/skills/handoff/SKILL.md  ← Antigravity 原生讀 .agents/：指向權威版的指標
+├─ .agents/skills/handoff/SKILL.md  ← Codex 讀 .agents/skills/：指向權威版的指標
 ├─ .agents/skills/<其他>/SKILL.md   ← 需要時才建：同樣只放指標，不複製內容
 ├─ docs/
 │   ├─ ai-notes/
@@ -378,6 +288,8 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ## 3. 各檔案內容（照抄，只換佔位符）
 
 ### 3.1 `AGENTS.md`
+
+> **2026-11-13 起（v3 D11、D12）**：開始與結束標記之間是共用制度，由部署包管理，≤ 40 行；專案只能在標記外面加自己的鐵律與連線資料，全檔 ≤ 100 行。共用制度只寫目標、模型不會自己知道的事與不可違反的條件，不寫逐步程序；開始標記裡的 `source:` 版本給開場 hook 比對上游用。
 
 ````markdown
 <!-- kit-file: AGENTS.md -->
@@ -436,7 +348,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 > 檔案裡的 `docs/ai-notes/handover-protocol.md` 刻意寫成純路徑而非連結，這樣同一份文字放進全域 `~/.claude/skills/` 也不會產生死連結。
 > **2026-11-10 起這支 skill 是一個目錄、六個檔**（決策書 F22：單檔 22,040 字元，正常接棒只需要其中一小部分）。入口與 `mode-a.md` 是新寫的摘要，其餘四個檔是從單檔逐字搬來的；六個檔的 `source:` 標記必須是同一個版本，同步時整個目錄一起覆蓋。下面六個區塊依序對應標題上的六個檔名。
 
-**`.claude/skills/handoff/SKILL.md`**——入口：每次都讀。適用判斷、選模式、全程禁令、必須停下來問人的清單、session 命名。
+**`.claude/skills/handoff/SKILL.md`**——參考檔入口：碰到才讀（2026-11-13 起，v3 第 5 節）。適用判斷、要細節時讀哪個檔、全程禁令、必須停下來問人的清單；session 命名指回 `AGENTS.md`。
 
 ````markdown
 <!-- kit-file: .claude/skills/handoff/SKILL.md -->
@@ -448,7 +360,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 <!-- kit-file: .claude/skills/handoff/mode-a.md -->
 ````
 
-**`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場沒有「全綠」行時才讀。
+**`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場 `[facts]` 有不正常的值時才讀。
 
 ````markdown
 <!-- kit-file: .claude/skills/handoff/mode-a-stop.md -->
@@ -488,6 +400,8 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ### 3.10 `.claude/hooks/git-freshness.sh`
 
+> **2026-11-13 起只報事實（v3 D12）**：fetch 一次，印出最多五行 `[facts]`，不下指示、不判讀。檔名沿用 `git-freshness.sh`，3.9 與 3.17 的接線因此不必改。
+>
 > Windows 需要 Git for Windows 附的 bash（Claude Code 內建可用）。建立後在 macOS／Linux 上加執行權限：`chmod +x .claude/hooks/git-freshness.sh`。
 
 ````bash
@@ -530,7 +444,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 <!-- kit-file: tools/verify_state.py -->
 ````
 
-### 3.16 `.agents/skills/handoff/SKILL.md`（給 Antigravity **與 Codex** 的指標）
+### 3.16 `.agents/skills/handoff/SKILL.md`（給 Codex 的指標）
 
 > **2026-10-30 起這個檔不再只給 Antigravity。** `codex debug prompt-input` 印的「Skill roots」表證實 Codex CLI `0.164.0` 也把 repo 的 `.agents/skills/` 當成 skill 來源（官方另外列 `$CWD/../.agents/skills`、`$HOME/.agents/skills`、`/etc/codex/skills`）。Antigravity 一樣原生辨識專案根目錄的 `.agents/skills/`。所以這一個檔現在同時是兩個工具的專案層入口。
 > 仍然**只放指標、不放內容**——複製一份程序在這裡，兩份就會各自演化，最後一份說要先 fetch、另一份沒說。
@@ -563,49 +477,15 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 **`PreToolUse` 的 Windows 命令末尾必須保留 `; exit $LASTEXITCODE`。** 2026-11-01 補做真阻擋驗收時發現：只在原生 cmd 測到 exit 2 還不夠；Codex 外層的 PowerShell `-Command` 會把最後一個 native 命令的失敗折成 exit 1，於是畫面只報 Hook failed、工具仍被放行。加上明確 exit 才把 2 交回 Codex。驗證器同時測完整 PowerShell → cmd → Git Bash 啟動鏈與拿掉明確 exit 的負向情境，避免再用少一層的測試報成功。
 
-與 3.19 同樣保持 **ASCII、全 LF、單行 if、沒有 label 與多行括號區塊**。尋找順序是 PATH 上 `git.exe` 的安裝位置、兩種 Program Files、使用者安裝位置；刻意不執行 PATH 上未驗明來源的 `bash`，以免又選到 WSL。找不到 Git Bash 就在 stderr 明確報錯並 exit 1，不假裝驗收成功。另量到 `0.166.0` 對以 `[` 開頭的純文字 stdout 會報 `invalid session start JSON output`；同一支腳本只加上 `Git status check:` 標頭後，互動驗收由 `HOOK_ABSENT` 變成 `HOOK_PRESENT`。所以標頭留在啟動器，不改兩支共用 `.sh` 的既有標記。
+保持 **ASCII、全 LF、單行 if、沒有 label 與多行括號區塊**。尋找順序是 PATH 上 `git.exe` 的安裝位置、兩種 Program Files、使用者安裝位置；刻意不執行 PATH 上未驗明來源的 `bash`，以免又選到 WSL。找不到 Git Bash 就在 stderr 明確報錯並 exit 1，不假裝驗收成功。另量到 `0.166.0` 對以 `[` 開頭的純文字 stdout 會報 `invalid session start JSON output`；同一支腳本只加上 `Git status check:` 標頭後，互動驗收由 `HOOK_ABSENT` 變成 `HOOK_PRESENT`。所以標頭留在啟動器，不改兩支共用 `.sh` 的既有標記。
 
 ````bat
 <!-- kit-file: .claude/hooks/codex-hook.cmd -->
 ````
 
-### 3.18 `.claude/hooks/ag-wrap.sh`（Antigravity 轉接層）
+### 3.18–3.20（2026-11-13 移除）
 
-> **為什麼要多一層**：Antigravity 的 `SessionStart` 只吃 JSON（`injectSteps`），而骨架那兩支 `.sh` 是直接 `echo` 給人讀的——裸文字會被當成不合格式**整段丟掉**，於是 hook 跑了、畫面上什麼都沒有。
-> **為什麼放在 `.claude/hooks/` 而不是 `.agents/`**：跟 3.17 同一個理由——hook 腳本只有一個家。路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置，內容不限任何工具。
-> 🔴 **這一層刻意不含任何判斷規則。** 要印什麼、要擋什麼，全在被包的那支腳本裡（權威版只有一份）。所以它跟「複製第二份腳本」不是同一種風險：裡面沒有規則可以跟權威版分岔，它只會在管線上壞掉——而管線是驗得出來的。
-> **位置從 `$0` 推，不依賴 cwd。** 雖然實測 cwd 就是 `hooks.json` 所在目錄（官方契約也這樣寫），但多押一個假設沒有好處：`$0` 推出來的路徑，被誰用什麼 cwd 呼叫都一樣。
-> **第一個參數是要跑的腳本檔名**，所以同一支轉接層以後掛別的 hook 也不用改。
-> macOS／Linux 建完要 `chmod +x`。
-> 🔴 **從 Windows 同步這個檔之後，提交前補一句 `git update-index --chmod=+x .claude/hooks/ag-wrap.sh`。** Windows 不帶執行位元，git 會記成 `100644`，而 3.20 的 Unix handler 是**直接**跑這支 `.sh`——Unix clone 拿到的是不可執行的檔，那條 handler 就**靜默不動**（只噴 stderr、不產生 stdout、沒有注入，畫面上跟「這台機器沒有這個 hook」長得一模一樣）。另外兩支 `.sh` 不受影響：它們都是被 `bash <檔>` 呼叫的，執行位元沒差。2026-10-31 補裝六個既有專案時就是從 Windows 做的，所以這一句是當下必須做的動作，不是叮嚀。
-
-````bash
-<!-- kit-file: .claude/hooks/ag-wrap.sh -->
-````
-
-### 3.19 `.agents/ag-hook.cmd`（Antigravity 在 Windows 的 shim）
-
-> **為什麼非要這一層**：`agy` 的 `command` **照空白切 token、不解析引號**（2026-10-31 實測四種組合），而 Windows 上要跑 `.sh` 就得先有 bash——Git Bash 裝在 `Program Files` 底下，路徑含空白，**在 `hooks.json` 裡根本寫不出來**。PATH 上那個 `bash` 通常是 WSL 的，路徑語意不同、不能用。所以必須有一個**不含空白的相對路徑**可以當 `command`，由它自己去找 bash。
-> 🔴 **全檔只有單行 `if`，沒有括號區塊也沒有 label**：這個檔是 LF 行末（`.gitattributes` 強制全檔 LF），而 `cmd.exe` 讀 LF-only 檔案時，多行的 `( )` 區塊與 `goto` 會出錯。不要「順手整理」成多行區塊。
-> 🔴 **全檔只有 ASCII，註解也是**：batch 的 `echo` 碰到 UTF-8 會依 OEM code page 變成亂碼，而 2026-10-31 實測時更糟——被誤讀的中文註解**整段被當成指令執行**，stderr 噴出三行 `is not recognized`。理由寫在部署包（這一節），檔案裡只留指路的一句。
-> **路徑用 `%~dp0` 推，不依賴 cwd**，跟 3.18 同一個理由。
-> 失敗要吵不要安靜：找不到 Git Bash 就注入一句 `[ag-hook] WARN`，而不是安靜地什麼都不做——一個「安靜地什麼都沒做」的 hook 跟「檢查過了沒事」在畫面上一模一樣。
-
-````bat
-<!-- kit-file: .agents/ag-hook.cmd -->
-````
-
-### 3.20 `.agents/hooks.json`（Antigravity 的 hook 接線）
-
-> **兩個 handler，一個平台各一個。** Unix 直接跑 `.sh`（`sh -c`，不需要 shim）；Windows 走 3.19 的 `.cmd`。**不合用的那一個會失敗，而失敗是無害的**——2026-10-31 實測：在 Windows 上 Unix 那條只往 stderr 噴一行 `'..' is not recognized`、不產生 stdout，session 照樣完成，注入也照樣只有一份。不要為了「乾淨」刪掉另一條：同一個 repo 會被兩種平台 clone。
-> **骨架只擁有 `handoff-git-check` 這一個頂層 key。** Antigravity 的設定檔形狀是「頂層 key ＝ hook 名稱」，所以專案自己要加 hook 就用自己的 key，兩邊不會互相踩到——`sync_project.py` 也只換這一個 key（這比 3.9／3.17 那兩份好處理，它們得在同一個 `hooks` 物件裡逐組比對）。
-> 🔴 **只接 `SessionStart`，刻意不接 `PreToolUse`。** 實測 `PreToolUse` **不明確回 `{"allow_tool": true}` 就等於拒絕**——回 `{}` 的那一輪 `agy` 把 `read_file` 與 `run_command` 全擋掉了。接上去之後，轉接層任何一次失敗都會變成「使用者的工具全部不能用」，那比「沒有防護」糟得多。要接之前先想清楚失敗路徑怎麼保證回 allow。
-> **路徑一律相對**（鐵律：寫死絕對路徑換機器就靜默失效）。這一點在 Antigravity 上不只是慣例——相對路徑是 Windows 這一面**唯一寫得出來**的形式。
-> **這一面刻意不加 3.9／3.17 那個 `$(git rev-parse --show-cdup)`**（它們為 F05 加了那一層）：`agy` 的 `command` 是**照空白切 token、不經 shell**（見 3.19），所以 `$( )` 不會被展開，只會變成檔名的一部分；而它的 cwd 依官方契約與實測就是 `hooks.json` 所在目錄、不是 session 的 cwd，所以這裡的 `../` 本來就是對的基準。**兩邊的定位基準不同，不要「順手統一」**（2026-11-02）。
-
-````json
-<!-- kit-file: .agents/hooks.json -->
-````
+原本是 Antigravity 的轉接層、Windows shim 與 hook 接線。需求決策書 v3 的 D8 放棄 Antigravity，三個檔移出部署包；編號保留，免得舊紀錄裡的「3.18」「3.19」「3.20」指到別的東西。已部署的專案裡那三個檔不會被同步工具刪掉，要不要清掉由使用者決定。
 
 ### 3.21 其他 skills 慣例（有需要時才建，不要空建）
 
@@ -666,14 +546,7 @@ git add . && git diff --cached --name-only
 
 依訪談逐一執行 `git check-ignore -- <憑證或運行路徑>`，必須列出該路徑；不要以檔案還沒建立為理由略過。核對 staged 清單沒有任何憑證或運行資料。關鍵字掃描只能降低風險，不能涵蓋所有祕密格式。
 
-部署了 Antigravity wrapper 時，所有平台都把它記成可執行（Windows 的檔案模式不會自動替你做這件事）；沒有採用此 wrapper 就明列此兩項不適用：
-
-```bash
-git update-index --chmod=+x .claude/hooks/ag-wrap.sh
-git ls-files --stage .claude/hooks/ag-wrap.sh
-```
-
-輸出必須是 `100755`。接著跑兩個本機檢查：
+接著跑兩個本機檢查：
 
 ```bash
 python -X utf8 tools/check_docs.py
@@ -714,10 +587,10 @@ git status -sb
 
 - [ ] `python -X utf8 tools/check_docs.py` → `OK`（一次涵蓋死連結與**殘留佔位符**；佔位符那一項掃 `.md`／`.py`／`.sh`／`.json`／`.gitignore`／`.gitattributes` 的 tracked 檔，所以要先 `git add`。本部署包自己被豁免——照最後一項刪掉它就好）
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
-- [ ] `bash .claude/hooks/git-freshness.sh` → 印出 `✅ 本機沒落後 origin`，且最後**兩**行是 `[handoff]` 的交接提醒與開工改名提示（後者長得像 `㊣　26110112｜<主題>｜工作中`，時間戳是當下的；2026-11-01 加）。沒有 upstream 會印警告，表示第 4 節沒做完
-- [ ] **子目錄也要有防護**（2026-11-02／F05）：`cd tools && sh -c 'bash "$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh"'; cd ..` → 要印出跟在根目錄一樣的 `[git-check]`。**要跑的是 `.claude/settings.json`／`.codex/hooks.json` 裡原始的那一串命令**，不是直接拿完整路徑跑腳本——後者在任何 cwd 都會過，測不到入口。hook 的 `command` 以 session 的 cwd 執行，而人會從子目錄開 session（`cd tools && claude`）；舊接線在那裡是 exit 127，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**
-- [ ] **工作中標記防呆**：把 `HANDOFF.md` 的「工作中」改成 `` `假機器名` ／ `Claude Code` ``，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 要印 🔴 並叫你走 A2.5；改成**這台機器**＋一個**別的工具名**（例如 `` `<本機名>` ／ `Codex CLI` ``）再跑 → 同樣要 🔴（這是 2026-10-31 補的同機器跨工具那個洞；若本機偵測不出自己是哪個工具，會退成 🟡 並把問題丟回給你答，那也是對的）；改回「無（已交棒）」、commit、push 後再跑 → 不該再印。**驗完記得改回來**
-- [ ] **骨架版本偵測**：`printf 2099-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要印 🟡「handoff 骨架落後」。快取裡放的是**上游最新版**，所以要餵一個比本機**新**的值；餵 2026-11-02 之前的舊日期只會印「比上游新」（2026-11-02 修正，見 F09——舊版這裡寫 `1999-01-01`，而那是本機領先，只是當時的實作不分方向所以照樣印落後）。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
+- [ ] `bash .claude/hooks/git-freshness.sh` → 印出三行 `[facts]`：時間（含 session 名用的 `YYMMDDHH`）與本機、落後 0 領先 0、origin 上「工作中」那一行的原文。印「origin 上沒有分支」表示第 4 節沒做完
+- [ ] **子目錄也要有防護**（2026-11-02／F05）：`cd tools && sh -c 'bash "$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh"'; cd ..` → 要印出跟在根目錄一樣的 `[facts]`。**要跑的是 `.claude/settings.json`／`.codex/hooks.json` 裡原始的那一串命令**，不是直接拿完整路徑跑腳本——後者在任何 cwd 都會過，測不到入口。hook 的 `command` 以 session 的 cwd 執行，而人會從子目錄開 session（`cd tools && claude`）；舊接線在那裡是 exit 127，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**
+- [ ] **工作中標記看得見**：把 `HANDOFF.md` 的「工作中」改成 `` `假機器名` ／ `Claude Code` ``，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 第三行要印出那個值的原文；改回「無（已交棒）」、commit、push 後再跑 → 要印回 `無（已交棒）`。**驗完記得改回來**
+- [ ] **共用制度版本提示**：`printf 2099-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要多印一行「共用制度落後」。快取裡放的是**上游最新版**，所以要餵一個比本機**新**的值。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）；同目錄有 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 五個檔，六個檔檔頭的 `source:` 版本相同（少一個，入口就會指向不存在的檔）
 - [ ] **`CLAUDE.md` 只有 `@AGENTS.md` 這一行 import**，不是「去讀 AGENTS.md」那種句子——有 `CLAUDE.md` 時 Claude Code 不會自己讀 `AGENTS.md`，而用文字請它去讀不保證它真的開那個檔（理由見開頭「跨工具與跨平台」）。開一個 session 問它「`AGENTS.md` 的鐵律第 1 條是什麼」，答得出來才算接上
 - [ ] `ARCHITECT.md` 存在且有「最後更新」標頭（`check_docs.py` 會擋），「專案本體」那節寫的是**實況**——還沒有程式碼就照實寫，不要先畫一個想像中的架構
@@ -728,12 +601,11 @@ git status -sb
 
 **跨工具（只驗你真的會用的那幾個，用不到的不必建檔）**
 
-- [ ] **可攜層**：`AGENTS.md` 開頭有「開工第一件事」那一段，而且指到的路徑存在——**這一項不能跳過**，它是唯一不需要任何設定就會被讀到的那一層（**「讀得到」不等於「照做」**，見開頭那一節），其餘都只是輔助
+- [ ] **可攜層**：`AGENTS.md` 有共用制度一節（開始與結束標記之間 ≤ 40 行）——**這一項不能跳過**，它是唯一不需要任何設定就會被讀到的那一層（**「讀得到」不等於「照做」**，見開頭那一節），其餘都只是輔助
 - [ ] **Codex CLI**：`.codex/hooks.json` 與 `.claude/hooks/codex-hook.cmd` 存在且接線路徑全是相對路徑（`grep -n ':[\\/]' .codex/hooks.json` 應無輸出——絕對路徑在別台機器會靜默失效）；**專案要先被信任**（否則整層 `.codex/` 被跳過）；Windows 的 `commandWindows` 要指向 `.claude/hooks/codex-hook.cmd`，該檔也必須在場；然後**開一次互動式 `codex`**——它開場就會問「Hooks need review」，選 `Trust all and continue`（想一條條看就選 `Review hooks`）。🔴 **這一項不能只看檔案在不在**，而且有三個會讓你誤判的點：①**信任綁 `hooks.json` 的絕對路徑，所以每個專案都要各做一次**，審過一個不會全通；②**在那個 session 裡送出一句話才驗得到**——2026-11-01 實測互動 TUI 開場不跑 `SessionStart`，它跟著第一個 turn 才跑；舊版這裡寫「你按下同意的那個 session 不會跑，要再開一個才算」，那是推論而實測是反的，而且它教人用**保證看不到**的方式驗收（再開一個、然後盯著開場）；③**不要去畫面上找 `[git-check]`**——Codex 把純文字 stdout 當 developer context 餵給模型、不顯示給人，所以要驗就問 agent 一個不必複述的是非題（「只回 YES／NO：你的 context 裡有沒有以 `[git-check]` 開頭的行」），或暫時讓 hook 自己寫一個檔。`codex exec` 從頭到尾不問也不印，**不能拿它當驗收手段**（2026-10-30／31 兩輪實測）
 - [ ] **Codex skill 來源**：`codex debug prompt-input` 會印一張「Skill roots」表，確認裡面有 `~/.codex/skills`（全域副本放這裡）與本專案的 `.agents/skills`。這比問模型「你有哪些 skill」可靠，也不花一次模型呼叫
 - [ ] **Codex 桌面 App**：它**有** hooks（App `26.506` 起有 in-app 信任審核，Settings 裡找 Hooks），而且跟 CLI 共用 `~/.codex`。舊版這裡寫「App 沒有 hooks」是 2026-08-06 的實測，已經過期。全域 skill 仍然放 `~/.codex/skills/handoff/SKILL.md`（2026-10-30 實測 CLI `0.164.0` 仍讀這個路徑，雖然官方文件已經不列它）
-- [ ] **Antigravity 指標檔**：`.agents/skills/handoff/SKILL.md` 存在，內容只有指標、沒有複製程序內容，而且 `description` 完整（那是它被發現的唯一依據；這個檔同時也是 Codex 的專案層入口，見 3.16）
-- [ ] **Antigravity CLI 的 hook**：在專案資料夾裡跑 `agy -p "把你在這個 prompt 之前收到的 session 開場訊息原文引用出來"`，要看到 `[git-check]` 那一句。看不到就先單獨跑 `.agents/ag-hook.cmd git-freshness.sh`（Windows）或 `bash .claude/hooks/ag-wrap.sh git-freshness.sh`（Unix）——有合法 JSON 出來就是 agy 這一端的問題，沒有就是 shim 這一端。**Antigravity IDE 不在這一項的範圍內**：`1.107.0` 實測不會觸發專案層設定，原因未解（見開頭那一節）
+- [ ] **Codex 指標檔**：`.agents/skills/handoff/SKILL.md` 存在，內容只有指標、沒有複製程序內容（見 3.16）
 - [ ] **共通的真正驗收**（不論哪個工具）：在專案裡講一句「我要接手這個專案」，agent 應該先 `git fetch`、讀 `AGENTS.md` ＋ `HANDOFF.md`，回報 3–5 行才動手。它直接開始翻程式碼就是沒接上——改用明講版：「請先讀 `.claude/skills/handoff/SKILL.md`，照 A 模式接棒」
 - [ ] **另一台機器**：clone 後重跑上面「python 可執行」與「hook 自動跑」兩項。`python` 不存在就用 `python3`；Windows 需要 Git for Windows 附的 bash
 - [ ] `HANDOFF.md` 的「本機能力」已填實際狀況

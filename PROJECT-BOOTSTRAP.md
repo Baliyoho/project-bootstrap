@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-12.4**（**交棒只在使用者要求時做**，決策書 Q31 (a)：入口模式表的 B 改成「使用者要求交棒／收工／換人接手」，告一段落走 C、commit／push 時機由 agent 判斷；C 的 push 在 origin「工作中」仍是本 session 時不必更新 HANDOFF；一段工作做完時讀得到上下文用量就讀，70% 建議交棒一次、85% 再一次，讀不到不估算；3.11 push 提醒在 origin「工作中」不是「無（已交棒）」時放行。守門人：入口必備句加「使用者沒要求就不得自行交棒」，「AI push 提醒情境」加放行、已交棒仍擋、沒有欄位仍擋與拿掉放行的負向測試。六個檔、3.11 與 3.16 指標一起跳到 `v2026-11-12.4`。**沒有驗證的**：模型會不會照著只建議不交棒。）
+> 版本：**2026-11-13**（**需求決策書 v3 第 1 期：共用制度縮成 `AGENTS.md` 裡的一節，開場 hook 只報事實，handoff skill 降為碰到才讀的參考，Antigravity 移出部署包**。3.1 `AGENTS.md` 範本的共用制度夾在開始與結束標記之間，32 行（v3 D11 上限 40），起點是 handoff-ab 的極簡版，補上「待續分支」、不提交祕密與不整批加入、F50 session 命名三條。3.10 `git-freshness.sh` 檔名不變（Codex 與 Windows 接線不用動），內容改成最多五行 `[facts]`：時間與 `YYMMDDHH`、與 origin 的落後與領先、未提交檔數、origin 的「工作中」原文，有差異才印的共用制度版本與家目錄 skill 差異；判讀表、全綠行、工具身分猜測與「先走 skill」的提醒移除。共用制度版本改從 `AGENTS.md` 開始標記讀。3.8 入口與 `mode-a.md` 改寫成參考，其餘四個檔只加一段 2026-11-13 註記。舊 3.18–3.20（Antigravity 轉接層、Windows shim、`.agents/hooks.json`）移除。同日補一句（F50 互動驗證重現：用選項卡片停下時漏了 `session：` 行）：共用制度的「session 名稱」加「用選項卡片發問也算停下來等決定，卡片之前先寫這一行」；這一版還沒發布到任何專案，所以版本號不跳。handoff-ab 兩輪 18／18 與 v2 完整版相同，結果在 `experiments/handoff-ab/RESULTS.md`；F50 在 `experiments/handoff-ab/F50.md`。）
+> 前一版 **2026-11-12.4**（**交棒只在使用者要求時做**，決策書 Q31 (a)：入口模式表的 B 改成「使用者要求交棒／收工／換人接手」，告一段落走 C、commit／push 時機由 agent 判斷；C 的 push 在 origin「工作中」仍是本 session 時不必更新 HANDOFF；一段工作做完時讀得到上下文用量就讀，70% 建議交棒一次、85% 再一次，讀不到不估算；3.11 push 提醒在 origin「工作中」不是「無（已交棒）」時放行。守門人：入口必備句加「使用者沒要求就不得自行交棒」，「AI push 提醒情境」加放行、已交棒仍擋、沒有欄位仍擋與拿掉放行的負向測試。六個檔、3.11 與 3.16 指標一起跳到 `v2026-11-12.4`。**沒有驗證的**：模型會不會照著只建議不交棒。）
 > 前一版 **2026-11-10.2**（**handoff skill 的 `reasons.md` 末尾加一張「規則 → 理由在哪」對照表**，決策書 Q17 (b)：入口與 `mode-a.md` 不逐條加連結（常態必讀不增加），改由對照表列出入口與四個模式檔每個段落的理由在哪；拆分前就沒寫理由的段落照實標「沒有寫下理由」。守門人：`verify_bootstrap.py` 的「skill 規則對照表」（每個段落標題都在左欄、右欄指到的段落存在，附負向測試；不判斷理由內容）。六個檔一起跳到 `v2026-11-10.2`。）
 > 前一版 **2026-11-10**（**handoff skill 從單檔拆成一個目錄、六個檔**，決策書 F22／Q9：單檔 22,040 字元，正常接棒只需要其中一小部分。3.8 現在產出入口 `SKILL.md`、`mode-a.md`（正常接棒）、`mode-a-stop.md`（完整判讀表與異常）、`mode-b.md`（交棒與中途同步）、`mode-0.md`（建制）、`reasons.md`（理由、事故與命名細則）；入口與 `mode-a.md` 是新寫的摘要，合計 5,380 字元，其餘四個檔逐字搬自單檔。3.10 `git-freshness.sh` 在 fetch 成功、不是 detached、upstream 是 `origin/<當前分支>`、沒有領先落後、工作樹乾淨、origin 的「工作中」是 `無（已交棒）` 全部成立時多印一行「全綠」，少一項就不印並指向 `mode-a-stop.md`。守門人：`verify_bootstrap.py` 新增「skill 拆分」（檔案齊全、六檔同版本、常態必讀 ≤6,000、入口與 mode-a 必備句、拆分前每一行逐字留存或列入已改寫清單）與「全綠行」（真 Git fixture 逐項打破條件）。`sync_project.py` 會替已有入口的專案補上五個新檔，並列出 skill 目錄裡不認得的檔。**沒有驗證的**：模型會不會真的從入口走到模式檔。）
 > 再前一版 **2026-11-03**（複審 R04／R07–R09：先遮罩再摘要；先 stage 並拒絕文件／檢查器部分 stage；空工具欄與角括號 title 組合修正。R03 同步資格檢查在維護工具，依 README 逐專案 A1–A5。）
@@ -82,8 +83,8 @@
 
 | 層 | 檔案 | 什麼時候動 |
 |---|---|---|
-| **觸發** | `.claude/hooks/git-freshness.sh`（SessionStart hook） | 每次 session 開始自動 fetch、報告落後／分岔、**讀 origin 的「工作中」標記揭露別台機器正在動同一條分支**，並提醒「接棒先走 handoff skill」 |
-| **程序** | `.claude/skills/handoff/SKILL.md` | agent 判斷要接棒／交棒／同步時自動載入；使用者也可打 `/handoff` 直接叫它 |
+| **事實** | `.claude/hooks/git-freshness.sh`（SessionStart hook） | 每次 session 開始自動 fetch 一次，印出最多五行 `[facts]`：時間、與 origin 的落後與領先、未提交檔數、origin 的「工作中」原文。**只報事實，不下指示**（2026-11-13 起，v3 D12） |
+| **參考** | `.claude/skills/handoff/SKILL.md` | 碰到才讀：異常判讀、交棒步驟、建制、理由。必守的條件在 `AGENTS.md` 的共用制度一節（2026-11-13 起，v3 第 5 節） |
 | **AI push 提醒** | `.claude/hooks/pre-push-handoff.sh`（PreToolUse hook） | 有限字面判讀，缺已提交 HANDOFF 差異時提醒並阻擋；保障範圍見 3.11 |
 
 **分工**：`docs/ai-notes/handover-protocol.md`＝**規則與理由**（為什麼、什麼算對）；skill＝**怎麼做**（指令、判讀表、模板）。
@@ -143,107 +144,17 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 - **skill 來源看得到，不必猜**：`codex debug prompt-input` 會印一張「Skill roots」表。2026-10-30 實測 0.164.0 列出 `~/.codex/skills`（**官方文件已經不列這個路徑，但實際仍然讀**）**與 repo 的 `.agents/skills`**。官方另外列 `$CWD/../.agents/skills`、`$HOME/.agents/skills`、`/etc/codex/skills`。
 - `project_doc_max_bytes` 會截 `AGENTS.md`，所以**「開工第一件事」那一段必須待在 `AGENTS.md` 最上面**。
 
-### Antigravity：四個 surface，骨架已附接線（CLI 與 2.0 實測通，IDE 沒觸發）
+### Antigravity：2026-11-13 起不支援
 
-🔴 **先認清一件事：「Antigravity」不是一個產品，是四個。** 官方 blog「Choosing your surface」並排列出：
+需求決策書 v3 的 D8 放棄 Antigravity：轉接層、Windows shim 與 `.agents/hooks.json`（舊 3.18–3.20）移出部署包。2026-10-31 量到的 hook 契約、四個 surface 的差異與 Windows 死結的解法留在本檔 Git 歷史（`2026-11-12.4` 以前的版本），要重新支援時從那裡讀起，不要憑記憶重刻。
 
-| Surface | 是什麼 | `applicationName`／設定目錄 |
-|---|---|---|
-| **Antigravity 2.0** | 獨立桌面 App，**沒有編輯器**，平行跑多個 agent、可排程。官方稱 the default recommendation | `antigravity` |
-| **Antigravity CLI** | 終端 TUI（Go 寫的），headless 執行、SSH／容器內用。執行檔是 `agy` | `antigravity-cli` |
-| **Antigravity IDE** | 原本那個 VS Code fork，agent 跑在工作區裡、逐行 accept／reject | `antigravity-ide` |
-| **Antigravity SDK** | Python（`google.antigravity`），自己組 agent | 不適用 |
-
-官方明講**沒有** deprecate IDE，並建議兩個都裝——所以**同一台機器上同時有多個 surface 是常態**，不是過渡狀態。問「你用 Antigravity 嗎」得不到夠用的答案，要問**哪一個**。
-
-**結論先講：Antigravity CLI（`1.4.7`／`1.4.12`）與 Antigravity 2.0（`2.28.2`）的專案層 `.agents/hooks.json` 都會被讀、而且真的觸發**（2026-10-31 實測）。所以「Antigravity 沒有 hook 這一層」是錯的——錯在把**一個 surface 的結果當成整個產品的性質**，而當初那個 surface（IDE）剛好是四個裡唯一不觸發的那一個。目前狀態分 surface 看：
+當時量到的專案層 hook 觸發情況（只作紀錄，部署包已不附接線）：
 
 | Surface | 專案層 `.agents/hooks.json` | 證據 |
 |---|---|---|
 | **Antigravity CLI `1.4.7`／`1.4.12`** | ✅ **會讀、會觸發** | 2026-10-31 實測（`agy -p` headless），六個事件逐一確認，契約見下；`1.4.12` 上重跑同一份接線沒壞 |
 | **Antigravity IDE `1.107.0`** | ❌ 沒觸發 | 2026-10-31 探針，四個事件都沒觸發、log 檔沒產生 |
 | **Antigravity 2.0 `2.28.2`** | ✅ **會讀、會觸發** | 2026-10-31 實測：`SessionStart`／`PreInvocation`／`PostInvocation`／`Stop` 四個都進 log，cwd 同樣是 `.agents/`，而且沒有出現任何信任／審核提示。接著在裝了 3.18–3.20 的真專案上開一次 session，agent 把 `[git-check]` 開場原文背了出來——注入確實進到 context。測法見下 |
-
-**骨架 2026-10-31 起附了接線**（3.18 轉接層 ＋ 3.19 Windows shim ＋ 3.20 `.agents/hooks.json`），而且是**端到端實測過的**：在重生出來的骨架上跑 `agy -p`，agent 把 `[git-check]` 那句原文背了出來——注入真的進到模型的 context，不是「設定長得像對的」。
-
-#### 怎麼測的：CLI 有 IDE 沒有的東西
-
-`agy` 有 `--print`／`-p`（headless 單輪），所以**不必拿「畫面上看不看得到訊息」當偵測器**——那正是前兩次 IDE 測不準的原因（混進了「沒跑」與「跑了但輸出被丟掉」）。探針讓 hook 自己 append 一行 log（事件名、label、`%CD%`），並在工作區根與 `.agents/` 各放一份同名但 label 不同的腳本，**用哪一份跑起來反推 cwd**。
-
-#### 2.0 怎麼測的：沒有 headless，但偵測器照樣不靠畫面
-
-2.0 的安裝目錄底下只有 `Antigravity.exe`，沒有任何命令列入口（`bin/` 根本不存在），所以 `agy -p` 那一招用不上——這一面只能由人或桌面自動化開一個 session。**但「要用畫面開 session」不等於「要用畫面判讀」**：探針仍然是 hook 自己往 `.agents/_probe.log` 追加一行（事件名、cwd、參數），所以結果不受「訊息有沒有顯示出來」影響。測法是另開一個乾淨資料夾當工作區，只放 `.agents/hooks.json` 與一支全 ASCII 的 `.cmd` 探針，掛五個事件（`PreToolUse` 刻意不掛，理由見上），開一次對話，然後讀 log。
-
-🔴 **先驗儀器，再測受測物。** 第一版探針的 `command` 在寫入時被轉義吃掉一個字元（`.\ag-probe.cmd` 變成 `.` ＋ BEL ＋ `g-probe.cmd`），而這種壞法在**已知會觸發**的 CLI 上同樣一聲不響。要是直接拿去測 2.0，就會把「我的檔寫壞了」寫成「2.0 不支援專案層 hook」——那正是 IDE 前兩輪誤判的同一個形狀。所以同一份接線先在 CLI 上跑一次，log 出來了才拿去測 2.0。**沒有驗過的儀器量不出陰性結果**，只量得出「沒看到東西」。
->
-> 2026-10-31 在 Codex 上又踩到同一條規則的另一種形狀：**把「建設定檔」與「跑受測物」寫在同一個指令裡，那個指令被權限層整個拒絕，於是設定檔根本沒生成**，接下來三次「hook 沒觸發」全部無效——不是受測物的性質，是儀器不在場。徵兆跟上面那次一樣：結果看起來完全合理。**所以佈置與測量要分開兩步，而且測量前先確認佈置真的落地了**（`ls` 一下就夠）。
-
-#### 量到的契約（CLI `1.4.7`／Windows）
-
-| 項目 | 實際 |
-|---|---|
-| 設定檔形狀 | 頂層 key 是 **hook 名稱**：`{"<名稱>":{"enabled":true,"<事件>":[…]}}`——與從 IDE 執行檔挖出的官方契約一致，這份形狀在 CLI 上**實測可用** |
-| 結構 | `PreToolUse`／`PostToolUse` 要包 `matcher` ＋ `hooks`；`SessionStart`／`PreInvocation`／`PostInvocation`／`Stop` 是**扁平**陣列 |
-| 觸發的事件 | `SessionStart`、`PreInvocation`、`PreToolUse`、`PostToolUse`、`PostInvocation`、`Stop` **六個全部實測觸發**。`PreInvocation` 在 CLI **沒有失效**——IDE 執行檔裡那句 `deprecated and has no effect` 不適用於這個 surface |
-| cwd | **`hooks.json` 所在的目錄**（即 `.agents/`），與官方契約一致。實測兩次：`.\x.cmd` 跑到 `.agents/` 那份、`..\x.cmd` 跑到工作區根那份 |
-| 相對路徑 | ✅ **可用**，而且是 Windows 上唯一可靠的形式（見下一列）。第三方指南說「`command` 必須絕對路徑、相對會對著啟動目錄解析」——**對 CLI `1.4.7` 不成立** |
-| 絕對路徑 | ⚠️ **只有「不含空白且不加引號」才跑得起來。** 實測四種：不加引號＋無空白（8.3 短名）→ ✅；加引號＋無空白 → ❌；不加引號＋含空白 → ❌；加引號＋含空白 → ❌。所以 `command` 是**照空白切 token、不解析引號**的，第一個 token 必須是能直接執行的路徑 |
-| `PreToolUse` 的回傳 | 🔴 **不明確允許就等於拒絕。** hook 回 `{}` 的那一輪，agy 直接回報 `tool calls were blocked by a pre-tool hook`，`read_file` 與 `run_command` 全被擋掉；改成回 `{"allow_tool": true}` 之後工具呼叫才通過，`PostToolUse` 也才跟著觸發 |
-| 執行殼層 | Windows 走 `cmd /c`，所以 `.sh` **不能**直接當 `command` |
-
-#### Windows 的死結，與 shim 怎麼解掉它
-
-骨架的 hook 是 `.sh`（只有一份腳本，這是鐵律），而上面兩列合起來本來是個死結：
-
-- `cmd /c` 跑不了 `.sh`，要寫成 `bash <script>`；
-- PATH 上的 `bash` 通常是 **WSL 的** `C:\WINDOWS\system32\bash.exe`（2026-10-31 那台機器上它連 `/bin/bash` 都找不到），路徑語意跟 Git Bash 不同，不能用；
-- 真正要用的 Git Bash 在 `Program Files` 底下——**路徑含空白**，而 `command` 不吃空白也不吃引號，所以**在 `hooks.json` 裡根本寫不出來**。
-
-解法是 3.19 那支 `.cmd`：`command` 只寫 `.\ag-hook.cmd git-freshness.sh`（相對、不含空白），由它自己去找 Git Bash，再跑 3.18 的轉接層——**shim 內部的引號是正常的，限制只在 agy 的 `command` 欄位**。三件原本列為「接之前要先解決」的事，現在的答案是：
-
-1. **shim 怎麼跨機器找到 Git Bash**：先問 `where git` 再推 `..\bin\bash.exe`，退路是 `%ProgramFiles%` 與 `%ProgramFiles(x86)%`。全程沒有寫死的絕對路徑（`verify_bootstrap.py` 的跨平台防呆會擋）。都找不到就**注入一句 `[ag-hook] WARN`**，不安靜放過。
-2. **Unix 不需要 shim，所以接線是兩個 handler**：3.20 同時放 Unix 與 Windows 兩條，不合用的那一條失敗而無害（實測只往 stderr 噴一行、不產生 stdout，session 照樣完成）。這是 `hooks.json` 這一個檔裡的兩行，不是「程序有兩個家」——規則仍然只在被包的那支 `.sh` 裡。
-3. **`PreToolUse` 刻意不接**：實測不明確回 `{"allow_tool": true}` 就等於拒絕，接上之後轉接層任何一次失敗都會擋掉使用者全部的工具呼叫。第一版只接 `SessionStart`。
-
-#### 還沒解決的
-
-- **IDE `1.107.0` 為什麼沒觸發，仍然沒有解釋**——同一種形狀、同樣的相對路徑，CLI 會跑、2.0 也會跑（2026-10-31 兩面都實測過），只有 IDE 沒動。四個 surface 裡它是唯一的例外，而**例外沒有解釋就是沒有解釋**，不要替它編一個。**2026-10-31 已決定不再追查**：使用者不再使用這個 surface，未解問題已沒有讀者；保留測量結果，不把重跑 IDE 列為下一步。
-- **專案自己的 `.agents/hooks.json` 內容**：骨架只擁有 `handoff-git-check` 這個頂層 key，同步只換它。但 Antigravity 的 hook 設定**只有專案層**這一份進 Git，全域那一份跟著機器走——所以跨機器的一致性靠的仍然是這個檔，不是人的記性。
-
-#### 一個已經收回的推論（鐵律 3）
-
-同日稍早寫過：「探針的 `command` 必然是相對的，而第三方指南說必須絕對——骨架自己的不變量可能保證了那支探針測不出東西」。**這個推論被實測推翻**：CLI 上相對路徑**正常工作**，反而絕對路徑才脆弱。所以鐵律 5「接線路徑一律相對」跟 Antigravity **沒有衝突**，它在 Windows 上甚至是唯一寫得出來的形式。
-
-**IDE `1.107.0` 那次為什麼沒觸發，到現在仍然沒有解釋**——CLI 與 2.0 都能跑的同一種形狀、同樣的相對路徑，在 IDE 上就是沒動。留著當未解問題，**不要再替它編一個理由**；是否追查的決定見上方「還沒解決的」。
-
-**怎麼測才測得準**——這一段比結論重要，因為前兩次都測不準：前兩次用的偵測器是「對話開頭看不看得到 `[git-check]`」，而那同時混進了「hook 沒跑」與「hook 跑了但輸出被丟掉」兩種可能，**兩者在畫面上長得一模一樣**。第三次改成**讓 hook 自己寫檔**（觸發就往 `.agents/_probe.log` 追加一行，記下事件名、cwd 與 stdin），一次掛四個探針：`SessionStart` 扁平、`SessionStart` 包 `matcher`／`hooks`、`PreToolUse` 配 `matcher: "*"`、`Stop`。完全關閉 IDE 重開、開新對話、讓它實際呼叫一次工具之後，**log 檔根本沒有產生**。
-
-關鍵是 `PreToolUse` 那一個對照組：它是 Antigravity 自己的 Hooks UI 就列得出來的事件，**連它都沒觸發**，所以結論不是「`SessionStart` 這一版還沒接上」，而是整個專案層設定檔沒被讀。
-
-**當時排除掉的兩個混淆**（保留實測邊界，不代表要重開追查）：
-
-- **不是信任閘**：`~/.gemini/trustedFolders.json` 裡家目錄是 `TRUST_FOLDER`，涵蓋受測專案。跟 Codex 那道信任不是同一回事。
-- **不是沒重啟**：四個探針是在完全關閉 IDE、重新啟動之後才測的。
-
-**查到的真實契約**，從 `resources/app/extensions/antigravity/bin/language_server_windows_x64.exe` 內嵌的官方文件與 proto 字串挖出來（比官網完整）。保留這些當時花最多力氣取得的證據，讓 IDE 的測量結果與 CLI／2.0 的實測能分開判讀：
-
-| 項目 | 實際 |
-|---|---|
-| 設定檔形狀 | 頂層 key 是 **hook 名稱**，不是事件名：`{"<名稱>":{"enabled":true,"<事件>":[…]}}`。骨架舊版照 Claude Code 寫成 `{"hooks":{"SessionStart":[…]}}`，**從一開始就是錯的** |
-| 結構 | 工具事件（`PreToolUse`／`PostToolUse`）要包 `matcher` ＋ `hooks`；其餘事件是**扁平**的 handler 陣列 |
-| cwd | **`hooks.json` 所在的目錄**（官方明定）。所以 `command` 裡相對路徑的基準是 `.agents/`，不是專案根——少一層 `../` 就是靜默失敗 |
-| 執行方式 | Unix 走 `sh -c`、Windows 走 `cmd /c`；`~` 會展開；`timeout` 預設 30 秒 |
-| stdin | 共同欄位有 `conversationId`、`workspacePaths`、`transcriptPath`、`artifactDirectoryPath`、`modelName`，全部 camelCase（protojson） |
-| `PreInvocation` | 執行檔裡有這句：`Pre-invocation hook %q is deprecated and has no effect`。而內嵌文件還在推薦它——**那份文件自己過時了**，別照著接 |
-| `SessionStart` | 內嵌文件的事件表**沒有列**它，但 proto 裡有 `SessionStartHookArgs`／`SessionStartHookResult`。存在於協定層 ≠ 這一版接得上 |
-| 輸出契約 | `{"injectSteps":[{"ephemeralMessage":"…"}]}`（裸文字會被丟掉）。骨架舊版的轉接層這部分**是對的**，只是沒機會被呼叫 |
-| 全域路徑 | Hooks UI 讀寫 `<home>/.gemini/<applicationName>/hooks.json`。**`applicationName` 跟著 surface 走**：IDE 是 `antigravity-ide`、CLI 是 `antigravity-cli`、2.0 是 `antigravity`（本機三個目錄並存）。所以**不能**從這一列推論「Antigravity 的 hook 是機器層設定」——它只說明全域那一份在哪。另有第三方實測指向共用的 `~/.gemini/config/hooks.json` |
-
-全域那一列**不能**被讀成「所以它只有機器層、專案層不存在」——那是舊版犯的錯。`applicationName` 隨 surface 變，這一列講的是「全域那一份放哪」，而專案層 `.agents/hooks.json` 官方與第三方都明確寫著存在。骨架要的是「clone 下來就有防護」，所以專案層能不能用才是關鍵，**CLI 與 2.0 已在 2026-10-31 實測成立**（證據見本節開頭的 surface 表）。想自己在機器上補一層的人，把設定放進對應 surface 的 `~/.gemini/<applicationName>/hooks.json`、並自己處理 stdout 必須是 JSON——**全域那條路徑骨架沒測過，所以這裡不寫成建議**。
-
-**可攜層在 Antigravity 這一面是獨立成立的**（就算 hook 那層壞掉也還在），而且是**實測成立**：2026-10-31 在完全沒有接線的狀態下，它自己發現了 `.agents/skills/handoff/`，照 A 模式跑完接棒並回報了 Git 狀態與「工作中」欄位。這是 3.16 那個指標檔第一次拿到 Antigravity 這一面的證據——也是為什麼它的 `description` 必須寫滿觸發詞：**agent 靠它決定要不要讀程序檔**，寫短等於無聲地關掉這個入口；CLI／2.0 的 hook 是另外一層提醒，不能取代這條可攜路徑。
-
-指示檔方面：Antigravity 讀 `AGENTS.md`、`GEMINI.md`、`.agents/rules/*.md`（**必須有合法 `trigger` frontmatter，否則整份丟棄**）、`.agents/AGENTS.md`，以及 legacy `.agent/rules/`，從檔案所在資料夾往上載到工作區根。**`AGENTS.md` 與 `GEMINI.md` 的優先序官方沒有排**——舊表寫「優先於 `GEMINI.md`」是沒有依據的斷言，已經改掉。骨架的 `GEMINI.md` 只是指標，實務上誰贏都不影響，但「查不到卻寫成確定」正是鐵律 3 要防的東西。
 
 ### `SessionEnd`：「關掉視窗就沒有下一個動作」現在只對一半的工具成立
 
@@ -280,6 +191,8 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 🔴 **最重要的坑是反過來的：在一個工具的殼層裡啟動另一個工具，變數會被繼承。** 從 Claude Code 的殼層跑 `codex sandbox cmd /c set`，112 個變數裡 `CLAUDECODE=1` 與 `AI_AGENT=claude-code_…` 整批都在——Codex 的 session 會自稱 Claude Code。而 agent 互相呼叫正是最容易發生這件事的場景，也就是說這個誤判不是邊角案例。
 
 所以結論：**環境變數只能用來加嚴，不能用來放寬。** 身分的權威來源是寫「工作中」標記的那一棒自己填的工具名（模型知道自己是誰，三個平台一致，不依賴任何變數）；變數只拿來交叉檢查「標記說是 A、但我看到 B」這種不一致，而且偵測不出來就退回只比機器名，**永遠不因為偵測失敗而放行**。
+
+> 2026-11-13：開場 hook 不再解析「工作中」也不猜工具身分，只印原文，由模型判讀（v3 D12）。下面這段是 2026-10-31 的落地紀錄，保留作為「環境變數只能加嚴」的理由。
 
 **落地在哪（2026-10-31，跳版 `2026-10-31`）**：
 
@@ -348,7 +261,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ```text
 {{GH_REPO}}/
 ├─ README.md                        ← 人的入口（第一次接觸專案看這份）
-├─ AGENTS.md                        ← AI 的入口（唯一權威來源）
+├─ AGENTS.md                        ← AI 的入口：共用制度一節（≤40 行）＋專案鐵律與連線資料
 ├─ CLAUDE.md                        ← 指標，指向 AGENTS.md
 ├─ GEMINI.md                        ← 指標，指向 AGENTS.md
 ├─ HANDOFF.md                       ← 當下工作狀態（≤80 行，不累積歷史）
@@ -358,17 +271,14 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ├─ .claude/                         ← Claude Code 讀這裡
 │   ├─ settings.json                ← hook 設定（進 Git）
 │   ├─ settings.local.json          ← 各機器本地設定（不進 Git）
-│   ├─ hooks/git-freshness.sh       ← SessionStart：git 新鮮度檢查＋提醒走交接程序
+│   ├─ hooks/git-freshness.sh       ← SessionStart：fetch 一次，只報事實（最多五行 [facts]）
 │   ├─ hooks/pre-push-handoff.sh    ← PreToolUse：AI push 提醒（有限覆蓋，見 3.11）
-│   ├─ hooks/ag-wrap.sh             ← Antigravity 轉接層：只做管線，把 stdout 包成 JSON
 │   ├─ hooks/codex-hook.cmd         ← Codex 的 Windows 啟動器：找 Git Bash、加純文字標頭、保留結束碼
-│   ├─ skills/handoff/SKILL.md      ← 交接與同步程序的入口（本骨架的核心、權威版）
-│   ├─ skills/handoff/mode-*.md、reasons.md ← 入口指過去的模式檔與理由檔（共五個，與入口同版本）
+│   ├─ skills/handoff/SKILL.md      ← 交接程序的參考入口（碰到才讀；必守條件在 AGENTS.md）
+│   ├─ skills/handoff/mode-*.md、reasons.md ← 參考檔：模式步驟與理由（共五個，與入口同版本）
 │   └─ skills/<其他>/SKILL.md       ← 需要時才建：可重複使用的操作食譜（權威版）
 ├─ .codex/hooks.json                ← Codex 讀這裡：掛上面同樣那兩個腳本，不另寫一份
-├─ .agents/hooks.json              ← Antigravity 讀這裡：經轉接層掛同一支 git-freshness.sh
-├─ .agents/ag-hook.cmd              ← Windows shim：找 Git Bash 再交給 ag-wrap.sh
-├─ .agents/skills/handoff/SKILL.md  ← Antigravity 原生讀 .agents/：指向權威版的指標
+├─ .agents/skills/handoff/SKILL.md  ← Codex 讀 .agents/skills/：指向權威版的指標
 ├─ .agents/skills/<其他>/SKILL.md   ← 需要時才建：同樣只放指標，不複製內容
 ├─ docs/
 │   ├─ ai-notes/
@@ -388,30 +298,57 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ### 3.1 `AGENTS.md`
 
-````markdown
-# AGENTS.md — AI 協作交接指引
+> **2026-11-13 起（v3 D11、D12）**：開始與結束標記之間是共用制度，由部署包管理，≤ 40 行；專案只能在標記外面加自己的鐵律與連線資料，全檔 ≤ 100 行。共用制度只寫目標、模型不會自己知道的事與不可違反的條件，不寫逐步程序；開始標記裡的 `source:` 版本給開場 hook 比對上游用。
 
-> 適用於所有參與本專案的 AI 代理（Claude Code、Codex、Antigravity、Gemini…）。**開工前先讀完本檔**，再依任務讀下方知識庫。
-> 本檔是唯一入口與權威來源；`CLAUDE.md`、`GEMINI.md` 只是指到這裡的指標。
+````markdown
+# AGENTS.md — 這個專案怎麼接續
+
+專案概觀與測試指令在 [README.md](README.md)。現在做到哪、下一步是什麼，在 [HANDOFF.md](HANDOFF.md)。使用者用 **{{LANG}}** 溝通。
 > 最後更新：{{TODAY}}（建立）
 
-## 開工第一件事（任何工具、任何模型都適用）
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-13 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+## 目標
 
-**先讀 [`.claude/skills/handoff/SKILL.md`](.claude/skills/handoff/SKILL.md)，照 A 模式接棒；A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。** 使用者要求交棒／收工才走 B 模式；工作告一段落時自行判斷 commit／push，走 C 模式（含拉最新、推安全點與依上下文用量建議交棒），不得自行交棒。
+這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
 
-那份檔案是純 Markdown，路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置——**其他工具直接讀它就好**，不要因為資料夾名字而略過。部分工具有自動化輔助（Claude Code 可打 `/handoff`、session 開始會自動檢查 git；Codex 可掛同樣的 hooks；Antigravity 原生讀 `.agents/skills/`），但**有沒有自動化都不改變義務**：沒有被自動提醒，就自己走。
+## 你不會自己知道的事
+
+- 本機的檔案可能是舊的。別台機器可能已經推了新東西到 origin，包含更新過的 `HANDOFF.md`。
+- 主幹不一定是 `main`：`HANDOFF.md` 的「待續分支」寫了分支名，就在那條分支上做。
+- 可能有另一個 session 正在同一條分支上工作。唯一的訊號是 origin 上 `HANDOFF.md` 的「工作中」那一行：`無（已交棒）` 表示沒人在做，其他值表示有人。
+- session 開始時會自動 fetch 一次，印出 `[facts]` 開頭的幾行。那是當下的快照，之後會過期。
+- 逐步程序、異常判讀與規則的理由在 [`.claude/skills/handoff/`](.claude/skills/handoff/SKILL.md)，是碰到才讀的參考。
+
+## 不可違反的條件
+
+1. 改任何檔案之前，本機要跟 origin 一致，而且 origin 上的「工作中」要先推成你自己（`機器 ／ 工具 ／ session 名`，加開工時間）。推不上去就不算。只讀、只回答問題的 session 不寫。
+2. origin 上的「工作中」是別人時，不改檔、不推送，停下來告訴使用者。
+3. 使用者要求交棒時才交棒。交棒完成的定義：所有成果都在 origin 上；`HANDOFF.md` 整份覆寫成當下狀態（欄位照現有格式，80 行以內，不累積歷史）；「工作中」改回 `無（已交棒）`；本機沒有留下沒推的東西。使用者沒要求就保留你的「工作中」。
+4. `main` 上的測試要一直是過的。沒做完的工作放分支推上去，在 `HANDOFF.md` 的「待續分支」寫明分支名。
+5. 沒驗證過的事不寫成已驗證。
+6. 不提交祕密或金鑰樣式的內容。提交前看 staged 清單，逐檔加入，不用 `git add -A` 或 `git add .`。
+7. 不做這些事：`reset --hard`、force push、改寫已推送的歷史、刪分支、自行 stash、刪除不是你建立的檔案、提交 `.gitignore` 排除的東西。
+8. 遇到本檔沒講、而且做錯無法復原的狀況（歷史分岔、fetch 失敗、來源不明的未提交變更），停下來告訴使用者。
+
+## session 名稱（工具能改名才做）
+
+格式 `<符號>　YYMMDDHH｜<主題>｜<狀態>｜交棒<N>次`，符號後接一個全形空格。三種狀態：`㊣` 工作中、`※` 待你決定、`↗` 已交棒。
+
+- `YYMMDDHH` 用開場 `[facts]` 印的值，之後不改；主題 ≤10 字，還不知道寫 `待指派`；新 session 的 N 從 0 起算。
+- 開始工作改 `㊣`；停下來等使用者決定改 `※`；交棒的 push 成功後才改 `↗`，N 加 1。是 `↗` 或 `※` 時收到任何新訊息，先改回 `㊣`，時間戳、主題與 N 不變。
+- 接棒、交棒與停下來等決定的回覆各寫一行 `session：<實際標題>`；工具不能改名就寫 `session：不適用：<原因>；交棒<N>次`。用選項卡片發問也算停下來等決定，卡片之前先寫這一行。
+<!-- 共用制度結束 -->
 
 ## 專案是什麼
 
-{{ONELINER}}。source／交接文件同步至 {{GH_VISIBILITY}} GitHub `{{GH_OWNER}}/{{GH_REPO}}`；**Git 不是資料備份**。專案概觀、檔案結構、啟動方式見 [README.md](README.md)。使用者以 **{{LANG}}** 溝通。
+{{ONELINER}}。source 與交接文件同步至 {{GH_VISIBILITY}} GitHub `{{GH_OWNER}}/{{GH_REPO}}`；**Git 不是資料備份**。結構與每一份檔案的權威在 [ARCHITECT.md](ARCHITECT.md)，持久待辦在 [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md)。
 
-## 鐵律（違反會造成實際損害，無例外）
+## 鐵律（違反會造成實際損害）
 
-1. **嚴禁提交祕密或運行資料到 Git**：{{SECRETS}}、API／SSH private key、{{RUNTIME_DIRS}} 均不可 commit/push；{{GH_VISIBILITY}} repository 也不是例外。提交前固定檢查 staged 檔案清單。
+1. **不提交祕密或運行資料**：{{SECRETS}}、API／SSH private key、{{RUNTIME_DIRS}} 都不可 commit 或 push；{{GH_VISIBILITY}} repository 也不例外。
 2. **破壞性操作前先備份**：改 schema、批次改資料、刪檔、覆寫設定之前，先產出可還原的副本並說明放在哪。
-3. **憑證原則**：憑證由使用者提供並存於 {{SECRETS}}，直接讀取即可；**不要**從系統檔、其他主機、Git history 自行挖取或搬運憑證。
-4. **不確定的破壞性操作先問**，不要用「應該沒問題」推進。
-<!-- 5. 專案專屬鐵律寫在這裡：每一條都要附「為什麼」與發生日期，否則下一棒會繞過它。 -->
+3. **憑證原則**：憑證由使用者提供並存於 {{SECRETS}}，直接讀取即可；不從系統檔、其他主機、Git history 自行挖取或搬運憑證。
+<!-- 4. 專案專屬鐵律寫在這裡：每一條附「為什麼」與發生日期，否則下一棒會繞過它。 -->
 
 ## 連線基本資料
 
@@ -420,28 +357,6 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 | 服務網址 | <部署後填> |
 | 驗證方式 | <部署後填；只寫「key 在 {{SECRETS}} 的 XXX」，不要寫值> |
 | 主要資源 ID | <部署後填> |
-
-## 知識庫地圖（依任務讀）
-
-| 任務 | 必讀 |
-|---|---|
-| 接手／交棒工作 | **[.claude/skills/handoff/SKILL.md](.claude/skills/handoff/SKILL.md)**（可執行程序：A 接棒／B 交棒／C 同步，含指令與判讀表）＋ [HANDOFF.md](HANDOFF.md)（當下狀態）＋ [docs/ai-notes/handover-protocol.md](docs/ai-notes/handover-protocol.md)（規則與判準、分支模型） |
-| 想知道整個專案怎麼組起來、東西放在哪、哪一份是權威版 | [ARCHITECT.md](ARCHITECT.md)（結構的唯一權威；**只有結構變動才改**，改就跟該變動同一個 commit） |
-| 還有哪些事沒做（持久待辦、相依、優先序） | [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md) |
-| <新主題> | <新增 docs/ai-notes/xxx.md 後，回來把這一列補上> |
-
-`.claude/skills/` 資料夾雖然掛在 Claude 的路徑下，內容是純 Markdown，**任何模型都應直接讀取**。
-`.agents/skills/` 下的同名檔案只是給 Antigravity 這類原生讀 `.agents/` 的工具用的**指標**，內容不重複——看到指標請回頭讀 `.claude/skills/` 的權威版。
-
-## 跨模型／跨機器協作規範
-
-1. **先同步 Git，再相信本機文件**：開工先 `git status -sb`、`git fetch origin`。異常（dirty／diverged／遠端意外前進）一律停在安全點，禁止 `reset --hard`、force push 或覆寫。
-2. **single writer**：同一時間只讓一個 agent／一台機器修改 `main` 與 `HANDOFF.md`。非小型工作走 `feature/<ID>-<slug>`；未完成分支不得偷塞進 main。
-3. **知識寫進 repo，不留在私有記憶。** 踩到新坑、確立新流程、改了 schema——當場更新 `docs/ai-notes/` 或對應 SKILL.md，並附**絕對日期**。私有記憶只放「先讀 AGENTS.md」這類指標與個人偏好。
-4. **文件與現實衝突時，以實況為準**（安全唯讀查證），就地修正文件並註記日期。該機器缺憑證時只能明記 SKIPPED，**不得自行挖憑證**。
-5. **不要重複造文件——每個事實只有一個家。** 結構寫 `ARCHITECT.md`；設計與決策寫 `docs/ai-notes/`；操作步驟寫對應的部署／應用目錄；狀態寫 `roadmap.md`（持久）與 `HANDOFF.md`（當下）。其他地方只放指標。新知識歸入現有檔案，只有全新主題才開新檔並更新上方地圖。
-
-> ⬆️ 完整的接棒／交棒步驟、分支規則、HANDOFF 模板與標準 prompt 全在 **[handover-protocol.md](docs/ai-notes/handover-protocol.md)**，本節只是原則摘要，細節不在此重複。
 ````
 
 ### 3.2 `CLAUDE.md` 與 `GEMINI.md`（2026-10-30 起兩檔內容不同，下面兩個區塊依序對應）
@@ -892,44 +807,44 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 > 檔案裡的 `docs/ai-notes/handover-protocol.md` 刻意寫成純路徑而非連結，這樣同一份文字放進全域 `~/.claude/skills/` 也不會產生死連結。
 > **2026-11-10 起這支 skill 是一個目錄、六個檔**（決策書 F22：單檔 22,040 字元，正常接棒只需要其中一小部分）。入口與 `mode-a.md` 是新寫的摘要，其餘四個檔是從單檔逐字搬來的；六個檔的 `source:` 標記必須是同一個版本，同步時整個目錄一起覆蓋。下面六個區塊依序對應標題上的六個檔名。
 
-**`.claude/skills/handoff/SKILL.md`**——入口：每次都讀。適用判斷、選模式、全程禁令、必須停下來問人的清單、session 命名。
+**`.claude/skills/handoff/SKILL.md`**——參考檔入口：碰到才讀（2026-11-13 起，v3 第 5 節）。適用判斷、要細節時讀哪個檔、全程禁令、必須停下來問人的清單；session 命名指回 `AGENTS.md`。
 
 ````markdown
 ---
 name: handoff
-description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when the user asks to wrap up or hand work over, when a chunk of work is done (commit/push at your own discretion via mode C, read context usage and suggest a handoff, but never hand off unless the user asks), when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
+description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
-# 交接與同步程序（入口）
+# 交接與同步程序（參考檔入口）
 
-> **核心優先序：SKILL.md**（含同目錄的模式檔）。共用交接制度衝突時以這個目錄的同步版本為準，包含仍宣稱協定優先的舊實例；`docs/ai-notes/handover-protocol.md` 是不同步的專案實例，升級時須人工遷移。override 只可加嚴，使用者明確指示仍優先。不得在單一專案就地修改共用 skill，回部署包修正再同步。模式 0 的權威是 `PROJECT-BOOTSTRAP.md` 部署包。
+> **2026-11-13 起（需求決策書 v3 第 5 節）這個目錄是碰到才讀的參考，不是制度成立的前提。** 必守的條件在專案 `AGENTS.md` 的共用制度一節；本目錄的步驟與它衝突時以 `AGENTS.md` 為準，使用者明確指示仍優先。
+>
+> 在程序細節上，**核心優先序：SKILL.md**（含同目錄的模式檔）優先於專案實例：`docs/ai-notes/handover-protocol.md` 是不同步的專案實例，升級時須人工遷移。override 只可加嚴。不得在單一專案就地修改共用 skill，回部署包修正再同步。模式 0 的權威是 `PROJECT-BOOTSTRAP.md` 部署包。
 
 ## 適用判斷（先做這一步）
 
 | 專案根目錄的狀態 | 走哪裡 |
 |---|---|
-| 有 `AGENTS.md` ＋ `HANDOFF.md` | 適用，往下選模式 |
+| 有 `AGENTS.md` ＋ `HANDOFF.md` | 適用，需要細節時往下找 |
 | 沒有，而且使用者**明講**要導入這套制度（建交接機制／建骨架／bootstrap） | **模式 0 建制** |
 | 沒有，使用者也沒提 | **本程序不適用**。直接做他要的事，**不要憑空建立交接檔案**；最多問一句「要不要導入這套交接制度？」，他說要才走模式 0 |
 
 專案沒有 `tools/verify_state.py`／`tools/check_docs.py` 也能用：對應步驟改為「跳過並在回報寫明沒有該工具」，**不要自己發明驗證**。
 
-## 選模式，然後讀對應的檔
+## 需要細節時讀哪個檔
 
-| 情況 | 模式 | 接著讀 |
+| 情況 | 模式 | 讀 |
 |---|---|---|
 | 這個資料夾還沒有這套制度，使用者要求建起來 | **0 建制** | `mode-0.md` |
-| session 剛開始／要續作／換機器／換模型；已交棒後又要改檔 | **A 接棒** | `mode-a.md` |
+| 接棒、續作、換機器；已交棒後又要改檔 | **A 接棒** | `mode-a.md`（正常路徑）；開場 `[facts]` 有不正常的值讀 `mode-a-stop.md` |
 | **使用者要求**交棒／收工／換人接手 | **B 交棒** | `mode-b.md` |
 | 工作告一段落；想拉最新或推一個安全點 | **C 同步** | `mode-b.md` 的 C 節 |
 
-不確定就走 A（不是 0）。**A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。**
-
-- **使用者沒要求就不得自行交棒**：告一段落時自己判斷要不要 commit／push（走 C），依 C 節讀上下文用量、必要時建議交棒；不走 B6／B9、不改 `↗`、不加次數。A5 開工標記與 C 中途安全點都不宣稱交棒。
-- **模式檔與本檔同目錄**：專案有 `.claude/skills/handoff/` 就讀那裡，沒有就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）。找不到模式檔就停下回報，不要憑記憶走程序。
-- `mode-a.md` 只寫正常路徑；異常讀 `mode-a-stop.md`。要改、質疑或想繞過任何一條規則之前先讀 `reasons.md`。摘要與原文衝突時以 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 為準。
+- **使用者沒要求就不得自行交棒**：告一段落時自己判斷要不要 commit／push（C），不改 `↗`、不加次數。A5 開工標記與 C 中途安全點都不宣稱交棒。
+- **模式檔與本檔同目錄**：專案有 `.claude/skills/handoff/` 就讀那裡，沒有就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）。
+- 要改、質疑或想繞過任何一條規則之前先讀 `reasons.md`。`mode-a.md` 與 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 衝突時以後四者為準；它們全部與 `AGENTS.md` 衝突時以 `AGENTS.md` 為準。
 
 ## 全程禁令
 
@@ -938,58 +853,38 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 ## 必須停下來問使用者（不得自行決定）
 
 - Git 異常：dirty 來源不明、接棒時 ahead-only、fetch 失敗、diverged、不能 fast-forward、遠端意外前進、沒有 upstream
-- **A2.5 偵測到別台機器的「工作中」標記**（同一條分支同時兩台＝違反 single writer）
+- origin 上的「工作中」是別人（同一條分支同時兩台＝違反 single writer）
 - `push --force`、`reset --hard`、刪分支、改寫歷史
 - 功能分支要併進 `main`（需使用者驗收；文件／基建分支驗證過可自己併）
 - 憑證缺失，或需要跨機器搬憑證
 - HANDOFF 沒授權的破壞性操作（刪檔、批次改資料、改 schema）
 - **建制（模式 0）**：資料夾不是空的、已有 Git 歷史或 README；要覆蓋既有的 `.gitignore`／`README.md`；建 GitHub repo 與第一次 push
 
-停下來，或任何時候把問題丟回去等回答，就把 session 名稱改成 `※ 待你決定`。
+停下來等回答時，session 名稱改成 `※`（格式見下）。
 
 ## session 命名（每則訊息都適用）
 
-```text
-<符號>　YYMMDDHH｜<主題>｜<狀態>｜交棒<N>次
-```
-
-| 符號 | 狀態 | 什麼時候改 |
-|---|---|---|
-| `㊣` | 工作中 | 首次接棒在 A5 回報完之後；已交棒或待決之後**收到任何新訊息就先改**，不等開工標記 |
-| `↗` | 已交棒 | B9，push 成功之後，N 加 1 |
-| `※` | 待你決定 | 把問題丟回去等回答時 |
-
-- 每則使用者新訊息都先看 session 狀態，包含只問問題、補充、更正與致謝；是 `↗` 或 `※` 就先改回 `㊣` 再回答，保留原本的 `YYMMDDHH`、主題與交棒次數。
-- 只讀續聊不改 HANDOFF、不 commit、不 push，也不為了結束回答再交棒。續聊要改檔前重新走 A1–A5：前次交棒已釋出分支，寫入資格不沿用。
-- `YYMMDDHH` 取接棒當下的時間，之後不更新；符號後面接一個全形空格；主題 ≤10 字、動詞＋受詞，還不知道就寫 `待指派`；新 session 的 N 從 0 起算。
-- A5、B9 與續聊的回覆都必須有 `session：` 一行，寫實際標題與次數。工具不能改名就寫 `不適用：<原因>；交棒<N>次`，不必為此停下來問；改名失敗照實寫。
-- 改名看的是 session 狀態，不是 git 結果（只有 `↗` 要等 push 成功）；側欄的 `㊣` 不證明 origin 上有開工標記。模式 C 不改名。細則在 `reasons.md` 的「session 命名」，交棒計數在 `mode-b.md`。
+格式、三種狀態、何時改與交棒計數的規則在 `AGENTS.md` 共用制度的「session 名稱」一節，這裡不重寫，以免兩份各自演化。時間戳用開場 `[facts]` 第一行印的 `YYMMDDHH`。細則、反例與「為什麼要改名」在 `reasons.md` 的「session 命名」；交棒計數何時加一在 `mode-b.md` 的 B9。
 ````
 
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
-> 本檔只寫「一切正常」的走法。**任何一步跟這裡寫的不一樣就停**，改讀同目錄的 `mode-a-stop.md`（完整判讀表、占用處理、漏交棒補救）；兩者衝突以它為準。A1–A4 不修改任何檔案。
+> 碰到才讀的參考。必守的條件在 `AGENTS.md` 的共用制度一節，衝突時以它為準。本檔只寫「一切正常」的走法；任何一步跟這裡寫的不一樣，讀同目錄的 `mode-a-stop.md`（完整判讀表、占用處理、漏交棒補救）。A1–A4 不修改任何檔案。
 
-## A1＋A2.5 同步與占用：先拿到「全綠」
+## A1＋A2.5 同步與占用：讀開場的 [facts]
 
-開場 hook 在全部條件成立時會印一行：
+開場 hook 會 fetch 一次，印出幾行 `[facts]`：時間（含 session 名用的 `YYMMDDHH`）、本機、分支；與 `origin/<當前分支>` 的落後與領先、origin 的短 SHA、未提交檔數；origin 那份 `HANDOFF.md` 的「工作中」原文。只報事實，判讀由你做。
 
-```text
-[git-check] 全綠 <時間>：A1 與 A2.5 可直接通過（branch=<分支>，origin=<SHA>）
-```
+一切正常的樣子：fetch 成功、落後 0、領先 0、未提交 0、「工作中」是 `無（已交棒）`。這時記下 origin 的 SHA（A5 要比對），往下走。
 
-它代表那一刻 fetch 成功、與 `origin/<當前分支>` 沒有領先或落後、工作樹乾淨、origin 的「工作中」是 `無（已交棒）`。**它是快照，不是通行證。** 下列情況先重跑一次 `bash .claude/hooks/git-freshness.sh`，以新輸出為準：
+**它是快照，不是通行證。** 下列情況先重跑一次 `bash .claude/hooks/git-freshness.sh`，以新輸出為準：已交棒後續聊要改檔、之後切換過分支、工具沒有跑 hook 或開場找不到 `[facts]`。
 
-- 這不是本 session 第一次接棒（已交棒後續聊要改檔）；
-- 之後切換過分支；
-- 工具沒有跑 hook，或開場輸出裡找不到這一行。
-
-有全綠行：記下那個 SHA（A5 要比對），往下走。**沒有全綠行（含腳本跑不起來、專案沒有這支 hook）：不要自己判斷「大概沒事」，讀 `mode-a-stop.md` 的 A1 與 A2.5 照表走。**
+任何一個值不是上面那樣（含腳本跑不起來、專案沒有這支 hook）：不要自己判斷「大概沒事」，讀 `mode-a-stop.md` 的 A1 與 A2.5 照表走。
 
 ## A2 站對分支
 
@@ -1017,7 +912,7 @@ Git：<分支>、<與 origin 關係>、<待續分支>
 session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次
 ```
 
-回報完就改 session 名稱（規則在入口）。**只讀、只問問題的 session 不寫開工標記。** 確定要改檔才做下面四步，做完才開始改：
+回報完就改 session 名稱（規則在 `AGENTS.md` 的「session 名稱」）。**只讀、只問問題的 session 不寫開工標記。** 確定要改檔才做下面四步，做完才開始改：
 
 1. 把 `HANDOFF.md` 的「工作中」改成本機與本 session（沒有這一欄就在「Git 狀態」補一列）：
 
@@ -1025,7 +920,7 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
    - **工作中**：`desk-win` ／ `Claude Code` ／ `㊣　26103009｜匯入格式｜工作中｜交棒0次`，2026-10-30 09:12 (+08) 開工
    ```
 
-   用全形斜線 `／` 分三欄：機器 ／ 工具 ／ session 名（第三欄可省）。**工具欄不能省**，寫慣用名（`Claude Code`／`Codex CLI`／`Gemini CLI`／`Antigravity`）。
+   用全形斜線 `／` 分三欄：機器 ／ 工具 ／ session 名（第三欄可省）。**工具欄不能省**，寫慣用名（`Claude Code`／`Codex CLI`）。
 2. **只** stage `HANDOFF.md`，核對 staged 清單後 commit，訊息用 `chore(handoff): <機器> 開工`。
 3. 重新 `git fetch origin`。遠端 SHA 跟 A1 記下的不同就停；相同才 push 到當前分支。
 4. push 成功後重讀 origin 的「工作中」，確認是本 session。
@@ -1033,14 +928,16 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
 **push 失敗就不是「已標記」**：告訴使用者這次沒有標記保護，問要不要在這個狀態下繼續，不要靜默往下做。開工標記是協調訊號，不是互斥鎖；這次 push 是開工例外，不算交棒、不加次數。
 ````
 
-**`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場沒有「全綠」行時才讀。
+**`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場 `[facts]` 有不正常的值時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
 > 2026-11-10 拆分 handoff skill 時逐字搬自單檔 `SKILL.md`。`mode-a.md` 是正常路徑的摘要，衝突時以本檔為準。文內的「session 命名」見入口 `SKILL.md` 與 `reasons.md` 的同名節；B 各步驟在 `mode-b.md`。
+>
+> 2026-11-13（需求決策書 v3）：本目錄降為碰到才讀的參考；必守的條件在 `AGENTS.md` 的共用制度一節，衝突時以它為準。文內提到的 `[git-check]` 判讀行、「全綠」行已由只報事實的 `[facts]` 取代。
 
 ### A／B／C 狀態轉移（2026-11-02／F11）
 
@@ -1216,11 +1113,13 @@ session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
 > 2026-11-10 拆分 handoff skill 時逐字搬自單檔 `SKILL.md`。A／B／C 狀態轉移表與 A 各步驟在 `mode-a-stop.md`；文內的「session 命名」見入口 `SKILL.md` 與 `reasons.md` 的同名節。
+>
+> 2026-11-13（需求決策書 v3）：本目錄降為碰到才讀的參考；必守的條件在 `AGENTS.md` 的共用制度一節，衝突時以它為準。文內提到的 `[git-check]` 判讀行、「全綠」行已由只報事實的 `[facts]` 取代。
 
 ### 同一 session 的交棒計數
 
@@ -1383,11 +1282,13 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
 > 2026-11-10 拆分 handoff skill 時逐字搬自單檔 `SKILL.md`。B6、B9 在 `mode-b.md`；「session 命名」見入口 `SKILL.md`。
+>
+> 2026-11-13（需求決策書 v3）：本目錄降為碰到才讀的參考；必守的條件在 `AGENTS.md` 的共用制度一節，衝突時以它為準。文內提到的 `[git-check]` 判讀行、「全綠」行已由只報事實的 `[facts]` 取代。
 
 ## 0. 建制（這個資料夾還沒有這套制度）
 
@@ -1456,11 +1357,13 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
 > 2026-11-10 拆分 handoff skill 時逐字搬自單檔 `SKILL.md`：每條規則的理由、日期與事故，加上 session 命名的完整細則。**不是每輪必讀；要改、質疑或想繞過某條規則之前先讀。** 文內的「本檔」指整個 handoff skill 目錄；A／B／C／0 各步驟分別在 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`。
+>
+> 2026-11-13（需求決策書 v3）：本目錄降為碰到才讀的參考；必守的條件在 `AGENTS.md` 的共用制度一節，衝突時以它為準。文內提到的 `[git-check]` 判讀行、「全綠」行已由只報事實的 `[facts]` 取代。
 
 ## 前言原文
 
@@ -1569,11 +1472,11 @@ python -X utf8 tools/check_docs.py
 | 規則（檔案 § 段落） | 理由在哪 |
 |---|---|
 | SKILL.md § 適用判斷（先做這一步） | reasons.md § 適用判斷：為什麼沒人提就不建<br>reasons.md § 反例（真的發生過，別重演） |
-| SKILL.md § 選模式，然後讀對應的檔 | reasons.md § 前言原文<br>reasons.md § 交棒由使用者決定（2026-11-12／Q31）<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
+| SKILL.md § 需要細節時讀哪個檔 | reasons.md § 前言原文<br>reasons.md § 交棒由使用者決定（2026-11-12／Q31）<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
 | SKILL.md § 全程禁令 | 沒有寫下理由 |
 | SKILL.md § 必須停下來問使用者（不得自行決定） | reasons.md § 停下來問人時為什麼要改名<br>mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>mode-0.md § 0-1 先確認你在對的資料夾、對的情境 |
 | SKILL.md § session 命名（每則訊息都適用） | reasons.md § session 命名（每輪必做；工具做不到就在回報裡寫「不適用」）<br>reasons.md § 已交棒後續聊（每則新訊息的入口）<br>reasons.md § 其他命名規則<br>reasons.md § 反例（真的發生過，別重演） |
-| mode-a.md § A1＋A2.5 同步與占用：先拿到「全綠」 | mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a.md § A1＋A2.5 同步與占用：讀開場的 [facts] | mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-a.md § A2 站對分支 | mode-a-stop.md § A2 站對分支 |
 | mode-a.md § A3 最小讀取 | mode-a-stop.md § A3 最小讀取 |
 | mode-a.md § A4 驗證（只記錄，不修） | mode-a-stop.md § A4 一鍵驗證<br>reasons.md § 反例（真的發生過，別重演） |
@@ -1653,192 +1556,59 @@ python -X utf8 tools/check_docs.py
 
 ### 3.10 `.claude/hooks/git-freshness.sh`
 
+> **2026-11-13 起只報事實（v3 D12）**：fetch 一次，印出最多五行 `[facts]`，不下指示、不判讀。檔名沿用 `git-freshness.sh`，3.9 與 3.17 的接線因此不必改。
+>
 > Windows 需要 Git for Windows 附的 bash（Claude Code 內建可用）。建立後在 macOS／Linux 上加執行權限：`chmod +x .claude/hooks/git-freshness.sh`。
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-12.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
-# SessionStart hook：git 新鮮度檢查（多機分岔防呆）
-# 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
-# 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
-# 落後／分岔時把警告直接注入對話開頭，不依賴任何人記得先 pull。
-# 輸出到 stdout 的內容會成為 session 起始 context。只讀不寫，絕不自動 pull/push。
+# source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# SessionStart hook：fetch 一次，只報事實，不下指示（需求決策書 v3 第 5 節，D12）。
+# 輸出到 stdout 的內容會進到 session 開頭的 context，最多 5 行。只讀：不 pull、不 push、不寫任何檔。
+# 怎麼判讀交給模型與 AGENTS.md 的共用制度；舊版的判讀表、全綠行與工具身分猜測在 2026-11-13 移除，
+# 理由與 E1 對照實測見 project-bootstrap 的 experiments/handoff-ab/RESULTS.md。
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
+me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
 
+# 第 1 行：時間（含 session 名用的 YYMMDDHH，F50）、本機、分支
+echo "[facts] 時間 $(date '+%Y-%m-%d %H:%M %z')（session 名用 $(date +%y%m%d%H)）；本機 ${me}；分支 ${branch}"
+
+# 第 2 行：與 origin 的關係
 if ! git fetch --quiet origin 2>/dev/null; then
-  echo "[git-check] ⚠️ 無法 fetch origin（離線或金鑰問題）——無法確認本地是否最新，停下回報並等待使用者指示，不用舊 tracking ref 宣稱同步。branch=$branch"
+  echo "[facts] fetch origin 失敗：不知道本機是不是最新"
   exit 0
 fi
-
-counts=$(git rev-list --left-right --count "@{upstream}...HEAD" 2>/dev/null)
+counts=$(git rev-list --left-right --count "origin/${branch}...HEAD" 2>/dev/null)
+dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
 if [ -z "$counts" ]; then
-  echo "[git-check] ⚠️ branch=$branch 沒有 upstream，跳過比對。"
+  echo "[facts] origin 上沒有分支 ${branch}；未提交或未追蹤 ${dirty} 個檔"
   exit 0
 fi
 behind=$(echo "$counts" | awk '{print $1}')
 ahead=$(echo "$counts" | awk '{print $2}')
-dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
-# 全綠判定（2026-11-10，F22）：下面每個不正常的分支都把 green 清掉，最後全部成立才印一行
-# 「全綠」，讓正常接棒不必重讀整張判讀表。少一項就不印——寧可多讀，不往放行的方向猜。
-# detached HEAD、upstream 不是 origin/<當前分支> 也算不正常：比較對象不對，計數再漂亮都不能信。
-green=1
-free=0
-up=$(git rev-parse --abbrev-ref --symbolic-full-name "@{upstream}" 2>/dev/null)
-if [ "$branch" = HEAD ] || [ "$up" != "origin/$branch" ]; then green=0; fi
-if [ "$behind" -gt 0 ] || [ "$ahead" -gt 0 ] || [ "$dirty" -gt 0 ]; then green=0; fi
+echo "[facts] 已 fetch：本機落後 origin/${branch} ${behind} 個 commit、領先 ${ahead} 個（origin=$(git rev-parse --short "origin/${branch}" 2>/dev/null)）；未提交或未追蹤 ${dirty} 個檔"
 
-if [ "$behind" -gt 0 ] && [ "$ahead" -gt 0 ]; then
-  echo "[git-check] 🔴 已分岔：落後 origin ${behind}、領先 ${ahead}（branch=${branch}）。停下回報並等待使用者指示；不得自行 rebase 或 merge，禁止直接 push 或 reset --hard。"
-elif [ "$behind" -gt 0 ]; then
-  echo "[git-check] 🔴 本地過時：落後 origin $behind 個 commit（branch=${branch}）。本地 HANDOFF.md／docs 可能是舊快照——先 git pull --ff-only 再讀任何文件、再動任何工作。"
-elif [ "$ahead" -gt 0 ]; then
-  echo "[git-check] 🟡 有 $ahead 個未推送 commit（branch=${branch}）。接棒時 ahead-only：停下回報未推送 commit 的來源，等待使用者指示，不自動 push。"
-else
-  echo "[git-check] ✅ 本機沒落後 origin（branch=${branch}）——這一行只比對本機與 origin 的落差，不代表沒有別台機器在做。"
-fi
-if [ "$dirty" -gt 0 ]; then
-  echo "[git-check] 🟡 工作區有 $dirty 個未提交變更（可能是上一棒未收斂，先辨認來源再動）。"
-fi
-
-# 工作中標記（跨機器誤接棒防呆，2026-10-30）
-# 起因：A 機器忘記交棒就關掉，B 機器開 session 看到「與 origin 同步」的綠勾就接棒——
-# 那個綠勾只證明「B 沒落後」，不證明「沒有別台在做」，於是 A 的未提交變更整批被繞過。
-# 讀 origin 那一份、不讀本機的：此刻還沒 pull，本機那份可能是舊快照。
-# 只讀、只提醒，絕不寫入——往權威分支自動 commit／push 是整套制度最不該自動化的地方
-# （本機落後時會當場分岔，工作樹 dirty 時會把別人的東西一起包進 commit）。寫入是 skill A5 的事。
-# 已知限制：本 hook 跑在 skill 的 A2「站對分支」之前，只看得到當前分支；
-# 切到 feature/... 之後的檢查由 A2.5 的程序負責。
-# 欄位在的時候一定印一句結論（✅／🟡／🔴），不要「沒事就不說話」：沉默跟「查過了沒事」
-# 分不出來，而這個機制的全部價值就在於讓人知道「有沒有被查」。
-remote_handoff=$(git show "origin/$branch:HANDOFF.md" 2>/dev/null)
+# 第 3 行：origin 那份 HANDOFF 的「工作中」。讀 origin 的、不讀本機的：此刻還沒 pull，本機那份可能是舊的。
+# 照原文印出，不解析、不判讀；有幾列就說幾列，讓重複的欄位看得見。
+remote_handoff=$(git show "origin/${branch}:HANDOFF.md" 2>/dev/null)
 if [ -n "$remote_handoff" ]; then
-  # 「工作中」欄位的判讀。2026-11-02 從子字串比對改成精確解析（查核報告 F01）。
-  # 舊版 `case "$busy" in *無*)` 拿整列當子字串比，於是**正常的任務名稱**就足以產生錯誤
-  # 綠燈：標記寫著別台機器正在做、而 session 主題叫「修無效連結」，它會印「✅ 無（已交棒）」。
-  # 同一個洞在機器名比對上也有——舊版拿整列當乾草堆、`$me` 當針，所以 `desk` 與 `desk-win`
-  # 互為子字串時會錯判成「同一台機器」，而那個方向的錯正好是放行。
-  # 現在的規則：
-  #   ① 只有欄位值正規化後**完整等於** `無（已交棒）` 才算空閒；
-  #   ② 其餘一律逐欄解析，機器欄要**完整相等**（只忽略大小寫，不接受子字串）；
-  #   ③ 欄位重複、或解析不出機器欄，都當成「有人在做」——永遠不往放行的方向猜。
-  # 全程只用參數展開與 tr，不用 sed：這段會被抄進各專案，而一條充滿轉義的 sed 腳本是
-  # 最容易在抄寫時悄悄壞掉的東西。
-  trim_mark() {                      # 去頭尾的半形／全形空白與反引號
-    _s=$1
-    while :; do
-      case $_s in
-        ' '*) _s=${_s# } ;;
-        '　'*) _s=${_s#　} ;;
-        *' ') _s=${_s% } ;;
-        *'　') _s=${_s%　} ;;
-        '`'*) _s=${_s#'`'} ;;
-        *'`') _s=${_s%'`'} ;;
-        *) break ;;
-      esac
-    done
-    printf '%s' "$_s"
-  }
-  busy_all=$(printf '%s\n' "$remote_handoff" | grep -F '**工作中**')
-  busy_n=$(printf '%s\n' "$busy_all" | grep -c '[^[:space:]]' || true)
-  busy=$(printf '%s\n' "$busy_all" | head -1)
-  value=${busy#*：}
-  value=${value%%，*}                # 砍掉「，2026-… (+08) 開工」那段尾註
-  value=$(trim_mark "$value")
-  if [ "$busy_n" -eq 0 ]; then
-    echo "[git-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 ${branch}（這個專案的骨架還沒升級到有這個機制；下次交棒時照 B6 補上）。"
-  elif [ "$busy_n" -gt 1 ]; then
-    echo "[git-check] 🔴 origin 的 HANDOFF.md 有 $busy_n 列「工作中」欄位，判讀不出來誰握著 ${branch}。"
-    echo "[git-check]    不猜——照 A2.5 停下來問使用者。這一欄只能有一列（B6 是覆寫，不要往下疊）。"
-  elif [ "$value" = '無（已交棒）' ]; then
-    free=1
-    echo "[git-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 ${branch}。"
+  busy=$(printf '%s\n' "$remote_handoff" | grep -F '**工作中**')
+  busy_n=$(printf '%s\n' "$busy" | grep -c '[^[:space:]]' || true)
+  if [ "$busy_n" -gt 1 ]; then
+    echo "[facts] origin 上的 HANDOFF 有 ${busy_n} 列「工作中」，第一列：$(printf '%s\n' "$busy" | head -1)"
   else
-    who=${busy#*：}
-    machine=$(trim_mark "${value%%／*}")
-    # 工具欄＝標記的第二欄（欄位用全形斜線 ／ 分隔）。2026-10-31 加：只比機器名的時候，
-    # 同一台機器換個工具就落進「大概是你自己另一個視窗」的 🟡——而同機器通常就是同一個
-    # 工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。
-    # 舊格式沒有工具欄，第二欄會是 session 名，而 session 名一定含全形豎線
-    # （`符號　YYMMDDHH｜主題｜狀態`）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
-    # 不必先知道這個專案升級了沒。全程只用參數展開，不用 sed：這段會被抄進各專案，
-    # 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西。
-    tool=''
-    case $value in
-      *／*)
-        rest=${value#*／}
-        tool=$(trim_mark "${rest%%／*}")
-        ;;
-    esac
-    case $tool in *｜*) tool='' ;; esac
-    me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
-    same=no
-    if [ -n "$me" ] && [ -n "$machine" ]; then
-      mlc=$(printf '%s' "$machine" | tr 'A-Z' 'a-z')
-      melc=$(printf '%s' "$me" | tr 'A-Z' 'a-z')
-      [ "$mlc" = "$melc" ] && same=yes
-    fi
-    # 自己是哪個工具：環境變數只拿來**加嚴**，不拿來放寬（2026-10-31 實測，理由見部署包
-    # 「工具身分」一節）。兩家以上的簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，
-    # 這時不猜——猜錯的方向會是「放行」，正好是最貴的那一種錯。
-    mytool=''
-    sigs=0
-    [ -n "${CODEX_VERSION:-}${CODEX_SESSION_ID:-}" ] && { mytool='Codex CLI'; sigs=$((sigs + 1)); }
-    [ -n "${GEMINI_CLI:-}" ] && { mytool='Gemini CLI'; sigs=$((sigs + 1)); }
-    [ -n "${CLAUDECODE:-}" ] && { mytool='Claude Code'; sigs=$((sigs + 1)); }
-    [ "$sigs" -gt 1 ] && mytool=''
-    # 比字串時不分大小寫，也接受標記寫得比偵測值長（例如 `Claude Code (desktop)`）：
-    # 寫法差一點就報 🔴 是在加嚴的方向，但也只是噪音，而噪音多了就會有人學會無視它。
-    mismatch=no
-    if [ -n "$mytool" ] && [ -n "$tool" ]; then
-      lc=$(printf '%s' "$tool" | tr 'A-Z' 'a-z')
-      mylc=$(printf '%s' "$mytool" | tr 'A-Z' 'a-z')
-      case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
-    fi
-    if [ -z "$machine" ]; then
-      echo "[git-check] 🔴 「工作中」欄位有值、但解析不出機器欄，判讀不出來誰握著 ${branch}：$who"
-      echo "[git-check]    當成有人在做處理。格式是「機器 ／ 工具 ／ session 名」（第三欄可選），見 skill 的 A5。"
-      echo "[git-check]    照 A2.5 停下來問使用者，不要直接接棒。"
-    else
-      if [ "$same" = no ]; then
-        echo "[git-check] 🔴 另一台機器正在 $branch 上工作，尚未交棒：$who"
-        echo "[git-check]    依 single writer 規則，同一時間只能有一台機器動同一條分支。"
-        echo "[git-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
-      elif [ -z "$tool" ]; then
-        echo "[git-check] 🟡 這台機器（${me}）還有一個 session 在 $branch 上沒交棒：$who"
-        echo "[git-check]    這個標記是舊格式、沒有工具欄，分不出是哪個工具寫的。確認是你自己這個工具開的另一個視窗才繼續，不是就照 A2.5 停下來。"
-      elif [ "$mismatch" = yes ]; then
-        echo "[git-check] 🔴 同一台機器（${me}）上另一個工具正在 $branch 上工作，尚未交棒：$who"
-        echo "[git-check]    標記寫的是「${tool}」，這個 session 的環境看起來是「${mytool}」。同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫——比跨機器那個洞更貴。"
-        echo "[git-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
-      else
-        echo "[git-check] 🟡 這台機器（${me}）上有一個「${tool}」的 session 在 $branch 上沒交棒：$who"
-        echo "[git-check]    你自己是不是「${tool}」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
-      fi
-    fi
+    echo "[facts] origin 上的 HANDOFF：${busy:-讀不到「工作中」那一行}"
   fi
 fi
-# origin 上沒有 HANDOFF.md（沒用這套制度，或這條分支還沒推過）就整段安靜跳過——
-# 那不是本 hook 該管的事，在這種 repo 裡每次開場嘮叨一句只會讓人學會無視 [git-check]。
 
-# 全綠行（2026-11-10，F22）。它是這一刻的快照：續聊後要改檔、切過分支時，agent 要重跑本腳本。
-if [ "$green" = 1 ] && [ "$free" = 1 ]; then
-  echo "[git-check] 全綠 $(date '+%Y-%m-%d %H:%M')：A1 與 A2.5 可直接通過（branch=${branch}，origin=$(git rev-parse "origin/$branch" 2>/dev/null)）"
-elif [ -f .claude/skills/handoff/mode-a-stop.md ]; then
-  echo "[git-check] 不是全綠：接棒時讀 handoff skill 的 mode-a-stop.md，照完整判讀表走。"
-fi
-# 骨架版本落後偵測（2026-10-30）
-# 起因：同步是手工的，而「這台機器上有哪些專案裝了這套骨架」沒人記得住——盤點時得用 find
-# 掃一遍，而且掃出 4 個專案留著上一輪沒 commit 的同步殘留。所以偵測放在「開場」這個你一定
-# 會經過的時刻：哪個專案落後，哪個就在你打開它的當下自己講，你永遠不必先知道有哪些專案。
-# 跟「工作中」標記同一招——把檢查掛在必然發生的動作上，而不是掛在要人記得的動作上。
-# 抓不到（離線、沒有 curl、fork 改過網址）就安靜跳過：這是提醒，不是關卡。
-# 結果快取 12 小時，免得每開一次 session 就打一次網路。關掉：BOOTSTRAP_VERSION_CHECK=off
+# 第 4 行（有差異才印）：共用制度的版本與上游不同（F18 提示）。
+# 版本取自 AGENTS.md 共用制度開始標記裡的 source: 標記。抓不到（離線、沒有 curl）就安靜跳過。
+# 結果快取 12 小時。關掉：BOOTSTRAP_VERSION_CHECK=off
 UPSTREAM_VERSION_URL=https://raw.githubusercontent.com/Baliyoho/project-bootstrap/main/VERSION  # fork 的人改這一行
-skill=.claude/skills/handoff/SKILL.md
-if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
-  mine=$(sed -n 's/.*source: PROJECT-BOOTSTRAP\.md v\([0-9][0-9.-]*\).*/\1/p' "$skill" | head -1)
+if [ "${BOOTSTRAP_VERSION_CHECK:-}" != off ] && [ -f AGENTS.md ]; then
+  mine=$(sed -n 's/.*共用制度開始 source: PROJECT-BOOTSTRAP\.md v\([0-9][0-9.-]*\).*/\1/p' AGENTS.md | head -1)
   cache=.claude/.bootstrap-version
   if [ -n "$(find "$cache" -mmin -720 2>/dev/null)" ]; then
     latest=$(cat "$cache" 2>/dev/null)
@@ -1846,11 +1616,7 @@ if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
     latest=$(curl -fsS --max-time 5 "$UPSTREAM_VERSION_URL" 2>/dev/null | tr -d '\r\n \t')
     [ -n "$latest" ] && printf '%s' "$latest" > "$cache" 2>/dev/null
   fi
-  # 2026-11-02 修（查核報告 F09）：舊版只比 `!=`，訊息卻寫死「落後」——本機比上游**新**的
-  # 時候（權威版還沒 push，或有人就地改了副本）它一樣印「落後」並叫你跑 sync_project.py，
-  # 而那會把新的蓋成舊的。所以方向要自己判：版本號是 `YYYY-MM-DD` 或 `YYYY-MM-DD.N`，
-  # 把序號補成三位數之後日期與序號就能一起比字典序（`.2` 與 `.10` 才不會比反），再用 sort
-  # 挑出較小的那一個——不用 test 的 `<`，那不是 POSIX。
+  # 版本號是 YYYY-MM-DD 或 YYYY-MM-DD.N；序號補成三位數後日期與序號能一起比字典序。
   verkey() {
     _d=${1%%.*}
     _n=${1#"$_d"}
@@ -1859,27 +1625,21 @@ if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
     case $_n in *[!0-9]*) _n=0 ;; esac
     printf '%s.%03d' "$_d" "$_n"
   }
-  if [ -n "$mine" ] && [ -n "$latest" ] && [ "$mine" != "$latest" ]; then
+  if [ -n "$mine" ] && [ -n "$latest" ]; then
     km=$(verkey "$mine")
     kl=$(verkey "$latest")
-    if [ "$km" = "$kl" ]; then
-      :                              # 只是寫法不同（2026-11-02 與 2026-11-02.0），不吵
-    elif [ "$(printf '%s\n%s\n' "$km" "$kl" | sort | head -1)" = "$km" ]; then
-      echo "[git-check] 🟡 handoff 骨架落後：本機 v${mine}，最新 v${latest}。"
-      echo "[git-check]    到 project-bootstrap 跑：python -X utf8 tools/sync_project.py <本專案路徑>（python 不存在就用 python3）"
-    else
-      echo "[git-check] 🟡 本機 handoff 骨架比上游新：本機 v${mine}，上游 v${latest}。"
-      echo "[git-check]    這不是落後——可能是權威版還沒 push，或有人就地改了這個專案的副本（鐵律 1 禁止）。"
-      echo "[git-check]    不要跑 sync_project.py，那會把新的蓋成舊的；先確認權威版推上去了沒。"
+    if [ "$km" != "$kl" ]; then
+      if [ "$(printf '%s\n%s\n' "$km" "$kl" | sort | head -1)" = "$km" ]; then
+        echo "[facts] 共用制度落後：本機 v${mine}，上游 v${latest}（更新方法見 project-bootstrap 的 README）"
+      else
+        echo "[facts] 共用制度比上游新：本機 v${mine}，上游 v${latest}"
+      fi
     fi
   fi
 fi
 
-# 家目錄的 handoff skill 蓋掉專案那份（2026-11-12，決策書 Q28 (a)）
-# 實測 Claude Code 2.1.321：~/.claude/skills/handoff/ 與專案都有同名 skill 時，skill 清單與
-# Skill 工具用的是家目錄那份；專案那份只靠入口一句「專案有就讀那裡」救回來，而全域副本
-# 舊到沒有那句時就救不回來，Claude Code 照舊程序、Codex 照專案程序。所以逐檔比內容，
-# 只要有一個檔不同（含只有一邊有的檔）就提醒；兩份相同或沒有全域副本就安靜。只讀不寫。
+# 第 5 行（有差異才印）：家目錄的 handoff skill 與專案那份不同。實測 Claude Code 2.1.321 會用家目錄那份
+# 蓋掉專案的同名 skill（決策書 Q28）。逐檔比內容，只有一邊有的檔也算不同。
 home_skill=${HOME:-}/.claude/skills/handoff
 if [ -f .claude/skills/handoff/SKILL.md ] && [ -n "${HOME:-}" ] && [ -d "$home_skill" ]; then
   skill_diff=''
@@ -1889,23 +1649,7 @@ if [ -f .claude/skills/handoff/SKILL.md ] && [ -n "${HOME:-}" ] && [ -d "$home_s
     case " $skill_diff " in *" $name "*) continue ;; esac
     cmp -s ".claude/skills/handoff/$name" "$home_skill/$name" || skill_diff="$skill_diff $name"
   done
-  if [ -n "$skill_diff" ]; then
-    echo "[git-check] 🟡 家目錄 ~/.claude/skills/handoff/ 跟本專案的 handoff skill 不一樣（${skill_diff# }）：Claude Code 會載入家目錄那份、蓋掉專案那份。"
-    echo "[git-check]    這次照本專案 .claude/skills/handoff/ 的檔案走；要消掉差異，用 project-bootstrap 部署包的版本覆蓋全域副本。"
-  fi
-fi
-
-if [ -f .claude/skills/handoff/SKILL.md ]; then
-  echo "[handoff] 本專案有交接制度：接棒先走 handoff skill 的 A 模式（.claude/skills/handoff/SKILL.md）——同步 Git、站對分支、A2.5 檢查「工作中」標記、只讀 AGENTS.md＋HANDOFF.md，回報 3–5 行後再動手；收工走 B 模式。"
-# 開工改名用的 YYMMDDHH 在這裡算好（2026-11-01 加）。改名規則在 skill 的「session 命名」
-# 那一節，但時間戳一直是要 agent 自己去取的——而它取錯的時候是靜默的：拿系統提示裡的日期
-# 去推小時就會寫出一個不存在的時刻，而那個時間戳的唯一用途正是「讓使用者在側欄認出這是
-# 哪一次」，對不上就等於沒改名。hook 跑在 SessionStart，所以這個值本來就比「回報完才去
-# date 一次」更接近接棒那一刻。
-# 只印、不改名：沒有任何工具讓 hook 改 session 名稱，有這個能力的是 agent（Claude Code 的
-# set_session_title），而 Codex CLI 與 Gemini CLI 沒有——所以這句明寫「有這個能力才做」，
-# 免得在做不到的工具上變成一個每次開場都在要求失敗動作的指令。
-  echo "[handoff] 開工改名用（接棒時間已算好，有這個能力的工具才做）：㊣　$(date +%y%m%d%H)｜<主題>｜工作中"
+  [ -n "$skill_diff" ] && echo "[facts] 家目錄 ~/.claude/skills/handoff/ 與本專案的 handoff skill 不同（${skill_diff# }）；Claude Code 載入的是家目錄那份"
 fi
 exit 0
 ````
@@ -2641,7 +2385,7 @@ if __name__ == '__main__':
     sys.exit(main())
 ````
 
-### 3.16 `.agents/skills/handoff/SKILL.md`（給 Antigravity **與 Codex** 的指標）
+### 3.16 `.agents/skills/handoff/SKILL.md`（給 Codex 的指標）
 
 > **2026-10-30 起這個檔不再只給 Antigravity。** `codex debug prompt-input` 印的「Skill roots」表證實 Codex CLI `0.164.0` 也把 repo 的 `.agents/skills/` 當成 skill 來源（官方另外列 `$CWD/../.agents/skills`、`$HOME/.agents/skills`、`/etc/codex/skills`）。Antigravity 一樣原生辨識專案根目錄的 `.agents/skills/`。所以這一個檔現在同時是兩個工具的專案層入口。
 > 仍然**只放指標、不放內容**——複製一份程序在這裡，兩份就會各自演化，最後一份說要先 fetch、另一份沒說。
@@ -2651,14 +2395,14 @@ if __name__ == '__main__':
 ````markdown
 ---
 name: handoff
-description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when the user asks to wrap up or hand work over, when a chunk of work is done (commit/push at your own discretion via mode C, read context usage and suggest a handoff, but never hand off unless the user asks), when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
+description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 本檔只是指標，改內容請改權威版 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-13 — 本檔只是指標，改內容請改權威版 -->
 
 # 本檔只是指標，請讀權威版
 
-**權威版：[`.claude/skills/handoff/SKILL.md`](../../../.claude/skills/handoff/SKILL.md)**（入口；它會告訴你接著讀同目錄的哪一個模式檔，那個檔也要讀）
+**權威版：[`.claude/skills/handoff/SKILL.md`](../../../.claude/skills/handoff/SKILL.md)**（參考檔入口；碰到才讀。必守的條件在 `AGENTS.md` 的共用制度一節）
 
 那份是純 Markdown，路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置，內容不限任何工具。
 
@@ -2715,7 +2459,7 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——接�
 
 **`PreToolUse` 的 Windows 命令末尾必須保留 `; exit $LASTEXITCODE`。** 2026-11-01 補做真阻擋驗收時發現：只在原生 cmd 測到 exit 2 還不夠；Codex 外層的 PowerShell `-Command` 會把最後一個 native 命令的失敗折成 exit 1，於是畫面只報 Hook failed、工具仍被放行。加上明確 exit 才把 2 交回 Codex。驗證器同時測完整 PowerShell → cmd → Git Bash 啟動鏈與拿掉明確 exit 的負向情境，避免再用少一層的測試報成功。
 
-與 3.19 同樣保持 **ASCII、全 LF、單行 if、沒有 label 與多行括號區塊**。尋找順序是 PATH 上 `git.exe` 的安裝位置、兩種 Program Files、使用者安裝位置；刻意不執行 PATH 上未驗明來源的 `bash`，以免又選到 WSL。找不到 Git Bash 就在 stderr 明確報錯並 exit 1，不假裝驗收成功。另量到 `0.166.0` 對以 `[` 開頭的純文字 stdout 會報 `invalid session start JSON output`；同一支腳本只加上 `Git status check:` 標頭後，互動驗收由 `HOOK_ABSENT` 變成 `HOOK_PRESENT`。所以標頭留在啟動器，不改兩支共用 `.sh` 的既有標記。
+保持 **ASCII、全 LF、單行 if、沒有 label 與多行括號區塊**。尋找順序是 PATH 上 `git.exe` 的安裝位置、兩種 Program Files、使用者安裝位置；刻意不執行 PATH 上未驗明來源的 `bash`，以免又選到 WSL。找不到 Git Bash 就在 stderr 明確報錯並 exit 1，不假裝驗收成功。另量到 `0.166.0` 對以 `[` 開頭的純文字 stdout 會報 `invalid session start JSON output`；同一支腳本只加上 `Git status check:` 標頭後，互動驗收由 `HOOK_ABSENT` 變成 `HOOK_PRESENT`。所以標頭留在啟動器，不改兩支共用 `.sh` 的既有標記。
 
 ````bat
 @echo off
@@ -2738,107 +2482,9 @@ echo Git status check:
 exit /b %ERRORLEVEL%
 ````
 
-### 3.18 `.claude/hooks/ag-wrap.sh`（Antigravity 轉接層）
+### 3.18–3.20（2026-11-13 移除）
 
-> **為什麼要多一層**：Antigravity 的 `SessionStart` 只吃 JSON（`injectSteps`），而骨架那兩支 `.sh` 是直接 `echo` 給人讀的——裸文字會被當成不合格式**整段丟掉**，於是 hook 跑了、畫面上什麼都沒有。
-> **為什麼放在 `.claude/hooks/` 而不是 `.agents/`**：跟 3.17 同一個理由——hook 腳本只有一個家。路徑掛在 `.claude/` 下只是因為 Claude Code 會自動載入該位置，內容不限任何工具。
-> 🔴 **這一層刻意不含任何判斷規則。** 要印什麼、要擋什麼，全在被包的那支腳本裡（權威版只有一份）。所以它跟「複製第二份腳本」不是同一種風險：裡面沒有規則可以跟權威版分岔，它只會在管線上壞掉——而管線是驗得出來的。
-> **位置從 `$0` 推，不依賴 cwd。** 雖然實測 cwd 就是 `hooks.json` 所在目錄（官方契約也這樣寫），但多押一個假設沒有好處：`$0` 推出來的路徑，被誰用什麼 cwd 呼叫都一樣。
-> **第一個參數是要跑的腳本檔名**，所以同一支轉接層以後掛別的 hook 也不用改。
-> macOS／Linux 建完要 `chmod +x`。
-> 🔴 **從 Windows 同步這個檔之後，提交前補一句 `git update-index --chmod=+x .claude/hooks/ag-wrap.sh`。** Windows 不帶執行位元，git 會記成 `100644`，而 3.20 的 Unix handler 是**直接**跑這支 `.sh`——Unix clone 拿到的是不可執行的檔，那條 handler 就**靜默不動**（只噴 stderr、不產生 stdout、沒有注入，畫面上跟「這台機器沒有這個 hook」長得一模一樣）。另外兩支 `.sh` 不受影響：它們都是被 `bash <檔>` 呼叫的，執行位元沒差。2026-10-31 補裝六個既有專案時就是從 Windows 做的，所以這一句是當下必須做的動作，不是叮嚀。
-
-````bash
-#!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-06 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
-# Antigravity hook 轉接層：只做管線，不含任何程序知識。
-# 用法：bash .claude/hooks/ag-wrap.sh <要跑的腳本檔名> [參數...]
-set -u
-
-bs='\'
-
-# 把文字包成 SessionStart 的契約並結束。全程只用參數展開、不用 sed：這支會被抄進各專案，
-# 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西（同樣的理由見 3.10 工具欄那段）。
-emit() {
-  esc=$1
-  esc=${esc//"$bs"/"$bs$bs"}
-  esc=${esc//'"'/"$bs\""}
-  esc=${esc//$'\r'/}
-  esc=${esc//$'\t'/"${bs}t"}
-  esc=${esc//$'\n'/"${bs}n"}
-  printf '{"injectSteps":[{"ephemeralMessage":"%s"}]}\n' "$esc"
-  exit 0
-}
-
-target=${1:-}
-[ -n "$target" ] || emit "[ag-wrap] ⚠️ 沒有收到要跑的腳本名稱——.agents/hooks.json 的 command 少了參數。"
-shift
-
-# 位置從 $0 推，不依賴 cwd：被誰用什麼 cwd 呼叫都一樣。
-here=$(CDPATH= cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd) || emit "[ag-wrap] ⚠️ 取不到轉接層自己的位置。"
-root=$(CDPATH= cd -- "$here/../.." >/dev/null 2>&1 && pwd) || emit "[ag-wrap] ⚠️ 取不到專案根目錄。"
-script=$here/$target
-[ -f "$script" ] || emit "[ag-wrap] ⚠️ 找不到 ${target}（應該在 .claude/hooks/ 底下）。"
-
-out=$(CDPATH= cd -- "$root" && bash "$script" "$@" 2>&1)
-[ -n "$out" ] || { printf '{}\n'; exit 0; }
-emit "$out"
-````
-
-### 3.19 `.agents/ag-hook.cmd`（Antigravity 在 Windows 的 shim）
-
-> **為什麼非要這一層**：`agy` 的 `command` **照空白切 token、不解析引號**（2026-10-31 實測四種組合），而 Windows 上要跑 `.sh` 就得先有 bash——Git Bash 裝在 `Program Files` 底下，路徑含空白，**在 `hooks.json` 裡根本寫不出來**。PATH 上那個 `bash` 通常是 WSL 的，路徑語意不同、不能用。所以必須有一個**不含空白的相對路徑**可以當 `command`，由它自己去找 bash。
-> 🔴 **全檔只有單行 `if`，沒有括號區塊也沒有 label**：這個檔是 LF 行末（`.gitattributes` 強制全檔 LF），而 `cmd.exe` 讀 LF-only 檔案時，多行的 `( )` 區塊與 `goto` 會出錯。不要「順手整理」成多行區塊。
-> 🔴 **全檔只有 ASCII，註解也是**：batch 的 `echo` 碰到 UTF-8 會依 OEM code page 變成亂碼，而 2026-10-31 實測時更糟——被誤讀的中文註解**整段被當成指令執行**，stderr 噴出三行 `is not recognized`。理由寫在部署包（這一節），檔案裡只留指路的一句。
-> **路徑用 `%~dp0` 推，不依賴 cwd**，跟 3.18 同一個理由。
-> 失敗要吵不要安靜：找不到 Git Bash 就注入一句 `[ag-hook] WARN`，而不是安靜地什麼都不做——一個「安靜地什麼都沒做」的 hook 跟「檢查過了沒事」在畫面上一模一樣。
-
-````bat
-@echo off
-rem source: PROJECT-BOOTSTRAP.md v2026-10-31.2 - authority is the kit; edit it first, then sync.
-rem Antigravity CLI hook shim for Windows. Finds Git Bash, then hands off to ag-wrap.sh.
-rem This file is ASCII-only, has no parenthesised blocks and no labels, on purpose.
-rem See PROJECT-BOOTSTRAP.md section 3.19 for the three reasons why.
-setlocal
-set "SC=%~1"
-if "%SC%"=="" echo {"injectSteps":[{"ephemeralMessage":"[ag-hook] WARN: .agents/hooks.json command is missing the script argument."}]}
-if "%SC%"=="" exit /b 0
-set "BASH="
-for /f "delims=" %%G in ('where git 2^>nul') do if not defined BASH if exist "%%~dpG..\bin\bash.exe" set "BASH=%%~dpG..\bin\bash.exe"
-if not defined BASH if exist "%ProgramFiles%\Git\bin\bash.exe" set "BASH=%ProgramFiles%\Git\bin\bash.exe"
-if not defined BASH if exist "%ProgramFiles(x86)%\Git\bin\bash.exe" set "BASH=%ProgramFiles(x86)%\Git\bin\bash.exe"
-if not defined BASH echo {"injectSteps":[{"ephemeralMessage":"[ag-hook] WARN: Git Bash not found. The Antigravity hook layer is inactive here; follow AGENTS.md and HANDOFF.md manually."}]}
-if not defined BASH exit /b 0
-"%BASH%" "%~dp0..\.claude\hooks\ag-wrap.sh" %*
-````
-
-### 3.20 `.agents/hooks.json`（Antigravity 的 hook 接線）
-
-> **兩個 handler，一個平台各一個。** Unix 直接跑 `.sh`（`sh -c`，不需要 shim）；Windows 走 3.19 的 `.cmd`。**不合用的那一個會失敗，而失敗是無害的**——2026-10-31 實測：在 Windows 上 Unix 那條只往 stderr 噴一行 `'..' is not recognized`、不產生 stdout，session 照樣完成，注入也照樣只有一份。不要為了「乾淨」刪掉另一條：同一個 repo 會被兩種平台 clone。
-> **骨架只擁有 `handoff-git-check` 這一個頂層 key。** Antigravity 的設定檔形狀是「頂層 key ＝ hook 名稱」，所以專案自己要加 hook 就用自己的 key，兩邊不會互相踩到——`sync_project.py` 也只換這一個 key（這比 3.9／3.17 那兩份好處理，它們得在同一個 `hooks` 物件裡逐組比對）。
-> 🔴 **只接 `SessionStart`，刻意不接 `PreToolUse`。** 實測 `PreToolUse` **不明確回 `{"allow_tool": true}` 就等於拒絕**——回 `{}` 的那一輪 `agy` 把 `read_file` 與 `run_command` 全擋掉了。接上去之後，轉接層任何一次失敗都會變成「使用者的工具全部不能用」，那比「沒有防護」糟得多。要接之前先想清楚失敗路徑怎麼保證回 allow。
-> **路徑一律相對**（鐵律：寫死絕對路徑換機器就靜默失效）。這一點在 Antigravity 上不只是慣例——相對路徑是 Windows 這一面**唯一寫得出來**的形式。
-> **這一面刻意不加 3.9／3.17 那個 `$(git rev-parse --show-cdup)`**（它們為 F05 加了那一層）：`agy` 的 `command` 是**照空白切 token、不經 shell**（見 3.19），所以 `$( )` 不會被展開，只會變成檔名的一部分；而它的 cwd 依官方契約與實測就是 `hooks.json` 所在目錄、不是 session 的 cwd，所以這裡的 `../` 本來就是對的基準。**兩邊的定位基準不同，不要「順手統一」**（2026-11-02）。
-
-````json
-{
-  "handoff-git-check": {
-    "enabled": true,
-    "SessionStart": [
-      {
-        "type": "command",
-        "command": "../.claude/hooks/ag-wrap.sh git-freshness.sh",
-        "timeout": 30
-      },
-      {
-        "type": "command",
-        "command": ".\\ag-hook.cmd git-freshness.sh",
-        "timeout": 30
-      }
-    ]
-  }
-}
-````
+原本是 Antigravity 的轉接層、Windows shim 與 hook 接線。需求決策書 v3 的 D8 放棄 Antigravity，三個檔移出部署包；編號保留，免得舊紀錄裡的「3.18」「3.19」「3.20」指到別的東西。已部署的專案裡那三個檔不會被同步工具刪掉，要不要清掉由使用者決定。
 
 ### 3.21 其他 skills 慣例（有需要時才建，不要空建）
 
@@ -2899,14 +2545,7 @@ git add . && git diff --cached --name-only
 
 依訪談逐一執行 `git check-ignore -- <憑證或運行路徑>`，必須列出該路徑；不要以檔案還沒建立為理由略過。核對 staged 清單沒有任何憑證或運行資料。關鍵字掃描只能降低風險，不能涵蓋所有祕密格式。
 
-部署了 Antigravity wrapper 時，所有平台都把它記成可執行（Windows 的檔案模式不會自動替你做這件事）；沒有採用此 wrapper 就明列此兩項不適用：
-
-```bash
-git update-index --chmod=+x .claude/hooks/ag-wrap.sh
-git ls-files --stage .claude/hooks/ag-wrap.sh
-```
-
-輸出必須是 `100755`。接著跑兩個本機檢查：
+接著跑兩個本機檢查：
 
 ```bash
 python -X utf8 tools/check_docs.py
@@ -2947,10 +2586,10 @@ git status -sb
 
 - [ ] `python -X utf8 tools/check_docs.py` → `OK`（一次涵蓋死連結與**殘留佔位符**；佔位符那一項掃 `.md`／`.py`／`.sh`／`.json`／`.gitignore`／`.gitattributes` 的 tracked 檔，所以要先 `git add`。本部署包自己被豁免——照最後一項刪掉它就好）
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
-- [ ] `bash .claude/hooks/git-freshness.sh` → 印出 `✅ 本機沒落後 origin`，且最後**兩**行是 `[handoff]` 的交接提醒與開工改名提示（後者長得像 `㊣　26110112｜<主題>｜工作中`，時間戳是當下的；2026-11-01 加）。沒有 upstream 會印警告，表示第 4 節沒做完
-- [ ] **子目錄也要有防護**（2026-11-02／F05）：`cd tools && sh -c 'bash "$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh"'; cd ..` → 要印出跟在根目錄一樣的 `[git-check]`。**要跑的是 `.claude/settings.json`／`.codex/hooks.json` 裡原始的那一串命令**，不是直接拿完整路徑跑腳本——後者在任何 cwd 都會過，測不到入口。hook 的 `command` 以 session 的 cwd 執行，而人會從子目錄開 session（`cd tools && claude`）；舊接線在那裡是 exit 127，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**
-- [ ] **工作中標記防呆**：把 `HANDOFF.md` 的「工作中」改成 `` `假機器名` ／ `Claude Code` ``，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 要印 🔴 並叫你走 A2.5；改成**這台機器**＋一個**別的工具名**（例如 `` `<本機名>` ／ `Codex CLI` ``）再跑 → 同樣要 🔴（這是 2026-10-31 補的同機器跨工具那個洞；若本機偵測不出自己是哪個工具，會退成 🟡 並把問題丟回給你答，那也是對的）；改回「無（已交棒）」、commit、push 後再跑 → 不該再印。**驗完記得改回來**
-- [ ] **骨架版本偵測**：`printf 2099-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要印 🟡「handoff 骨架落後」。快取裡放的是**上游最新版**，所以要餵一個比本機**新**的值；餵 2026-11-02 之前的舊日期只會印「比上游新」（2026-11-02 修正，見 F09——舊版這裡寫 `1999-01-01`，而那是本機領先，只是當時的實作不分方向所以照樣印落後）。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
+- [ ] `bash .claude/hooks/git-freshness.sh` → 印出三行 `[facts]`：時間（含 session 名用的 `YYMMDDHH`）與本機、落後 0 領先 0、origin 上「工作中」那一行的原文。印「origin 上沒有分支」表示第 4 節沒做完
+- [ ] **子目錄也要有防護**（2026-11-02／F05）：`cd tools && sh -c 'bash "$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh"'; cd ..` → 要印出跟在根目錄一樣的 `[facts]`。**要跑的是 `.claude/settings.json`／`.codex/hooks.json` 裡原始的那一串命令**，不是直接拿完整路徑跑腳本——後者在任何 cwd 都會過，測不到入口。hook 的 `command` 以 session 的 cwd 執行，而人會從子目錄開 session（`cd tools && claude`）；舊接線在那裡是 exit 127，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**
+- [ ] **工作中標記看得見**：把 `HANDOFF.md` 的「工作中」改成 `` `假機器名` ／ `Claude Code` ``，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 第三行要印出那個值的原文；改回「無（已交棒）」、commit、push 後再跑 → 要印回 `無（已交棒）`。**驗完記得改回來**
+- [ ] **共用制度版本提示**：`printf 2099-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要多印一行「共用制度落後」。快取裡放的是**上游最新版**，所以要餵一個比本機**新**的值。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）；同目錄有 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 五個檔，六個檔檔頭的 `source:` 版本相同（少一個，入口就會指向不存在的檔）
 - [ ] **`CLAUDE.md` 只有 `@AGENTS.md` 這一行 import**，不是「去讀 AGENTS.md」那種句子——有 `CLAUDE.md` 時 Claude Code 不會自己讀 `AGENTS.md`，而用文字請它去讀不保證它真的開那個檔（理由見開頭「跨工具與跨平台」）。開一個 session 問它「`AGENTS.md` 的鐵律第 1 條是什麼」，答得出來才算接上
 - [ ] `ARCHITECT.md` 存在且有「最後更新」標頭（`check_docs.py` 會擋），「專案本體」那節寫的是**實況**——還沒有程式碼就照實寫，不要先畫一個想像中的架構
@@ -2961,12 +2600,11 @@ git status -sb
 
 **跨工具（只驗你真的會用的那幾個，用不到的不必建檔）**
 
-- [ ] **可攜層**：`AGENTS.md` 開頭有「開工第一件事」那一段，而且指到的路徑存在——**這一項不能跳過**，它是唯一不需要任何設定就會被讀到的那一層（**「讀得到」不等於「照做」**，見開頭那一節），其餘都只是輔助
+- [ ] **可攜層**：`AGENTS.md` 有共用制度一節（開始與結束標記之間 ≤ 40 行）——**這一項不能跳過**，它是唯一不需要任何設定就會被讀到的那一層（**「讀得到」不等於「照做」**，見開頭那一節），其餘都只是輔助
 - [ ] **Codex CLI**：`.codex/hooks.json` 與 `.claude/hooks/codex-hook.cmd` 存在且接線路徑全是相對路徑（`grep -n ':[\\/]' .codex/hooks.json` 應無輸出——絕對路徑在別台機器會靜默失效）；**專案要先被信任**（否則整層 `.codex/` 被跳過）；Windows 的 `commandWindows` 要指向 `.claude/hooks/codex-hook.cmd`，該檔也必須在場；然後**開一次互動式 `codex`**——它開場就會問「Hooks need review」，選 `Trust all and continue`（想一條條看就選 `Review hooks`）。🔴 **這一項不能只看檔案在不在**，而且有三個會讓你誤判的點：①**信任綁 `hooks.json` 的絕對路徑，所以每個專案都要各做一次**，審過一個不會全通；②**在那個 session 裡送出一句話才驗得到**——2026-11-01 實測互動 TUI 開場不跑 `SessionStart`，它跟著第一個 turn 才跑；舊版這裡寫「你按下同意的那個 session 不會跑，要再開一個才算」，那是推論而實測是反的，而且它教人用**保證看不到**的方式驗收（再開一個、然後盯著開場）；③**不要去畫面上找 `[git-check]`**——Codex 把純文字 stdout 當 developer context 餵給模型、不顯示給人，所以要驗就問 agent 一個不必複述的是非題（「只回 YES／NO：你的 context 裡有沒有以 `[git-check]` 開頭的行」），或暫時讓 hook 自己寫一個檔。`codex exec` 從頭到尾不問也不印，**不能拿它當驗收手段**（2026-10-30／31 兩輪實測）
 - [ ] **Codex skill 來源**：`codex debug prompt-input` 會印一張「Skill roots」表，確認裡面有 `~/.codex/skills`（全域副本放這裡）與本專案的 `.agents/skills`。這比問模型「你有哪些 skill」可靠，也不花一次模型呼叫
 - [ ] **Codex 桌面 App**：它**有** hooks（App `26.506` 起有 in-app 信任審核，Settings 裡找 Hooks），而且跟 CLI 共用 `~/.codex`。舊版這裡寫「App 沒有 hooks」是 2026-08-06 的實測，已經過期。全域 skill 仍然放 `~/.codex/skills/handoff/SKILL.md`（2026-10-30 實測 CLI `0.164.0` 仍讀這個路徑，雖然官方文件已經不列它）
-- [ ] **Antigravity 指標檔**：`.agents/skills/handoff/SKILL.md` 存在，內容只有指標、沒有複製程序內容，而且 `description` 完整（那是它被發現的唯一依據；這個檔同時也是 Codex 的專案層入口，見 3.16）
-- [ ] **Antigravity CLI 的 hook**：在專案資料夾裡跑 `agy -p "把你在這個 prompt 之前收到的 session 開場訊息原文引用出來"`，要看到 `[git-check]` 那一句。看不到就先單獨跑 `.agents/ag-hook.cmd git-freshness.sh`（Windows）或 `bash .claude/hooks/ag-wrap.sh git-freshness.sh`（Unix）——有合法 JSON 出來就是 agy 這一端的問題，沒有就是 shim 這一端。**Antigravity IDE 不在這一項的範圍內**：`1.107.0` 實測不會觸發專案層設定，原因未解（見開頭那一節）
+- [ ] **Codex 指標檔**：`.agents/skills/handoff/SKILL.md` 存在，內容只有指標、沒有複製程序內容（見 3.16）
 - [ ] **共通的真正驗收**（不論哪個工具）：在專案裡講一句「我要接手這個專案」，agent 應該先 `git fetch`、讀 `AGENTS.md` ＋ `HANDOFF.md`，回報 3–5 行才動手。它直接開始翻程式碼就是沒接上——改用明講版：「請先讀 `.claude/skills/handoff/SKILL.md`，照 A 模式接棒」
 - [ ] **另一台機器**：clone 後重跑上面「python 可執行」與「hook 自動跑」兩項。`python` 不存在就用 `python3`；Windows 需要 Git for Windows 附的 bash
 - [ ] `HANDOFF.md` 的「本機能力」已填實際狀況

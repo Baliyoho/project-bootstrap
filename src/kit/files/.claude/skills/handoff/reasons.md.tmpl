@@ -1,8 +1,10 @@
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
 > 2026-11-10 拆分 handoff skill 時逐字搬自單檔 `SKILL.md`：每條規則的理由、日期與事故，加上 session 命名的完整細則。**不是每輪必讀；要改、質疑或想繞過某條規則之前先讀。** 文內的「本檔」指整個 handoff skill 目錄；A／B／C／0 各步驟分別在 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`。
+>
+> 2026-11-13（需求決策書 v3）：本目錄降為碰到才讀的參考；必守的條件在 `AGENTS.md` 的共用制度一節，衝突時以它為準。文內提到的 `[git-check]` 判讀行、「全綠」行已由只報事實的 `[facts]` 取代。
 
 ## 前言原文
 
@@ -111,11 +113,11 @@
 | 規則（檔案 § 段落） | 理由在哪 |
 |---|---|
 | SKILL.md § 適用判斷（先做這一步） | reasons.md § 適用判斷：為什麼沒人提就不建<br>reasons.md § 反例（真的發生過，別重演） |
-| SKILL.md § 選模式，然後讀對應的檔 | reasons.md § 前言原文<br>reasons.md § 交棒由使用者決定（2026-11-12／Q31）<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
+| SKILL.md § 需要細節時讀哪個檔 | reasons.md § 前言原文<br>reasons.md § 交棒由使用者決定（2026-11-12／Q31）<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
 | SKILL.md § 全程禁令 | 沒有寫下理由 |
 | SKILL.md § 必須停下來問使用者（不得自行決定） | reasons.md § 停下來問人時為什麼要改名<br>mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>mode-0.md § 0-1 先確認你在對的資料夾、對的情境 |
 | SKILL.md § session 命名（每則訊息都適用） | reasons.md § session 命名（每輪必做；工具做不到就在回報裡寫「不適用」）<br>reasons.md § 已交棒後續聊（每則新訊息的入口）<br>reasons.md § 其他命名規則<br>reasons.md § 反例（真的發生過，別重演） |
-| mode-a.md § A1＋A2.5 同步與占用：先拿到「全綠」 | mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>reasons.md § 反例（真的發生過，別重演） |
+| mode-a.md § A1＋A2.5 同步與占用：讀開場的 [facts] | mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-a.md § A2 站對分支 | mode-a-stop.md § A2 站對分支 |
 | mode-a.md § A3 最小讀取 | mode-a-stop.md § A3 最小讀取 |
 | mode-a.md § A4 驗證（只記錄，不修） | mode-a-stop.md § A4 一鍵驗證<br>reasons.md § 反例（真的發生過，別重演） |

@@ -37,7 +37,6 @@ class RepoPackageTests(unittest.TestCase):
         expected[sync_project.SURGICAL] = 'region'
         for path in sync_project.WIRING:
             expected[path] = 'wiring'
-        expected[sync_project.AG_WIRING] = 'key'
         for path in sync_project.PARTIAL:
             expected[path] = 'lines'
         for path in sync_project.INSTANCE:

@@ -1,186 +1,51 @@
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-12.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
-# SessionStart hook：git 新鮮度檢查（多機分岔防呆）
-# 起因：某台機器的複本停在舊快照、session 對著過時 HANDOFF 工作數小時後 commit，造成分岔。
-# 此腳本在每次 session 開始時由 harness 自動執行：fetch origin 並比對本地分支，
-# 落後／分岔時把警告直接注入對話開頭，不依賴任何人記得先 pull。
-# 輸出到 stdout 的內容會成為 session 起始 context。只讀不寫，絕不自動 pull/push。
+# source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# SessionStart hook：fetch 一次，只報事實，不下指示（需求決策書 v3 第 5 節，D12）。
+# 輸出到 stdout 的內容會進到 session 開頭的 context，最多 5 行。只讀：不 pull、不 push、不寫任何檔。
+# 怎麼判讀交給模型與 AGENTS.md 的共用制度；舊版的判讀表、全綠行與工具身分猜測在 2026-11-13 移除，
+# 理由與 E1 對照實測見 project-bootstrap 的 experiments/handoff-ab/RESULTS.md。
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
+me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
 
+# 第 1 行：時間（含 session 名用的 YYMMDDHH，F50）、本機、分支
+echo "[facts] 時間 $(date '+%Y-%m-%d %H:%M %z')（session 名用 $(date +%y%m%d%H)）；本機 ${me}；分支 ${branch}"
+
+# 第 2 行：與 origin 的關係
 if ! git fetch --quiet origin 2>/dev/null; then
-  echo "[git-check] ⚠️ 無法 fetch origin（離線或金鑰問題）——無法確認本地是否最新，停下回報並等待使用者指示，不用舊 tracking ref 宣稱同步。branch=$branch"
+  echo "[facts] fetch origin 失敗：不知道本機是不是最新"
   exit 0
 fi
-
-counts=$(git rev-list --left-right --count "@{upstream}...HEAD" 2>/dev/null)
+counts=$(git rev-list --left-right --count "origin/${branch}...HEAD" 2>/dev/null)
+dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
 if [ -z "$counts" ]; then
-  echo "[git-check] ⚠️ branch=$branch 沒有 upstream，跳過比對。"
+  echo "[facts] origin 上沒有分支 ${branch}；未提交或未追蹤 ${dirty} 個檔"
   exit 0
 fi
 behind=$(echo "$counts" | awk '{print $1}')
 ahead=$(echo "$counts" | awk '{print $2}')
-dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
-# 全綠判定（2026-11-10，F22）：下面每個不正常的分支都把 green 清掉，最後全部成立才印一行
-# 「全綠」，讓正常接棒不必重讀整張判讀表。少一項就不印——寧可多讀，不往放行的方向猜。
-# detached HEAD、upstream 不是 origin/<當前分支> 也算不正常：比較對象不對，計數再漂亮都不能信。
-green=1
-free=0
-up=$(git rev-parse --abbrev-ref --symbolic-full-name "@{upstream}" 2>/dev/null)
-if [ "$branch" = HEAD ] || [ "$up" != "origin/$branch" ]; then green=0; fi
-if [ "$behind" -gt 0 ] || [ "$ahead" -gt 0 ] || [ "$dirty" -gt 0 ]; then green=0; fi
+echo "[facts] 已 fetch：本機落後 origin/${branch} ${behind} 個 commit、領先 ${ahead} 個（origin=$(git rev-parse --short "origin/${branch}" 2>/dev/null)）；未提交或未追蹤 ${dirty} 個檔"
 
-if [ "$behind" -gt 0 ] && [ "$ahead" -gt 0 ]; then
-  echo "[git-check] 🔴 已分岔：落後 origin ${behind}、領先 ${ahead}（branch=${branch}）。停下回報並等待使用者指示；不得自行 rebase 或 merge，禁止直接 push 或 reset --hard。"
-elif [ "$behind" -gt 0 ]; then
-  echo "[git-check] 🔴 本地過時：落後 origin $behind 個 commit（branch=${branch}）。本地 HANDOFF.md／docs 可能是舊快照——先 git pull --ff-only 再讀任何文件、再動任何工作。"
-elif [ "$ahead" -gt 0 ]; then
-  echo "[git-check] 🟡 有 $ahead 個未推送 commit（branch=${branch}）。接棒時 ahead-only：停下回報未推送 commit 的來源，等待使用者指示，不自動 push。"
-else
-  echo "[git-check] ✅ 本機沒落後 origin（branch=${branch}）——這一行只比對本機與 origin 的落差，不代表沒有別台機器在做。"
-fi
-if [ "$dirty" -gt 0 ]; then
-  echo "[git-check] 🟡 工作區有 $dirty 個未提交變更（可能是上一棒未收斂，先辨認來源再動）。"
-fi
-
-# 工作中標記（跨機器誤接棒防呆，2026-10-30）
-# 起因：A 機器忘記交棒就關掉，B 機器開 session 看到「與 origin 同步」的綠勾就接棒——
-# 那個綠勾只證明「B 沒落後」，不證明「沒有別台在做」，於是 A 的未提交變更整批被繞過。
-# 讀 origin 那一份、不讀本機的：此刻還沒 pull，本機那份可能是舊快照。
-# 只讀、只提醒，絕不寫入——往權威分支自動 commit／push 是整套制度最不該自動化的地方
-# （本機落後時會當場分岔，工作樹 dirty 時會把別人的東西一起包進 commit）。寫入是 skill A5 的事。
-# 已知限制：本 hook 跑在 skill 的 A2「站對分支」之前，只看得到當前分支；
-# 切到 feature/... 之後的檢查由 A2.5 的程序負責。
-# 欄位在的時候一定印一句結論（✅／🟡／🔴），不要「沒事就不說話」：沉默跟「查過了沒事」
-# 分不出來，而這個機制的全部價值就在於讓人知道「有沒有被查」。
-remote_handoff=$(git show "origin/$branch:HANDOFF.md" 2>/dev/null)
+# 第 3 行：origin 那份 HANDOFF 的「工作中」。讀 origin 的、不讀本機的：此刻還沒 pull，本機那份可能是舊的。
+# 照原文印出，不解析、不判讀；有幾列就說幾列，讓重複的欄位看得見。
+remote_handoff=$(git show "origin/${branch}:HANDOFF.md" 2>/dev/null)
 if [ -n "$remote_handoff" ]; then
-  # 「工作中」欄位的判讀。2026-11-02 從子字串比對改成精確解析（查核報告 F01）。
-  # 舊版 `case "$busy" in *無*)` 拿整列當子字串比，於是**正常的任務名稱**就足以產生錯誤
-  # 綠燈：標記寫著別台機器正在做、而 session 主題叫「修無效連結」，它會印「✅ 無（已交棒）」。
-  # 同一個洞在機器名比對上也有——舊版拿整列當乾草堆、`$me` 當針，所以 `desk` 與 `desk-win`
-  # 互為子字串時會錯判成「同一台機器」，而那個方向的錯正好是放行。
-  # 現在的規則：
-  #   ① 只有欄位值正規化後**完整等於** `無（已交棒）` 才算空閒；
-  #   ② 其餘一律逐欄解析，機器欄要**完整相等**（只忽略大小寫，不接受子字串）；
-  #   ③ 欄位重複、或解析不出機器欄，都當成「有人在做」——永遠不往放行的方向猜。
-  # 全程只用參數展開與 tr，不用 sed：這段會被抄進各專案，而一條充滿轉義的 sed 腳本是
-  # 最容易在抄寫時悄悄壞掉的東西。
-  trim_mark() {                      # 去頭尾的半形／全形空白與反引號
-    _s=$1
-    while :; do
-      case $_s in
-        ' '*) _s=${_s# } ;;
-        '　'*) _s=${_s#　} ;;
-        *' ') _s=${_s% } ;;
-        *'　') _s=${_s%　} ;;
-        '`'*) _s=${_s#'`'} ;;
-        *'`') _s=${_s%'`'} ;;
-        *) break ;;
-      esac
-    done
-    printf '%s' "$_s"
-  }
-  busy_all=$(printf '%s\n' "$remote_handoff" | grep -F '**工作中**')
-  busy_n=$(printf '%s\n' "$busy_all" | grep -c '[^[:space:]]' || true)
-  busy=$(printf '%s\n' "$busy_all" | head -1)
-  value=${busy#*：}
-  value=${value%%，*}                # 砍掉「，2026-… (+08) 開工」那段尾註
-  value=$(trim_mark "$value")
-  if [ "$busy_n" -eq 0 ]; then
-    echo "[git-check] 🟡 origin 的 HANDOFF.md 沒有「工作中」欄位，無法確認有沒有別台機器在動 ${branch}（這個專案的骨架還沒升級到有這個機制；下次交棒時照 B6 補上）。"
-  elif [ "$busy_n" -gt 1 ]; then
-    echo "[git-check] 🔴 origin 的 HANDOFF.md 有 $busy_n 列「工作中」欄位，判讀不出來誰握著 ${branch}。"
-    echo "[git-check]    不猜——照 A2.5 停下來問使用者。這一欄只能有一列（B6 是覆寫，不要往下疊）。"
-  elif [ "$value" = '無（已交棒）' ]; then
-    free=1
-    echo "[git-check] ✅ 「工作中」是「無（已交棒）」，沒有別台機器佔著 ${branch}。"
+  busy=$(printf '%s\n' "$remote_handoff" | grep -F '**工作中**')
+  busy_n=$(printf '%s\n' "$busy" | grep -c '[^[:space:]]' || true)
+  if [ "$busy_n" -gt 1 ]; then
+    echo "[facts] origin 上的 HANDOFF 有 ${busy_n} 列「工作中」，第一列：$(printf '%s\n' "$busy" | head -1)"
   else
-    who=${busy#*：}
-    machine=$(trim_mark "${value%%／*}")
-    # 工具欄＝標記的第二欄（欄位用全形斜線 ／ 分隔）。2026-10-31 加：只比機器名的時候，
-    # 同一台機器換個工具就落進「大概是你自己另一個視窗」的 🟡——而同機器通常就是同一個
-    # 工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。
-    # 舊格式沒有工具欄，第二欄會是 session 名，而 session 名一定含全形豎線
-    # （`符號　YYMMDDHH｜主題｜狀態`）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
-    # 不必先知道這個專案升級了沒。全程只用參數展開，不用 sed：這段會被抄進各專案，
-    # 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西。
-    tool=''
-    case $value in
-      *／*)
-        rest=${value#*／}
-        tool=$(trim_mark "${rest%%／*}")
-        ;;
-    esac
-    case $tool in *｜*) tool='' ;; esac
-    me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
-    same=no
-    if [ -n "$me" ] && [ -n "$machine" ]; then
-      mlc=$(printf '%s' "$machine" | tr 'A-Z' 'a-z')
-      melc=$(printf '%s' "$me" | tr 'A-Z' 'a-z')
-      [ "$mlc" = "$melc" ] && same=yes
-    fi
-    # 自己是哪個工具：環境變數只拿來**加嚴**，不拿來放寬（2026-10-31 實測，理由見部署包
-    # 「工具身分」一節）。兩家以上的簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，
-    # 這時不猜——猜錯的方向會是「放行」，正好是最貴的那一種錯。
-    mytool=''
-    sigs=0
-    [ -n "${CODEX_VERSION:-}${CODEX_SESSION_ID:-}" ] && { mytool='Codex CLI'; sigs=$((sigs + 1)); }
-    [ -n "${GEMINI_CLI:-}" ] && { mytool='Gemini CLI'; sigs=$((sigs + 1)); }
-    [ -n "${CLAUDECODE:-}" ] && { mytool='Claude Code'; sigs=$((sigs + 1)); }
-    [ "$sigs" -gt 1 ] && mytool=''
-    # 比字串時不分大小寫，也接受標記寫得比偵測值長（例如 `Claude Code (desktop)`）：
-    # 寫法差一點就報 🔴 是在加嚴的方向，但也只是噪音，而噪音多了就會有人學會無視它。
-    mismatch=no
-    if [ -n "$mytool" ] && [ -n "$tool" ]; then
-      lc=$(printf '%s' "$tool" | tr 'A-Z' 'a-z')
-      mylc=$(printf '%s' "$mytool" | tr 'A-Z' 'a-z')
-      case "$lc" in *"$mylc"*) ;; *) mismatch=yes ;; esac
-    fi
-    if [ -z "$machine" ]; then
-      echo "[git-check] 🔴 「工作中」欄位有值、但解析不出機器欄，判讀不出來誰握著 ${branch}：$who"
-      echo "[git-check]    當成有人在做處理。格式是「機器 ／ 工具 ／ session 名」（第三欄可選），見 skill 的 A5。"
-      echo "[git-check]    照 A2.5 停下來問使用者，不要直接接棒。"
-    else
-      if [ "$same" = no ]; then
-        echo "[git-check] 🔴 另一台機器正在 $branch 上工作，尚未交棒：$who"
-        echo "[git-check]    依 single writer 規則，同一時間只能有一台機器動同一條分支。"
-        echo "[git-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
-      elif [ -z "$tool" ]; then
-        echo "[git-check] 🟡 這台機器（${me}）還有一個 session 在 $branch 上沒交棒：$who"
-        echo "[git-check]    這個標記是舊格式、沒有工具欄，分不出是哪個工具寫的。確認是你自己這個工具開的另一個視窗才繼續，不是就照 A2.5 停下來。"
-      elif [ "$mismatch" = yes ]; then
-        echo "[git-check] 🔴 同一台機器（${me}）上另一個工具正在 $branch 上工作，尚未交棒：$who"
-        echo "[git-check]    標記寫的是「${tool}」，這個 session 的環境看起來是「${mytool}」。同機器通常就是同一個工作樹，兩個 agent 會即時互相覆寫——比跨機器那個洞更貴。"
-        echo "[git-check]    停下來問使用者（handoff skill 的 A2.5），不要直接接棒。"
-      else
-        echo "[git-check] 🟡 這台機器（${me}）上有一個「${tool}」的 session 在 $branch 上沒交棒：$who"
-        echo "[git-check]    你自己是不是「${tool}」？不是就照 🔴 處理（A2.5）。這一句由你答、不由環境變數答——跨工具啟動時變數會被繼承而說謊。"
-      fi
-    fi
+    echo "[facts] origin 上的 HANDOFF：${busy:-讀不到「工作中」那一行}"
   fi
 fi
-# origin 上沒有 HANDOFF.md（沒用這套制度，或這條分支還沒推過）就整段安靜跳過——
-# 那不是本 hook 該管的事，在這種 repo 裡每次開場嘮叨一句只會讓人學會無視 [git-check]。
 
-# 全綠行（2026-11-10，F22）。它是這一刻的快照：續聊後要改檔、切過分支時，agent 要重跑本腳本。
-if [ "$green" = 1 ] && [ "$free" = 1 ]; then
-  echo "[git-check] 全綠 $(date '+%Y-%m-%d %H:%M')：A1 與 A2.5 可直接通過（branch=${branch}，origin=$(git rev-parse "origin/$branch" 2>/dev/null)）"
-elif [ -f .claude/skills/handoff/mode-a-stop.md ]; then
-  echo "[git-check] 不是全綠：接棒時讀 handoff skill 的 mode-a-stop.md，照完整判讀表走。"
-fi
-# 骨架版本落後偵測（2026-10-30）
-# 起因：同步是手工的，而「這台機器上有哪些專案裝了這套骨架」沒人記得住——盤點時得用 find
-# 掃一遍，而且掃出 4 個專案留著上一輪沒 commit 的同步殘留。所以偵測放在「開場」這個你一定
-# 會經過的時刻：哪個專案落後，哪個就在你打開它的當下自己講，你永遠不必先知道有哪些專案。
-# 跟「工作中」標記同一招——把檢查掛在必然發生的動作上，而不是掛在要人記得的動作上。
-# 抓不到（離線、沒有 curl、fork 改過網址）就安靜跳過：這是提醒，不是關卡。
-# 結果快取 12 小時，免得每開一次 session 就打一次網路。關掉：BOOTSTRAP_VERSION_CHECK=off
+# 第 4 行（有差異才印）：共用制度的版本與上游不同（F18 提示）。
+# 版本取自 AGENTS.md 共用制度開始標記裡的 source: 標記。抓不到（離線、沒有 curl）就安靜跳過。
+# 結果快取 12 小時。關掉：BOOTSTRAP_VERSION_CHECK=off
 UPSTREAM_VERSION_URL=https://raw.githubusercontent.com/Baliyoho/project-bootstrap/main/VERSION  # fork 的人改這一行
-skill=.claude/skills/handoff/SKILL.md
-if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
-  mine=$(sed -n 's/.*source: PROJECT-BOOTSTRAP\.md v\([0-9][0-9.-]*\).*/\1/p' "$skill" | head -1)
+if [ "${BOOTSTRAP_VERSION_CHECK:-}" != off ] && [ -f AGENTS.md ]; then
+  mine=$(sed -n 's/.*共用制度開始 source: PROJECT-BOOTSTRAP\.md v\([0-9][0-9.-]*\).*/\1/p' AGENTS.md | head -1)
   cache=.claude/.bootstrap-version
   if [ -n "$(find "$cache" -mmin -720 2>/dev/null)" ]; then
     latest=$(cat "$cache" 2>/dev/null)
@@ -188,11 +53,7 @@ if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
     latest=$(curl -fsS --max-time 5 "$UPSTREAM_VERSION_URL" 2>/dev/null | tr -d '\r\n \t')
     [ -n "$latest" ] && printf '%s' "$latest" > "$cache" 2>/dev/null
   fi
-  # 2026-11-02 修（查核報告 F09）：舊版只比 `!=`，訊息卻寫死「落後」——本機比上游**新**的
-  # 時候（權威版還沒 push，或有人就地改了副本）它一樣印「落後」並叫你跑 sync_project.py，
-  # 而那會把新的蓋成舊的。所以方向要自己判：版本號是 `YYYY-MM-DD` 或 `YYYY-MM-DD.N`，
-  # 把序號補成三位數之後日期與序號就能一起比字典序（`.2` 與 `.10` 才不會比反），再用 sort
-  # 挑出較小的那一個——不用 test 的 `<`，那不是 POSIX。
+  # 版本號是 YYYY-MM-DD 或 YYYY-MM-DD.N；序號補成三位數後日期與序號能一起比字典序。
   verkey() {
     _d=${1%%.*}
     _n=${1#"$_d"}
@@ -201,27 +62,21 @@ if [ "$BOOTSTRAP_VERSION_CHECK" != off ] && [ -f "$skill" ]; then
     case $_n in *[!0-9]*) _n=0 ;; esac
     printf '%s.%03d' "$_d" "$_n"
   }
-  if [ -n "$mine" ] && [ -n "$latest" ] && [ "$mine" != "$latest" ]; then
+  if [ -n "$mine" ] && [ -n "$latest" ]; then
     km=$(verkey "$mine")
     kl=$(verkey "$latest")
-    if [ "$km" = "$kl" ]; then
-      :                              # 只是寫法不同（2026-11-02 與 2026-11-02.0），不吵
-    elif [ "$(printf '%s\n%s\n' "$km" "$kl" | sort | head -1)" = "$km" ]; then
-      echo "[git-check] 🟡 handoff 骨架落後：本機 v${mine}，最新 v${latest}。"
-      echo "[git-check]    到 project-bootstrap 跑：python -X utf8 tools/sync_project.py <本專案路徑>（python 不存在就用 python3）"
-    else
-      echo "[git-check] 🟡 本機 handoff 骨架比上游新：本機 v${mine}，上游 v${latest}。"
-      echo "[git-check]    這不是落後——可能是權威版還沒 push，或有人就地改了這個專案的副本（鐵律 1 禁止）。"
-      echo "[git-check]    不要跑 sync_project.py，那會把新的蓋成舊的；先確認權威版推上去了沒。"
+    if [ "$km" != "$kl" ]; then
+      if [ "$(printf '%s\n%s\n' "$km" "$kl" | sort | head -1)" = "$km" ]; then
+        echo "[facts] 共用制度落後：本機 v${mine}，上游 v${latest}（更新方法見 project-bootstrap 的 README）"
+      else
+        echo "[facts] 共用制度比上游新：本機 v${mine}，上游 v${latest}"
+      fi
     fi
   fi
 fi
 
-# 家目錄的 handoff skill 蓋掉專案那份（2026-11-12，決策書 Q28 (a)）
-# 實測 Claude Code 2.1.321：~/.claude/skills/handoff/ 與專案都有同名 skill 時，skill 清單與
-# Skill 工具用的是家目錄那份；專案那份只靠入口一句「專案有就讀那裡」救回來，而全域副本
-# 舊到沒有那句時就救不回來，Claude Code 照舊程序、Codex 照專案程序。所以逐檔比內容，
-# 只要有一個檔不同（含只有一邊有的檔）就提醒；兩份相同或沒有全域副本就安靜。只讀不寫。
+# 第 5 行（有差異才印）：家目錄的 handoff skill 與專案那份不同。實測 Claude Code 2.1.321 會用家目錄那份
+# 蓋掉專案的同名 skill（決策書 Q28）。逐檔比內容，只有一邊有的檔也算不同。
 home_skill=${HOME:-}/.claude/skills/handoff
 if [ -f .claude/skills/handoff/SKILL.md ] && [ -n "${HOME:-}" ] && [ -d "$home_skill" ]; then
   skill_diff=''
@@ -231,22 +86,6 @@ if [ -f .claude/skills/handoff/SKILL.md ] && [ -n "${HOME:-}" ] && [ -d "$home_s
     case " $skill_diff " in *" $name "*) continue ;; esac
     cmp -s ".claude/skills/handoff/$name" "$home_skill/$name" || skill_diff="$skill_diff $name"
   done
-  if [ -n "$skill_diff" ]; then
-    echo "[git-check] 🟡 家目錄 ~/.claude/skills/handoff/ 跟本專案的 handoff skill 不一樣（${skill_diff# }）：Claude Code 會載入家目錄那份、蓋掉專案那份。"
-    echo "[git-check]    這次照本專案 .claude/skills/handoff/ 的檔案走；要消掉差異，用 project-bootstrap 部署包的版本覆蓋全域副本。"
-  fi
-fi
-
-if [ -f .claude/skills/handoff/SKILL.md ]; then
-  echo "[handoff] 本專案有交接制度：接棒先走 handoff skill 的 A 模式（.claude/skills/handoff/SKILL.md）——同步 Git、站對分支、A2.5 檢查「工作中」標記、只讀 AGENTS.md＋HANDOFF.md，回報 3–5 行後再動手；收工走 B 模式。"
-# 開工改名用的 YYMMDDHH 在這裡算好（2026-11-01 加）。改名規則在 skill 的「session 命名」
-# 那一節，但時間戳一直是要 agent 自己去取的——而它取錯的時候是靜默的：拿系統提示裡的日期
-# 去推小時就會寫出一個不存在的時刻，而那個時間戳的唯一用途正是「讓使用者在側欄認出這是
-# 哪一次」，對不上就等於沒改名。hook 跑在 SessionStart，所以這個值本來就比「回報完才去
-# date 一次」更接近接棒那一刻。
-# 只印、不改名：沒有任何工具讓 hook 改 session 名稱，有這個能力的是 agent（Claude Code 的
-# set_session_title），而 Codex CLI 與 Gemini CLI 沒有——所以這句明寫「有這個能力才做」，
-# 免得在做不到的工具上變成一個每次開場都在要求失敗動作的指令。
-  echo "[handoff] 開工改名用（接棒時間已算好，有這個能力的工具才做）：㊣　$(date +%y%m%d%H)｜<主題>｜工作中"
+  [ -n "$skill_diff" ] && echo "[facts] 家目錄 ~/.claude/skills/handoff/ 與本專案的 handoff skill 不同（${skill_diff# }）；Claude Code 載入的是家目錄那份"
 fi
 exit 0

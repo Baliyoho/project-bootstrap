@@ -46,7 +46,7 @@ from project_bootstrap import channel, distribute, migrate, package, pointer  # 
 from project_bootstrap.contracts import Denied  # noqa: E402
 
 RELEASED = sp.WHOLE + (sp.SURGICAL,)
-MIXED = sp.WIRING + (sp.AG_WIRING,) + sp.PARTIAL
+MIXED = sp.WIRING + sp.PARTIAL
 
 
 def observe(project, rel):

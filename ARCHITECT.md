@@ -1,5 +1,9 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 最後更新：2026-11-13（v3 第 1 期：部署包改成 v3 形狀）：骨架 27 → 24 檔，`VERSION` `2026-11-13`。3.1 `AGENTS.md` 範本有開始／結束標記夾住的共用制度（≤40 行）；3.10 開場 hook 只報事實（最多五行 `[facts]`）；3.8 handoff skill 降為碰到才讀的參考；舊 3.18–3.20（Antigravity 轉接層、shim、`.agents/hooks.json`）移除，`sync_project.py` 不再處理 `.agents/hooks.json`，`owners.json` 少三列。驗證項的取捨記在「`tools/verify_bootstrap.py` 守的東西」表下方。
+>
+> 前次 2026-11-13（需求決策書 v3 與 handoff-ab 實測）：新增 `project-bootstrap-requirements-decision-v3.md` 當現行需求權威，v2 決策書並存供工具讀取（v3 Q32 (b)）；新增 `experiments/handoff-ab/`（對照實測，v3 的依據）。部署包、`VERSION`、驗證項都沒動。
+
 > 最後更新：2026-11-12（v2 併進 main 與 `beta` epoch 3）：`main` 快轉到 `cf58954`（決策書 Q30），在那裡發 `channel/beta/3-ad6948d1…`；核對與乾淨環境安裝紀錄在 v2 說明。
 
 > 2026-11-12 稍早（Claude Code skill 載入與 Q28／Q29）：第三次 `claude -p` 量到家目錄 handoff skill 蓋掉專案那份；決策書 Q28 (a) 讓部署包 3.10 開場 hook 在兩份不同時印 🟡（`source:` `v2026-11-12.3`，`VERSION` 不動，各專案未同步），`selftest.SKILLS` 的 Claude Code 改家目錄優先。Q29 (a)：Antigravity 凍結，不測、不追、不移除。
@@ -137,7 +141,7 @@
 
 | 要做的事 | 先讀 |
 |---|---|
-| 討論需求、驗收、待決事項或替代工具 | [需求決策書](project-bootstrap-requirements-decision.md)：現行需求唯一權威（D1–D8、51 個穩定需求 ID）；待決唯一入口是第 6 節。決策定稿不等於實作完成 |
+| 討論需求、驗收、待決事項或替代工具 | [需求決策書 v3](project-bootstrap-requirements-decision-v3.md)：2026-11-13 起的現行需求權威（D1–D15、51 個穩定需求 ID，編號沿用 v2）；新的待決登記在它的第 8 節。[v2 決策書](project-bootstrap-requirements-decision.md)並存：工具仍讀它，v2 時期已決的題目與逐條理由在它的第 6 節。決策定稿不等於實作完成 |
 | 查某個需求 ID 做到哪 | [v2 現況索引](experiments/v2/status.json)；HANDOFF 只留停點與行動 |
 | 動同步工具、驗證器、hook 或 R01–R09 相關的地方 | [第二輪複審快照](project-bootstrap-reaudit-2026-11-03.md)。2026-11-10 使用者同意從每輪必讀改成條件式；R01–R09 邊界的獨立複審還沒做，不要當成全部結案 |
 | 動原查核報告那 16 條 | [查核進度](project-bootstrap-audit-progress.md) |
@@ -185,7 +189,9 @@
 | [project-bootstrap-reaudit-2026-11-03.md](project-bootstrap-reaudit-2026-11-03.md) | **第二輪複審快照**：R01–R09 的證據、改善與驗收門檻、原 F01–F16 的複審判定；2026-11-03 使用者要求下一輪先讀，2026-11-10 使用者同意改成動到同步工具、驗證器、hook 或 R01–R09 相關處才讀。不部署、不同步，原始探針留在審查聊天產物 | 查核結論需勘誤時；當下實作進度看 HANDOFF |
 | [project-bootstrap-efficiency-plan.md](project-bootstrap-efficiency-plan.md) | **效率改進設計提案**：接棒分流、驗證分層、必讀內容精簡、原始碼與部署產物分離；尚未實施，不部署、不同步，不取代現行程序 | 設計決策改變時；實作進度看 HANDOFF |
 | [project-bootstrap-skill-split-design.md](project-bootstrap-skill-split-design.md) | **handoff skill 依模式拆分設計稿**（F22 第二階段 (1)(3)）：2026-11-10 實測、甲乙方案比較、檔案配置、開場 hook 全綠行、要改的守門與推出順序。等使用者審閱（決策書 Q9），未實施，不部署、不同步 | 設計改變時；實作進度看 HANDOFF |
-| [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 現行需求唯一權威：D1–D8、51 條需求、驗收、待決與變更理由。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
+| [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md) | **現行需求權威（決策版本 3，2026-11-13）**：適用範圍、依據、D1–D15、51 條需求的處置與強度、目標部署形狀、驗收、待決 Q32 起。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
+| [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 決策版本 2，2026-11-13 起由 v3 取代為現行權威，**並存不刪**：驗證器、`test_trail_repo`、`test_registry`、一致性檢查與 v2 現況索引仍讀這個檔名；Q1–Q31 與逐條否決理由只在這裡。衝突以 v3 為準 | 只補工具需要的登記與帶日期的註記 |
+| [experiments/handoff-ab/](experiments/handoff-ab/README.md) | 完整版與極簡版骨架的對照實測（2026-11-13 兩輪、36 次）：極簡版骨架、情境搭建、執行、評分與結果。v3 的依據 E1。實驗用，不部署、不同步；原始資料在 gitignored 的 `dist/` | 加跑或改情境時 |
 | [project-bootstrap-implementation-plan.md](project-bootstrap-implementation-plan.md) | 依決策書評估既有程式與開源工具；推薦技術棧、50 項映射、可行性門檻、遷移與驗收。不承載滾動達成狀態，不部署、不同步 | 選型或實現方案改變時 |
 | [project-bootstrap-requirements-history.md](project-bootstrap-requirements-history.md) | 原 v3.10 全文與修訂理由，歷史封存；不再指示現行操作 | 僅補帶日期的歷史勘誤 |
 | [project-bootstrap-requirements-review-2026-11-04.md](project-bootstrap-requirements-review-2026-11-04.md) | 需求審閱建議快照 Q1–Q7，供下一棒 Opus 討論；未採納，不改變需求權威或現行程序。不部署、不同步 | 本次審閱快照；採納結果另改需求文件 |
@@ -237,7 +243,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 
 | 節 | 產出 | 角色 |
 |---|---|---|
-| 3.1 | `AGENTS.md` | AI 入口、鐵律、知識庫地圖 |
+| 3.1 | `AGENTS.md` | AI 入口：開始／結束標記之間是共用制度（≤40 行，2026-11-13 起，v3 D11），標記外是專案鐵律與連線資料 |
 | 3.2 | `CLAUDE.md`＋`GEMINI.md` | **一節產兩檔**：Claude 用 import，Gemini 用文字指標 |
 | 3.3 | `HANDOFF.md` | 當下狀態（≤80 行、覆寫不累積） |
 | 3.4 | `README.md` | 人的入口、收工交棒／開工接棒 prompt |
@@ -246,17 +252,15 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 3.7 | `docs/ai-notes/roadmap.md` | 持久待辦與決策記錄 |
 | 3.8 | `.claude/skills/handoff/` 六個檔：`SKILL.md`、`mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` | **本骨架的核心**，**一節產六檔**（2026-11-10 拆分）：入口每次讀；`mode-a.md` 是正常接棒摘要；其餘四個逐字搬自單檔，依模式或異常才讀 |
 | 3.9 | `.claude/settings.json` | 兩個 hook 的接線 |
-| 3.10 | `.claude/hooks/git-freshness.sh` | SessionStart：git 新鮮度 |
+| 3.10 | `.claude/hooks/git-freshness.sh` | SessionStart：fetch 一次，只報事實（最多五行 `[facts]`，2026-11-13 起） |
 | 3.11 | `.claude/hooks/pre-push-handoff.sh` | PreToolUse：AI push 提醒（有限覆蓋，見部署包 3.11） |
 | 3.12 | `.gitignore` | 祕密與運行資料 |
 | 3.13 | `.gitattributes` | 行末 LF |
 | 3.14 | `tools/check_docs.py` | 文件與交接快照的機械檢查 |
 | 3.15 | `tools/verify_state.py` | 一鍵現況查證（骨架） |
-| 3.16 | `.agents/skills/handoff/SKILL.md` | Antigravity 的指標檔 |
+| 3.16 | `.agents/skills/handoff/SKILL.md` | Codex 讀的指標檔 |
 | 3.17 | `.codex/hooks.json`＋`.claude/hooks/codex-hook.cmd` | Codex 的 hook 接線與 Windows 啟動器（掛 3.10／3.11 同樣那兩個 `.sh`，Windows 明確找 Git Bash） |
-| 3.18 | `.claude/hooks/ag-wrap.sh` | Antigravity 轉接層：只做管線（跑腳本、把 stdout 包成 JSON），不含規則 |
-| 3.19 | `.agents/ag-hook.cmd` | Antigravity 在 Windows 的 shim：找 Git Bash 再交給 3.18 |
-| 3.20 | `.agents/hooks.json` | Antigravity 的 hook 接線（經 3.18 掛同一支 3.10；只接 `SessionStart`） |
+| 3.18–3.20 | —— | 2026-11-13 移除（Antigravity 轉接層、Windows shim、`.agents/hooks.json`；v3 D8）。編號保留不重用 |
 | 3.21 | —— | 其他 skills 的**慣例說明**，不產檔 |
 
 ## 部署包 → 骨架的抽取規則（改範本前先讀這段）
@@ -287,15 +291,15 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 真實部署形狀 | 部署包在場＋非 ASCII 檔名時仍 exit 0 | 照說明部署的人一定會踩到 |
 | 跨平台防呆 | 無絕對路徑、有 `python3` 退路 | 換一台機器會靜默失效 |
 | AI push 提醒情境 | staged／unstaged 不放行、已提交開工／交棒放行；命令選項、remote、refspec、GUI／script 的已知邊界；恢復舊捷徑的負向測試 | 未提交修改不會隨 push 上傳，不能拿來放行；有限提醒不能冒充發布保證（2026-11-02／F06） |
-| 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 後每種狀態各印對應結論（別台 🔴、自己這台 🟡、已交棒 ✅、欄位不存在 🟡），**且判讀是精確解析而非子字串**（2026-11-02／F01：主題或機器名含「無」要 🔴、機器名互為子字串要 🔴、欄位重複要 🔴，已交棒值前後有空白仍要 ✅） | 跨機器誤接棒防呆靜默失效——下一棒只會看到一切正常 |
+| 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 那一份後照原文印出（2026-11-13 起不再分 🔴／🟡／✅，v3 D12）：別台機器、主題含「無」原文完整、已交棒、欄位重複說有幾列、欄位不存在明講讀不到、工具環境變數不改變輸出；拿掉印出那一行的負向測試 | 下一棒看不到誰握著分支（F4 偵測） |
 | `VERSION` 檔 | 與部署包版本行一致 | 落後偵測會說謊，落後的專案以為自己最新 |
-| 版本落後偵測 | 餵**比本機新**的版本要講落後、餵**比本機舊**的要說「比上游新」並勸退同步、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後，同步又回到靠人記得；方向弄反則會叫人把新版蓋成舊版（2026-11-02／F09，舊 fixture 本身就是反的） |
+| 版本落後偵測 | 共用制度版本取自 `AGENTS.md` 開始標記；餵**比本機新**的版本要講落後、餵**比本機舊**的要說「比上游新」、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後（F18 提示） |
 | 本 repo 自己的文件 | 本 repo 的 `.md` 無死連結、`AGENTS.md`／`ARCHITECT.md` 有日期標頭，受管非 Markdown 檔無已知部署佔位符 | 改檔名或搬段落留下死連結，或把未填的部署欄位帶進公開來源。部署包裡指向「部署後才存在的檔」的連結不算，判準是 `EXPECTED`，所以它指向本 repo 檔案的連結照樣會被抓 |
 | 動作當下送規則 | 實跑 `repo-action-rules.sh` 20 個情境：該送時送合法 additionalContext、不該送時安靜、永遠 exit 0、不做放行／阻擋決定；接線守門 6 個負向測試 | 提醒在該出現時沒出現，或誤擋操作；只證明 hook 本身，不證明模型照做 |
 | 本 repo 兩份接線 | `.claude/settings.json` 與 `.codex/hooks.json` 都是合法 JSON、`SessionStart` 都指向真的在的 `repo-git-check.sh`；只有 Claude Code 那份可以多接 PreToolUse／PostToolUse，且只能指向 `repo-action-rules.sh`（2026-11-10 Q6 (a)），其他事件一律拒絕，而且沒被改成指向 `git-freshness.sh`／`pre-push-handoff.sh` | 開場檢查靜默不執行——看起來有防護、實際上沒有。這兩個檔是 JSON、塞不進 `source:` 標記，落後偵測看不到它們，這一項是唯一的守門人 |
 | sync 拒絕本 repo | `sync_project.py <本 repo 路徑>` 要印出拒絕，**而且預演輸出裡零 `UPDATE`** | 一次手打路徑就把兩份接線改成指向這裡不存在的腳本。只檢查「有印拒絕」的話，一個印了話卻照樣改檔的版本會通過，比沒有這項更糟 |
 | 改名寫進回報模板 | A5／B9 各有必填 `session：` 與無改名工具時的回報選項，附負向測試 | 改名漏做卻在 repo 內沒有任何跡象 |
-| 續聊狀態與計數 | skill 與指標 description 觸發已交棒後每則新訊息；程序保留原時間與計數、先恢復工作中、只讀不寫 Git、改檔重跑 A、成功交棒才累加；附 18 個負向測試 | 同一 session 續聊仍掛著已交棒，或把問答／失敗 push 算成交棒；只守程序文字，不宣稱外部工具已實跑 |
+| 續聊狀態與計數 | `AGENTS.md` 共用制度有「`↗`／`※` 時收到新訊息先改回 `㊣`」（2026-11-13 起取代 skill 與指標 description 的觸發詞，skill 不再必讀）；skill 參考檔保留時間與計數、只讀不寫 Git、改檔重跑 A、成功交棒才累加；附 17 個負向測試 | 已交棒後續聊沒恢復工作中，或計數被重算 |
 | 本 repo 交接狀態 | 必要欄位與章節、≤80 行、骨架版本符合 VERSION、禁止這次已知過期待辦與只改兩欄的入口規則；附負向測試 | 標記清了卻保留已完成待辦，下一棒被迫從聊天重建現況；不保證任意待辦的語意正確，仍需 B6 人工核對 |
 | 規則理由連結 | AGENTS.md 每節至少一個、鐵律／副本規則／hook 訊息每條各一個指向 AGENTS-reasons.md 的連結，連結的段落存在且非空；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
 | 來源例外可見性（F46 部分） | 每輪印出 handoff skill、pre-push-handoff.sh、check_docs.py 三項已宣告減項；確認來源缺、產物有，並對漏宣告／來源增項／產物缺項跑負向變異 | 三項減項再次從驗證輸出中靜默消失；這只驗可見性，未完成來源／產物全部同組情境 |
@@ -306,7 +310,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 本 repo 工作中判讀 | `repo-git-check.sh` 讀 `origin` 的 `HANDOFF.md` 後每種狀態各印對應結論，且跟 3.10 用同一個欄位字串與**同一張情境表**（含 2026-11-02 的 F01 五項） | 這個 repo 的跨機器防呆靜默失效，或兩支 hook 的欄位格式悄悄分岔 |
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
 | 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（2026-11-02／F02、F03） |
-| 同步升級 mode | 替換前複製既存 mode；複製失敗保留原檔；新依賴仍可建立；移除複製的負向變異必須失敗。POSIX 另驗 0755／0640、原始 wrapper 直接執行、Git 無 mode diff | 新 inode 預設權限會讓更新後的 POSIX hook 無法執行；Windows 通過不代表 POSIX 實測 |
+| 同步升級 mode | 替換前複製既存 mode；複製失敗保留原檔；新依賴仍可建立；移除複製的負向變異必須失敗。POSIX 另驗 0755／0640、開場 hook 直接執行、Git 無 mode diff | 新 inode 預設權限會讓更新後的 POSIX hook 無法執行；Windows 通過不代表 POSIX 實測 |
 | 結構摘要一致性 | 本 repo 與生成 ARCHITECT 區分 Claude import／Gemini 文字指標，README prompt 用收工／開工；三個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
 | 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
 | 跨工具表保鮮期 | 「跨工具與跨平台」那節的「查證日期」不得超過 90 天（`BOOTSTRAP_FRESHNESS=off` 可跳過） | 對外部工具能力的斷言在無聲中過期。這一項只保證有人看過日期，**不保證有人真的重查**——買到的是「必須有意識地決定」。會做成 fail 而不是警告，是因為上一次的對策就是一句警告，而警告沒擋住第二次（Antigravity 的 hooks、Codex 桌面 App 的 hooks，兩次同一種錯） |
@@ -322,17 +326,27 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | Python 版本下限 | 兩支維護工具檔頭的 `MIN_PY` 存在、會擋、兩邊同號；README 範本寫出部署後工具的下限；四支 `.py` 都沒有用到高於下限的 API（掃描前把註解與字串塗白） | 3.13-only 的 API 在舊版 python 上是執行到那一行才炸成 TypeError，不會說「版本太舊」。下限是靜態擔保、不是實測：沒有舊版可跑，要實測得先有 CI（2026-11-02／F14） |
 | 已修正的主張沒復活 | 能力表 ✅ 的工具不得被散文說成沒有 skill、交接 prompt 不得有自己的 A／B 編號且要寫出模式、`verify_state` 不得以憑證為前提、版本序號只有一種定義、可攜層不得寫成「到哪都成立」；附九個負向測試 | 事實在部署包被改對，範本、操作卡與入口文件裡的舊說法照樣部署出去。綁結構不綁禁句，「」裡的引用不算主張（鐵律 3 要留為什麼）；守不了一整段敘述的準確度（2026-11-02／F15） |
 | ZIP 發布門檻 | 注入結果走 CLI 與實際 ZIP：全過才正常打包；SKIP 預設拒絕，顯式例外附 UNVERIFIED.json 與說明、仍 exit 1；FAIL 不可繞過；拒絕時保留舊檔。含移除門檻的負向測試 | 舊流程有 SKIP 仍先打包再回 1，看似正式產物但未完整驗證（2026-11-02／F07） |
-| 協作狀態契約／Git 異常提示 | 六狀態與步驟契約、20 個負向測試，含 R07 先 stage 再驗證；兩支 hook 實跑領先／分岔／fetch 失敗 | 程序順序矛盾或工具提示教人自行 rebase（2026-11-02／F11） |
+| 協作狀態契約／Git 異常提示 | 六狀態與步驟契約、21 個負向測試，含 R07 先 stage 再驗證。Git 異常：部署 hook 實跑領先／分岔／fetch 失敗要照實報出、不得建議 rebase，`AGENTS.md` 共用制度要有停止條件；本 repo hook 照舊要求停止；2 個負向測試 | 程序順序矛盾或工具提示教人自行 rebase |
 | 核心與實例優先序 | skill／協定／README 宣告一致、override 範圍明確、11 個負向測試；同步列版本與 MIGRATE，保留舊實例 | 不同步的舊協定會推翻新程序（F10） |
 | 接力協調邊界 | A2.5／A5／協定明列協調訊號非鎖、SHA 比對與禁止自動奪權，8 個文字負向測試 | 不宣稱並行互斥；原子 claim 留待另案（F12） |
-| skill 拆分 | 六個 skill 檔齊全、同版本、都在 `WHOLE`；入口＋`mode-a.md` ≤6,000 字元；入口 17 條、`mode-a.md` 12 條必備句；拆分前每一行逐字留存或列入已改寫清單；38 個負向測試 | 入口指向不存在的檔、同步只寫一半、濃縮時丟了停止條件或理由。不證明模型會去讀模式檔 |
+| skill 拆分 | 六個 skill 檔齊全、同版本、都在 `WHOLE`；入口＋`mode-a.md` ≤6,000 字元；入口 12 條、`mode-a.md` 12 條必備句；拆分前每一行逐字留存或列入已改寫清單（13 行） | 入口指向不存在的檔、同步只寫一半、濃縮時丟了停止條件或理由。不證明模型會去讀模式檔 |
+| AGENTS.md 共用制度 | 開始／結束標記成對、26 條必備條件（v3 第 5 節；第 26 條是 F50 互動驗證後補的「選項卡片也算停下來」）、共用 ≤40 行、全檔 ≤100 行（v3 D11）、開始標記的版本等於 `VERSION`；30 個負向測試（2026-11-13 新增） | 每個 session 都載入的那一層缺了條件、長過預算，或版本提示失準。只證明文字在，不證明模型照做 |
 | 同步補齊模式檔 | 只有單檔的舊專案會補上五個新檔、入口最後寫、不認得的檔列為 EXTRA；1 個負向測試 | 同步後新入口指向不存在的模式檔 |
-| 全綠行 | 兩支開場 hook 在真 Git fixture 上：正常才印含分支與 SHA 的全綠行，10 種不正常狀態都不印；拿掉條件的腳本會被看出來 | 不該綠的時候印了全綠，正常路徑會跳過完整判讀表 |
+| 全綠行 | 本 repo 的 `repo-git-check.sh` 在真 Git fixture 上：正常才印含分支與 SHA 的全綠行，10 種不正常狀態都不印；拿掉條件的腳本會被看出來。部署 hook 2026-11-13 起不印全綠行 | 不該綠的時候印了全綠，正常路徑會跳過完整判讀表 |
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
-| 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，mode 100755 與 wrapper 直接執行；7 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit；不測外部 GitHub 或模型行為（F16） |
+| 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，clone 後開場 hook 印出 `[facts]`；5 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit |
 | 部署包由來源生成 | `src/kit` 生成結果與 `PROJECT-BOOTSTRAP.md` 逐位元組相同、每個範本剛好用一次、範本集合等於 `EXPECTED`；9 個負向測試（手改部署包、改範本或散文沒重生、多／少範本、指錯、重複、缺結尾換行、範本含收尾圍籬） | 有人手改了部署包，或改了來源沒重生 |
 | P1 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `src/project_bootstrap` 的程式除 `P1_EXTRAS` 列的模組外不 import 鎖檔裡的套件，也不 import 那些模組；import 它們的測試缺套件時 SkipTest；10 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
+
+> **2026-11-13 驗證項取捨（v3 第 1 期）**。準則：守 v3 仍為必要的需求就留；守已退役或降強度的需求、Antigravity、或「skill 必讀」結構的就改或移除。
+> - **移除「Antigravity 接線」**：v3 D8 放棄 Antigravity，三個檔移出部署包。
+> - **改「git-freshness.sh」「工作中標記」「版本落後偵測」「接線 cwd 定位」「F46 接手流程」「Git 異常提示」**：部署 hook 只報事實（v3 D12），檢查改看 `[facts]` 原文與「最多五行、沒有指示行」，本 repo 自己的 hook 照舊。
+> - **「全綠行」縮到本 repo 的 hook**：部署 hook 不再印這一行。
+> - **「skill 拆分」入口必備句 18 → 12**：拿掉的六句（A2.5 占用、A1–A4 不改檔、找不到模式檔就停、每則新訊息看 session 狀態、續聊改檔前重走 A1–A5、`session：` 一行）改由新增的「AGENTS.md 共用制度」守，因為 skill 不再必讀（v3 第 5 節）。
+> - **「續聊狀態與計數」**：觸發詞從 skill description 搬到 `AGENTS.md` 共用制度。
+> - **「部署生命週期」「同步升級 mode」**：拿掉 Antigravity wrapper 的 100755 兩項，改用開場 hook。
+> - **沒動、但守的是 v2 才有的強度，列給使用者決定**：「AI push 提醒情境」（v3 F10 降為偵測，hook 仍 exit 2 擋）、「工作中欄位格式（負向）」（`check_docs.py` 對壞格式 exit 2）、「接力協調邊界」與「協作狀態契約」守的 skill 參考檔句子（skill 已非必讀）、「跨工具表保鮮期」與 README 跨工具表仍含 Antigravity 欄。
 
 **exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫。
 
@@ -346,33 +360,26 @@ handoff skill 目錄（2026-11-10 起六個檔，同版本、整個目錄一起�
           ├─→ （選用）~/.codex/skills/handoff/    ← Codex CLI 與桌面 App（2026-10-30 實測
           │                                          CLI 0.164.0 仍讀這個路徑，雖然官方
           │                                          文件已經不列它）
-          └─→ .agents/skills/handoff/SKILL.md     ← 只放指標，不複製內容。2026-10-30 起
-                                                     Antigravity 與 Codex 都把它當專案層
-                                                     skill 來源，所以它的 description
-                                                     必須寫滿觸發詞（那是它被發現的唯一依據）
+          └─→ .agents/skills/handoff/SKILL.md     ← 只放指標，不複製內容。Codex 把它當
+                                                     專案層 skill 來源（Antigravity 2026-11-13
+                                                     移出部署包），description 與權威版相同
+                                                     （那是它被發現的唯一依據）
 
 兩支 hook .sh
   部署包 3.10／3.11（權威）
     └─→ 各專案 .claude/hooks/*.sh   ← 只有這一份腳本
           ├─← .claude/settings.json 指向它
-          ├─← .codex/hooks.json 指向同樣那兩個（不複製第二份）
-          └─← .agents/hooks.json 經 3.18 的轉接層指向同一支 3.10
-                （Windows 還多一層 3.19 的 .cmd shim：agy 的 command 不吃空白
-                 也不吃引號，而 Git Bash 的路徑含空白。2026-10-31 在 CLI 1.4.7
-                 上端到端實測過；2.0 2.28.2 同日也實測通過；IDE 1.107.0 沒觸發、不再追查）
+          └─← .codex/hooks.json 指向同樣那兩個（不複製第二份）
 
 check_docs.py
   部署包 3.14（權威，「專案設定」區塊除外——那塊本來就該依專案調）
     └─→ 各專案 tools/check_docs.py
 
-三份 hook 接線（JSON）
+兩份 hook 接線（JSON；Antigravity 那份 2026-11-13 移出部署包，已部署的不同步、不刪除）
   部署包 3.9／3.17（權威，只管「指向骨架那幾個 .sh」的那幾組；
                         專案自己加的 permissions／env／額外 hook 原樣保留）
     ├─→ 各專案 .claude/settings.json
     └─→ 各專案 .codex/hooks.json
-  部署包 3.20（權威。Antigravity 的頂層 key 就是 hook 名稱，所以骨架只擁有
-               handoff-git-check 這一個 key，換掉它、專案自己的 key 原樣保留）
-    └─→ 各專案 .agents/hooks.json
 ```
 
 **本 repo 自己的兩份接線（`.claude/settings.json`、`.codex/hooks.json`）不在上面這張圖裡。**

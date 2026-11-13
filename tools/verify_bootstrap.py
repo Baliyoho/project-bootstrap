@@ -155,7 +155,6 @@ EXPECTED = {
     '.claude/settings.json',
     '.claude/hooks/git-freshness.sh', '.claude/hooks/pre-push-handoff.sh',
     '.codex/hooks.json', '.agents/skills/handoff/SKILL.md',
-    '.claude/hooks/ag-wrap.sh', '.agents/ag-hook.cmd', '.agents/hooks.json',
     '.claude/hooks/codex-hook.cmd',
     '.gitignore', '.gitattributes',
     'tools/check_docs.py', 'tools/verify_state.py',
@@ -810,6 +809,84 @@ def step_hook(dest, tmp):
 
 
 # ── 6. 行末與雜項 ──────────────────────────────────────────────
+FACTS_MAX_LINES = 5   # 需求決策書 v3 第 5 節：開場 hook 輸出 ≤ 5 行
+
+
+def facts_output_problems(out):
+    """開場 hook（2026-11-13 起）的輸出形狀：每一行都是 [facts]、不超過五行、第一行有時間戳。"""
+    lines = [l for l in out.split('\n') if l.strip()]
+    bad = []
+    if not lines:
+        return ['沒有輸出']
+    if any(not l.startswith('[facts] ') for l in lines):
+        bad.append('有不是 [facts] 開頭的行（hook 只報事實，不下指示）')
+    if len(lines) > FACTS_MAX_LINES:
+        bad.append('輸出 %d 行，超過 %d 行' % (len(lines), FACTS_MAX_LINES))
+    if not re.search(r'（session 名用 [0-9]{8}）', lines[0]):
+        bad.append('第一行沒有 session 名用的 YYMMDDHH')
+    return bad
+
+
+SHARED_START = '<!-- 共用制度開始'
+SHARED_END = '<!-- 共用制度結束 -->'
+SHARED_MAX_LINES = 40   # 需求決策書 v3 D11
+AGENTS_MAX_LINES = 100
+
+
+def shared_rules(agents):
+    """AGENTS.md 裡開始與結束標記之間的共用制度（含兩行標記）；找不到就回空字串。"""
+    if agents.count(SHARED_START) != 1 or agents.count(SHARED_END) != 1:
+        return ''
+    a = agents.index(SHARED_START)
+    b = agents.index(SHARED_END) + len(SHARED_END)
+    return agents[a:b] if a < b else ''
+
+
+AGENTS_STOP_TOKENS = ('歷史分岔、fetch 失敗、來源不明的未提交變更', '停下來告訴使用者', '本機要跟 origin 一致')
+
+
+def agents_stop_problems(agents):
+    shared = shared_rules(agents)
+    return ['AGENTS.md 共用制度缺：' + t for t in AGENTS_STOP_TOKENS if t not in shared]
+
+
+def facts_busy_cases(push_busy, me):
+    """開場 hook 的「工作中」情境表（2026-11-13 起，v3 D12：照原文印、不判讀）。
+
+    v3 的 F4（知道誰在動）是「偵測」：hook 讀 origin 那一份並印出來，判讀交給模型。
+    所以這裡釘的是「印得出來、印得完整、不被環境左右」：舊版 F01 那幾個子字串陷阱
+    （主題或機器名含「無」、欄位重複）在只印原文的實作上不會放行，但仍要看得到原文。
+    """
+    sess = '`㊣　26103009｜測試｜工作中`'
+    claude = tool_env(CLAUDECODE='1')
+    cases = []
+    busy = '[facts] origin 上的 HANDOFF：- **工作中**：'
+
+    value = '`other-box` ／ `Claude Code` ／ ' + sess
+    out = push_busy(value, claude)
+    cases.append(('別台機器→印出原文', busy + value in out))
+
+    out_plain = push_busy(value, tool_env())
+    out_both = push_busy(value, tool_env(CLAUDECODE='1', CODEX_VERSION='0.164.0'))
+    cases.append(('工具環境變數不改變輸出', strip_clock(out) == strip_clock(out_plain) == strip_clock(out_both)))
+
+    value = '`%s` ／ `Codex CLI` ／ `㊣　26110209｜修無效連結｜工作中｜交棒0次`' % me
+    out = push_busy(value, claude)
+    cases.append(('主題含「無」→原文完整', busy + value in out))
+
+    out = push_busy('無（已交棒）', claude)
+    cases.append(('已交棒→印出無（已交棒）', busy + '無（已交棒）' in out))
+    cases.append(('第一行有 YYMMDDHH', not facts_output_problems(out)))
+
+    out = push_busy('無（已交棒）\n- **工作中**：`other-box` ／ `Codex CLI` ／ ' + sess, claude)
+    cases.append(('欄位重複→說有幾列', '有 2 列「工作中」' in out))
+    return cases, out
+
+
+def strip_clock(out):
+    return re.sub(r'時間 \S+ \S+ \S+（session 名用 [0-9]{8}）', '時間 <t>', out)
+
+
 def busy_cases(push_busy, me):
     """兩支 hook 共用的「工作中」情境表（2026-10-31 起含工具欄）。
 
@@ -900,8 +977,8 @@ def busy_cases(push_busy, me):
 def step_busy(dest, work):
     """「工作中」標記防呆（2026-10-30，2026-10-31 加工具欄）。
 
-    守的是整條鏈：範本有欄位 → hook 讀得到 origin 那一份 → 別台機器印 🔴、同機器不同工具
-    也印 🔴、同機器同工具印 🟡、認不出自己是哪個工具印 🟡 但把問題丟回給模型、交棒後不印。
+    守的是整條鏈：範本有欄位 → hook 讀得到 origin 那一份 → 照原文印出來（2026-11-13 起，
+    v3 D12：不再分 🔴／🟡，判讀交給模型與 AGENTS.md 的共用制度）。
     鏈上任何一環斷掉都不會有徵兆——下一棒只會看到一切正常然後接棒，而那正是這個機制要擋
     的那件事，所以它必須有自動測試。
     """
@@ -937,14 +1014,30 @@ def step_busy(dest, work):
         git(['push', '-q', 'origin', 'main'], work)
         return run([bash, hook], cwd=work, env=env or tool_env()).stdout
 
-    cases, out = busy_cases(push_busy, me)
-    # 欄位整列拿掉：舊骨架的樣子。要印 🟡 說「查不了」，不能安靜放過——
+    cases, out = facts_busy_cases(push_busy, me)
+    # 欄位整列拿掉：舊骨架的樣子。要明講讀不到，不能安靜放過——
     # 安靜放過跟「查過了沒事」在畫面上一模一樣，那就回到了這個機制要解決的問題本身。
     write_lf(target, base.replace(line + '\n', ''))
     git(['commit', '-qam', 'chore: drop busy field'], work)
     git(['push', '-q', 'origin', 'main'], work)
     out = run([bash, hook], cwd=work, env=tool_env()).stdout
-    cases.append(('欄位不存在→🟡', '沒有「工作中」欄位' in out))
+    cases.append(('欄位不存在→明講讀不到', '讀不到「工作中」那一行' in out))
+    # 儀器自檢（2026-11-13）：把讀 origin 那一行改成不印，「別台機器」必須 FAIL。
+    original_hook = (work / hook).read_bytes()
+    try:
+        text = original_hook.decode('utf-8')
+        planted = text.replace('echo "[facts] origin 上的 HANDOFF：${busy:-讀不到「工作中」那一行}"', ':')
+        if planted == text:
+            cases.append(('負向測試找得到要拿掉的那一行', False))
+        else:
+            (work / hook).write_bytes(planted.encode('utf-8'))
+            git(['commit', '-qam', 'chore: planted hook'], work)
+            mutant = push_busy('`other-box` ／ `Claude Code` ／ x', tool_env())
+            cases.append(('負向測試：不印「工作中」就抓得到', '`other-box`' not in mutant))
+    finally:
+        (work / hook).write_bytes(original_hook)
+        git(['commit', '-qam', 'chore: restore hook'], work)
+        git(['push', '-q', 'origin', 'main'], work)
 
     bad = [n for n, good in cases if not good]
     if bad:
@@ -1025,7 +1118,7 @@ def step_version_check(work):
         return None
     hook = '.claude/hooks/git-freshness.sh'
     cache = work / '.claude' / '.bootstrap-version'
-    mark = '骨架落後'
+    mark = '共用制度落後'
 
     # 🔴 快取裡放的是「上游最新版」，所以落後的情境要餵一個**比本機新**的版本。
     # 2026-11-02 修（查核報告 F09）：舊版這裡餵 1999-01-01——那是上游比本機**舊**，
@@ -1042,8 +1135,7 @@ def step_version_check(work):
 
     cases = [('落後→講', mark in lag),
              ('領先→不說落後', mark not in ahead),
-             ('領先→說比上游新並勸退同步',
-              '比上游新' in ahead and '不要跑 sync_project.py' in ahead),
+             ('領先→說比上游新', '比上游新' in ahead),
              ('同版→閉嘴', mark not in same),
              ('開關 off→閉嘴', mark not in off)]
     bad = [n for n, good in cases if not good]
@@ -1129,13 +1221,18 @@ def step_rename_line(dest):
     return True
 
 
-def session_resume_problems(skill, pointer):
-    """守住 2026-11-02 的程序契約；不模擬模型或外部 session 改名工具。"""
+SESSION_RESUME_RULE = '是 `↗` 或 `※` 時收到任何新訊息，先改回 `㊣`'
+
+
+def session_resume_problems(skill, agents):
+    """守住 2026-11-02 的程序契約；不模擬模型或外部 session 改名工具。
+
+    2026-11-13（v3 第 5 節）：skill 降為碰到才讀的參考，「每則新訊息先恢復工作中」不再靠
+    skill description 觸發，改由每個 session 都載入的 AGENTS.md 共用制度承載。
+    """
     problems = []
-    for name, text in (('skill', skill), ('指標', pointer)):
-        description = re.search(r'^description: (.+)$', text, re.M)
-        if not description or 'every new user message after a handoff' not in description[1]:
-            problems.append(name + ' description 缺續聊觸發')
+    if SESSION_RESUME_RULE not in shared_rules(agents):
+        problems.append('AGENTS.md 共用制度缺續聊恢復規則')
     # 2026-11-10：命名規則拆到入口（摘要）、mode-b.md（計數）與 reasons.md（細則原文），
     # 所以這裡看整個 skill 目錄；入口自己該有哪些句子由「skill 入口與常態必讀量」守。
     naming = skill
@@ -1169,11 +1266,10 @@ def session_resume_problems(skill, pointer):
 
 def step_session_resume(dest):
     skill = skill_text(dest)
-    pointer = (dest / '.agents/skills/handoff/SKILL.md').read_text(encoding='utf-8')
+    pointer = read_lf(dest / 'AGENTS.md')
     problems = session_resume_problems(skill, pointer)
     # 每個守門條件都故意拿掉一次；沒有改到字串也必須失敗，不能空測。
     rules = (
-        'every new user message after a handoff',
         '每則使用者新訊息都先檢查 session 狀態',
         '包含只問問題、補充、更正與致謝',
         '先用改名工具恢復 `㊣ 工作中`，再回答或執行任務',
@@ -1190,7 +1286,7 @@ def step_session_resume(dest):
         '依「同一 session 的交棒計數」將 N 加 1',
     )
     cases = [(rule, skill.replace(rule, ''), pointer) for rule in rules]
-    cases.append(('指標續聊觸發', skill, pointer.replace('every new user message after a handoff', '')))
+    cases.append(('AGENTS.md 續聊恢復規則', skill, pointer.replace(SESSION_RESUME_RULE, '')))
     for heading in ('### A5 ', '### B9 '):
         block = rename_block(skill, heading) or ''
         cases.append((heading + '計數', skill.replace(block, block.replace('交棒<N>次', '')), pointer))
@@ -1203,7 +1299,7 @@ def step_session_resume(dest):
         record('FAIL', '續聊狀態與計數', '；'.join(problems))
         return False
     record('OK', '續聊狀態與計數',
-           '程序與兩個 description 涵蓋逐訊息恢復、只讀續聊、重查占用、累計與舊版恢復；'
+           'AGENTS.md 共用制度與 skill 參考檔涵蓋逐訊息恢復、只讀續聊、重查占用、累計與舊版恢復；'
            '%d 個負向測試通過（未呼叫模型／改名工具）' % len(cases))
     return True
 
@@ -1891,6 +1987,9 @@ def handoff_flow_case(kind, dest, tmp, bash):
     if kind == 'product':
         shutil.copytree(initial, writer, ignore=shutil.ignore_patterns('.git'))
         hook_rel = '.claude/hooks/git-freshness.sh'
+        # 2026-11-13 起部署出去的 hook 照原文印「工作中」（v3 D12），判讀交給模型。
+        free_mark, foreign_mark = '- **工作中**：無（已交棒）', '- **工作中**：`other-box`'
+        needle = 'origin/${branch}:HANDOFF.md'
     else:
         writer.mkdir()
         for rel in ('AGENTS.md', 'ARCHITECT.md', 'HANDOFF.md', 'README.md',
@@ -1899,6 +1998,8 @@ def handoff_flow_case(kind, dest, tmp, bash):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(initial / rel, target)
         hook_rel = '.claude/hooks/repo-git-check.sh'
+        free_mark, foreign_mark = '✅ 「工作中」是', '🔴 另一台機器正在'
+        needle = 'origin/$branch:HANDOFF.md'
 
     handoff = writer / 'HANDOFF.md'
     busy_line = next(line for line in read_lf(handoff).splitlines()
@@ -1932,13 +2033,13 @@ def handoff_flow_case(kind, dest, tmp, bash):
         must(git(['commit', '-qm', action], writer), 'commit ' + action)
         must(git(['push', '-q', 'origin', 'main'], writer), 'push ' + action)
 
-    check_hook('✅ 「工作中」是')
+    check_hook(free_mark)
     set_busy('`other-box` ／ `Claude Code` ／ `㊣　26110816｜測試｜工作中｜交棒0次`',
              'foreign claim')
     # reader 的本機快照仍空閒；hook 必須 fetch 並讀 origin 那份。
     if '無（已交棒）' not in read_lf(reader / 'HANDOFF.md'):
         raise AssertionError('陳舊 checkout 起點不是空閒快照')
-    check_hook('🔴 另一台機器正在')
+    check_hook(foreign_mark)
     counts = must(git(['rev-list', '--left-right', '--count', 'HEAD...@{upstream}'], reader),
                   'A1 counts').stdout.strip()
     if counts != '0\t1':
@@ -1946,22 +2047,21 @@ def handoff_flow_case(kind, dest, tmp, bash):
 
     # 負向變異：改成讀 HEAD，陳舊 reader 會錯把遠端占用判成已交棒。
     original = read_lf(hook)
-    needle = 'origin/$branch:HANDOFF.md'
     if original.count(needle) != 1:
         raise AssertionError('無法定位 hook 的遠端快照讀取')
     try:
         write_lf(hook, original.replace(needle, 'HEAD:HANDOFF.md'))
         mutant = must(run([bash, str(hook)], cwd=reader, env=env), 'local-only mutant')
-        if '✅ 「工作中」是' not in mutant.stdout or '🔴 另一台機器正在' in mutant.stdout:
+        if free_mark not in mutant.stdout or foreign_mark in mutant.stdout:
             raise AssertionError('本機快照負向變異沒有重現錯誤放行')
     finally:
         write_lf(hook, original)
 
     must(git(['pull', '-q', '--ff-only'], reader), 'A1 fast-forward')
-    check_hook('🔴 另一台機器正在')
+    check_hook(foreign_mark)
     set_busy('無（已交棒）', 'foreign release')
     must(git(['pull', '-q', '--ff-only'], reader), 'pull release')
-    check_hook('✅ 「工作中」是')
+    check_hook(free_mark)
     # A2.5 看到空閒到 A5 開工之間若遠端前進，舊 SHA 不能再授予寫入資格。
     observed = must(git(['rev-parse', 'origin/main'], reader), 'A2.5 SHA').stdout.strip()
     (writer / 'README.md').open('a', encoding='utf-8', newline='').write('\n另一棒先行。\n')
@@ -1978,13 +2078,13 @@ def handoff_flow_case(kind, dest, tmp, bash):
     writer = reader
     set_busy('`%s` ／ `Claude Code` ／ `㊣　26110816｜測試｜工作中｜交棒0次`' % me,
              'own claim')
-    check_hook('🟡 這台機器')
+    check_hook('🟡 這台機器' if kind == 'source' else '- **工作中**：`%s`' % me)
     (reader / 'README.md').open('a', encoding='utf-8', newline='').write('\n合成任務。\n')
     must(git(['add', '--', 'README.md'], reader), 'stage task')
     must(git(['commit', '-qm', 'synthetic task'], reader), 'commit task')
     must(git(['push', '-q', 'origin', 'main'], reader), 'push task')
     set_busy('無（已交棒）', 'own release')
-    check_hook('✅ 「工作中」是')
+    check_hook(free_mark)
     remote = must(git(['show', 'origin/main:HANDOFF.md'], reader), 'remote release').stdout
     if '- **工作中**：無（已交棒）' not in remote:
         raise AssertionError('交棒後 origin 標記未清')
@@ -2307,114 +2407,6 @@ def step_sync_self_guard():
     return True
 
 
-def step_antigravity(dest):
-    """Antigravity 接線的三個檔：轉接層的 JSON 與 escaping、shim 的兩個硬約束、接線的形狀。
-
-    2026-10-31 端到端實測過（`agy -p` 讓 agent 把注入的開場訊息原文背出來），但那個測試
-    需要裝著 Antigravity CLI 的機器，所以這裡釘的是**自動驗得出來的那部分**：管線會不會動、
-    以及兩個踩過才知道的約束有沒有被「順手整理」掉——
-      ① shim 必須全 ASCII：中文 `rem` 註解被 OEM code page 誤讀後會**整段被當成指令執行**，
-         stderr 噴出 `is not recognized`，而 stdout 的 JSON 看起來還是對的，所以不會有徵兆。
-      ② shim 不能有多行括號區塊或 label：檔案是 LF 行末（.gitattributes 強制全檔 LF），
-         而 cmd.exe 讀 LF-only 檔案時這兩種結構會出錯。
-    這兩項都是「看起來沒問題、實際壞掉」的類型，所以做成 fail 而不是註解裡的叮嚀。
-    """
-    wrap = dest / '.claude' / 'hooks' / 'ag-wrap.sh'
-    shim = dest / '.agents' / 'ag-hook.cmd'
-    wiring = dest / '.agents' / 'hooks.json'
-
-    raw = shim.read_bytes()
-    bad = []
-    if any(b > 127 for b in raw):
-        bad.append('shim 有非 ASCII 位元組（batch 的 echo 會依 OEM code page 變亂碼，'
-                   '而被誤讀的註解會被當成指令執行）')
-    text = raw.decode('ascii', 'replace')
-    for n, ln in enumerate(text.split('\n'), 1):
-        s = ln.strip()
-        if s.startswith(':') and not s.startswith('::'):
-            bad.append('shim 第 %d 行是 label（LF-only 檔案上 goto／label 會出錯）' % n)
-        if s.endswith('(') and not s.lower().startswith('rem'):
-            bad.append('shim 第 %d 行開了多行括號區塊（LF-only 檔案上會出錯）' % n)
-    try:
-        conf = json.loads(wiring.read_text(encoding='utf-8'))
-    except Exception as e:
-        record('FAIL', 'Antigravity 接線', '.agents/hooks.json 不是合法 JSON：%s' % e)
-        return False
-    hook = conf.get('handoff-git-check')
-    if not isinstance(hook, dict):
-        bad.append('hooks.json 少了 handoff-git-check 這個頂層 key（sync 靠它認骨架的接線）')
-    else:
-        if list(hook) != ['enabled', 'SessionStart']:
-            bad.append('hooks.json 的 handoff-git-check 多了或少了欄位：%s'
-                       '（PreToolUse 刻意不接——不明確回 allow_tool 就等於拒絕）' % list(hook))
-        cmds = [h.get('command', '') for h in hook.get('SessionStart', [])]
-        if not any(c.startswith('../') for c in cmds):
-            bad.append('hooks.json 少了 Unix 那條 handler')
-        if not any(c.startswith('.\\\\') or c.startswith('.\\') for c in cmds):
-            bad.append('hooks.json 少了 Windows 那條（.\\ag-hook.cmd）handler')
-        for c in cmds:
-            if ':' in c or c.startswith('/'):
-                bad.append('hooks.json 的 command 看起來是絕對路徑：%s'
-                           '（換機器就靜默失效，而且 agy 的 command 不吃空白）' % c)
-
-    bash = find_bash()
-    if not bash:
-        record('SKIP', 'Antigravity 接線', '這台機器上沒有 bash，轉接層的管線沒測到')
-        return True
-
-    # 轉接層的管線：拿一支會吐引號、反斜線與換行的腳本餵它，JSON 要合法且原樣還原。
-    probe = dest / '.claude' / 'hooks' / '_probe.sh'
-    payload = 'he said "hi"\\path\tand\nsecond line'
-    write_lf(probe, '#!/usr/bin/env bash\nprintf \'%s\\n\' \'' + payload + '\'\n')
-    for name, args, want in (
-            ('正常注入', ['_probe.sh'], payload),
-            ('少參數', [], '少了參數'),
-            ('腳本不存在', ['_nope.sh'], '找不到'),
-    ):
-        r = run([bash, str(wrap)] + args, cwd=str(dest / '.agents'))
-        try:
-            got = json.loads(r.stdout)
-        except Exception as e:
-            bad.append('轉接層「%s」的 stdout 不是合法 JSON（%s）：%r'
-                       % (name, e, r.stdout[:120]))
-            continue
-        msg = got.get('injectSteps', [{}])[0].get('ephemeralMessage', '')
-        if want not in msg:
-            bad.append('轉接層「%s」的訊息不對：%r' % (name, msg[:120]))
-    probe.unlink()
-
-    # 接線合併：骨架只擁有 handoff-git-check 這一個頂層 key，要換得掉又不能動到專案自己的。
-    sys.path.insert(0, str(ROOT / 'tools'))
-    import sync_project as sp
-    auth = wiring.read_text(encoding='utf-8')
-    stale = json.loads(auth)
-    stale[sp.AG_KEY]['SessionStart'] = [{'type': 'command', 'command': 'OLD'}]
-    stale['project-own-hook'] = {'enabled': True, 'Stop': [{'command': 'mine'}]}
-    new, _, err = sp.merge_ag_wiring(auth, json.dumps(stale, ensure_ascii=False, indent=2))
-    if err or new is None:
-        bad.append('AG 接線合併沒認出落後的 %s（落後的專案不會被修好）：%s'
-                   % (sp.AG_KEY, err or '說已經一致'))
-    else:
-        got = json.loads(new)
-        if got.get(sp.AG_KEY) != json.loads(auth)[sp.AG_KEY]:
-            bad.append('AG 接線合併沒把 %s 換成權威版' % sp.AG_KEY)
-        if got.get('project-own-hook', {}).get('Stop', [{}])[0].get('command') != 'mine':
-            bad.append('AG 接線合併把專案自己的 hook 洗掉了')
-    same, _, err2 = sp.merge_ag_wiring(auth, auth)
-    if err2 or same is not None:
-        bad.append('AG 接線已一致卻說要改（每次同步都製造假變更，雜訊會讓人不再看輸出）')
-    if sp.merge_ag_wiring(auth, '{壞掉')[2] is None:
-        bad.append('AG 接線合併吃到壞 JSON 卻沒回報錯誤')
-
-    if bad:
-        record('FAIL', 'Antigravity 接線', '；'.join(bad))
-        return False
-    record('OK', 'Antigravity 接線',
-           '轉接層三情境的 JSON 與 escaping 正確、shim 全 ASCII 且無括號區塊／label、'
-           'hooks.json 兩個 handler 都在且只接 SessionStart、接線合併換得掉又保住專案自己的')
-    return True
-
-
 def wiring_command(script):
     """接線裡那一串 Unix 命令的唯一來源。
 
@@ -2654,7 +2646,7 @@ def step_wiring_cwd(dest, tmp):
     for sub in ('.', 'tools', 'docs/ai-notes'):
         cwd = work if sub == '.' else work / sub
         r = run([bash, '-c', handler['SessionStart']['command']], cwd=cwd, stdin='{}', env=env)
-        check('%s 開場檢查' % sub, r.returncode == 0 and '[git-check]' in r.stdout,
+        check('%s 開場檢查' % sub, r.returncode == 0 and '[facts]' in r.stdout,
               (r.returncode, r.stdout[:100], r.stderr[:100]))
         r = run([bash, '-c', handler['PreToolUse']['command']], cwd=cwd, stdin=push, env=env)
         check('%s push 防呆' % sub, r.returncode == 2, (r.returncode, r.stderr[:100]))
@@ -2662,7 +2654,7 @@ def step_wiring_cwd(dest, tmp):
     # 負向①：舊形式從子目錄必須失敗，否則這一項根本沒在量東西。
     r = run([bash, '-c', 'bash .claude/hooks/git-freshness.sh'],
             cwd=work / 'tools', stdin='{}', env=env)
-    check('舊形式從子目錄→失敗（負向）', r.returncode != 0 and '[git-check]' not in r.stdout,
+    check('舊形式從子目錄→失敗（負向）', r.returncode != 0 and '[facts]' not in r.stdout,
           (r.returncode, r.stdout[:80]))
 
     if os.name == 'nt':
@@ -2671,7 +2663,7 @@ def step_wiring_cwd(dest, tmp):
             win = handler['SessionStart']['commandWindows']
             r = run([powershell, '-NoProfile', '-NonInteractive', '-Command', win],
                     cwd=work / 'tools', stdin='{}', env=env)
-            check('Windows 啟動鏈從子目錄', r.returncode == 0 and '[git-check]' in r.stdout,
+            check('Windows 啟動鏈從子目錄', r.returncode == 0 and '[facts]' in r.stdout,
                   (r.returncode, r.stdout[:100], r.stderr[:100]))
             # 負向②：拿掉斜線正規化就會變成 `../.claude\...`，cmd 吃不下混合斜線。
             naive = win.replace("$((git rev-parse --show-cdup) -replace '/','\\')",
@@ -2682,7 +2674,7 @@ def step_wiring_cwd(dest, tmp):
                 r = run([powershell, '-NoProfile', '-NonInteractive', '-Command', naive],
                         cwd=work / 'tools', stdin='{}', env=env)
                 check('混合斜線從子目錄→失敗（負向）',
-                      r.returncode != 0 and '[git-check]' not in r.stdout,
+                      r.returncode != 0 and '[facts]' not in r.stdout,
                       (r.returncode, r.stdout[:80]))
         else:
             cases.append(('Windows 啟動鏈', None, '找不到 PowerShell'))
@@ -2928,7 +2920,7 @@ def step_sync_coverage(dest):
     sys.path.insert(0, str(ROOT / 'tools'))
     import sync_project as sp
 
-    declared = (set(sp.WHOLE) | {sp.SURGICAL} | set(sp.WIRING) | {sp.AG_WIRING}
+    declared = (set(sp.WHOLE) | {sp.SURGICAL} | set(sp.WIRING)
                 | set(sp.PARTIAL) | set(sp.INSTANCE))
     missing, extra = EXPECTED - declared, declared - EXPECTED
     if missing or extra:
@@ -3864,11 +3856,17 @@ def step_misc(dest, work=None):
         record('SKIP', 'git-freshness.sh', 'hook fixture 沒建起來，缺少有 origin 與 commit 的 repo 可測')
     else:
         r = run([bash, '.claude/hooks/git-freshness.sh'], cwd=work)
-        if r.returncode == 0 and '[git-check]' in r.stdout and '[handoff]' in r.stdout:
-            record('OK', 'git-freshness.sh', 'exit 0，印出 [git-check] 比對結果與 [handoff] 提醒行')
+        bad = facts_output_problems(r.stdout)
+        # 儀器自檢：多一行指示、多到六行，都要被看出來。
+        planted = [facts_output_problems(r.stdout + '[git-check] 先走 handoff skill\n'),
+                   facts_output_problems(r.stdout + '[facts] x\n' * 3)]
+        if not all(planted):
+            bad.append('負向測試未重現：多一行指示或超過五行應該被擋')
+        if r.returncode == 0 and not bad:
+            record('OK', 'git-freshness.sh', 'exit 0，只印 [facts] 行、不超過五行、含時間戳與「工作中」；2 個負向測試')
         else:
             record('FAIL', 'git-freshness.sh',
-                   f'exit {r.returncode}：{(r.stdout + r.stderr).strip()[:160]}')
+                   f'exit {r.returncode}：{"；".join(bad)}：{(r.stdout + r.stderr).strip()[:160]}')
             ok = False
     return ok
 
@@ -4137,29 +4135,49 @@ def step_flow_contract(dest, tmp):
     scripts = [('部署 hook', read_lf(dest / '.claude/hooks/git-freshness.sh')),
                ('本 repo hook', read_lf(ROOT / '.claude/hooks/repo-git-check.sh'))]
     issues = []
-    def check_scripts(state, marker):
+    # 2026-11-13（v3 D12）：部署出去的 hook 只報事實，「停下來」寫在 AGENTS.md 共用制度的條件 8；
+    # 本 repo 自己的 hook 不在副本拓撲裡，照舊要求停止。兩者都不准建議 rebase。
+    facts_marks = {'ahead-only': '落後 origin/main 0 個 commit、領先 1 個',
+                   'diverged': '落後 origin/main 1 個 commit、領先 1 個',
+                   'fetch failure': 'fetch origin 失敗'}
+    repo_marks = {'ahead-only': 'ahead-only', 'diverged': '已分岔', 'fetch failure': '無法 fetch'}
+
+    def deployed_ok(state, out):
+        return facts_marks[state] in out and 'git pull --rebase' not in out and not facts_output_problems(out)
+
+    def check_scripts(state):
         for name, source in scripts:
             path = tmp / 'flow-probe.sh'
             write_lf(path, source)
-            r = run([bash, str(path)], cwd=work, env=tool_env(BOOTSTRAP_FRESHNESS='off'))
-            if r.returncode or marker not in r.stdout or '停下' not in r.stdout or '等待使用者指示' not in r.stdout or 'git pull --rebase' in r.stdout:
+            r = run([bash, str(path)], cwd=work, env=tool_env(BOOTSTRAP_VERSION_CHECK='off'))
+            if name == '部署 hook':
+                if r.returncode or not deployed_ok(state, r.stdout):
+                    issues.append(name + ' ' + state + ' 沒有照實報出狀態，或給了 rebase 建議')
+            elif (r.returncode or repo_marks[state] not in r.stdout or '停下' not in r.stdout
+                  or '等待使用者指示' not in r.stdout or 'git pull --rebase' in r.stdout):
                 issues.append(name + ' ' + state + ' 未要求停止或仍建議 rebase')
-    check_scripts('ahead-only', 'ahead-only')
+    check_scripts('ahead-only')
     write_lf(peer / 'file', 'remote\n')
     must(['commit', '-qam', 'remote'], peer)
     must(['push', '-q', 'origin', 'main'], peer)
-    check_scripts('diverged', '已分岔')
-    # 在真分岔 fixture 上恢復舊建議，儀器必須辨識這是錯誤提示。
-    old = scripts[0][1].replace('停下回報並等待使用者指示；不得自行 rebase 或 merge', '開工前必須先整合（git pull --rebase）')
+    check_scripts('diverged')
+    # 在真分岔 fixture 上植入舊建議，儀器必須辨識這是錯誤提示。
+    old = scripts[0][1].replace('exit 0\n', 'echo "[facts] 開工前必須先整合（git pull --rebase）"\nexit 0\n')
     path = tmp / 'flow-old.sh'
     write_lf(path, old)
-    r = run([bash, str(path)], cwd=work, env=tool_env(BOOTSTRAP_FRESHNESS='off'))
-    if '已分岔' not in r.stdout or 'git pull --rebase' not in r.stdout:
+    r = run([bash, str(path)], cwd=work, env=tool_env(BOOTSTRAP_VERSION_CHECK='off'))
+    if old == scripts[0][1] or deployed_ok('diverged', r.stdout):
         issues.append('負向測試未重現舊分岔建議')
     must(['remote', 'set-url', 'origin', str(tmp / 'missing-origin.git')], work)
-    check_scripts('fetch failure', '無法 fetch')
+    check_scripts('fetch failure')
+    # 停下來的條件改住在 AGENTS.md 共用制度。
+    agents = read_lf(dest / 'AGENTS.md')
+    issues.extend(agents_stop_problems(agents))
+    if not agents_stop_problems(agents.replace(AGENTS_STOP_TOKENS[0], '移除條件')):
+        issues.append('負向測試未重現：拿掉停止條件應該被擋')
     record('FAIL' if issues else 'OK', 'Git 異常提示', '；'.join(issues) if issues else
-           '兩支 hook 實跑 ahead-only／分岔／fetch 失敗均要求停止；舊 rebase 建議負向重現')
+           '部署 hook 實跑 ahead-only／分岔／fetch 失敗都照實報出、不建議 rebase，AGENTS.md 共用制度有停止條件；'
+           '本 repo hook 照舊要求停止；植入 rebase 建議與拿掉停止條件兩個負向測試')
 
 
 def core_priority_problems(skill, protocol, readme=None):
@@ -4456,7 +4474,6 @@ def deployment_order_problems(kit, skill, zip_readme, readme):
     bad = []
     section = kit.split('## 4. ', 1)[-1].split('## 5. ', 1)[0]
     sequence = ('### 4.1 本機驗收', 'git add .', 'git check-ignore',
-                'git update-index --chmod=+x .claude/hooks/ag-wrap.sh',
                 'python -X utf8 tools/check_docs.py', '### 4.2 首次發布',
                 'git commit -m', 'gh repo create')
     positions = [section.find(token) for token in sequence]
@@ -4475,9 +4492,6 @@ def deployment_index_problems(work, paths):
             bad.append('未忽略 ' + path)
         if git(['ls-files', '--', path], work).stdout.strip():
             bad.append('已進索引 ' + path)
-    mode = git(['ls-files', '--stage', '--', '.claude/hooks/ag-wrap.sh'], work)
-    if mode.returncode or not mode.stdout.startswith('100755 '):
-        bad.append('wrapper 索引 mode 不是 100755')
     return bad
 
 
@@ -4512,12 +4526,6 @@ def step_deployment_lifecycle(tmp):
             pass
         else:
             bad.append('反向納入祕密的 ignore 輸入未拒絕')
-    # 從操作卡取出原始命令執行，避免只驗測試自己的固定命令。
-    command = re.search(r'^git update-index --chmod=\+x \.claude/hooks/ag-wrap\.sh$', kit, re.M)
-    if command:
-        must(command.group(0).split(), work)
-    else:
-        bad.append('部署包缺執行位元命令')
     must([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], work)
     state = must([sys.executable, '-X', 'utf8', 'tools/verify_state.py'], work)
     if 'NOT_CONFIGURED' not in state.stdout:
@@ -4529,11 +4537,7 @@ def step_deployment_lifecycle(tmp):
     if not any('未忽略' in s for s in deployment_index_problems(work, paths)):
         bad.append('負向測試未抓到自訂 ignore 缺失')
     write_lf(work / '.gitignore', ignore)
-    must(['git', 'update-index', '--chmod=-x', '.claude/hooks/ag-wrap.sh'], work)
-    if not any('mode' in s for s in deployment_index_problems(work, paths)):
-        bad.append('負向測試未抓到 100644')
-    must(['git', 'update-index', '--chmod=+x', '.claude/hooks/ag-wrap.sh'], work)
-    for token in ('git check-ignore', 'git update-index --chmod=+x .claude/hooks/ag-wrap.sh', '### 4.1 本機驗收'):
+    for token in ('git check-ignore', '### 4.1 本機驗收'):
         if not deployment_order_problems(kit.replace(token, '移除門檻'), skill, ZIP_README, read_lf(ROOT / 'README.md')):
             bad.append('順序負向測試未擋 ' + token)
     if bad:
@@ -4546,18 +4550,18 @@ def step_deployment_lifecycle(tmp):
     must(['git', 'clone', '-q', '-b', 'main', str(remote), str(clone)])
     if git(['ls-tree', '-r', '--name-only', 'HEAD', '--', *paths], clone).stdout.strip():
         bad.append('初次 commit 含假憑證或運行資料')
-    # clone 後仍驗索引與原始 wrapper；不呼叫模型、不測外部工具注入。
+    # clone 後仍驗索引與開場 hook；不呼叫模型、不測外部工具注入。
     bad.extend(deployment_index_problems(clone, paths))
     bash = find_bash()
     if not bash:
-        record('SKIP', '部署生命週期', '缺少 Git Bash，無法驗 clone 後直接執行 wrapper')
+        record('SKIP', '部署生命週期', '缺少 Git Bash，無法驗 clone 後執行開場 hook')
         return
-    r = run([bash, '-c', './.claude/hooks/ag-wrap.sh git-freshness.sh'], cwd=clone,
-            env=tool_env(BOOTSTRAP_FRESHNESS='off'))
-    if r.returncode or '[git-check]' not in r.stdout:
-        bad.append('clone 後 wrapper 直接執行失敗')
+    r = run([bash, '.claude/hooks/git-freshness.sh'], cwd=clone,
+            env=tool_env(BOOTSTRAP_VERSION_CHECK='off'))
+    if r.returncode or '[facts]' not in r.stdout:
+        bad.append('clone 後開場 hook 執行失敗')
     record('FAIL' if bad else 'OK', '部署生命週期', '；'.join(bad) if bad else
-           '自訂憑證／空白中文路徑 ignore；本機驗收→首 commit→local bare push→clone，100755 與 wrapper 直接執行；7 個負向測試，未呼叫模型或 GitHub')
+           '自訂憑證／空白中文路徑 ignore；本機驗收→首 commit→local bare push→clone，clone 後開場 hook 印出 [facts]；5 個負向測試，未呼叫模型或 GitHub（Antigravity wrapper 的 100755 兩項 2026-11-13 隨 v3 D8 移除）')
 
 
 def sync_mode_problems(sp, dest, tmp):
@@ -4571,26 +4575,25 @@ def sync_mode_problems(sp, dest, tmp):
         return result
     work = tmp / 'mode-upgrade'
     work.mkdir(parents=True, exist_ok=True)
-    wrapper = work / '.claude/hooks/ag-wrap.sh'
+    wrapper = work / '.claude/hooks/git-freshness.sh'
     wrapper.parent.mkdir(parents=True, exist_ok=True)
-    original = read_lf(dest / '.claude/hooks/ag-wrap.sh')
+    original = read_lf(dest / '.claude/hooks/git-freshness.sh')
     write_lf(wrapper, original + '\n# before upgrade\n')
-    write_lf(wrapper.parent / 'git-freshness.sh', '#!/bin/sh\necho mode-upgrade-ok\n')
     wrapper.chmod(0o755)
     must(['git', 'init', '-q', work.as_posix()])
     must(['git', 'config', 'core.filemode', 'true'], work)
     must(['git', 'add', '.'], work)
-    must(['git', 'update-index', '--chmod=+x', '.claude/hooks/ag-wrap.sh'], work)
+    must(['git', 'update-index', '--chmod=+x', '.claude/hooks/git-freshness.sh'], work)
     must(['git', 'commit', '-qm', 'before mode upgrade'], work)
     plan = sp.Plan()
-    plan.update(wrapper, '.claude/hooks/ag-wrap.sh', original + '\n# after upgrade\n')
+    plan.update(wrapper, '.claude/hooks/git-freshness.sh', original + '\n# after upgrade\n')
     bad = []
     copier = sp.shutil.copymode
     with mock.patch.object(sp.shutil, 'copymode', wraps=copier) as copied:
         done, error = sp.apply_plan(plan)
-        if copied.call_args_list != [mock.call(wrapper, wrapper.with_name('ag-wrap.sh.sync-tmp'))]:
+        if copied.call_args_list != [mock.call(wrapper, wrapper.with_name('git-freshness.sh.sync-tmp'))]:
             bad.append('替換前未複製既存 mode')
-    if error or done != ['.claude/hooks/ag-wrap.sh'] or '# after upgrade' not in read_lf(wrapper):
+    if error or done != ['.claude/hooks/git-freshness.sh'] or '# after upgrade' not in read_lf(wrapper):
         bad.append('升級內容未完成')
     if os.name == 'posix':
         if stat.S_IMODE(wrapper.stat().st_mode) != 0o755:
@@ -4599,8 +4602,8 @@ def sync_mode_problems(sp, dest, tmp):
         if 'mode change' in diff:
             bad.append('Git 出現 mode change')
         try:
-            result = run([str(wrapper), 'git-freshness.sh'], cwd=work)
-            if result.returncode or 'mode-upgrade-ok' not in result.stdout:
+            result = run([str(wrapper)], cwd=work, env=tool_env(BOOTSTRAP_VERSION_CHECK='off'))
+            if result.returncode or '[facts]' not in result.stdout:
                 bad.append('升級後原始 wrapper 無法直接執行')
         except OSError:
             bad.append('升級後原始 wrapper 拒絕執行')
@@ -4729,23 +4732,83 @@ def step_v2():
 
 
 SPLIT_BASELINE = ROOT / 'tools/skill_split_baseline.json'
-# 入口必須自己帶著的句子：停止條件、禁令與每則訊息都適用的命名規則。這些不能只留在
-# 模式檔或理由檔——模型沒去讀模式檔時，入口是最後一道。
+# 入口必須自己帶著的句子：停止條件與禁令。2026-11-13（v3 第 5 節）起 skill 是碰到才讀的參考，
+# 「模型沒去讀模式檔時的最後一道」改成每個 session 都載入的 AGENTS.md 共用制度（SHARED_MUST）；
+# 原本在這裡的六句（A2.5 占用、A1–A4 不改檔、找不到模式檔就停、每則新訊息看 session 狀態、
+# 續聊改檔前重走 A1–A5、`session：` 一行）移到那裡守，取捨記在 ARCHITECT 的驗證項表。
 ENTRY_MUST = (
     '不要憑空建立交接檔案', '`reset --hard`', '`push --force`', '自行 `stash`',
-    '接棒時 ahead-only', 'fetch 失敗', 'A2.5 偵測到別台機器的「工作中」標記',
+    '接棒時 ahead-only', 'fetch 失敗',
     '功能分支要併進 `main`', '憑證缺失', 'HANDOFF 沒授權的破壞性操作', '建 GitHub repo 與第一次 push',
-    'A1–A4 不修改專案檔案', '~/.claude/skills/handoff/', '找不到模式檔就停下回報',
-    '每則使用者新訊息都先看 session 狀態', '續聊要改檔前重新走 A1–A5', '必須有 `session：` 一行',
-    '使用者沒要求就不得自行交棒',
+    '~/.claude/skills/handoff/', '使用者沒要求就不得自行交棒',
+)
+# AGENTS.md 共用制度（開始與結束標記之間）必須有的條件，v3 第 5 節。
+SHARED_MUST = (
+    '本機的檔案可能是舊的', '「待續分支」', '唯一的訊號是 origin 上 `HANDOFF.md` 的「工作中」那一行',
+    '`[facts]`', '.claude/skills/handoff/',
+    '要先推成你自己', '推不上去就不算', '只讀、只回答問題的 session 不寫',
+    'origin 上的「工作中」是別人時，不改檔、不推送，停下來告訴使用者',
+    '使用者要求交棒時才交棒', '「工作中」改回 `無（已交棒）`', '使用者沒要求就保留你的「工作中」',
+    '沒驗證過的事不寫成已驗證', '不提交祕密或金鑰樣式的內容', '不用 `git add -A` 或 `git add .`',
+    '`reset --hard`', 'force push', '自行 stash',
+    '歷史分岔、fetch 失敗、來源不明的未提交變更',
+    '<符號>　YYMMDDHH｜<主題>｜<狀態>｜交棒<N>次', '`㊣` 工作中、`※` 待你決定、`↗` 已交棒',
+    '交棒的 push 成功後才改 `↗`，N 加 1', '是 `↗` 或 `※` 時收到任何新訊息，先改回 `㊣`',
+    '各寫一行 `session：<實際標題>`', '`session：不適用：<原因>；交棒<N>次`',
+    # 2026-11-13 F50 互動驗證：用選項卡片停下時三次漏了兩次 `session：` 行（experiments/handoff-ab/F50.md）。
+    '用選項卡片發問也算停下來等決定，卡片之前先寫這一行',
 )
 MODE_A_MUST = (
-    '] 全綠 ', 'bash .claude/hooks/git-freshness.sh', '不要自己判斷「大概沒事」', '`mode-a-stop.md`',
+    '印出幾行 `[facts]`', 'bash .claude/hooks/git-freshness.sh', '不要自己判斷「大概沒事」', '`mode-a-stop.md`',
     '切換後重做 A1', '都不能寫成通過',
     'session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次',
     '只讀、只問問題的 session 不寫開工標記', '**工具欄不能省**', '遠端 SHA 跟 A1 記下的不同就停',
     'push 失敗就不是「已標記」', '不是互斥鎖',
 )
+
+
+def shared_rules_problems(agents, version):
+    """AGENTS.md 共用制度（v3 第 5 節、D11）：標記成對、內容齊、行數在預算內、版本與 VERSION 相同。"""
+    shared = shared_rules(agents)
+    if not shared:
+        return ['AGENTS.md 找不到成對的共用制度開始／結束標記']
+    bad = ['共用制度缺：' + token for token in SHARED_MUST if token not in shared]
+    n = shared.count('\n') + 1
+    if n > SHARED_MAX_LINES:
+        bad.append('共用制度 %d 行，超過 %d 行（v3 D11）' % (n, SHARED_MAX_LINES))
+    total = agents.rstrip('\n').count('\n') + 1
+    if total > AGENTS_MAX_LINES:
+        bad.append('AGENTS.md 全檔 %d 行，超過 %d 行（v3 D11）' % (total, AGENTS_MAX_LINES))
+    mark = re.search(r'共用制度開始 source: PROJECT-BOOTSTRAP\.md v([0-9][0-9.-]*)', shared)
+    if not mark:
+        bad.append('共用制度開始標記沒有 source 版本（開場 hook 靠它比對上游）')
+    elif mark[1] != version:
+        bad.append('共用制度版本 v%s 與 VERSION %s 不同' % (mark[1], version))
+    return bad
+
+
+def step_shared_rules(dest):
+    agents = read_lf(dest / 'AGENTS.md')
+    version = read_lf(ROOT / 'VERSION').strip()
+    bad = shared_rules_problems(agents, version)
+    shared = shared_rules(agents)
+    cases = []
+    if not bad:
+        for token in SHARED_MUST:
+            cases.append(('拿掉 ' + token, agents.replace(token, '')))
+        pad = SHARED_MAX_LINES - (shared.count('\n') + 1) + 1
+        cases.append(('共用制度超過 40 行', agents.replace(SHARED_END, '-\n' * pad + SHARED_END)))
+        cases.append(('全檔超過 100 行', agents + '-\n' * AGENTS_MAX_LINES))
+        cases.append(('結束標記不見', agents.replace(SHARED_END, '')))
+        cases.append(('版本標記與 VERSION 不同', agents.replace('md v' + version, 'md v2000-01-01', 1)))
+    for name, text in cases:
+        if text == agents or not shared_rules_problems(text, version):
+            bad.append('負向測試未擋：' + name)
+    record('FAIL' if bad else 'OK', 'AGENTS.md 共用制度', '；'.join(bad) if bad else
+           '標記成對、%d 條必備條件、共用 %d／%d 行、全檔 %d／%d 行、版本與 VERSION 相同；%d 個負向測試'
+           '（只證明文字在、在預算內，不證明模型照做）'
+           % (len(SHARED_MUST), shared.count('\n') + 1, SHARED_MAX_LINES,
+              agents.rstrip('\n').count('\n') + 1, AGENTS_MAX_LINES, len(cases)))
 
 
 def line_key(line):
@@ -4985,14 +5048,14 @@ def step_all_green(dest, tmp):
     """開場 hook 的「全綠」行（2026-11-10，F22）：全部條件成立才印，少一項就不能印。
 
     這一行讓正常接棒可以不讀完整判讀表，所以它印錯的方向只有一個是危險的——不該綠的時候綠了。
-    每個條件各用一個真 Git fixture 打破一次；兩支 hook（部署範本與本 repo 自己的）都跑。
+    每個條件各用一個真 Git fixture 打破一次。2026-11-13 起只跑本 repo 自己的 hook：部署出去的
+    hook 改成只報事實（v3 D12），不再印全綠行；它的輸出形狀由「git-freshness.sh」那一項守。
     """
     bash = find_bash()
     if not bash:
         record('SKIP', '全綠行', '缺少可用 bash')
         return
-    scripts = [('部署 hook', read_lf(dest / '.claude/hooks/git-freshness.sh')),
-               ('本 repo hook', read_lf(ROOT / '.claude/hooks/repo-git-check.sh'))]
+    scripts = [('本 repo hook', read_lf(ROOT / '.claude/hooks/repo-git-check.sh'))]
     free = '# HANDOFF\n\n- **工作中**：無（已交棒）\n'
     counter = [0]
 
@@ -5090,7 +5153,7 @@ def step_all_green(dest, tmp):
     except RuntimeError as e:
         issues.append(str(e))
     record('FAIL' if issues else 'OK', '全綠行', '；'.join(issues) if issues else
-           '兩支 hook 實跑：正常狀態印出含分支與 origin SHA 的全綠行；%d 種不正常狀態都不印；'
+           '本 repo hook 實跑（部署 hook 2026-11-13 起不印全綠行）：正常狀態印出含分支與 origin SHA 的全綠行；%d 種不正常狀態都不印；'
            '拿掉 dirty 或占用條件的腳本會被看出來（只證明 hook 的判定，不證明模型照它走）' % len(breakers))
 
 
@@ -5103,7 +5166,6 @@ def run_checks(dest, tmp):
         step_date_guard(dest)
         step_busy_tool_guard(dest)
         step_deploy_shape(dest)
-        step_antigravity(dest)
         step_codex_windows(dest, tmp)
         step_wiring_cwd(dest, tmp)
         step_portability(dest)
@@ -5136,6 +5198,7 @@ def run_checks(dest, tmp):
     step_core_priority(dest, tmp)
     step_coordination(dest)
     step_skill_split(dest)
+    step_shared_rules(dest)
     step_skill_rule_map(dest)
     step_sync_skill_parts(dest, tmp)
     step_all_green(dest, tmp)
