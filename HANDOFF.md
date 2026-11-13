@@ -10,7 +10,7 @@
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
-- **待續分支**：無，在 `main` 上做（2026-11-12 `main` 快轉到 `codex/project-bootstrap_v2`，那條分支保留不刪）。
+- **待續分支**：`feature/v3`（2026-11-13 起主幹在那條分支：需求決策書 v3、handoff-ab 實測與 v3 第 1 期的工作單都在那裡；`main` 上這份快照其餘內容停在 2026-11-12，以分支上的 HANDOFF 為準）。
 - **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-12.4`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；`gh` 已登入且有 `workflow` 權限。PATH 上沒有 `claude`／`codex`；桌面 App 內附的 Claude Code 2.1.321 已用 `claude auth login` 登入（Pro，到 2026-12-12），拿掉宿主 session 的變數就能單獨跑；ChatGPT.app 內附 Codex CLI `0.167.0-alpha.3.2`。Windows／Linux 未驗。
