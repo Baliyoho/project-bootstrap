@@ -12,7 +12,7 @@
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：`feature/v3`（從 `main @ 8cd8107` 開；`main` 只多一個把本欄指過來的 commit）。v3 的工作都在這條分支，第 1 期驗過、使用者驗收後才併回 `main`。
 - **工作中**：`Mac` ／ `Claude Code` ／ `㊣　26111316｜v3第1期｜工作中｜交棒0次`，2026-11-13 16:20 (+08) 開工
-- **骨架版本**：`2026-11-12.4`
+- **骨架版本**：`2026-11-13`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；沒有 `python` 指令，用 `python3`。桌面 App 內附 Claude Code 2.1.321。handoff-ab 受測用的獨立設定目錄在系統暫存目錄，重開機可能被清掉，清掉要使用者重新登入一次（指令由 `run.py preflight` 印出）。
 
 ## 已完成

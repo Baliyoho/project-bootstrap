@@ -34,14 +34,17 @@ class ResumeRepoTests(unittest.TestCase):
             project, home = Path(directory) / 'project', Path(directory) / 'home'
             home.mkdir()
             verify_bootstrap.extract(project)
-            result = check(project, home)
+            # 2026-11-13 (decision v3 D12): the generated AGENTS.md has no start-of-work
+            # section; the shared rules link the reference procedure from this one.
+            heading = "你不會自己知道的事"
+            result = check(project, home, heading=heading)
             self.assertEqual((result['result'], result['reasons'], result['missing']),
                              ('通過', [], []))
             self.assertEqual([p['path'] for p in result['procedures']],
                              ['.claude/skills/handoff/SKILL.md'])
             # Without the deployed copy a new machine has nothing to follow.
             (project / '.claude/skills/handoff/SKILL.md').unlink()
-            result = check(project, home)
+            result = check(project, home, heading=heading)
             self.assertEqual(result['result'], '不通過')
             self.assertIn('procedure-not-in-repo', result['reasons'])
 

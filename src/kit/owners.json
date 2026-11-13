@@ -11,13 +11,10 @@
     ".claude/hooks/pre-push-handoff.sh": {"owner": "core", "update": "whole"},
     "tools/check_docs.py": {"owner": "core", "update": "region"},
 
-    ".claude/hooks/ag-wrap.sh": {"owner": "adapter", "update": "whole"},
     ".claude/hooks/codex-hook.cmd": {"owner": "adapter", "update": "whole"},
-    ".agents/ag-hook.cmd": {"owner": "adapter", "update": "whole"},
     ".agents/skills/handoff/SKILL.md": {"owner": "adapter", "update": "whole"},
     ".claude/settings.json": {"owner": "adapter", "update": "wiring"},
     ".codex/hooks.json": {"owner": "adapter", "update": "wiring"},
-    ".agents/hooks.json": {"owner": "adapter", "update": "key"},
 
     "HANDOFF.md": {"owner": "project", "update": "lines"},
     ".gitignore": {"owner": "project", "update": "lines"},

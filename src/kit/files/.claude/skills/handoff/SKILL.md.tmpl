@@ -1,38 +1,38 @@
 ---
 name: handoff
-description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀、站對分支、驗證、寫 HANDOFF、安全提交與 push），以及在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）。Use on every new user message after a handoff, including read-only questions, corrections, and thanks; restore the session title to working and preserve its handoff count. Also use at the start of a work session in a repo that has AGENTS.md/HANDOFF.md, when picking up where a previous session, model, or machine left off, when the user asks to wrap up or hand work over, when a chunk of work is done (commit/push at your own discretion via mode C, read context usage and suggest a handoff, but never hand off unless the user asks), when syncing mid-session, and before any git push. Also use when a folder or project does NOT yet have AGENTS.md/HANDOFF.md and the user asks to set up, bootstrap, scaffold, or introduce this handoff system. Triggers on 已交棒後續聊、接手、接棒、交棒、收工、換機器、換模型、同步進度、繼續上次的工作、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、pick up where we left off、resume work、bootstrap project、set up handoff。
+description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-12.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
-# 交接與同步程序（入口）
+# 交接與同步程序（參考檔入口）
 
-> **核心優先序：SKILL.md**（含同目錄的模式檔）。共用交接制度衝突時以這個目錄的同步版本為準，包含仍宣稱協定優先的舊實例；`docs/ai-notes/handover-protocol.md` 是不同步的專案實例，升級時須人工遷移。override 只可加嚴，使用者明確指示仍優先。不得在單一專案就地修改共用 skill，回部署包修正再同步。模式 0 的權威是 `PROJECT-BOOTSTRAP.md` 部署包。
+> **2026-11-13 起（需求決策書 v3 第 5 節）這個目錄是碰到才讀的參考，不是制度成立的前提。** 必守的條件在專案 `AGENTS.md` 的共用制度一節；本目錄的步驟與它衝突時以 `AGENTS.md` 為準，使用者明確指示仍優先。
+>
+> 在程序細節上，**核心優先序：SKILL.md**（含同目錄的模式檔）優先於專案實例：`docs/ai-notes/handover-protocol.md` 是不同步的專案實例，升級時須人工遷移。override 只可加嚴。不得在單一專案就地修改共用 skill，回部署包修正再同步。模式 0 的權威是 `PROJECT-BOOTSTRAP.md` 部署包。
 
 ## 適用判斷（先做這一步）
 
 | 專案根目錄的狀態 | 走哪裡 |
 |---|---|
-| 有 `AGENTS.md` ＋ `HANDOFF.md` | 適用，往下選模式 |
+| 有 `AGENTS.md` ＋ `HANDOFF.md` | 適用，需要細節時往下找 |
 | 沒有，而且使用者**明講**要導入這套制度（建交接機制／建骨架／bootstrap） | **模式 0 建制** |
 | 沒有，使用者也沒提 | **本程序不適用**。直接做他要的事，**不要憑空建立交接檔案**；最多問一句「要不要導入這套交接制度？」，他說要才走模式 0 |
 
 專案沒有 `tools/verify_state.py`／`tools/check_docs.py` 也能用：對應步驟改為「跳過並在回報寫明沒有該工具」，**不要自己發明驗證**。
 
-## 選模式，然後讀對應的檔
+## 需要細節時讀哪個檔
 
-| 情況 | 模式 | 接著讀 |
+| 情況 | 模式 | 讀 |
 |---|---|---|
 | 這個資料夾還沒有這套制度，使用者要求建起來 | **0 建制** | `mode-0.md` |
-| session 剛開始／要續作／換機器／換模型；已交棒後又要改檔 | **A 接棒** | `mode-a.md` |
+| 接棒、續作、換機器；已交棒後又要改檔 | **A 接棒** | `mode-a.md`（正常路徑）；開場 `[facts]` 有不正常的值讀 `mode-a-stop.md` |
 | **使用者要求**交棒／收工／換人接手 | **B 交棒** | `mode-b.md` |
 | 工作告一段落；想拉最新或推一個安全點 | **C 同步** | `mode-b.md` 的 C 節 |
 
-不確定就走 A（不是 0）。**A1–A4 不修改專案檔案；A5 只允許寫開工標記，確認推送成功後才開始任務修改。**
-
-- **使用者沒要求就不得自行交棒**：告一段落時自己判斷要不要 commit／push（走 C），依 C 節讀上下文用量、必要時建議交棒；不走 B6／B9、不改 `↗`、不加次數。A5 開工標記與 C 中途安全點都不宣稱交棒。
-- **模式檔與本檔同目錄**：專案有 `.claude/skills/handoff/` 就讀那裡，沒有就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）。找不到模式檔就停下回報，不要憑記憶走程序。
-- `mode-a.md` 只寫正常路徑；異常讀 `mode-a-stop.md`。要改、質疑或想繞過任何一條規則之前先讀 `reasons.md`。摘要與原文衝突時以 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 為準。
+- **使用者沒要求就不得自行交棒**：告一段落時自己判斷要不要 commit／push（C），不改 `↗`、不加次數。A5 開工標記與 C 中途安全點都不宣稱交棒。
+- **模式檔與本檔同目錄**：專案有 `.claude/skills/handoff/` 就讀那裡，沒有就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）。
+- 要改、質疑或想繞過任何一條規則之前先讀 `reasons.md`。`mode-a.md` 與 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 衝突時以後四者為準；它們全部與 `AGENTS.md` 衝突時以 `AGENTS.md` 為準。
 
 ## 全程禁令
 
@@ -41,29 +41,15 @@ description: 接棒／交棒／跨機器同步的固定程序（Git 同步判讀
 ## 必須停下來問使用者（不得自行決定）
 
 - Git 異常：dirty 來源不明、接棒時 ahead-only、fetch 失敗、diverged、不能 fast-forward、遠端意外前進、沒有 upstream
-- **A2.5 偵測到別台機器的「工作中」標記**（同一條分支同時兩台＝違反 single writer）
+- origin 上的「工作中」是別人（同一條分支同時兩台＝違反 single writer）
 - `push --force`、`reset --hard`、刪分支、改寫歷史
 - 功能分支要併進 `main`（需使用者驗收；文件／基建分支驗證過可自己併）
 - 憑證缺失，或需要跨機器搬憑證
 - HANDOFF 沒授權的破壞性操作（刪檔、批次改資料、改 schema）
 - **建制（模式 0）**：資料夾不是空的、已有 Git 歷史或 README；要覆蓋既有的 `.gitignore`／`README.md`；建 GitHub repo 與第一次 push
 
-停下來，或任何時候把問題丟回去等回答，就把 session 名稱改成 `※ 待你決定`。
+停下來等回答時，session 名稱改成 `※`（格式見下）。
 
 ## session 命名（每則訊息都適用）
 
-```text
-<符號>　YYMMDDHH｜<主題>｜<狀態>｜交棒<N>次
-```
-
-| 符號 | 狀態 | 什麼時候改 |
-|---|---|---|
-| `㊣` | 工作中 | 首次接棒在 A5 回報完之後；已交棒或待決之後**收到任何新訊息就先改**，不等開工標記 |
-| `↗` | 已交棒 | B9，push 成功之後，N 加 1 |
-| `※` | 待你決定 | 把問題丟回去等回答時 |
-
-- 每則使用者新訊息都先看 session 狀態，包含只問問題、補充、更正與致謝；是 `↗` 或 `※` 就先改回 `㊣` 再回答，保留原本的 `YYMMDDHH`、主題與交棒次數。
-- 只讀續聊不改 HANDOFF、不 commit、不 push，也不為了結束回答再交棒。續聊要改檔前重新走 A1–A5：前次交棒已釋出分支，寫入資格不沿用。
-- `YYMMDDHH` 取接棒當下的時間，之後不更新；符號後面接一個全形空格；主題 ≤10 字、動詞＋受詞，還不知道就寫 `待指派`；新 session 的 N 從 0 起算。
-- A5、B9 與續聊的回覆都必須有 `session：` 一行，寫實際標題與次數。工具不能改名就寫 `不適用：<原因>；交棒<N>次`，不必為此停下來問；改名失敗照實寫。
-- 改名看的是 session 狀態，不是 git 結果（只有 `↗` 要等 push 成功）；側欄的 `㊣` 不證明 origin 上有開工標記。模式 C 不改名。細則在 `reasons.md` 的「session 命名」，交棒計數在 `mode-b.md`。
+格式、三種狀態、何時改與交棒計數的規則在 `AGENTS.md` 共用制度的「session 名稱」一節，這裡不重寫，以免兩份各自演化。時間戳用開場 `[facts]` 第一行印的 `YYMMDDHH`。細則、反例與「為什麼要改名」在 `reasons.md` 的「session 命名」；交棒計數何時加一在 `mode-b.md` 的 B9。

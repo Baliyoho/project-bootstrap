@@ -42,7 +42,10 @@ class RepoSelftestTests(unittest.TestCase):
 
     def test_every_surface_with_wiring_passes_on_a_seeded_project(self):
         home = self.tmp / 'empty-home'
-        for surface, platform in [(s, p) for s in selftest.SKILLS for p in selftest.PLATFORMS]:
+        # Antigravity left the kit on 2026-11-13 (decision v3 D8); the module still reads
+        # projects deployed before that, but a seeded project no longer has its wiring.
+        kit_surfaces = [s for s in selftest.SKILLS if not s.startswith('antigravity-')]
+        for surface, platform in [(s, p) for s in kit_surfaces for p in selftest.PLATFORMS]:
             result = selftest.run(surface, self.project, self.tmp / 'cache', version='0', home=home,
                                   platform=platform)
             self.assertEqual(result['matrix'], 'installed ' + self.digest)

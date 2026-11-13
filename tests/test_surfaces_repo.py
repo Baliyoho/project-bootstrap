@@ -21,7 +21,8 @@ sys.path.insert(0, str(ROOT / 'tools'))
 
 import build_package  # noqa: E402
 
-ALL = ('claude-code', 'codex-cli', 'codex-app', 'antigravity-cli', 'antigravity-2', 'antigravity-ide')
+# Antigravity left the kit on 2026-11-13 (decision v3 D8).
+ALL = ('claude-code', 'codex-cli', 'codex-app')
 FREE = '- **工作中**：無（已交棒）\n'
 
 
@@ -81,15 +82,10 @@ class Fixture(unittest.TestCase):
 class RepoSurfaceTests(Fixture):
     def test_green(self):
         text = self.compare()
-        self.assertIn('[git-check] 全綠 <time>', text)
-        self.assertIn('「工作中」是「無（已交棒）」', text)
-        self.assertIn('[handoff] 開工改名用', text)
-
-    def test_ide_is_named_unsupported_on_its_measured_version(self):
-        result = surfaces.compare(self.work, ALL, self.env, versions={'antigravity-ide': '1.107.0'}, subdir='docs')
-        self.assertTrue(result['equal'])
-        self.assertEqual(list(result['unsupported']), ['antigravity-ide'])
-        self.assertEqual(len(result['runs']), 5)
+        self.assertIn('本機落後 origin/main 0 個 commit、領先 0 個', text)
+        self.assertIn('未提交或未追蹤 0 個檔', text)
+        self.assertIn('[facts] origin 上的 HANDOFF：- **工作中**：無（已交棒）', text)
+        self.assertIn('（session 名用 <time>）', text)
 
     def test_behind(self):
         other = self.other_clone()
@@ -97,11 +93,11 @@ class RepoSurfaceTests(Fixture):
         self.git('add', 'note.txt', cwd=other)
         self.git('commit', '-q', '-m', 'ahead', cwd=other)
         self.git('push', '-q', cwd=other)
-        self.assertIn('本地過時：落後 origin 1 個 commit', self.compare())
+        self.assertIn('本機落後 origin/main 1 個 commit', self.compare())
 
     def test_dirty(self):
         (self.work / 'scratch.txt').write_text('x\n', encoding='utf-8')
-        self.assertIn('工作區有 1 個未提交變更', self.compare())
+        self.assertIn('未提交或未追蹤 1 個檔', self.compare())
 
     def test_occupied_by_another_machine(self):
         other = self.other_clone()
@@ -110,25 +106,24 @@ class RepoSurfaceTests(Fixture):
         self.git('push', '-q', cwd=other)
         self.git('pull', '-q', '--ff-only')
         text = self.compare()
-        self.assertIn('另一台機器正在 main 上工作', text)
-        self.assertNotIn('[git-check] 全綠', text)
-        self.assertIn('不是全綠', text)
+        self.assertIn('[facts] origin 上的 HANDOFF：- **工作中**：`desk-win` ／ `Codex CLI`', text)
 
     def test_same_machine_other_tool_with_the_same_identity_everywhere(self):
-        # The hook may tell tools apart; the adapters must not change what it sees.
+        # Since 2026-11-13 the hook prints the marker as it is and does not guess the tool;
+        # a tool variable in the environment must not change what any surface sees.
         self.handoff('- **工作中**：`test-host` ／ `Codex CLI` ／ `x`，開工\n')
         self.git('commit', '-q', '-am', 'busy')
         self.git('push', '-q')
         env = dict(self.env, CLAUDECODE='1')
-        self.assertIn('同一台機器（test-host）上另一個工具', self.compare(env))
+        self.assertEqual(self.compare(env), self.compare())
 
     def test_no_upstream(self):
         self.git('switch', '-q', '-c', 'feature')
-        self.assertIn('branch=feature 沒有 upstream', self.compare())
+        self.assertIn('origin 上沒有分支 feature', self.compare())
 
     def test_fetch_fails(self):
         self.git('remote', 'set-url', 'origin', str(self.tmp / 'gone.git'))
-        self.assertIn('無法 fetch origin', self.compare())
+        self.assertIn('fetch origin 失敗', self.compare())
 
     def test_global_claude_skill_warning(self):
         # Decision Q28 (a): Claude Code loads ~/.claude/skills/handoff/ over the project's,
@@ -141,8 +136,7 @@ class RepoSurfaceTests(Fixture):
         (home / 'mode-a-stop.md').unlink()
         (home / 'extra.md').write_text('x\n', encoding='utf-8')
         text = self.compare()
-        self.assertIn('🟡 家目錄 ~/.claude/skills/handoff/ 跟本專案的 handoff skill 不一樣（mode-a-stop.md mode-b.md extra.md）', text)
-        self.assertIn('[git-check] 全綠', text)
+        self.assertIn('[facts] 家目錄 ~/.claude/skills/handoff/ 與本專案的 handoff skill 不同（mode-a-stop.md mode-b.md extra.md）', text)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-11（F22 第二輪：規則縮成短句，原文逐條留在理由檔；條件式文件表搬到 ARCHITECT）
+> 最後更新：2026-11-13（v3 第 1 期：Antigravity 移出部署包，副本規則跟著改）
 > 本檔只放規則；每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 開工第一件事
@@ -27,11 +27,11 @@ AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-B
 
 ## 副本規則
 
-拓撲在 [ARCHITECT.md](ARCHITECT.md)。動副本、接線或 Antigravity 之前，先讀對應理由段落的完整原文。
+拓撲在 [ARCHITECT.md](ARCHITECT.md)。動副本或接線之前，先讀對應理由段落的完整原文。
 
 - 改完部署包，所有副本一起覆蓋，含選用的兩個全域 `skills/handoff/`。[為什麼](AGENTS-reasons.md#copy-1)
 - Codex 與 Claude Code 掛同樣兩個 `.sh`，不在 `.codex/` 複製第二份；Windows 的 `codex-hook.cmd` 只做管線。[為什麼](AGENTS-reasons.md#copy-2)
-- Antigravity 只接 `SessionStart`；改 3.18–3.20 前先讀部署包那一節與理由裡的四個約束。IDE 那面不再追。[為什麼](AGENTS-reasons.md#copy-3)
+- Antigravity 2026-11-13 起移出部署包（需求決策書 v3 D8）：舊 3.18–3.20 不再產出，已部署專案裡那三個檔不同步也不刪，清不清由使用者決定；要重新支援先讀理由裡的四個約束。[為什麼](AGENTS-reasons.md#copy-3)
 - 接線路徑一律相對、不假設 cwd：前面掛 `$(git rev-parse --show-cdup)`；Antigravity 刻意不跟。[為什麼](AGENTS-reasons.md#copy-4)
 - `.agents/` 只放指標與接線，skill 指標的 `description` 寫滿觸發詞。[為什麼](AGENTS-reasons.md#copy-5)
 - Codex 啟動器也要同步（`sync_project.py --codex-only`）；接線改過要重新審核並驗收實際執行。[為什麼](AGENTS-reasons.md#copy-6)

@@ -34,7 +34,7 @@ HAS_GIT = shutil.which('git') is not None
 SIGNS = (platform.system() == 'Darwin' and release_module.VERIFIER.is_file() and HAS_GIT)
 HOOK = '.claude/hooks/git-freshness.sh'
 SKILL = '.claude/skills/handoff/SKILL.md'
-LAUNCHER = '.agents/ag-hook.cmd'
+LAUNCHER = '.claude/hooks/codex-hook.cmd'
 OWNER = '`fixture` ／ `Claude Code` ／ `migrate`'
 
 
@@ -237,7 +237,7 @@ class MigrateRepoTests(unittest.TestCase):
             settings['permissions'] = {'allow': ['Bash(ls)']}
             (project / '.claude/settings.json').write_text(json.dumps(settings))
             (project / LAUNCHER).unlink()
-            crlf = project / '.claude/hooks/codex-hook.cmd'
+            crlf = project / '.claude/hooks/pre-push-handoff.sh'
             crlf.write_bytes(crlf.read_bytes().replace(b'\n', b'\r\n'))
         project = self.project('target', origin=True, tweak=own)
         self.claim(project)
