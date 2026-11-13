@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 最後更新：2026-11-13（需求決策書 v3 與 handoff-ab 實測）：新增 `project-bootstrap-requirements-decision-v3.md` 當現行需求權威，v2 決策書並存供工具讀取（v3 Q32 (b)）；新增 `experiments/handoff-ab/`（對照實測，v3 的依據）。部署包、`VERSION`、驗證項都沒動。
+
 > 最後更新：2026-11-12（v2 併進 main 與 `beta` epoch 3）：`main` 快轉到 `cf58954`（決策書 Q30），在那裡發 `channel/beta/3-ad6948d1…`；核對與乾淨環境安裝紀錄在 v2 說明。
 
 > 2026-11-12 稍早（Claude Code skill 載入與 Q28／Q29）：第三次 `claude -p` 量到家目錄 handoff skill 蓋掉專案那份；決策書 Q28 (a) 讓部署包 3.10 開場 hook 在兩份不同時印 🟡（`source:` `v2026-11-12.3`，`VERSION` 不動，各專案未同步），`selftest.SKILLS` 的 Claude Code 改家目錄優先。Q29 (a)：Antigravity 凍結，不測、不追、不移除。
@@ -137,7 +139,7 @@
 
 | 要做的事 | 先讀 |
 |---|---|
-| 討論需求、驗收、待決事項或替代工具 | [需求決策書](project-bootstrap-requirements-decision.md)：現行需求唯一權威（D1–D8、51 個穩定需求 ID）；待決唯一入口是第 6 節。決策定稿不等於實作完成 |
+| 討論需求、驗收、待決事項或替代工具 | [需求決策書 v3](project-bootstrap-requirements-decision-v3.md)：2026-11-13 起的現行需求權威（D1–D15、51 個穩定需求 ID，編號沿用 v2）；新的待決登記在它的第 8 節。[v2 決策書](project-bootstrap-requirements-decision.md)並存：工具仍讀它，v2 時期已決的題目與逐條理由在它的第 6 節。決策定稿不等於實作完成 |
 | 查某個需求 ID 做到哪 | [v2 現況索引](experiments/v2/status.json)；HANDOFF 只留停點與行動 |
 | 動同步工具、驗證器、hook 或 R01–R09 相關的地方 | [第二輪複審快照](project-bootstrap-reaudit-2026-11-03.md)。2026-11-10 使用者同意從每輪必讀改成條件式；R01–R09 邊界的獨立複審還沒做，不要當成全部結案 |
 | 動原查核報告那 16 條 | [查核進度](project-bootstrap-audit-progress.md) |
@@ -185,7 +187,9 @@
 | [project-bootstrap-reaudit-2026-11-03.md](project-bootstrap-reaudit-2026-11-03.md) | **第二輪複審快照**：R01–R09 的證據、改善與驗收門檻、原 F01–F16 的複審判定；2026-11-03 使用者要求下一輪先讀，2026-11-10 使用者同意改成動到同步工具、驗證器、hook 或 R01–R09 相關處才讀。不部署、不同步，原始探針留在審查聊天產物 | 查核結論需勘誤時；當下實作進度看 HANDOFF |
 | [project-bootstrap-efficiency-plan.md](project-bootstrap-efficiency-plan.md) | **效率改進設計提案**：接棒分流、驗證分層、必讀內容精簡、原始碼與部署產物分離；尚未實施，不部署、不同步，不取代現行程序 | 設計決策改變時；實作進度看 HANDOFF |
 | [project-bootstrap-skill-split-design.md](project-bootstrap-skill-split-design.md) | **handoff skill 依模式拆分設計稿**（F22 第二階段 (1)(3)）：2026-11-10 實測、甲乙方案比較、檔案配置、開場 hook 全綠行、要改的守門與推出順序。等使用者審閱（決策書 Q9），未實施，不部署、不同步 | 設計改變時；實作進度看 HANDOFF |
-| [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 現行需求唯一權威：D1–D8、51 條需求、驗收、待決與變更理由。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
+| [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md) | **現行需求權威（決策版本 3，2026-11-13）**：適用範圍、依據、D1–D15、51 條需求的處置與強度、目標部署形狀、驗收、待決 Q32 起。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
+| [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 決策版本 2，2026-11-13 起由 v3 取代為現行權威，**並存不刪**：驗證器、`test_trail_repo`、`test_registry`、一致性檢查與 v2 現況索引仍讀這個檔名；Q1–Q31 與逐條否決理由只在這裡。衝突以 v3 為準 | 只補工具需要的登記與帶日期的註記 |
+| [experiments/handoff-ab/](experiments/handoff-ab/README.md) | 完整版與極簡版骨架的對照實測（2026-11-13 兩輪、36 次）：極簡版骨架、情境搭建、執行、評分與結果。v3 的依據 E1。實驗用，不部署、不同步；原始資料在 gitignored 的 `dist/` | 加跑或改情境時 |
 | [project-bootstrap-implementation-plan.md](project-bootstrap-implementation-plan.md) | 依決策書評估既有程式與開源工具；推薦技術棧、50 項映射、可行性門檻、遷移與驗收。不承載滾動達成狀態，不部署、不同步 | 選型或實現方案改變時 |
 | [project-bootstrap-requirements-history.md](project-bootstrap-requirements-history.md) | 原 v3.10 全文與修訂理由，歷史封存；不再指示現行操作 | 僅補帶日期的歷史勘誤 |
 | [project-bootstrap-requirements-review-2026-11-04.md](project-bootstrap-requirements-review-2026-11-04.md) | 需求審閱建議快照 Q1–Q7，供下一棒 Opus 討論；未採納，不改變需求權威或現行程序。不部署、不同步 | 本次審閱快照；採納結果另改需求文件 |

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/session-facts.sh\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

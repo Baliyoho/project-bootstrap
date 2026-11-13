@@ -1,46 +1,54 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-12 22:32（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（Q31：交棒只在使用者要求時做）
+- **交接時間**：2026-11-13 16:00（+08）
+- **交棒者**：Claude Code（Fable 5.2）／ `Mac`（handoff-ab 兩輪實測、需求決策書 v3、開 `feature/v3`）
 
 ## 任務目標
 
-依[需求決策書](project-bootstrap-requirements-decision.md)決策版本 2 與[實現規劃](project-bootstrap-implementation-plan.md)續作 v2；2026-11-12 使用者指示把 v2 併進 main（決策書 Q30，快轉），之後在 main 上做；同步各專案仍要另行授權。逐 ID 狀態唯一權威是 [v2 現況索引](experiments/v2/status.json)，索引不可讀就停止判定。
+依[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)把以 v2 做出來的成果改成 v3 的形狀。現在做**第 1 期：Claude Code＋macOS**，做完就是基本版；第 2 期 Codex＋macOS、第 3 期兩個工具＋Windows，前一期驗過才開始下一期。Antigravity 放棄。v3 的一句話：制度只負責模型不會自己知道的事，不教模型怎麼做，也不自己造執行屏障。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
-- **待續分支**：無，在 `main` 上做（2026-11-12 `main` 快轉到 `codex/project-bootstrap_v2`，那條分支保留不刪）。
+- **待續分支**：`feature/v3`（從 `main @ 8cd8107` 開；`main` 只多一個把本欄指過來的 commit）。v3 的工作都在這條分支，第 1 期驗過、使用者驗收後才併回 `main`。
 - **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-12.4`
-- 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；`gh` 已登入且有 `workflow` 權限。PATH 上沒有 `claude`／`codex`；桌面 App 內附的 Claude Code 2.1.321 已用 `claude auth login` 登入（Pro，到 2026-12-12），拿掉宿主 session 的變數就能單獨跑；ChatGPT.app 內附 Codex CLI `0.167.0-alpha.3.2`。Windows／Linux 未驗。
+- 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；沒有 `python` 指令，用 `python3`。桌面 App 內附 Claude Code 2.1.321。handoff-ab 受測用的獨立設定目錄在系統暫存目錄，重開機可能被清掉，清掉要使用者重新登入一次（指令由 `run.py preflight` 印出）。
 
 ## 已完成
 
-P0、P1、F22 與 P2 五片見 [v2 說明](experiments/v2/README.md)；2026-11-12 先前的 F14、Q27–Q30、beta epoch 3 見決策書與 git log。2026-11-12 晚（使用者指示）：
-- Q31 (a)：入口模式表的 B 只在使用者要求交棒／收工／換人接手時觸發，告一段落走 C、commit／push 時機由 agent 判斷；C 的 push 在 origin「工作中」仍是本 session 時免更新 HANDOFF；讀得到上下文用量就讀，70% 建議交棒、85% 再一次，讀不到不估算。3.11 push 提醒在 origin 標記不是「無（已交棒）」時放行，附四個情境含負向測試。`VERSION` 跳 `2026-11-12.4`，六檔、3.11、3.16 指標同版；這台兩份全域 skill（Claude、Codex）已覆蓋。
+- **handoff-ab 對照實測**（[結果](experiments/handoff-ab/RESULTS.md)）：十個情境、36 次，Opus 5.5 拿 22 行的極簡骨架，機器查得到的結果不比現行完整版差，成本約一半到四分之三。只測了 Opus 5.5、單輪、macOS。
+- **需求決策書 v3**：2026-11-13 起的現行需求權威，與 v2 檔並存（v3 Q32 (b)）。`AGENTS.md`、`AGENTS-reasons.md`、`ARCHITECT.md` 已改指 v3；讀 v2 檔的驗證器與測試沒有改。
+- 同日使用者修訂：F50 回到必要、平台分三期、Antigravity 放棄。
 
 ## 未完成／下一步
 
-1. 各專案還沒同步到 v2／epoch 3（含 Q27 (a)、3.16、Q28 (a) 與 Q31）；P2 退出條件也還差真實專案遷移與另外 20 個專案的私人清單；`鍵鼠同部署_mac` 與 upstream 沒對齊。使用者 2026-11-12 回答先不要同步，要等授權。
-2. Codex：等使用者額度在 2026-11-14（週六）重置後再處理啟動自測與 F14 實測；每次模型呼叫仍要授權。
-3. F14 只到「讀得到的文字與 hook 輸出相同」；部署包沒接 SessionEnd，模型是否照程序做沒有等價案例。Claude Code 原生讀 `AGENTS.md`（沒有 `CLAUDE.md`）沒測。
-4. channel tag 沒有伺服器端保護（Q23）；每次發布要先刪舊的 `release-request/<channel>` 觸發 tag（見 ARCHITECT）。
-5. F22 剩 Windows／Linux 與 Codex 沒量；P3／P4、Windows hook 同步、R01–R09 複審、F28 探針維持暫緩（2026-11-12 使用者再確認）。
+第 1 期還沒動工。部署包、`src/kit/`、`VERSION`、各專案與全域 skill 都還是 v2 的樣子。
+
+1. **改部署包來源**（`src/kit/`，改完跑 `build_kit.py` 重生部署包）成 v3 第 5 節的形狀：
+   - `AGENTS.md` 範本的共用制度一節 ≤ 40 行。起點是 [極簡版](experiments/handoff-ab/minimal/AGENTS.md.tmpl)，補三條：看「待續分支」、不提交祕密與不整批加入、F50 的 session 命名。
+   - 開場 hook 改成只報事實。起點是極簡版的 `session-facts.sh.tmpl`，加上 F50 要的時間戳與版本落後提示一行。
+   - handoff skill 六個檔降為碰到才讀的參考，入口不得要求必讀。
+   - Antigravity 的接線與轉接檔移出部署包。
+2. **調整 `verify_bootstrap.py`**。準則：守的是 v3 仍為必要的需求就留；守的是已退役或降強度的需求、Antigravity、或「skill 必讀」這種結構的，就改或移除，每移除一項在 ARCHITECT 的驗證項表記日期與理由。拿不準的留著，列給使用者決定，不要自己砍。
+3. **驗第 1 期**：把 handoff-ab 的「完整版」那一組換成新部署包，跑兩輪十個情境（用法見 [README](experiments/handoff-ab/README.md) 與 [ROUND2](experiments/handoff-ab/ROUND2.md)）。要呼叫模型，每一批都要使用者批准，單次決策 ≤ 24 次、只用訂閱額度（v3 D15）。F50 測不到，要在互動 session 另外驗。
+4. 第 1 期過了再問使用者要不要併回 `main`。同步各專案一向另行授權。
+
+v3 第 8 節還有兩題沒定：凍結的執行屏障模組要不要搬去封存（Q33）、各專案何時換新骨架（Q34）。定之前那些模組與測試原地不動。
 
 ## 地雷與注意事項
 
-- 改這個 repo 的地雷在 [ARCHITECT.md](ARCHITECT.md)「開發注意事項」（含發布與 `workflow` 權限），碰到對應的檔才讀。
-- 跨工具表改 `src/kit/capabilities.json`，不改 `kit.md`；格子文字不能有 `|`。改矩陣會改變包的 digest。決策書已決題要逐一寫「未選 (x)」理由，否則 `test_trail_repo` 擋；HANDOFF 懸置的每一條都要在決策書登記成待決。
-- Claude Code 會用 `~/.claude/skills/handoff/` 蓋掉專案那份；改了 skill 目錄要一起覆蓋這台的全域副本。
-- `*_repo.py` 測試要 import `tools/`，不能進 mutation 群組，反證要手動做。
-- 改 handoff skill 的 `description` 要同步 `.agents/skills/handoff/SKILL.md.tmpl` 指標，否則 `tests/test_surfaces_repo.py` 的程序入口比對失敗（只有 `verify_v2.py` 看得到）。
-- Q31 之後中途 push 不更新 HANDOFF，所以 HANDOFF 只在交棒時準；session 斷掉沒交棒，以 git log 為準。
-- 部署 hook 的註解別寫直譯器名稱，跨平台防呆會當成依賴。
+- **一致性檢查對 v2 已決的題號很敏感**：在 `README`、`AGENTS`、`ARCHITECT`、`HANDOFF` 這幾份裡，提到 v2 題號的那一行不要同時出現「待決」兩個字，否則 `test_contradictions_repo` 會判成已決的題目還被當成待決。
+- **待決登記處有兩個**：工具認得的是 v2 決策書第 6 節；v3 新增的題目在 v3 第 8 節。
+- handoff-ab 的評分器出過一次會翻轉結論的錯。每個 FAIL 都要先人工看原始資料再採用；改評分器要加專屬反例，`selfcheck.py` 兩輪都要過（第二輪加 `HANDOFF_AB_ROUND=2`）。
+- 使用者的帳號允許超額使用，撞到訂閱上限會直接轉成計費而不報錯。`run.py` 有用量守門（超額、被限流、任一用量窗到 85% 就停），不要拿掉。
+- Claude Code 會用家目錄的 handoff skill 蓋掉專案那份；改了 skill 目錄要一起覆蓋這台的全域副本。受測時要用獨立的設定目錄，`preflight` 會查。
+- 改這個 repo 的其他地雷在 [ARCHITECT.md](ARCHITECT.md)「開發注意事項」，碰到對應的檔才讀。
 
 ## 服務查證與期望快照
 
-- 2026-11-12 22:32 `verify_bootstrap.py --staged`：exit 0；`uv run --locked pytest` 652 通過（3.15）。mutation 沒跑。B4：本 repo 沒有 `check_docs.py`（已宣告例外）。B5：Codex hook 接線未改，不適用。模型呼叫：本 session 沒有。
+- 2026-11-13 16:00 `verify_bootstrap.py --staged`：exit 0；`uv run --locked pytest` 652 通過（3.15）。mutation 沒重跑。handoff-ab 的 `selfcheck.py` 兩輪全過。B4：本 repo 沒有 `check_docs.py`（已宣告例外）。B5：Codex hook 接線未改，不適用。
+- 模型呼叫：本 session 共 36 次 Opus 5.5（`claude -p`，兩批各經使用者批准，只用訂閱額度，沒有用到超額）。
 
 ## 懸置事項（AI 勿自行處理）
 
