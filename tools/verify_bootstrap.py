@@ -1413,9 +1413,41 @@ REASON_ITEM_SECTIONS = ('鐵律', '副本規則', '改兩支 hook 的訊息時')
 REASON_MIN_BODY = 40
 
 
+def blank_shared_copy(text):
+    """本 repo AGENTS.md 裡的共用制度是部署包的逐字副本（2026-11-14 使用者決定貼入）：
+    它連到部署後才存在的 skill 路徑、章節也沒有本 repo 的理由連結，這兩項檢查跳過它，
+    改由 shared_copy_problems 要求它跟部署包逐字相同。行數保留，錯誤行號才對得上。"""
+    if text.count(SHARED_START) != 1 or text.count(SHARED_END) != 1:
+        return text
+    a = text.rfind('\n', 0, text.index(SHARED_START)) + 1
+    b = text.index(SHARED_END) + len(SHARED_END)
+    if b <= a:
+        return text
+    return text[:a] + '\n' * text.count('\n', a, b) + text[b:]
+
+
+def shared_copy_problems(agents, template):
+    """本 repo AGENTS.md 的共用制度副本：要剛好一份，而且跟部署包範本逐字相同。"""
+    def block(text):
+        if text.count(SHARED_START) != 1 or text.count(SHARED_END) != 1:
+            return None
+        a = text.rfind('\n', 0, text.index(SHARED_START)) + 1
+        b = text.index(SHARED_END) + len(SHARED_END)
+        return text[a:b] if b > a else None
+    want, have = block(template), block(agents)
+    if want is None:
+        return ['部署包範本找不到共用制度']
+    if have is None:
+        return ['本 repo AGENTS.md 沒有剛好一份共用制度（全域 handoff skill 指向它）']
+    if have != want:
+        return ['本 repo AGENTS.md 的共用制度跟部署包不同：改完部署包要手動重貼（sync_project 拒絕本 repo）']
+    return []
+
+
 def reason_link_problems(agents, reasons):
     """agents／reasons：兩份文件的全文 → 問題清單。"""
     problems = []
+    agents = blank_shared_copy(agents)
     bodies = {}
     chunks = re.split(r'(?m)^<a id="([A-Za-z0-9-]+)"></a>\s*$', reasons)
     for anchor, body in zip(chunks[1::2], chunks[2::2]):
@@ -1466,6 +1498,19 @@ def step_reason_links():
     path = ROOT / REASON_FILE
     reasons = read_lf(path) if path.is_file() else ''
     problems = reason_link_problems(agents, reasons)
+    template = read_lf(ROOT / 'src/kit/files/AGENTS.md.tmpl')
+    problems.extend(shared_copy_problems(agents, template))
+    copy_cases = (
+        ('共用制度副本被改一個字', agents.replace('## 不可違反的條件', '## 不可違反之條件', 1)),
+        ('共用制度副本被拿掉', agents.replace(SHARED_END, '', 1)),
+    )
+    for name, mutated in copy_cases:
+        if mutated == agents:
+            problems.append('負向測試沒有改到內容：' + name)
+        elif not shared_copy_problems(mutated, template):
+            problems.append('負向測試未擋住：' + name)
+    if reason_link_problems(agents.replace(SHARED_END, '', 1), reasons) == reason_link_problems(agents, reasons):
+        problems.append('負向測試未擋住：副本標記壞掉時理由連結檢查仍跳過那幾節')
     first = REASON_LINK.search(agents.split('\n## 鐵律', 1)[-1])
     rule = '](%s#%s)' % (REASON_FILE, first.group(1)) if first else None
     anchor = '<a id="%s"></a>' % first.group(1) if first else None
@@ -1494,6 +1539,7 @@ def step_reason_links():
         return False
     record('OK', title,
            'AGENTS.md 每節與鐵律／副本規則／hook 訊息每條都連到 %s 的非空段落；%d 個負向測試通過'
+           '；共用制度副本與部署包逐字相同（3 個負向測試）'
            '（只查連結與段落存在，不判斷理由寫得對不對）' % (REASON_FILE, len(cases)))
     return True
 
@@ -1823,7 +1869,10 @@ def source_document_problems(root, mds, link_ok_paths=()):
         # 來源部署包的範本位於圍欄內，仍須檢查；其他文件的圍欄是範例，
         # 與產物 check_docs 一樣略過。F46 同組反例同時驗圍欄後的真死連結。
         lines, fence = [], None
-        for line in (root / rel).read_text(encoding='utf-8').split('\n'):
+        doc = (root / rel).read_text(encoding='utf-8')
+        if rel == 'AGENTS.md':
+            doc = blank_shared_copy(doc)
+        for line in doc.split('\n'):
             marker = re.match(r'^\s*(```+|~~~+)', line)
             if rel != 'PROJECT-BOOTSTRAP.md':
                 if fence is not None:

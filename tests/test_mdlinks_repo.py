@@ -32,7 +32,14 @@ class RepoLinkTests(unittest.TestCase):
         documents = [p for p in listed if p and not p.startswith('src/kit/')]
         self.assertIn('PROJECT-BOOTSTRAP.md', documents)
 
+        # AGENTS.md carries a verbatim copy of the kit's shared section (2026-11-14); it links
+        # the deployed skill path, which this repo deliberately lacks (it reads the global copy).
+        # verify_bootstrap checks the copy is byte-identical to the kit template.
+        shared_copy = ('.claude/skills/handoff/SKILL.md',)
+
         def template(document, target):
+            if document == 'AGENTS.md' and str(target).split('#')[0] in shared_copy:
+                return True
             return document == 'PROJECT-BOOTSTRAP.md' and verify_bootstrap.template_link(target)
         self.assertEqual(dead_links(ROOT, documents, skip=template), [])
 
