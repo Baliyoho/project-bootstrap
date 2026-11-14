@@ -455,7 +455,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ## 換一個 AI 接手工作（交接 prompt）
 
-程序已經寫成 **[handoff skill](.claude/skills/handoff/SKILL.md)**（A 接棒／B 交棒／C 同步）。在 Claude Code 直接打 `/handoff` 就會執行；**Codex 與 Antigravity 也會自己發現它**（Codex 讀 `~/.codex/skills/` 與這個 repo 的 `.agents/skills/`，Antigravity 原生讀 `.agents/skills/`；各工具的實測結論見 [AGENTS.md](AGENTS.md)「跨工具的可靠度不一樣」）。下面兩段 prompt 是給**自動發現不成立**的時候用的：沒裝全域副本、工具不在那張表上，或你要明確指定跑哪一個模式。SKILL.md 是純 Markdown，任何模型照讀就能做。
+程序已經寫成 **[handoff skill](.claude/skills/handoff/SKILL.md)**（A 接棒／B 交棒／C 同步）。在 Claude Code 直接打 `/handoff` 就會執行；**Codex 也會自己發現它**（Codex 讀 `~/.codex/skills/` 與這個 repo 的 `.agents/skills/`；各工具的實測結論見 [AGENTS.md](AGENTS.md)「跨工具的可靠度不一樣」）。下面兩段 prompt 是給**自動發現不成立**的時候用的：沒裝全域副本、工具不在那張表上，或你要明確指定跑哪一個模式。SKILL.md 是純 Markdown，任何模型照讀就能做。
 
 ### 收工時：請目前這個 AI 交棒（skill 的 **B 模式**）
 
@@ -569,12 +569,12 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 | [.claude/settings.json](.claude/settings.json) | 上面兩個 hook 的接線（進 Git） | 本專案 | 加減 hook |
 | `.claude/settings.local.json` | 各機器本地設定（**不進 Git**） | 各機器自己 | 換機器 |
 | [.codex/hooks.json](.codex/hooks.json) | Codex CLI 的 hook 接線——掛的是上面**同樣那兩個 `.sh`**，不另存一份腳本 | 本專案 | 加減 hook |
-| [.agents/skills/handoff/SKILL.md](.agents/skills/handoff/SKILL.md) | Antigravity 原生讀 `.agents/`：只放指向權威版的指標 | 指向 `.claude/` 那份 | 幾乎不動 |
+| [.agents/skills/handoff/SKILL.md](.agents/skills/handoff/SKILL.md) | Codex 也讀 `.agents/skills/`：只放指向權威版的指標 | 指向 `.claude/` 那份 | 幾乎不動 |
 | [tools/check_docs.py](tools/check_docs.py) | 文件與交接快照的機械檢查：死連結／過期字串／缺日期標頭／硬編數量／殘留佔位符／交接快照結構 | 部署包（「專案設定」區塊除外，那塊本來就該依專案調） | 專案設定要調 |
 | [tools/verify_state.py](tools/verify_state.py) | 一鍵現況查證，輸出 key=value 事實快照 | 本專案（骨架來自部署包） | 服務或檢查項改變 |
 | [.gitignore](.gitignore)、[.gitattributes](.gitattributes) | 排除祕密與運行資料；行末強制 LF | 本專案 | 新增祕密檔或運行目錄 |
 
-**跨工具的可靠度不一樣**：`AGENTS.md` 與純 Markdown 的程序檔是**可攜層**（Claude Code／Codex／Antigravity 都原生讀得到）；hooks 已接 Claude Code、Codex CLI／桌面 App、Antigravity CLI／2.0，而且**都帶條件**——Codex 要專案被信任＋hook 經審核；Antigravity 的 Windows 這一面要找得到 Git Bash，CLI 與 2.0 已於 2026-10-31 實測觸發，IDE `1.107.0` 實測沒觸發、已決定不再追查。正確性押在可攜層，不押在 hook 上：2026-10-30 在未信任的資料夾實測，`AGENTS.md` 照樣被讀進 prompt，`.codex/hooks.json` 整層被跳過而且沒有任何訊息。
+**跨工具的可靠度不一樣**：`AGENTS.md` 與純 Markdown 的程序檔是**可攜層**（Claude Code／Codex 都原生讀得到）；hooks 已接 Claude Code、Codex CLI／桌面 App，而且**帶條件**——Codex 要專案被信任＋hook 經審核。正確性押在可攜層，不押在 hook 上：2026-10-30 在未信任的資料夾實測，`AGENTS.md` 照樣被讀進 prompt，`.codex/hooks.json` 整層被跳過而且沒有任何訊息。
 
 ## 專案本體
 
@@ -721,7 +721,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 「下一個動作」上，而**直接關掉視窗沒有下一個動作**。所以這是**程序責任，不是工具責任**。
 
 > 2026-10-30 補一個事實：Claude Code 與 Codex 其實**有** `SessionEnd` 事件（Codex 的還會在閒置
-> 30 分鐘時觸發），Antigravity 沒有。所以「沒有下一個動作」這句話現在只對一部分工具成立。
+> 30 分鐘時觸發），所以「沒有下一個動作」這句話不再那麼絕對。
 > 但它救不了這件事：Claude Code 的 `SessionEnd` 不能擋下結束、預設只有 1.5 秒預算，做不完一次
 > `git push`；它最多提醒**離場的那一個人**，救不了下一棒。所以結論沒變——真正的擔保仍然是
 > 開工時就推上 origin 的「工作中」標記，加上這套程序。
@@ -739,8 +739,7 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
   東西還是得回去拿。
 - **A 在 A5 之前就關掉**（還沒寫標記）→ `origin` 上什麼都沒有，跟以前一樣。
 - **A 那一端的 hook 沒有真的生效**（例如 Codex 的專案未被信任或 hook 未經審核，非互動模式
-  會靜默跳過；Antigravity 的 shim 找不到 Git Bash，或使用的是實測未觸發的 IDE surface）→
-  沒有自動提醒，只剩程序擔保。Codex 與 Antigravity 的接線已隨骨架提供；這一條要防的仍然是
+  會靜默跳過）→ 沒有自動提醒，只剩程序擔保。Codex 的接線已隨骨架提供；這一條要防的仍然是
   「裝了不代表會跑」。
 
 所以下面這套補救程序仍然必要，**能補回來的只有留在磁碟上的那部分**這句話也沒有改變。

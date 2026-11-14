@@ -22,7 +22,7 @@
 
 ## 換一個 AI 接手工作（交接 prompt）
 
-程序已經寫成 **[handoff skill](.claude/skills/handoff/SKILL.md)**（A 接棒／B 交棒／C 同步）。在 Claude Code 直接打 `/handoff` 就會執行；**Codex 與 Antigravity 也會自己發現它**（Codex 讀 `~/.codex/skills/` 與這個 repo 的 `.agents/skills/`，Antigravity 原生讀 `.agents/skills/`；各工具的實測結論見 [AGENTS.md](AGENTS.md)「跨工具的可靠度不一樣」）。下面兩段 prompt 是給**自動發現不成立**的時候用的：沒裝全域副本、工具不在那張表上，或你要明確指定跑哪一個模式。SKILL.md 是純 Markdown，任何模型照讀就能做。
+程序已經寫成 **[handoff skill](.claude/skills/handoff/SKILL.md)**（A 接棒／B 交棒／C 同步）。在 Claude Code 直接打 `/handoff` 就會執行；**Codex 也會自己發現它**（Codex 讀 `~/.codex/skills/` 與這個 repo 的 `.agents/skills/`；各工具的實測結論見 [AGENTS.md](AGENTS.md)「跨工具的可靠度不一樣」）。下面兩段 prompt 是給**自動發現不成立**的時候用的：沒裝全域副本、工具不在那張表上，或你要明確指定跑哪一個模式。SKILL.md 是純 Markdown，任何模型照讀就能做。
 
 ### 收工時：請目前這個 AI 交棒（skill 的 **B 模式**）
 

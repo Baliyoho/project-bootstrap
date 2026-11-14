@@ -46,12 +46,12 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 | [.claude/settings.json](.claude/settings.json) | 上面兩個 hook 的接線（進 Git） | 本專案 | 加減 hook |
 | `.claude/settings.local.json` | 各機器本地設定（**不進 Git**） | 各機器自己 | 換機器 |
 | [.codex/hooks.json](.codex/hooks.json) | Codex CLI 的 hook 接線——掛的是上面**同樣那兩個 `.sh`**，不另存一份腳本 | 本專案 | 加減 hook |
-| [.agents/skills/handoff/SKILL.md](.agents/skills/handoff/SKILL.md) | Antigravity 原生讀 `.agents/`：只放指向權威版的指標 | 指向 `.claude/` 那份 | 幾乎不動 |
+| [.agents/skills/handoff/SKILL.md](.agents/skills/handoff/SKILL.md) | Codex 也讀 `.agents/skills/`：只放指向權威版的指標 | 指向 `.claude/` 那份 | 幾乎不動 |
 | [tools/check_docs.py](tools/check_docs.py) | 文件與交接快照的機械檢查：死連結／過期字串／缺日期標頭／硬編數量／殘留佔位符／交接快照結構 | 部署包（「專案設定」區塊除外，那塊本來就該依專案調） | 專案設定要調 |
 | [tools/verify_state.py](tools/verify_state.py) | 一鍵現況查證，輸出 key=value 事實快照 | 本專案（骨架來自部署包） | 服務或檢查項改變 |
 | [.gitignore](.gitignore)、[.gitattributes](.gitattributes) | 排除祕密與運行資料；行末強制 LF | 本專案 | 新增祕密檔或運行目錄 |
 
-**跨工具的可靠度不一樣**：`AGENTS.md` 與純 Markdown 的程序檔是**可攜層**（Claude Code／Codex／Antigravity 都原生讀得到）；hooks 已接 Claude Code、Codex CLI／桌面 App、Antigravity CLI／2.0，而且**都帶條件**——Codex 要專案被信任＋hook 經審核；Antigravity 的 Windows 這一面要找得到 Git Bash，CLI 與 2.0 已於 2026-10-31 實測觸發，IDE `1.107.0` 實測沒觸發、已決定不再追查。正確性押在可攜層，不押在 hook 上：2026-10-30 在未信任的資料夾實測，`AGENTS.md` 照樣被讀進 prompt，`.codex/hooks.json` 整層被跳過而且沒有任何訊息。
+**跨工具的可靠度不一樣**：`AGENTS.md` 與純 Markdown 的程序檔是**可攜層**（Claude Code／Codex 都原生讀得到）；hooks 已接 Claude Code、Codex CLI／桌面 App，而且**帶條件**——Codex 要專案被信任＋hook 經審核。正確性押在可攜層，不押在 hook 上：2026-10-30 在未信任的資料夾實測，`AGENTS.md` 照樣被讀進 prompt，`.codex/hooks.json` 整層被跳過而且沒有任何訊息。
 
 ## 專案本體
 
