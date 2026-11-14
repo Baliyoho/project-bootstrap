@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 最後更新：2026-11-14（Codex 交接成本優化）：`verify_bootstrap.py` 先啟動獨立的 `verify_v2.py` 子程序，與其餘暫存 fixture 檢查重疊，收尾仍必須驗其結束碼及報告；新增 `--quiet` 只縮成功輸出。`tests/test_verifier_execution.py` 驗大量輸出、失敗／SKIP 保留與異常清理。不部署新工具、不新增模型呼叫；skill 補 Codex 外層等待用法，版本 `2026-11-14.4`。
+
 > 最後更新：2026-11-14（使用者決定：本 repo 補裝 push 前 hook——`.claude/hooks/repo-pre-push.sh` 是 3.11 的逐字副本，兩份接線都接 PreToolUse，pre-push 從已宣告例外移除；動作提醒 `repo-action-rules.sh` 與它的 PostToolUse 接線拿掉；驗證項「動作當下送規則」換成「本 repo push 前 hook」。前面同日：本 repo 交接制度對齊 v3：`.claude/hooks/repo-git-check.sh` 換成 3.10 `git-freshness.sh` 的逐字副本，只印 `[facts]`；驗證項「本 repo 工作中判讀」與「全綠行」退場，換成「本 repo 開場 hook」逐位元組比對；`.gitignore` 加 `.claude/.bootstrap-version`；`AGENTS.md` 開工段改名「跟部署出去的專案不同的地方」、只寫事實。前面同日：v3 Q33：執行屏障模組與測試封存到 [archive/v2-barrier/](archive/v2-barrier/README.md)，`verify_v2.py` 不再跑探針；前面同日：session 名稱時間戳改 `MM.DD.HH`，`VERSION` `2026-11-14`；`sync_project.py` 會同步 `AGENTS.md` 的共用制度，驗證項加「同步共用制度」）。前次 2026-11-13（v3 第 1 期：部署包改成 v3 形狀）：骨架 27 → 24 檔，`VERSION` `2026-11-13`。3.1 `AGENTS.md` 範本有開始／結束標記夾住的共用制度（≤40 行）；3.10 開場 hook 只報事實（最多五行 `[facts]`）；3.8 handoff skill 降為碰到才讀的參考；舊 3.18–3.20（Antigravity 轉接層、shim、`.agents/hooks.json`）移除，`sync_project.py` 不再處理 `.agents/hooks.json`，`owners.json` 少三列。驗證項的取捨記在「`tools/verify_bootstrap.py` 守的東西」表下方。
 >
 > 前次 2026-11-13（需求決策書 v3 與 handoff-ab 實測）：新增 `project-bootstrap-requirements-decision-v3.md` 當現行需求權威，v2 決策書並存供工具讀取（v3 Q32 (b)）；新增 `experiments/handoff-ab/`（對照實測，v3 的依據）。部署包、`VERSION`、驗證項都沒動。

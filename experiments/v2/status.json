@@ -699,6 +699,10 @@
           "scope": "當輪檔案字元、digest 與可選的既有驗證器耗時；2026-11-11 第二輪壓縮後實測 10,462"
         },
         {
+          "path": "tests/test_verifier_execution.py",
+          "scope": "2026-11-14：來源驗證器重疊執行的子程序大量輸出、失敗／無效報告、異常清理與 quiet 下 FAIL／SKIP 結束碼；不代表完整交接成本或模型遵循驗收"
+        },
+        {
           "path": "src/project_bootstrap/status_card.py",
           "scope": "短入口候選：本 repo 實測輸出約 600 字元；目前程序仍要求讀 AGENTS、HANDOFF 與 skill，卡片沒有取代任何必讀，所以不算進降量"
         }

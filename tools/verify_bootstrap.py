@@ -134,7 +134,7 @@ import tempfile
 import threading
 import tokenize
 import zipfile
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import contextmanager, redirect_stdout, redirect_stderr
 from unittest.mock import patch
 from datetime import date
 
@@ -220,10 +220,13 @@ def tool_env(**extra):
 
 
 results = []  # (status, 標題, 說明)  status: OK / FAIL / SKIP
+QUIET = False
 
 
 def record(status, title, detail=''):
     results.append((status, title, detail))
+    if QUIET and status == 'OK':
+        return
     icon = {'OK': '  ok  ', ' FAIL ': ' FAIL ', 'FAIL': ' FAIL ', 'SKIP': ' skip '}[status]
     print(f'[{icon}] {title}{("  — " + detail) if detail else ""}')
 
@@ -4548,9 +4551,35 @@ def v2_report_problem(report):
     return ''
 
 
-def step_v2():
+@contextmanager
+def background_command(command, cwd):
+    """Overlap an isolated read-only process; always reap it, including on errors.
+
+    Files avoid pipe backpressure when a failing suite emits a large traceback.
+    This is concurrency within the verifier, not another model invocation.
+    """
+    with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+        proc = subprocess.Popen(command, cwd=cwd, env=GIT_ENV,
+                                stdout=stdout, stderr=stderr)
+        def collect():
+            code = proc.wait()
+            stdout.seek(0)
+            stderr.seek(0)
+            return subprocess.CompletedProcess(command, code,
+                stdout.read().decode('utf-8', errors='replace'),
+                stderr.read().decode('utf-8', errors='replace'))
+        try:
+            yield collect
+        finally:
+            if proc.poll() is None:
+                proc.terminate()
+            proc.wait()
+
+
+def step_v2(result=None):
     """P0 regression success is NOT strict-mode or requirement acceptance."""
-    result = run([sys.executable, '-X', 'utf8', str(ROOT / 'tools/verify_v2.py'), '--json'], cwd=ROOT)
+    if result is None:
+        result = run([sys.executable, '-X', 'utf8', str(ROOT / 'tools/verify_v2.py'), '--json'], cwd=ROOT)
     try:
         report = json.loads(result.stdout)
         problem = v2_report_problem(report)
@@ -4564,6 +4593,8 @@ def step_v2():
                       report['strict_ready']))
     except (ValueError, KeyError, TypeError):
         valid, detail = False, 'v2 報告缺失或無效'
+    if not valid and result.stderr:
+        detail += '\n' + result.stderr[-12000:]
     record('OK' if valid else 'FAIL', 'v2 P0 原型回歸（非需求達標）', detail)
 
 
@@ -4953,6 +4984,14 @@ def step_sync_shared_section(dest, tmp):
 
 
 def run_checks(dest, tmp):
+    # verify_v2 reads the source repo and uses its own temporary fixtures.
+    # The other checks mutate only their generated fixtures, so overlap is safe.
+    with background_command(
+            [sys.executable, '-X', 'utf8', str(ROOT / 'tools/verify_v2.py'), '--json'], ROOT) as collect:
+        _run_checks(dest, tmp, collect)
+
+
+def _run_checks(dest, tmp, collect):
     work = None
     seen = step_regenerate(dest) and step_fill(dest)
     if seen and step_check_docs(dest):
@@ -5001,7 +5040,7 @@ def run_checks(dest, tmp):
     step_sync_mode(dest, tmp)
     step_architecture_summary(dest)
     step_deployment_lifecycle(tmp)
-    step_v2()
+    step_v2(collect())
     step_p1_layout()
     step_kit_source()
 
@@ -5229,7 +5268,10 @@ def step_kit_source():
 
 
 def main():
+    global QUIET
     ap = argparse.ArgumentParser()
+    ap.add_argument('--quiet', action='store_true',
+                    help='只印摘要及 FAIL／SKIP；仍執行全部檢查，結束碼不變')
     ap.add_argument('--staged', action='store_true',
                     help='B7 提交前拒絕未暫存或未追蹤檔，驗證實際 staged 候選')
     ap.add_argument('--keep', action='store_true', help='保留產生的骨架，印出路徑')
@@ -5238,6 +5280,7 @@ def main():
     ap.add_argument('--allow-unverified-zip', action='store_true',
                     help='搭配 --zip：容許 SKIP 的調試產物，附未驗證清單且仍 exit 1；FAIL 不可覆寫')
     args = ap.parse_args()
+    QUIET = args.quiet
     if args.allow_unverified_zip and args.zip is None:
         ap.error('--allow-unverified-zip 必須搭配 --zip')
     results.clear()
@@ -5286,7 +5329,7 @@ def main():
     if skipped:
         print('UNVERIFIED：僅供調試，跳過的項目沒有被驗證，結束碼仍為 1')
         return 1
-    print('OK：部署包驗證全數通過')
+    print('OK：部署包驗證全數通過（%d 項）' % len(results))
     return 0
 
 

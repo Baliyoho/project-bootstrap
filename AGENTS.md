@@ -3,7 +3,7 @@
 > 最後更新：2026-11-14（補裝 push 前 hook、拿掉動作提醒 hook；前面同日：本 repo 交接制度對齊 v3：開場 hook 換成部署包 3.10 的逐字副本，開工段改成只寫事實）；前次同日（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
 > 本檔只放規則；每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-14.3 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-14.4 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -40,7 +40,7 @@
 
 ## 跟部署出去的專案不同的地方
 
-- 驗證入口是 `python3 -X utf8 tools/verify_bootstrap.py`（不是 `verify_state.py`），exit 0 才算改完；提交前先逐檔 stage，再加 `--staged` 跑。
+- 驗證入口是 `python3 -X utf8 tools/verify_bootstrap.py`（不是 `verify_state.py`），exit 0 才算改完；提交前先逐檔 stage，再加 `--staged` 跑。可加 `--quiet` 只印摘要與失敗，檢查集合與結束碼不變。
 - 沒有 `check_docs.py`。開場 hook `.claude/hooks/repo-git-check.sh` 與 push 前 hook `.claude/hooks/repo-pre-push.sh` 是部署包 3.10、3.11 的逐字副本；要重查開場事實就重跑前者。
 - 沒有專案層的 handoff skill。要看參考程序就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）；這台機器沒有就讀 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的「3.8」節，不要搬檔或憑記憶重刻。
 - 其他文件碰到那件事才讀，對照表在 [ARCHITECT.md](ARCHITECT.md) 的「碰到才讀的文件」。
