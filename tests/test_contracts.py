@@ -13,16 +13,16 @@ from project_bootstrap.session import HandoffReceipt, Session, rename
 
 class SessionTests(unittest.TestCase):
     def setUp(self):
-        self.session = Session('26110621', '重建骨架v2')
+        self.session = Session('11.06.21', '重建骨架v2')
         self.receipt = HandoffReceipt('handoff-1', True, True, True, True)
 
     def test_resume_wait_finish_preserve_identity(self):
         waiting = self.session.transition('wait_for_user')
-        self.assertTrue(waiting.title().startswith('※　26110621'))
+        self.assertTrue(waiting.title().startswith('※　11.06.21'))
         done = waiting.transition('handoff', self.receipt)
         resumed = done.transition('message')
         self.assertEqual((resumed.started, resumed.topic, resumed.count),
-                         ('26110621', '重建骨架v2', 1))
+                         ('11.06.21', '重建骨架v2', 1))
         self.assertTrue(resumed.title().startswith('㊣　'))
 
     def test_each_missing_handoff_condition_rejected(self):
@@ -42,11 +42,11 @@ class SessionTests(unittest.TestCase):
                        {'topic': '一二三四五六七八九十十'}, {'topic': '主題｜分隔'},
                        {'topic': '換\n行'}, {'topic': '換\r行'}, {'count': -1}, {'count': '1'},
                        {'state': 'done'}, {'completed': ('a', 'a')}, {'completed': ('',)}):
-            values = dict(started='26110621', topic='重建骨架v2')
+            values = dict(started='11.06.21', topic='重建骨架v2')
             values.update(kwargs)
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
                 Session(**values)
-        self.assertEqual(Session('26110621', '一二三四五六七八九十').topic, '一二三四五六七八九十')
+        self.assertEqual(Session('11.06.21', '一二三四五六七八九十').topic, '一二三四五六七八九十')
 
     def test_checkpoint_and_title_retry_do_not_increment(self):
         self.assertEqual(self.session.transition('checkpoint').count, 0)
@@ -65,15 +65,15 @@ class SessionTests(unittest.TestCase):
         self.assertEqual(done.transition('message').transition('handoff', second).count, 2)
 
     def test_old_lower_bound_is_not_reset(self):
-        old = Session.from_title('↗　26110621｜重建骨架v2｜已交棒｜交棒≥2次')
+        old = Session.from_title('↗　11.06.21｜重建骨架v2｜已交棒｜交棒≥2次')
         done = old.transition('message').transition('handoff', self.receipt)
         self.assertTrue(done.title().endswith('交棒≥3次'))
         with self.assertRaises(ValueError):
-            Session.from_title('↗　26110621｜重建骨架v2｜已交棒')
+            Session.from_title('↗　11.06.21｜重建骨架v2｜已交棒')
 
     def test_invalid_title_not_silently_repaired(self):
-        for title in ('↗　26110621｜重建骨架v2｜工作中｜交棒1次',
-                      '㊣　26110621｜重建骨架v2｜工作中｜交棒-1次'):
+        for title in ('↗　11.06.21｜重建骨架v2｜工作中｜交棒1次',
+                      '㊣　11.06.21｜重建骨架v2｜工作中｜交棒-1次'):
             with self.subTest(title=title), self.assertRaises(ValueError):
                 Session.from_title(title)
 

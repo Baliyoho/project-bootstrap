@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-13 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-14 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：fetch 一次，只報事實，不下指示（需求決策書 v3 第 5 節，D12）。
 # 輸出到 stdout 的內容會進到 session 開頭的 context，最多 5 行。只讀：不 pull、不 push、不寫任何檔。
 # 怎麼判讀交給模型與 AGENTS.md 的共用制度；舊版的判讀表、全綠行與工具身分猜測在 2026-11-13 移除，
@@ -9,8 +9,8 @@ cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
 me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
 
-# 第 1 行：時間（含 session 名用的 YYMMDDHH，F50）、本機、分支
-echo "[facts] 時間 $(date '+%Y-%m-%d %H:%M %z')（session 名用 $(date +%y%m%d%H)）；本機 ${me}；分支 ${branch}"
+# 第 1 行：時間（含 session 名用的 MM.DD.HH，F50）、本機、分支
+echo "[facts] 時間 $(date '+%Y-%m-%d %H:%M %z')（session 名用 $(date +%m.%d.%H)）；本機 ${me}；分支 ${branch}"
 
 # 第 2 行：與 origin 的關係
 if ! git fetch --quiet origin 2>/dev/null; then

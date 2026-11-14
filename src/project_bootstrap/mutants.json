@@ -2156,7 +2156,7 @@
     },
     {
      "file": "src/project_bootstrap/session.py",
-     "old": "        if not re.fullmatch(r'\\d{8}', self.started):\n",
+     "old": "        if not re.fullmatch(r'\\d{2}\\.\\d{2}\\.\\d{2}', self.started):\n",
      "new": "        if False:\n"
     },
     {

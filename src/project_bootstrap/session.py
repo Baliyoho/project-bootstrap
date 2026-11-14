@@ -34,8 +34,8 @@ class Session:
 
     def __post_init__(self):
         object.__setattr__(self, 'completed', tuple(self.completed))
-        if not re.fullmatch(r'\d{8}', self.started):
-            raise ValueError('start must be the original YYMMDDHH')
+        if not re.fullmatch(r'\d{2}\.\d{2}\.\d{2}', self.started):
+            raise ValueError('start must be the original MM.DD.HH')
         if not self.topic or len(self.topic) > 10 or any(
                 ch in self.topic for ch in '\n\r｜'):
             raise ValueError('topic must contain 1–10 characters without separators')
@@ -77,7 +77,7 @@ class Session:
     @classmethod
     def from_title(cls, title):
         match = re.fullmatch(
-            r'([㊣※↗])[ 　](\d{8})｜([^｜]+)｜(工作中|待你決定|已交棒)｜交棒(≥?)(\d+)次',
+            r'([㊣※↗])[ 　](\d{2}\.\d{2}\.\d{2})｜([^｜]+)｜(工作中|待你決定|已交棒)｜交棒(≥?)(\d+)次',
             title)
         if not match:
             raise ValueError('cannot recover count; inspect this chat history')

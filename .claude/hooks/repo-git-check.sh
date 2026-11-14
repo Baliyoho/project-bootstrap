@@ -13,7 +13,7 @@
 # 打「接棒」把全域 skill 載進來；哪天直接說「幫我改部署包第 3.8 節」，skill 不會載入，
 # 就可能對著落後的本機動手——那是反例清單第一條。
 #
-# 2026-11-01 加第三件事：把開工改名用的 YYMMDDHH 算好印出來（理由見下面那段）。三件事都是
+# 2026-11-01 加第三件事：把開工改名用的 MM.DD.HH 算好印出來（理由見下面那段）。三件事都是
 # 「開場印一句話」，沒有可以跟權威版分岔的判斷規則，所以這支腳本仍然簡單到不會腐化。
 #
 # 只讀不寫，絕不自動 pull/push。
@@ -115,7 +115,7 @@ if [ -n "$remote_handoff" ]; then
     # 同一台機器換個工具就落進「大概是你自己另一個視窗」的 🟡——而同機器通常就是同一個
     # 工作樹，兩個 agent 會即時互相覆寫，比跨機器那個洞更貴（跨機器至少是兩份磁碟）。
     # 舊格式沒有工具欄，第二欄會是 session 名，而 session 名一定含全形豎線
-    # （`符號　YYMMDDHH｜主題｜狀態`）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
+    # （`符號　MM.DD.HH｜主題｜狀態`，2026-11-14 前是 YYMMDDHH）——拿豎線當判別子，同一段邏輯讀新舊兩種格式都對，
     # 不必先知道這個專案升級了沒。全程只用參數展開，不用 sed：這段會被抄進各專案，
     # 而一條充滿轉義的 sed 腳本是最容易在抄寫時悄悄壞掉的東西。
     tool=''
@@ -183,7 +183,7 @@ elif [ -f "$HOME/.claude/skills/handoff/mode-a-stop.md" ] || [ -f "$HOME/.codex/
   echo "[repo-check] 不是全綠：接棒時讀全域 handoff skill 的 mode-a-stop.md，照完整判讀表走。"
 fi
 echo "[repo-check] 本 repo 刻意沒有專案層的 handoff skill、pre-push 防呆與 check_docs.py：接棒程序讀全域 ~/.claude/skills/handoff/，本 repo 的規則與例外見 AGENTS.md。"
-# 開工改名用的 YYMMDDHH 在這裡算好（2026-11-01 加）。改名規則在 skill 的「session 命名」
+# 開工改名用的 MM.DD.HH 在這裡算好（2026-11-01 加；2026-11-14 起由 YYMMDDHH 改成 MM.DD.HH）。改名規則在 skill 的「session 命名」
 # 那一節，但時間戳一直是要 agent 自己去取的——而它取錯的時候是靜默的：拿系統提示裡的日期
 # 去推小時就會寫出一個不存在的時刻，而那個時間戳的唯一用途正是「讓使用者在側欄認出這是
 # 哪一次」，對不上就等於沒改名。hook 跑在 SessionStart，所以這個值本來就比「回報完才去
@@ -191,5 +191,5 @@ echo "[repo-check] 本 repo 刻意沒有專案層的 handoff skill、pre-push �
 # 只印、不改名：沒有任何工具讓 hook 改 session 名稱，有這個能力的是 agent（Claude Code 的
 # set_session_title），而 Codex CLI 與 Gemini CLI 沒有——所以這句明寫「有這個能力才做」，
 # 免得在做不到的工具上變成一個每次開場都在要求失敗動作的指令。
-echo "[repo-check] 開工改名用（接棒時間已算好，有這個能力的工具才做）：㊣　$(date +%y%m%d%H)｜<主題>｜工作中"
+echo "[repo-check] 開工改名用（接棒時間已算好，有這個能力的工具才做）：㊣　$(date +%m.%d.%H)｜<主題>｜工作中"
 exit 0

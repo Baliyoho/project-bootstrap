@@ -142,7 +142,7 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(calls, ['claude-code', 'antigravity-ide'])
 
     def test_normalise_only_clock_readings(self):
-        self.assertEqual(surfaces.normalise('全綠 2026-11-12 18:59：x ㊣　26111218｜y'), '全綠 <time>：x ㊣　<time>｜y')
+        self.assertEqual(surfaces.normalise('全綠 2026-11-12 18:59：x ㊣　11.12.18｜y'), '全綠 <time>：x ㊣　<time>｜y')
         self.assertEqual(surfaces.normalise('落後 2026-11-12 18:59'), '落後 2026-11-12 18:59')
 
     def test_neutral_env_drops_tool_identity_only(self):

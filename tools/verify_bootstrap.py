@@ -621,7 +621,7 @@ def step_busy_tool_guard(dest):
     if line is None:
         record('FAIL', '工作中欄位格式（負向測試）', 'HANDOFF.md 範本找不到「工作中」欄位列')
         return False
-    sess = '`㊣　26103009｜測試｜工作中`'
+    sess = '`㊣　10.30.09｜測試｜工作中`'
     # 四個都要被擋下。後三個是 2026-11-02 補的 F01 負向測試，在舊版（`'無' in value`
     # 就跳過驗證、而且只看第一列）上**全部會 exit 0**：
     #   ②「修無效連結」是完全正常的任務名稱，卻讓整個格式驗證被跳過；
@@ -822,8 +822,8 @@ def facts_output_problems(out):
         bad.append('有不是 [facts] 開頭的行（hook 只報事實，不下指示）')
     if len(lines) > FACTS_MAX_LINES:
         bad.append('輸出 %d 行，超過 %d 行' % (len(lines), FACTS_MAX_LINES))
-    if not re.search(r'（session 名用 [0-9]{8}）', lines[0]):
-        bad.append('第一行沒有 session 名用的 YYMMDDHH')
+    if not re.search(r'（session 名用 [0-9]{2}\.[0-9]{2}\.[0-9]{2}）', lines[0]):
+        bad.append('第一行沒有 session 名用的 MM.DD.HH')
     return bad
 
 
@@ -857,7 +857,7 @@ def facts_busy_cases(push_busy, me):
     所以這裡釘的是「印得出來、印得完整、不被環境左右」：舊版 F01 那幾個子字串陷阱
     （主題或機器名含「無」、欄位重複）在只印原文的實作上不會放行，但仍要看得到原文。
     """
-    sess = '`㊣　26103009｜測試｜工作中`'
+    sess = '`㊣　10.30.09｜測試｜工作中`'
     claude = tool_env(CLAUDECODE='1')
     cases = []
     busy = '[facts] origin 上的 HANDOFF：- **工作中**：'
@@ -876,7 +876,7 @@ def facts_busy_cases(push_busy, me):
 
     out = push_busy('無（已交棒）', claude)
     cases.append(('已交棒→印出無（已交棒）', busy + '無（已交棒）' in out))
-    cases.append(('第一行有 YYMMDDHH', not facts_output_problems(out)))
+    cases.append(('第一行有 MM.DD.HH', not facts_output_problems(out)))
 
     out = push_busy('無（已交棒）\n- **工作中**：`other-box` ／ `Codex CLI` ／ ' + sess, claude)
     cases.append(('欄位重複→說有幾列', '有 2 列「工作中」' in out))
@@ -884,7 +884,7 @@ def facts_busy_cases(push_busy, me):
 
 
 def strip_clock(out):
-    return re.sub(r'時間 \S+ \S+ \S+（session 名用 [0-9]{8}）', '時間 <t>', out)
+    return re.sub(r'時間 \S+ \S+ \S+（session 名用 [0-9]{2}\.[0-9]{2}\.[0-9]{2}）', '時間 <t>', out)
 
 
 def busy_cases(push_busy, me):
@@ -896,7 +896,7 @@ def busy_cases(push_busy, me):
 
     回傳 (情境清單, 最後一次輸出)；最後一次輸出只給失敗時貼現場用。
     """
-    sess = '`㊣　26103009｜測試｜工作中`'
+    sess = '`㊣　10.30.09｜測試｜工作中`'
     claude = tool_env(CLAUDECODE='1')
     cases = []
 
@@ -934,9 +934,9 @@ def busy_cases(push_busy, me):
     # 開工改名提示（2026-11-01）。放進這張共用表，是因為它正是「期望值有兩份就會分岔」的
     # 下一個候選；而它消失的時候完全沒有徵兆——agent 只會回頭自己去 date 一次，或者更糟，
     # 拿系統提示裡的日期猜一個小時，寫出一個不存在的時刻。所以連格式一起釘：全形空格、
-    # 八位數字、全形豎線，少一樣側欄上就排不整齊，而排不整齊就等於沒改名。
+    # MM.DD.HH（2026-11-14 前是八位數字）、全形豎線，少一樣側欄上就排不整齊，而排不整齊就等於沒改名。
     cases.append(('印開工改名提示', '開工改名用' in out
-                  and re.search('㊣　[0-9]{8}｜', out) is not None))
+                  and re.search(r'㊣　[0-9]{2}\.[0-9]{2}\.[0-9]{2}｜', out) is not None))
 
     # ── F01 的負向測試（2026-11-02）。舊版 `case "$busy" in *無*)` 拿整列當子字串比，
     # 機器名比對也拿整列當乾草堆，所以下面前四個情境在舊版上全是錯的，而且錯的方向
@@ -1199,8 +1199,8 @@ def step_rename_line(dest):
         return False
 
     # 負向測試：一個永遠回 ok 的檢查跟沒有這一項在畫面上一模一樣。
-    a5 = 'session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次'
-    b9 = 'session：↗　<YYMMDDHH｜主題>｜已交棒｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次'
+    a5 = 'session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次'
+    b9 = 'session：↗　<MM.DD.HH｜主題>｜已交棒｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次'
     cases = (
         ('A5 那一行被刪掉', skill.replace(a5 + '\n', '')),
         ('B9 那一行被刪掉', skill.replace(b9 + '\n', '')),
@@ -1240,7 +1240,7 @@ def session_resume_problems(skill, agents):
         '每則使用者新訊息都先檢查 session 狀態',
         '包含只問問題、補充、更正與致謝',
         '先用改名工具恢復 `㊣ 工作中`，再回答或執行任務',
-        '保留原本的 `YYMMDDHH`、主題與交棒次數',
+        '保留原本的 `MM.DD.HH`、主題與交棒次數',
         '只讀續聊不改 HANDOFF、不 commit、不 push，也不為了結束回答再交棒',
         '續聊要改檔前重新走 A1–A5，重查 origin 的工作中標記',
         '續聊回覆必須有 `session：` 一行',
@@ -1273,7 +1273,7 @@ def step_session_resume(dest):
         '每則使用者新訊息都先檢查 session 狀態',
         '包含只問問題、補充、更正與致謝',
         '先用改名工具恢復 `㊣ 工作中`，再回答或執行任務',
-        '保留原本的 `YYMMDDHH`、主題與交棒次數',
+        '保留原本的 `MM.DD.HH`、主題與交棒次數',
         '只讀續聊不改 HANDOFF、不 commit、不 push，也不為了結束回答再交棒',
         '續聊要改檔前重新走 A1–A5，重查 origin 的工作中標記',
         '續聊回覆必須有 `session：` 一行',
@@ -4752,7 +4752,7 @@ SHARED_MUST = (
     '沒驗證過的事不寫成已驗證', '不提交祕密或金鑰樣式的內容', '不用 `git add -A` 或 `git add .`',
     '`reset --hard`', 'force push', '自行 stash',
     '歷史分岔、fetch 失敗、來源不明的未提交變更',
-    '<符號>　YYMMDDHH｜<主題>｜<狀態>｜交棒<N>次', '`㊣` 工作中、`※` 待你決定、`↗` 已交棒',
+    '<符號>　MM.DD.HH｜<主題>｜<狀態>｜交棒<N>次', '`㊣` 工作中、`※` 待你決定、`↗` 已交棒',
     '交棒的 push 成功後才改 `↗`，N 加 1', '是 `↗` 或 `※` 時收到任何新訊息，先改回 `㊣`',
     '各寫一行 `session：<實際標題>`', '`session：不適用：<原因>；交棒<N>次`',
     # 2026-11-13 F50 互動驗證：用選項卡片停下時三次漏了兩次 `session：` 行（experiments/handoff-ab/F50.md）。
@@ -4761,7 +4761,7 @@ SHARED_MUST = (
 MODE_A_MUST = (
     '印出幾行 `[facts]`', 'bash .claude/hooks/git-freshness.sh', '不要自己判斷「大概沒事」', '`mode-a-stop.md`',
     '切換後重做 A1', '都不能寫成通過',
-    'session：㊣　<YYMMDDHH｜主題>｜工作中｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次',
+    'session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不適用：<本工具不能改名>；交棒<N>次',
     '只讀、只問問題的 session 不寫開工標記', '**工具欄不能省**', '遠端 SHA 跟 A1 記下的不同就停',
     'push 失敗就不是「已標記」', '不是互斥鎖',
 )

@@ -42,10 +42,10 @@ FRESHNESS = 'git-freshness.sh'
 CWD = {'antigravity-cli': '.agents', 'antigravity-2': '.agents', 'antigravity-ide': '.agents'}
 # Clock readings the hook prints; two surfaces run a minute apart must still compare equal.
 STAMPS = ((re.compile(r'全綠 \d{4}-\d{2}-\d{2} \d{2}:\d{2}'), '全綠 <time>'),
-          (re.compile(r'㊣　\d{8}'), '㊣　<time>'),
+          (re.compile(r'㊣　\d{2}\.\d{2}\.\d{2}'), '㊣　<time>'),
           # 2026-11-13 facts hook (v3 D12): the first line carries the clock twice.
           (re.compile(r'時間 \d{4}-\d{2}-\d{2} \d{2}:\d{2} [+-]\d{4}'), '時間 <time>'),
-          (re.compile(r'session 名用 \d{8}'), 'session 名用 <time>'))
+          (re.compile(r'session 名用 \d{2}\.\d{2}\.\d{2}'), 'session 名用 <time>'))
 # A surface's own identity is what the hook may tell apart; the adapters must not.
 TOOL_VARS = ('CLAUDECODE', 'CODEX_VERSION', 'CODEX_SESSION_ID', 'GEMINI_CLI')
 

@@ -192,7 +192,7 @@ class GitGateTests(unittest.TestCase):
         receipt = finish(self.b, self.checks(self.b), env=self.env)
         self.assertTrue(receipt.valid())
         self.assertEqual(receipt.event_id, self.remote_head())
-        session = Session('26110922', '測試')
+        session = Session('11.09.22', '測試')
         handed = session.transition('handoff', receipt)
         self.assertEqual((handed.state, handed.count), ('handed_off', 1))
         self.assertEqual(handed.transition('handoff', receipt).count, 1)

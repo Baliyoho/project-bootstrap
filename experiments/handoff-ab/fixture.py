@@ -126,7 +126,7 @@ def marker(machine, tool, minutes_ago):
     """「工作中」欄位的占用值，格式照現行部署包的 A5。"""
     when = stamp(minutes_ago)
     return '`%s` ／ `%s` ／ `㊣　%s｜補克氏換算｜工作中｜交棒0次`，%s (+08) 開工' % (
-        machine, tool, when.strftime('%y%m%d%H'), when.strftime('%Y-%m-%d %H:%M'))
+        machine, tool, when.strftime('%m.%d.%H'), when.strftime('%Y-%m-%d %H:%M'))
 
 
 def foreign_marker(minutes_ago=40):

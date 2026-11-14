@@ -329,6 +329,21 @@
   "418216a81247bd45": "skill 的 description：2026-11-12（Q31）「when wrapping up」改成使用者要求才交棒，並寫明告一段落走 C、可建議交棒",
   "83c2ee1d75ead092": "mode-b.md C 節「推安全點」：2026-11-12（Q31）改成時機由 agent 判斷、標記仍在時不必更新 HANDOFF，下一行新增上下文用量建議",
   "f899650dc8cc9e1b": "2026-11-13 v3：入口降為參考，「A1–A4 不修改專案檔案；A5 只寫開工標記」改由 AGENTS.md 共用制度條件 1 承載，原句仍在 mode-a.md 開頭與 A5",
-  "190c1617288f699d": "2026-11-13 v3：入口停止清單改寫成「origin 上的「工作中」是別人」（hook 不再有 A2.5 判讀），AGENTS.md 共用制度條件 2 同義"
+  "190c1617288f699d": "2026-11-13 v3：入口停止清單改寫成「origin 上的「工作中」是別人」（hook 不再有 A2.5 判讀），AGENTS.md 共用制度條件 2 同義",
+  "ec90dfb9508f37d8": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "a3ce68b093ac6047": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "73ef6415c903fe66": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "a3e5ad0d556eb7b3": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "bc58fc8afc8f213f": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "fbe7ade69cce4723": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "e9be23a2ea7bc766": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "2589249764691d99": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "ac076b11163957cb": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "618f602966e92a51": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "9c5c35f541446400": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "79f7de16e66121ce": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "1277dce99da562cc": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "b705d0f138edef97": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變",
+  "ec1b7bb947e07129": "2026-11-14：session 名稱時間戳由 YYMMDDHH 改成 MM.DD.HH，其餘字句不變"
  }
 }
