@@ -3089,7 +3089,7 @@ def tool_section(text):
 
 
 def tool_matrix(section):
-    """那一節裡的能力矩陣：表頭是空的第一欄＋四個工具名。
+    """那一節裡的能力矩陣：表頭是空的第一欄＋至少三個工具名（2026-11-14 前是四個，Antigravity 欄拿掉）。
 
     回傳 (欄名, {列名: [判定符號]})。**只讀第一張這種形狀的表**：那一節裡還有別的表
     （Antigravity 四個 surface、hook 契約、實測版本），拿列名當 key 全掃會把它們也收
@@ -3100,14 +3100,14 @@ def tool_matrix(section):
         if not line.startswith('|'):
             continue
         cells = [c.strip() for c in line.strip('|').split('|')]
-        if cells[0] or len(cells) != 5:
+        if cells[0] or len(cells) < 4:
             continue
         rows = {}
         for body in lines[n + 2:]:
             if not body.startswith('|'):
                 break
             row = [c.strip() for c in body.strip('|').split('|')]
-            if len(row) != 5:
+            if len(row) != len(cells):
                 break
             rows[row[0]] = [c[:1] if c[:1] in TOOL_VERDICTS else '?' for c in row[1:]]
         return tuple(cells[1:]), rows
@@ -3125,7 +3125,7 @@ def compare_tool_tables(readme, kit):
     rcols, rrows = tool_matrix(rsec)
     kcols, krows = tool_matrix(ksec)
     if not rrows or not krows:
-        problems.append('抓不到能力矩陣，表頭要是空的第一欄＋四個工具名（%s）'
+        problems.append('抓不到能力矩陣，表頭要是空的第一欄＋至少三個工具名（%s）'
                         % ('README' if not rrows else '部署包'))
         return problems
     if rcols != kcols:
@@ -3172,13 +3172,13 @@ def step_readme_table():
     # 負向測試：比對器自己要擋得住四種分岔。一個永遠回「一致」的比對器，跟沒有這項檢查
     # 在畫面上一模一樣——這整支腳本的存在理由就是不接受那種東西。
     base = ('## 跨工具與跨平台\n\n細節見部署包。\n\n'
-            '| | Claude Code | Codex CLI | Codex 桌面 App | Antigravity |\n'
-            '|---|---|---|---|---|\n'
-            '| Hooks | ✅ a | ✅ b `1.2.3` | ✅ c | ✅ d |\n')
+            '| | Claude Code | Codex CLI | Codex 桌面 App |\n'
+            '|---|---|---|---|\n'
+            '| Hooks | ✅ a | ✅ b `1.2.3` | ✅ c |\n')
     cases = (
         ('判定符號翻掉', base.replace('| Hooks | ✅ a | ✅ b', '| Hooks | ✅ a | ⬜ b')),
         ('版本號成孤兒', base.replace('`1.2.3`', '`9.9.9`')),
-        ('欄位長出一個', base.replace('| Antigravity |\n', '| Antigravity | 新工具 |\n')),
+        ('欄位長出一個', base.replace('| Codex 桌面 App |\n', '| Codex 桌面 App | 新工具 |\n')),
         ('指標被抽掉', base.replace('細節見部署包。', '細節見別處。')),
     )
     missed = [name for name, mutated in cases if not compare_tool_tables(mutated, base)]

@@ -60,8 +60,7 @@
      "text": "✅ 原生（與 CLI 共用 `~/.codex`）"},
     {"id": "antigravity/reads-agents-md", "capability": "reads-agents-md",
      "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"],
-     "status": "supported", "basis": "docs",
-     "text": "✅ 原生（與 `GEMINI.md` 的優先序官方沒排，見下）"},
+     "status": "supported", "basis": "docs"},
 
     {"id": "claude-code/loads-skill", "capability": "loads-skill", "surfaces": ["claude-code"],
      "status": "supported", "basis": "tested", "tested": ["2.1.321"],
@@ -75,8 +74,7 @@
      "text": "✅ 同 CLI"},
     {"id": "antigravity/loads-skill", "capability": "loads-skill",
      "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"],
-     "status": "supported", "basis": "docs",
-     "text": "✅ 原生讀 `.agents/skills/`"},
+     "status": "supported", "basis": "docs"},
 
     {"id": "claude-code/hooks", "capability": "hooks", "surfaces": ["claude-code"],
      "status": "supported", "basis": "tested", "tested": ["2.1.321"],
@@ -88,9 +86,6 @@
     {"id": "codex-app/hooks", "capability": "hooks", "surfaces": ["codex-app"],
      "status": "supported", "basis": "docs", "since": "26.506",
      "text": "✅ **有**（App `26.506` 起有 in-app 信任審核）"},
-    {"id": "antigravity/hooks-summary", "capability": "hooks",
-     "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"], "summary": true,
-     "text": "✅ `<repo>/.agents/hooks.json`（3.20），**CLI（`1.4.7`／`1.4.12`）與 2.0 `2.28.2` 都端到端實測過**；Windows 要經 3.19 的 `.cmd` shim。IDE `1.107.0` 沒觸發（原因未解，不再追），見下"},
     {"id": "antigravity-cli/hooks", "capability": "hooks", "surfaces": ["antigravity-cli"],
      "status": "supported", "basis": "tested", "tested": ["1.4.7", "1.4.12"],
      "text": "✅ **會讀、會觸發**",
@@ -115,8 +110,7 @@
      "text": "✅ 同 CLI"},
     {"id": "antigravity/session-end-event", "capability": "session-end-event",
      "surfaces": ["antigravity-cli", "antigravity-2", "antigravity-ide"],
-     "status": "missing", "basis": "docs",
-     "text": "❌ 沒有這個事件"},
+     "status": "missing", "basis": "docs"},
 
     {"id": "claude-code/push-reminder", "capability": "push-reminder", "surfaces": ["claude-code"],
      "status": "supported", "basis": "tested", "tested": ["2.1.321"],
@@ -136,12 +130,12 @@
   ],
   "tables": {
     "tools": {
-      "header": ["", {"surface": "claude-code"}, {"surface": "codex-cli"}, {"surface": "codex-app"}, "Antigravity"],
+      "header": ["", {"surface": "claude-code"}, {"surface": "codex-cli"}, {"surface": "codex-app"}],
       "rows": [
-        [{"capability": "reads-agents-md"}, {"cell": "claude-code/reads-agents-md"}, {"cell": "codex-cli/reads-agents-md"}, {"cell": "codex-app/reads-agents-md"}, {"cell": "antigravity/reads-agents-md"}],
-        [{"capability": "loads-skill"}, {"cell": "claude-code/loads-skill"}, {"cell": "codex-cli/loads-skill"}, {"cell": "codex-app/loads-skill"}, {"cell": "antigravity/loads-skill"}],
-        [{"capability": "hooks"}, {"cell": "claude-code/hooks"}, {"cell": "codex-cli/hooks"}, {"cell": "codex-app/hooks"}, {"cell": "antigravity/hooks-summary"}],
-        [{"capability": "session-end-event"}, {"cell": "claude-code/session-end-event"}, {"cell": "codex-cli/session-end-event"}, {"cell": "codex-app/session-end-event"}, {"cell": "antigravity/session-end-event"}]
+        [{"capability": "reads-agents-md"}, {"cell": "claude-code/reads-agents-md"}, {"cell": "codex-cli/reads-agents-md"}, {"cell": "codex-app/reads-agents-md"}],
+        [{"capability": "loads-skill"}, {"cell": "claude-code/loads-skill"}, {"cell": "codex-cli/loads-skill"}, {"cell": "codex-app/loads-skill"}],
+        [{"capability": "hooks"}, {"cell": "claude-code/hooks"}, {"cell": "codex-cli/hooks"}, {"cell": "codex-app/hooks"}],
+        [{"capability": "session-end-event"}, {"cell": "claude-code/session-end-event"}, {"cell": "codex-cli/session-end-event"}, {"cell": "codex-app/session-end-event"}]
       ]
     },
     "antigravity-hooks": {

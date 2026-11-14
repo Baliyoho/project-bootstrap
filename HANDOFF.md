@@ -26,7 +26,7 @@
 ## 未完成／下一步
 
 1. **各專案與全域 skill 已升到 v2026-11-14（2026-11-14，使用者授權）**：NAA_TR（在 `feature/W15-research-shell`）、NAS_MAINT、grist-workflow、鍵鼠同部署_mac 逐個開工、`sync_project.py --owner --write`、check_docs 通過、push、清標記；AGENTS.md 補上共用制度，標記外的舊交接段落沒有矛盾，照使用者定的原則保留不動。全域 `~/.claude` 與 `~/.codex` 的 handoff skill 換成 v3（v2 備份只在本機暫存目錄）；本 repo 的 AGENTS.md 貼入共用制度副本（理由在 AGENTS-reasons 的 shared）。別台機器的全域副本還沒換：那台接棒時開場 hook 會印家目錄與專案不同。
-2. **ARCHITECT 驗證項表下方「列給使用者決定」那一條**：push 提醒仍 exit 2 擋、`check_docs.py` 對壞格式 exit 2、skill 參考檔句子的契約檢查、README 跨工具表仍有 Antigravity 欄。等使用者逐項決定留或改。
+2. **ARCHITECT 驗證項表下方那四項已由使用者定案（2026-11-14）**：push hook 維持 exit 2（依 D13，跟 F10 字面的差異記在 ARCHITECT）、check_docs 壞格式 exit 2 保留、兩項 skill 句子契約檢查保留、README 拿掉 Antigravity 欄與檔案樹的 Antigravity 檔。剩一件等使用者決定：F10 的字要不要改成跟 D13 一致。
 3. 第 2 期 Codex＋macOS：同一套 handoff-ab 兩輪＋互動驗證，換 Codex 跑。開始前先問使用者。
 4. v3 第 8 節未定：凍結的執行屏障模組要不要封存（Q33）、各專案何時換新骨架（Q34）。
 

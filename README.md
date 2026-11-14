@@ -2,7 +2,7 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-11-11。這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型。
+> 最後更新：2026-11-14（Antigravity 移出檔案樹與跨工具表；檔案樹改成 v3 的描述）；前次 2026-11-11。這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型。
 > 這個 repo 自己的結構（有哪些檔、部署包各節產出什麼、副本存在於哪些地方）見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 怎麼用
@@ -26,21 +26,18 @@
 ```text
 專案/
 ├─ README.md                        人的入口（系統是什麼、怎麼連）
-├─ AGENTS.md                        AI 的入口（鐵律、連線資料、知識庫地圖）＝唯一權威
+├─ AGENTS.md                        AI 的入口（標記之間是部署包管理的共用制度；其餘是鐵律、連線資料、知識庫地圖）＝唯一權威
 ├─ CLAUDE.md / GEMINI.md            指標，指向 AGENTS.md
 ├─ HANDOFF.md                       當下工作狀態（≤80 行、覆寫不累積）
 ├─ ARCHITECT.md                     專案結構的唯一權威（只有結構變動才改）
 ├─ .claude/                         Claude Code
 │   ├─ settings.json                hook 設定
-│   ├─ hooks/git-freshness.sh       SessionStart：git 新鮮度檢查＋提醒走交接程序＋開工改名提示
+│   ├─ hooks/git-freshness.sh       SessionStart：fetch 後只印 [facts]（時間與 session 名用的 MM.DD.HH、落後領先、origin 的「工作中」）
 │   ├─ hooks/pre-push-handoff.sh    PreToolUse：AI push 提醒（有限覆蓋）
-│   ├─ hooks/ag-wrap.sh             Antigravity 轉接層：只做管線，把 stdout 包成 JSON
 │   ├─ hooks/codex-hook.cmd         Codex 的 Windows 啟動器（Git Bash、純文字標頭、結束碼）
-│   └─ skills/handoff/              交接與同步的可執行程序＝權威版：入口 SKILL.md＋mode-a／mode-a-stop／mode-b／mode-0／reasons 五個檔
+│   └─ skills/handoff/              碰到才讀的參考：入口 SKILL.md＋mode-a／mode-a-stop／mode-b／mode-0／reasons 五個檔
 ├─ .codex/hooks.json                Codex：掛上面同樣那兩個腳本（同格式、同語意）
-├─ .agents/hooks.json              Antigravity：經轉接層掛同一支 git-freshness.sh（只接 SessionStart）
-├─ .agents/ag-hook.cmd              Windows shim：找 Git Bash 再交給 ag-wrap.sh
-├─ .agents/skills/handoff/SKILL.md  Antigravity 原生讀 .agents/：指向權威版的指標
+├─ .agents/skills/handoff/SKILL.md  Codex 讀 repo 的 .agents/skills/：指向權威版的指標
 ├─ docs/ai-notes/
 │   ├─ handover-protocol.md         交接協定（規則與判準）
 │   └─ roadmap.md                   持久待辦總表
@@ -85,19 +82,19 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那六個檔（2026-11-1
 
 ## 跨工具與跨平台
 
-正確性放在**可攜層**（`AGENTS.md` 開頭那段＋純 Markdown 的程序檔），下面四個平面都原生讀得到；hooks 只是讓人不必記得，不是制度成立的前提。**「讀得到」不等於「照做」**：這張表量的是載入，不是遵循（2026-11-02／F15；遵循那一種唯一的量測是 2026-11-01 的六個收尾 session，git 全對、兩個漏改 session 名稱）。
+正確性放在**可攜層**（`AGENTS.md` 開頭那段＋純 Markdown 的程序檔），下面三個平面都原生讀得到；hooks 只是讓人不必記得，不是制度成立的前提。**「讀得到」不等於「照做」**：這張表量的是載入，不是遵循（2026-11-02／F15；遵循那一種唯一的量測是 2026-11-01 的六個收尾 session，git 全對、兩個漏改 session 名稱）。
 
-| | Claude Code | Codex CLI | Codex 桌面 App | Antigravity |
-|---|---|---|---|---|
-| 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 | ✅ 原生 |
-| 自動載入程序檔 | ✅ `.claude/skills/`、`/handoff` | ✅ `~/.codex/skills/` ＋ repo 的 `.agents/skills/`（2026-10-30 實測） | ✅ 同 CLI | ✅ 原生讀 `.agents/skills/` |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意；要專案被信任＋**每個專案各審一次**（信任綁絕對路徑；互動模式開場會自己問） | ✅ 有（App `26.506` 起，Settings 裡審核） | ✅ `<repo>/.agents/hooks.json`，**CLI（`1.4.7`／`1.4.12`）與 2.0（`2.28.2`）端到端實測過**（Windows 經 `.cmd` shim）。IDE `1.107.0` 沒觸發，原因未解 |
+| | Claude Code | Codex CLI | Codex 桌面 App |
+|---|---|---|---|
+| 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 |
+| 自動載入程序檔 | ✅ `.claude/skills/`、`/handoff` | ✅ `~/.codex/skills/` ＋ repo 的 `.agents/skills/`（2026-10-30 實測） | ✅ 同 CLI |
+| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意；要專案被信任＋**每個專案各審一次**（信任綁絕對路徑；互動模式開場會自己問） | ✅ 有（App `26.506` 起，Settings 裡審核） |
 
 **Codex 要分 CLI 與桌面 App**：CLI 有 hooks 且與 Claude Code 同格式，兩邊掛**同樣那兩個 `.sh`**、不各留一份；桌面 App 也有 hooks（2026-10-30 重查：App `26.506` 起有 in-app 信任審核，與 CLI 共用 `~/.codex`；舊版這裡寫「沒有」是 2026-08-06 的實測，已過期），全域 skill 一樣放 `~/.codex/skills/handoff/`。
 
-**Antigravity 要分 surface 看**：它原生讀 `AGENTS.md` 與 `.agents/skills/`（可攜層，獨立成立）。hook 這一層 2026-10-31 在 **CLI（`1.4.7`／`1.4.12`）** 與 **2.0（`2.28.2`）** 上都端到端實測通過，接線已附進骨架——Windows 要經一支 `.cmd` shim，因為 `agy` 的 `command` 不吃空白也不吃引號，而 Git Bash 的路徑含空白。**四個 surface 裡只剩 IDE `1.107.0` 實測不會觸發專案層設定，原因仍未解釋**。細節見部署包那一節。
+**Antigravity 2026-11-13 起放棄**（需求決策書 v3 D8）：部署包不再產出它的接線與轉接層，已部署專案裡的舊檔不同步也不刪，清不清由使用者決定。之前的實測紀錄在 git 歷史與 [ARCHITECT.md](ARCHITECT.md)。
 
-四個平面都接得上 hooks，但**每一個都帶條件**：Codex 要專案被信任、而且每個專案各審一次；Antigravity 的 Windows 這一面要找得到 Git Bash，IDE `1.107.0` 實測仍然沒觸發。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的）；`python` 不存在的機器改用 `python3`。
+三個平面都接得上 hooks，但**都帶條件**：Codex 要專案被信任、而且每個專案各審一次。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的）；`python` 不存在的機器改用 `python3`。
 
 ## 它在解決什麼
 
