@@ -24,15 +24,15 @@
 - **補裝 push 前 hook**：`.claude/hooks/repo-pre-push.sh` 是 3.11 的逐字副本，兩份接線都接 PreToolUse。ARCHITECT 的已宣告例外剩 handoff skill 與 `check_docs.py` 兩項。驗證項「本 repo push 前 hook」含 7 個接線負向測試。
 - **拿掉 `repo-action-rules.sh`** 與它的 PostToolUse 接線、驗證項「動作當下送規則」。
 - **能力表** `loads-skill` 的替代做法不再指向已不存在的「開工第一件事」；`kit.md` 的 Codex 截斷提醒改指共用制度；部署包重生（`VERSION` 不動，skill 六檔沒改）。
+- **Claude Code 的 push 前 hook 在本 repo 實測三條路**（11:2x 的 session，使用者回「做第 2 項」）：用本機暫時的空 commit 配 `git push --dry-run`，origin「工作中」為「無（已交棒）」時被擋（exit 2、訊息進 context）；推開工標記（差異含 `HANDOFF.md`）時放行；標記推上去後的 dry-run 也放行。兩個暫時 commit 都沒推，已用 `reset --soft` 拿掉。
 - 同日稍早的 session：時間戳改 `MM.DD.HH`、`sync_project.py` 同步共用制度、四個專案與全域升 v2026-11-14、Q33／Q34／F10 定案（細節在 git log 與 ARCHITECT 表頭）。
 
 ## 未完成／下一步
 
 1. **本 repo 的 Codex 接線改過（多了 PreToolUse），還沒重新審核與驗收**：在 Codex 互動 CLI 的 `/hooks` 審核 `.codex/hooks.json`，再開新 session 確認開場 `[facts]` 進 context、`git push` 時 `repo-pre-push.sh` 有跑。要呼叫模型，先問使用者。
-2. 本 repo 的 Claude Code 新接線（PreToolUse → `repo-pre-push.sh`）只在本機手動跑過一次（當時沒有待推 commit，走到提早放行那一步）；下次 session 開啟時才會真正載入，擋下的那條路沒在本 repo 實擋過。
-3. 第 2 期 Codex＋macOS：同一套 handoff-ab 兩輪＋互動驗證，換 Codex 跑。要呼叫模型，開始前先問使用者；這個月的額外用量 2026-11-14 已到 94%（$7.54／$8）。
-4. 別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是 v2：那台接棒時開場 hook 會印「家目錄與本專案不同」，從已同步的專案複製六個檔覆蓋。
-5. NAS_MAINT 與鍵鼠同部署_mac 的 `AGENTS.md` 舊段落還提到 Antigravity（過時，但照原則沒動），清不清等使用者決定。
+2. 第 2 期 Codex＋macOS：同一套 handoff-ab 兩輪＋互動驗證，換 Codex 跑。要呼叫模型，開始前先問使用者；這個月的額外用量 2026-11-14 已到 94%（$7.54／$8）。
+3. 別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是 v2：那台接棒時開場 hook 會印「家目錄與本專案不同」，從已同步的專案複製六個檔覆蓋。
+4. NAS_MAINT 與鍵鼠同部署_mac 的 `AGENTS.md` 舊段落還提到 Antigravity（過時，但照原則沒動），清不清等使用者決定。
 
 ## 地雷與注意事項
 
