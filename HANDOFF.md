@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
 - **交接時間**：2026-11-14 12:3x（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（清掉 NAS_MAINT 與 NAA_TR 的 Antigravity 殘留）
+- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（收拾 Windows/Codex 沒做完的交棒）
 
 ## 任務目標
 
@@ -11,13 +11,15 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：無（`feature/v3` 保留不刪，它那份 HANDOFF 指回 `main`）。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　11.14.12｜接棒善後｜工作中｜交棒0次`，2026-11-14 12:32 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-14.2`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；沒有 `python` 指令，用 `python3`。桌面 App 內附 Claude Code 2.1.321。這台的全域 `~/.claude`、`~/.codex` handoff skill 已是 v2026-11-14.2。
 
 ## 已完成
 
-2026-11-14 兩個 session：11.14.11（使用者選「Antigravity 殘留」，依序回「改，並同步」「刪掉」「兩處都改」，最後「五個都交棒」）與 11.14.12（使用者依序選「清 NAS_MAINT 殘留」「NAA_TR 規則檔：刪檔＋改 README」「三邊都交棒」）：
+- **Windows/Codex 交棒沒做完（12:23–12:32）**：`DESKTOP-M8MRS05` 上那台的 Codex 還沒升級 bootstrap，接棒時只推了開工標記（2750f1d，只改「工作中」那一行），交棒卡住沒推上去。Mac 這邊查過，origin 沒有其他變更。使用者確認那個 session 已經關掉、沒留下要保留的東西後，Mac 才接手（1b7b36c）並交棒。
+
+2026-11-14 稍早兩個 session：11.14.11（使用者選「Antigravity 殘留」，依序回「改，並同步」「刪掉」「兩處都改」，最後「五個都交棒」）與 11.14.12（使用者依序選「清 NAS_MAINT 殘留」「NAA_TR 規則檔：刪檔＋改 README」「三邊都交棒」）：
 
 - **部署包 v2026-11-14.2**（d35c36f）：skill `mode-a-stop.md` 三處、`kit.md` 工具名舉例拿掉 Antigravity；`GEMINI.md` 指標寫法的理由改寫成不依賴它。`VERSION`、六個 skill 檔、共用制度標記一起跳版（共用制度內文沒動，但開場 hook 拿那個標記比上游 `VERSION`）；本 repo `AGENTS.md` 副本重貼；`tools/skill_split_baseline.json` 的 `rewritten` 登記三行改寫。
 - **四個專案同步並刪接線檔**：鍵鼠同部署_mac、NAS_MAINT、grist-workflow、NAA_TR（在 `feature/W15-research-shell`）都跑了 `sync_project.py`（7 項），刪掉 `.agents/ag-hook.cmd`、`.agents/hooks.json`、`.claude/hooks/ag-wrap.sh`（刪前確認只互相引用），check_docs exit 0，四個都已交棒。
@@ -30,7 +32,7 @@
 
 1. **本 repo 的 Codex 接線改過（多了 PreToolUse），還沒重新審核與驗收**：在 Codex 互動 CLI 的 `/hooks` 審核 `.codex/hooks.json`，再開新 session 確認開場 `[facts]` 進 context、`git push` 時 `repo-pre-push.sh` 有跑。要呼叫模型，先問使用者。
 2. 第 2 期 Codex＋macOS：同一套 handoff-ab 兩輪＋互動驗證，換 Codex 跑。要呼叫模型，開始前先問使用者；這個月的額外用量 2026-11-14 已到 94%（$7.54／$8）。
-3. 別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是舊版：從已同步的專案複製六個檔覆蓋。
+3. 別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是舊版（`DESKTOP-M8MRS05` 已確認是舊的，交棒就是在那裡卡住）：從已同步的專案複製六個檔覆蓋，然後在那台跑 `git status`／`git log origin/main..HEAD`，有沒推的殘留就直接丟掉，不要推。
 4. 各專案開場可能印「共用制度比上游新：本機 v2026-11-14.2，上游 v2026-11-14」：上游版本快取 720 分鐘，最晚 12 小時自己消失；要立刻消就由使用者刪該專案的 `.claude/.bootstrap-version`。
 
 ## 地雷與注意事項
@@ -51,11 +53,12 @@
 
 ## 服務查證與期望快照
 
+- 2026-11-14 12:3x（Mac 接棒善後 session，只改 `HANDOFF.md`）：逐檔 stage 後 `verify_bootstrap.py --staged` exit 0；pytest 沒重跑。
 - 2026-11-14 12:3x（11.14.12 session，本 repo 只改 `HANDOFF.md`）：逐檔 stage 後 `verify_bootstrap.py --staged` exit 0；pytest 沒重跑。NAS_MAINT、NAA_TR 各自 check_docs exit 0，接線沒動。
 - 2026-11-14 11:5x 在 `main`（d35c36f 提交前的工作樹）：`verify_bootstrap.py` exit 0（0 skip），逐檔 stage 後 `--staged` exit 0；`uv run --locked pytest` 435 通過。`verify_v2.py` 本 session 沒跑。
 - B3：本 repo 沒有 `verify_state.py`，用 `verify_bootstrap.py`。B4：沒有 `check_docs.py`（已宣告例外）。B5：本 repo 的 Codex 接線**有改**（稍早 session），重新審核與實際執行驗收**沒做**（見下一步 1）。四個專案的接線（`.claude/settings.json`、`.codex/hooks.json`）本 session 沒動，同步器報 ok。
 - push 前 hook：Claude Code 這邊擋下與兩種放行都實測過；Codex 那邊沒測。
-- 模型呼叫：兩個 session 都沒有額外的模型呼叫。
+- 模型呼叫：今天的 session 都沒有額外的模型呼叫。
 
 ## 懸置事項（AI 勿自行處理）
 
