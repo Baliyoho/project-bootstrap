@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：無（`feature/v3` 保留不刪，它那份 HANDOFF 指回 `main`）。
-- **工作中**：無（已交棒）
+- **工作中**：Mac ／ Claude Code ／ 11.14.11｜Antigravity殘留（2026-11-14 11:5x 開工）
 - **骨架版本**：`2026-11-14`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；沒有 `python` 指令，用 `python3`。桌面 App 內附 Claude Code 2.1.321。這台的全域 `~/.claude`、`~/.codex` handoff skill 已是 v2026-11-14。
 
