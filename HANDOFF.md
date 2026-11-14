@@ -12,7 +12,7 @@
 - Repo：public `Baliyoho/project-bootstrap`；權威分支 `main`。
 - **待續分支**：無；`feature/v3` 保留但不是待續分支。
 - **工作中**：`Mac` ／ `Claude Code 桌面 App` ／ `㊣　11.14.21｜Codex接棒成本｜工作中｜交棒0次`，2026-11-14 21:25 (+08) 開工
-- **骨架版本**：`2026-11-14.2`
+- **骨架版本**：`2026-11-14.3`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；無 `python` 指令，使用 `python3`。本機兩份全域 handoff skill 與部署包相同。
 
 ## 已完成
