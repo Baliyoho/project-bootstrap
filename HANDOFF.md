@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-14 12:00（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（skill 拿掉 Antigravity、v2026-11-14.2 同步四個專案並刪掉接線檔）
+- **交接時間**：2026-11-14 12:3x（+08）
+- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（清掉 NAS_MAINT 與 NAA_TR 的 Antigravity 殘留）
 
 ## 任務目標
 
@@ -11,19 +11,19 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：無（`feature/v3` 保留不刪，它那份 HANDOFF 指回 `main`）。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　11.14.12｜清NAS殘留｜工作中｜交棒0次`，2026-11-14 12:1x (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-14.2`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；沒有 `python` 指令，用 `python3`。桌面 App 內附 Claude Code 2.1.321。這台的全域 `~/.claude`、`~/.codex` handoff skill 已是 v2026-11-14.2。
 
 ## 已完成
 
-2026-11-14 本 session（使用者選「Antigravity 殘留」，三項依序回「改，並同步」「刪掉」「兩處都改」，最後「五個都交棒」）：
+2026-11-14 兩個 session：11.14.11（使用者選「Antigravity 殘留」，依序回「改，並同步」「刪掉」「兩處都改」，最後「五個都交棒」）與 11.14.12（使用者依序選「清 NAS_MAINT 殘留」「NAA_TR 規則檔：刪檔＋改 README」「三邊都交棒」）：
 
 - **部署包 v2026-11-14.2**（d35c36f）：skill `mode-a-stop.md` 三處、`kit.md` 工具名舉例拿掉 Antigravity；`GEMINI.md` 指標寫法的理由改寫成不依賴它。`VERSION`、六個 skill 檔、共用制度標記一起跳版（共用制度內文沒動，但開場 hook 拿那個標記比上游 `VERSION`）；本 repo `AGENTS.md` 副本重貼；`tools/skill_split_baseline.json` 的 `rewritten` 登記三行改寫。
 - **四個專案同步並刪接線檔**：鍵鼠同部署_mac、NAS_MAINT、grist-workflow、NAA_TR（在 `feature/W15-research-shell`）都跑了 `sync_project.py`（7 項），刪掉 `.agents/ag-hook.cmd`、`.agents/hooks.json`、`.claude/hooks/ag-wrap.sh`（刪前確認只互相引用），check_docs exit 0，四個都已交棒。
 - **全域 skill**：`~/.claude`、`~/.codex` 六個檔覆蓋成 v2026-11-14.2（覆蓋前比對過與舊版逐位元組相同）。
-- **NAS_MAINT 殘留**（12dd01e，11.14.12 session）：`AGENTS.md` 三處、`ARCHITECT.md` 兩處照 e7ddfb3 手改；README、handover-protocol 本來就沒有殘留；check_docs exit 0。
-- **NAA_TR 規則檔**（6963f21，在 `feature/W15-research-shell`）：使用者決定刪掉 `.agents/rules/handoff.md`，README 指路句一併拿掉；pre-push、AGENTS、handover-protocol 的歷史性提及保留；check_docs exit 0。
+- **NAS_MAINT 殘留**（12dd01e，已交棒）：`AGENTS.md` 三處、`ARCHITECT.md` 兩處照 e7ddfb3 手改；README、handover-protocol 本來就沒有殘留；check_docs exit 0。
+- **NAA_TR 規則檔**（6963f21，在 `feature/W15-research-shell`，已交棒）：使用者決定刪掉 `.agents/rules/handoff.md`，README 指路句一併拿掉；pre-push、AGENTS、handover-protocol 的歷史性提及保留；check_docs exit 0。
 - 同日稍早的 session：部署包範本拿掉 Antigravity（e7ddfb3）、開場 hook 換成 3.10 逐字副本、補裝 push 前 hook、時間戳改 `MM.DD.HH`（細節在 git log）。
 
 ## 未完成／下一步
@@ -51,10 +51,11 @@
 
 ## 服務查證與期望快照
 
+- 2026-11-14 12:3x（11.14.12 session，本 repo 只改 `HANDOFF.md`）：逐檔 stage 後 `verify_bootstrap.py --staged` exit 0；pytest 沒重跑。NAS_MAINT、NAA_TR 各自 check_docs exit 0，接線沒動。
 - 2026-11-14 11:5x 在 `main`（d35c36f 提交前的工作樹）：`verify_bootstrap.py` exit 0（0 skip），逐檔 stage 後 `--staged` exit 0；`uv run --locked pytest` 435 通過。`verify_v2.py` 本 session 沒跑。
 - B3：本 repo 沒有 `verify_state.py`，用 `verify_bootstrap.py`。B4：沒有 `check_docs.py`（已宣告例外）。B5：本 repo 的 Codex 接線**有改**（稍早 session），重新審核與實際執行驗收**沒做**（見下一步 1）。四個專案的接線（`.claude/settings.json`、`.codex/hooks.json`）本 session 沒動，同步器報 ok。
 - push 前 hook：Claude Code 這邊擋下與兩種放行都實測過；Codex 那邊沒測。
-- 模型呼叫：本 session 沒有額外的模型呼叫。
+- 模型呼叫：兩個 session 都沒有額外的模型呼叫。
 
 ## 懸置事項（AI 勿自行處理）
 
