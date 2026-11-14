@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支 `main`。
 - **待續分支**：無；`feature/v3` 保留但不是待續分支。
-- **工作中**：無（已交棒）
+- **工作中**：`Mac` ／ `Codex 桌面 App` ／ `㊣ 11.14.22｜接棒用量量測｜工作中｜交棒0次`，2026-11-14 22:03 (+08) 開工
 - **骨架版本**：`2026-11-14.4`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；無 `python`，用 `python3`。兩份全域 handoff skill（Claude Code、Codex）12 檔與 `.4` 範本逐位元組相同。
 
