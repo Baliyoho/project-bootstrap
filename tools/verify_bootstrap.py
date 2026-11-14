@@ -5044,6 +5044,78 @@ def step_sync_skill_parts(dest, tmp):
            '只有單檔的舊專案會補上五個新檔、入口最後寫、不認得的檔列為 EXTRA；沒有 skill 的專案與 Codex 限定同步不動；1 個負向測試')
 
 
+def step_sync_shared_section(dest, tmp):
+    """AGENTS.md 共用制度的同步（2026-11-14，v3 Q34 前置）。
+
+    v3 的必守條件住在 AGENTS.md 標記之間，新 skill 指向那一節；同步器只發 skill 的話，
+    舊專案會拿到一個指向空白的 skill，而且沒有徵兆。這裡釘：沒有就插在第一個「## 」前、
+    舊版就整段換掉、標記外一個字不動、已是權威版不寫、標記壞掉就 FAIL 不寫、
+    舊交接段落列成 MIGRATE、AGENTS.md 排在 skill 入口之前寫。
+    """
+    import sync_project as syncer
+    entry = SKILL_DIR + 'SKILL.md'
+    block_src = read_lf(dest / 'AGENTS.md')
+    a = block_src.index(SHARED_START)
+    b = block_src.index(SHARED_END) + len(SHARED_END)
+    block = block_src[a:b]
+    head = '# AGENTS.md — 舊專案\n\n> 最後更新：2026-01-01\n\n'
+    body = '## 專案是什麼\n\n專案自己的內容。\n\n## 跨模型／跨機器協作規範\n\n舊規則。\n'
+
+    def project(name, agents):
+        p = tmp / ('shared-' + name)
+        (p / SKILL_DIR).mkdir(parents=True)
+        write_lf(p / entry, '---\nname: handoff\ndescription: old\n---\n\n舊版\n')
+        write_lf(p / 'AGENTS.md', agents)
+        return p
+
+    def run(p):
+        plan = syncer.sync(p, dest)
+        writes = {rel: text for _, text, rel in plan.writes}
+        order = [rel for _, _, rel in plan.writes]
+        return plan, writes, order, '\n'.join(plan.msgs)
+
+    bad = []
+    plan, writes, order, msgs = run(project('fresh', head + body))
+    new = writes.get('AGENTS.md')
+    if new is None:
+        bad.append('沒有共用制度的專案沒有補上')
+    else:
+        if new != head + block + '\n\n' + body:
+            bad.append('補上的位置不在第一個「## 」前，或動到標記外的內容')
+        if 'AGENTS.md' in order and entry in order and order.index('AGENTS.md') > order.index(entry):
+            bad.append('AGENTS.md 排在 skill 入口之後寫')
+    if 'MIGRATE AGENTS.md' not in msgs or '跨模型／跨機器協作規範' not in msgs:
+        bad.append('標記外的舊交接段落沒有列成 MIGRATE')
+
+    old_block = block.replace('## 目標', '## 舊目標', 1)
+    _, writes, _, _ = run(project('stale', head + old_block + '\n\n' + body))
+    if writes.get('AGENTS.md') != head + block + '\n\n' + body:
+        bad.append('舊版共用制度沒有整段換成權威版，或動到標記外')
+
+    _, writes, _, _ = run(project('same', head + block + '\n\n## 專案是什麼\n\nx\n'))
+    if 'AGENTS.md' in writes:
+        bad.append('已是權威版還是寫了 AGENTS.md')
+
+    broken = {
+        '只有開始標記': head + block.replace(SHARED_END, '') + body,
+        '兩個開始標記': head + block + '\n' + block.split('\n', 1)[0] + '\n' + body,
+        '結束標記在前': head + SHARED_END + '\n' + block.replace(SHARED_END, '') + '\n' + body,
+    }
+    for name, text in broken.items():
+        plan, writes, _, _ = run(project('broken-%d' % len(bad) + name, text))
+        if 'AGENTS.md' in writes or not any('AGENTS.md' in e for e in plan.errors):
+            bad.append('標記壞掉沒有 FAIL 或照樣寫入：' + name)
+
+    # 負向：同步器拿掉共用制度這一步時，上面第一個情境必須看得出「沒補上」。
+    with patch.object(syncer, 'sync_shared_section', lambda *a, **k: None):
+        _, writes, _, _ = run(project('neg', head + body))
+    if 'AGENTS.md' in writes:
+        bad.append('負向測試未重現：拿掉共用制度同步後仍寫了 AGENTS.md')
+    record('FAIL' if bad else 'OK', '同步共用制度', '；'.join(bad) if bad else
+           '沒有就插在第一個「## 」前、舊版整段換掉、標記外不動、已是權威版不寫、'
+           '3 種壞標記 FAIL 不寫、舊交接段落列 MIGRATE、AGENTS.md 先於 skill 入口；1 個負向測試')
+
+
 def step_all_green(dest, tmp):
     """開場 hook 的「全綠」行（2026-11-10，F22）：全部條件成立才印，少一項就不能印。
 
@@ -5201,6 +5273,7 @@ def run_checks(dest, tmp):
     step_shared_rules(dest)
     step_skill_rule_map(dest)
     step_sync_skill_parts(dest, tmp)
+    step_sync_shared_section(dest, tmp)
     step_all_green(dest, tmp)
     step_sync_scope(dest, tmp)
     step_sync_mode(dest, tmp)

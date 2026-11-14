@@ -19,7 +19,7 @@
     "HANDOFF.md": {"owner": "project", "update": "lines"},
     ".gitignore": {"owner": "project", "update": "lines"},
     "CLAUDE.md": {"owner": "project", "update": "lines"},
-    "AGENTS.md": {"owner": "project", "update": "seed"},
+    "AGENTS.md": {"owner": "project", "update": "lines"},
     "ARCHITECT.md": {"owner": "project", "update": "seed"},
     "GEMINI.md": {"owner": "project", "update": "seed"},
     "README.md": {"owner": "project", "update": "seed"},

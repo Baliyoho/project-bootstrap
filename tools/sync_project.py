@@ -129,9 +129,19 @@ GITIGNORE_LINES = ('.claude/.bootstrap-version', '.obsidian/')
 # import 是純加法（官方說留著 import 不會讓它讀兩次），專案自己加的內容原樣保留。
 # 不這樣做的話，這個修正只有新部署的專案拿得到，既有專案會無聲地停在舊行為。
 CLAUDE_IMPORT = '@AGENTS.md'
+# AGENTS.md 2026-11-14 從 INSTANCE 搬到 PARTIAL（v3 Q34 前置）：v3 把必守條件放進 AGENTS.md
+# 開始／結束標記之間的「共用制度」，新版 skill 也指向那一節。只同步 skill 的話，舊專案的
+# skill 會指向一節不存在的內容，而且沒有任何徵兆。所以同步器只管標記之間那一段：
+# 有就整段換成權威版，沒有就插在第一個「## 」標題前面；標記外的內容一個字都不動。
+# 舊版的交接段落（開工第一件事、跨模型／跨機器協作規範）可能跟新條件重疊或矛盾，
+# 同步器不刪，只列出來要人工比對——刪專案自己寫的規則是使用者的決定。
+SHARED_START = '<!-- 共用制度開始'
+SHARED_END = '<!-- 共用制度結束 -->'
+LEGACY_HANDOFF_HEADINGS = ('## 開工第一件事', '## 跨模型／跨機器協作規範')
 
 # 有專屬處理程式的檔：owners.json 跟這裡對不上就是有檔沒人處理，或處理程式指向不存在的檔。
-HANDLED = {'region': {SURGICAL}, 'key': set(), 'lines': {'HANDOFF.md', '.gitignore', 'CLAUDE.md'},
+HANDLED = {'region': {SURGICAL}, 'key': set(),
+           'lines': {'HANDOFF.md', '.gitignore', 'CLAUDE.md', 'AGENTS.md'},
            'wiring': {'.claude/settings.json', '.codex/hooks.json'}}
 for _kind, _expected in HANDLED.items():
     if set(by_update(UPDATES, _kind)) != _expected:
@@ -365,6 +375,59 @@ def ensure_claude_import(text):
     return '\n'.join(lines)
 
 
+def shared_block(text):
+    """回傳 (起點, 終點) 或 None（沒有標記）；標記不成對、重複或順序反了就丟 ValueError。
+
+    起點是開始標記那一行的行首，終點是結束標記那一行的行尾（不含換行）。
+    """
+    starts, ends = text.count(SHARED_START), text.count(SHARED_END)
+    if starts == 0 and ends == 0:
+        return None
+    if starts != 1 or ends != 1:
+        raise ValueError('共用制度開始標記 %d 個、結束標記 %d 個，各要剛好 1 個' % (starts, ends))
+    a = text.rfind('\n', 0, text.index(SHARED_START)) + 1
+    b = text.index(SHARED_END) + len(SHARED_END)
+    if b <= a:
+        raise ValueError('共用制度結束標記在開始標記前面')
+    return a, b
+
+
+def merge_shared_section(authority, current):
+    """AGENTS.md 的共用制度：回傳 (新內容或 None, 說明, 錯誤)。標記外原樣保留。"""
+    try:
+        span = shared_block(authority)
+    except ValueError as e:
+        return None, None, '權威版 ' + str(e)
+    if span is None:
+        return None, None, '權威版 AGENTS.md 沒有共用制度標記'
+    block = authority[span[0]:span[1]]
+    if '{{' in block:
+        return None, None, '權威版共用制度裡有佔位符，不能原樣發出去'
+    try:
+        mine = shared_block(current)
+    except ValueError as e:
+        return None, None, str(e) + '；先人工修好標記再同步'
+    if mine is not None:
+        if current[mine[0]:mine[1]] == block:
+            return None, None, None
+        return current[:mine[0]] + block + current[mine[1]:], '換成權威版共用制度，標記外原樣保留', None
+    lines = current.split('\n')
+    at = next((k for k, l in enumerate(lines) if l.startswith('## ')), None)
+    if at is None:
+        tail = '' if current.endswith('\n') else '\n'
+        return current + tail + '\n' + block + '\n', '補上共用制度（檔尾；找不到「## 」標題）', None
+    lines[at:at] = block.split('\n') + ['']
+    return '\n'.join(lines), '補上共用制度（插在第一個「## 」標題前）', None
+
+
+def legacy_handoff_sections(text):
+    """共用制度以外、v2 留下的交接段落標題。"""
+    span = shared_block(text)
+    outside = text if span is None else text[:span[0]] + text[span[1]:]
+    return [l.strip() for l in outside.split('\n')
+            if any(l.startswith(h) for h in LEGACY_HANDOFF_HEADINGS)]
+
+
 class Plan:
     """一個同步目標的計畫：要改哪些檔、算不出來的有哪些。
 
@@ -438,6 +501,28 @@ def sync_wiring(project, gen, rels, plan):
             plan.update(dst, rel, new, note)
 
 
+def sync_shared_section(project, gen, plan):
+    """AGENTS.md 共用制度。排在 skill 之前寫：新 skill 指向這一節，不能先有指標後有內容。"""
+    rel = 'AGENTS.md'
+    dst = project / rel
+    cur = read(dst)
+    if cur is None:
+        plan.skip(rel, '不存在')
+        return
+    new, note, err = merge_shared_section(read(gen / rel) or '', cur)
+    if err:
+        plan.fail(rel, err)
+        return
+    if new is None:
+        plan.ok(rel + '（共用制度已是權威版）')
+    else:
+        plan.update(dst, rel, new, note)
+    legacy = legacy_handoff_sections(new if new is not None else cur)
+    if legacy:
+        plan.msgs.append('  MIGRATE AGENTS.md：標記外還有舊交接段落 %s，可能跟共用制度重疊或矛盾；'
+                         '同步不刪，要人工比對' % '、'.join('「%s」' % h for h in legacy))
+
+
 def sync(project, gen, codex_only=False):
     """算出這個目標要改什麼，**不寫任何檔**。回傳 Plan；寫入是 apply_plan 的事。"""
     plan = Plan()
@@ -450,6 +535,7 @@ def sync(project, gen, codex_only=False):
         protocol = read(project / 'docs/ai-notes/handover-protocol.md')
         if protocol is not None and '**核心優先序：SKILL.md**' not in protocol:
             plan.msgs.append('  MIGRATE docs/ai-notes/handover-protocol.md：舊實例須人工遷移優先序與 override；不覆蓋專案規則，新 skill 核心優先')
+        sync_shared_section(project, gen, plan)
 
     for rel in WHOLE:
         if codex_only and rel != CODEX_LAUNCHER:
