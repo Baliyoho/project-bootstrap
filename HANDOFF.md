@@ -5,7 +5,7 @@
 
 ## 任務目標
 
-依[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)驗收交接制度；本輪完成 Codex 等待與驗證器加速，下一棒依使用者要求順便量測接棒 token 花費。
+依需求決策書 v3 改善交接棒執行效率，方針是落實既有流程與規則。下一輪 Sol 的工作入口為[改進與驗證計劃](experiments/handoff-ab/OPTIMIZATION-PLAN.md)。
 
 ## Git 狀態
 
@@ -24,10 +24,10 @@
 
 ## 未完成／下一步
 
-1. **使用者已要求：下一次接棒順便測 token 花費。** 正常完成 `.4` 接棒，不另開測試聊天、不額外呼叫模型。從當前聊天的本機 rollout（`~/.codex/sessions/<日期>/rollout-*.jsonl`）只取該接棒 turn：數 `token_usage_record`，讀最後的 `turn_token_usage`，記 input、cached input、非快取 input（兩者相減）、output；以 `task_started`／`task_complete` 算耗時，另記空等工具呼叫次數。
-2. 量測結果寫回 CODEX-RESULTS.md，對照 `.3` 的 11 次／349,246 input／147.103 秒及更早基準。當輪未結束時，最後回覆的用量尚未落盤：先標明截點與暫計，等下一則正常互動再補齊，不等待自己完成、不把暫計寫成完整總額；量測與記錄額外開銷另註。讀不到資料就明記未量，不能估算 token 或訂閱消耗。新版完整交棒用量仍未驗。
-3. 已部署專案尚未同步到 `.4`，逐專案 `sync_project.py` 須另行授權。
-4. 歷史開場訊息曾印本機版本比上游新（`.3` 對 `2026-11-14`）；當時未追查上游來源，`.4` 尚未重驗此提示，不當作已確認的現行故障。
+1. 使用者要求記錄供下一輪 Sol 執行的方案，已完成。先讀 [OPTIMIZATION-PLAN.md](experiments/handoff-ab/OPTIMIZATION-PLAN.md)，包含共用／工具特有改善、第一階段離線驗證與第二階段模型對照。實作尚未開始；下一輪收到執行指示後依順序做。
+2. 額外模型測試仍需授權，只用訂閱額度；本輪未啟動 Sol sub-agent。其他已部署專案同步仍須另行授權。
+3. .4 接棒完整用量已補齊並推送於 7d190e0：12 次、444,536 input（398,336 cached）、3,368 output、194.283 秒；包含量測記錄開銷，詳見 CODEX-RESULTS.md。
+4. 已查明當時版本提示讀到舊快取 2026-11-14，而 origin/main:VERSION 是 .4；快取改善列入計劃，尚未修正。
 5. F50 桌面 App：本聊天改名工具成功，但不等於完整互動驗收；使用者先前決定不另建測試聊天。第 3 期 Windows 未開始，新版 SessionStart 接線未實跑，當地全域 skill 仍舊；先同步並核對 Git 殘留，不推舊 session 的未推 commit。
 
 ## 地雷與注意事項
@@ -39,7 +39,7 @@
 ## 服務查證與期望快照
 
 - `.4` 一般及 `--staged --quiet` 驗證均 66 項 exit 0（`470d34c` 提交前）；`uv run --locked pytest -q`：439 passed、376 subtests passed。
-- 本次交棒只覆寫快照與量測待辦，程式未變，沿用上述 pytest 結果；提交前再跑 `python3 -X utf8 tools/verify_bootstrap.py --staged --quiet` 驗最終文件。
+- 本輪只更新量測紀錄與計劃，程式未變；上述 pytest 為歷史結果。文件提交前執行 `python3 -X utf8 tools/verify_bootstrap.py --staged --quiet` 驗最終文件。
 - 本 repo 沒有 `verify_state.py`／`check_docs.py`，依 AGENTS 使用替代入口；本輪未改 hook 接線，重新審核不適用。Windows 與新版完整交接模型用量未驗。
 
 ## 懸置事項（AI 勿自行處理）
