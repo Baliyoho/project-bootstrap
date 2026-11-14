@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-14**（**session 名稱開頭的時間改成 `MM.DD.HH`**（使用者 2026-11-14 指定，例：`㊣　11.14.06｜主題｜工作中｜交棒0次`），取代 `YYMMDDHH`：同一年內不需要年份，加點分隔比八位數字好認。3.1 共用制度的「session 名稱」、3.8 handoff skill 各檔的格式與範例、3.10 開場 hook 第一行（`date +%m.%d.%H`）一起改；`VERSION` 與六個 skill 檔、共用制度標記、3.10 的 `source:` 跳到 `v2026-11-14`。已經用舊格式命名的 session 不必改名，「工作中」欄位的判讀靠全形豎線，新舊兩種都讀得懂。同日稍晚：「跨工具與跨平台」的能力矩陣拿掉 Antigravity 欄（v3 D8 已放棄，`capabilities.json` 那幾格留狀態不渲染），使用者 2026-11-14 定案；skill 沒動，`VERSION` 不跳。）
+> 版本：**2026-11-14.2**（**handoff skill 與部署包敘述拿掉已退場的 Antigravity**（使用者 2026-11-14 決定）：3.8 `mode-a-stop.md` 三處（`SessionEnd` 理由裡「它沒有這個事件」的半句、工具名舉例）刪掉，`SessionEnd` 救不了的結論不變（擋不下結束、1.5 秒做不完 push）；本檔「工具名用慣用寫法」的舉例同步拿掉，`GEMINI.md` 維持指標寫法的理由改寫成不依賴 Antigravity。skill 有改，`VERSION`、六個 skill 檔與共用制度標記跳到 `v2026-11-14.2`（共用制度內文沒動，但開場 hook 拿共用制度標記比上游 `VERSION`，不跟著跳會讓每個專案一直印落後）。已部署專案裡的 Antigravity 接線檔，使用者同日決定刪掉。）
+> 前一版 **2026-11-14**（**session 名稱開頭的時間改成 `MM.DD.HH`**（使用者 2026-11-14 指定，例：`㊣　11.14.06｜主題｜工作中｜交棒0次`），取代 `YYMMDDHH`：同一年內不需要年份，加點分隔比八位數字好認。3.1 共用制度的「session 名稱」、3.8 handoff skill 各檔的格式與範例、3.10 開場 hook 第一行（`date +%m.%d.%H`）一起改；`VERSION` 與六個 skill 檔、共用制度標記、3.10 的 `source:` 跳到 `v2026-11-14`。已經用舊格式命名的 session 不必改名，「工作中」欄位的判讀靠全形豎線，新舊兩種都讀得懂。同日稍晚：「跨工具與跨平台」的能力矩陣拿掉 Antigravity 欄（v3 D8 已放棄，`capabilities.json` 那幾格留狀態不渲染），使用者 2026-11-14 定案；skill 沒動，`VERSION` 不跳。）
 > 前一版 **2026-11-13**（**需求決策書 v3 第 1 期：共用制度縮成 `AGENTS.md` 裡的一節，開場 hook 只報事實，handoff skill 降為碰到才讀的參考，Antigravity 移出部署包**。3.1 `AGENTS.md` 範本的共用制度夾在開始與結束標記之間，32 行（v3 D11 上限 40），起點是 handoff-ab 的極簡版，補上「待續分支」、不提交祕密與不整批加入、F50 session 命名三條。3.10 `git-freshness.sh` 檔名不變（Codex 與 Windows 接線不用動），內容改成最多五行 `[facts]`：時間與 `YYMMDDHH`、與 origin 的落後與領先、未提交檔數、origin 的「工作中」原文，有差異才印的共用制度版本與家目錄 skill 差異；判讀表、全綠行、工具身分猜測與「先走 skill」的提醒移除。共用制度版本改從 `AGENTS.md` 開始標記讀。3.8 入口與 `mode-a.md` 改寫成參考，其餘四個檔只加一段 2026-11-13 註記。舊 3.18–3.20（Antigravity 轉接層、Windows shim、`.agents/hooks.json`）移除。同日補一句（F50 互動驗證重現：用選項卡片停下時漏了 `session：` 行）：共用制度的「session 名稱」加「用選項卡片發問也算停下來等決定，卡片之前先寫這一行」；這一版還沒發布到任何專案，所以版本號不跳。handoff-ab 兩輪 18／18 與 v2 完整版相同，結果在 `experiments/handoff-ab/RESULTS.md`；F50 在 `experiments/handoff-ab/F50.md`。）
 > 前一版 **2026-11-12.4**（**交棒只在使用者要求時做**，決策書 Q31 (a)：入口模式表的 B 改成「使用者要求交棒／收工／換人接手」，告一段落走 C、commit／push 時機由 agent 判斷；C 的 push 在 origin「工作中」仍是本 session 時不必更新 HANDOFF；一段工作做完時讀得到上下文用量就讀，70% 建議交棒一次、85% 再一次，讀不到不估算；3.11 push 提醒在 origin「工作中」不是「無（已交棒）」時放行。守門人：入口必備句加「使用者沒要求就不得自行交棒」，「AI push 提醒情境」加放行、已交棒仍擋、沒有欄位仍擋與拿掉放行的負向測試。六個檔、3.11 與 3.16 指標一起跳到 `v2026-11-12.4`。**沒有驗證的**：模型會不會照著只建議不交棒。）
 > 前一版 **2026-11-10.2**（**handoff skill 的 `reasons.md` 末尾加一張「規則 → 理由在哪」對照表**，決策書 Q17 (b)：入口與 `mode-a.md` 不逐條加連結（常態必讀不增加），改由對照表列出入口與四個模式檔每個段落的理由在哪；拆分前就沒寫理由的段落照實標「沒有寫下理由」。守門人：`verify_bootstrap.py` 的「skill 規則對照表」（每個段落標題都在左欄、右欄指到的段落存在，附負向測試；不判斷理由內容）。六個檔一起跳到 `v2026-11-10.2`。）
@@ -197,7 +198,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 **落地在哪（2026-10-31，跳版 `2026-10-31`）**：
 
-- 標記格式 `` `機器` ／ `工具` ／ `session 名`（可選） ``，由 skill **A5** 寫；工具名用慣用寫法（`Claude Code`／`Codex CLI`／`Gemini CLI`／`Antigravity`），因為 hook 比的是這個字串。
+- 標記格式 `` `機器` ／ `工具` ／ `session 名`（可選） ``，由 skill **A5** 寫；工具名用慣用寫法（`Claude Code`／`Codex CLI`／`Gemini CLI`），因為 hook 比的是這個字串。
 - 判讀表在 **A2.5**：同機器同工具→往下走（但要核對 session 名／開工時間）、同機器別的工具→停、同機器沒有工具欄→**當成別的工具處理**。分不出來的時候不往放行的方向猜。
 - `git-freshness.sh`（3.10）的同機器分支依工具欄拆成 🟡／🔴。變數偵測只在「偵測到的工具跟標記不符」時加嚴，而且**兩家以上的簽章同時在場就不猜**——那正是被繼承的樣子。偵測一致或認不出來都只印 🟡，並把「你自己是不是 X」這一句明文丟給模型答：模型知道答案，hook 不知道。
 - `check_docs.py` 第 6 項擋「標記在工作中卻沒填工具欄」，判別子是 session 名裡的全形豎線（`｜`）——`機器` ／ `工具` 的第二欄不會有它，`機器` ／ `session 名` 的第二欄一定有。
@@ -307,7 +308,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 專案概觀與測試指令在 [README.md](README.md)。現在做到哪、下一步是什麼，在 [HANDOFF.md](HANDOFF.md)。使用者用 **{{LANG}}** 溝通。
 > 最後更新：{{TODAY}}（建立）
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-14 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-14.2 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -374,7 +375,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
      不要寫回這裡——那個目錄不計入上面那個判定，會跟 AGENTS.md 並存。 -->
 ````
 
-> `GEMINI.md` **不改成 import**，維持指標寫法：Antigravity 原生讀 `AGENTS.md`，這一份只是給還不會讀 `AGENTS.md` 的舊版工具的保險，而它支不支援 `@` import 沒有文件可查——猜錯的話會是靜默失效。若也用其他工具，比照再加一份指標檔即可，**內容永遠只是指標**。
+> `GEMINI.md` **不改成 import**，維持指標寫法：它只是給還不會讀 `AGENTS.md` 的工具（例如舊版 Gemini CLI）的保險，而它支不支援 `@` import 沒有文件可查——猜錯的話會是靜默失效。若也用其他工具，比照再加一份指標檔即可，**內容永遠只是指標**。
 
 ````markdown
 # GEMINI.md
@@ -815,7 +816,7 @@ name: handoff
 description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（參考檔入口）
 
@@ -870,7 +871,7 @@ description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒�
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
@@ -931,7 +932,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場 `[facts]` 有不正常的值時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
@@ -1032,7 +1033,7 @@ git show "origin/$(git rev-parse --abbrev-ref HEAD):HANDOFF.md" | grep -F "**工
 > 判準綁在一個工具的介面上，另外三個平面就等於沒有判準。
 
 > **為什麼標記寫在開工而不是收工**：寫在開工的標記不依賴任何人記得收尾——A 沒交棒，標記就留在 origin 上，下一棒一定看得到。
-> 2026-10-30 重查後，這條規則的理由要講得更準：Claude Code 與 Codex **有** `SessionEnd` 事件（Codex 的還會在閒置 30 分鐘時觸發），Antigravity 沒有，所以「關掉視窗沒有下一個動作」只對一部分工具成立。但那個事件救不了這件事——它**不能擋下結束**，Claude Code 那邊預設只有 1.5 秒預算，做不完一次 `git push`，而且四個平面有一個根本沒有它。所以它最多提醒**離場的那一個人**，擔保仍然只能押在「開工就推上 origin」這一邊。
+> 2026-10-30 重查後，這條規則的理由要講得更準：Claude Code 與 Codex **有** `SessionEnd` 事件（Codex 的還會在閒置 30 分鐘時觸發）。但那個事件救不了這件事——它**不能擋下結束**，Claude Code 那邊預設只有 1.5 秒預算，做不完一次 `git push`。所以它最多提醒**離場的那一個人**，擔保仍然只能押在「開工就推上 origin」這一邊。
 > **它救不回什麼**：A 那些未提交的變更仍然只在 A 的磁碟上。標記只讓你知道「有東西在那台機器」，東西還是得回去拿。
 
 ### A3 最小讀取
@@ -1078,7 +1079,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 
    - **工具欄不能省**（2026-10-31 加）。少了它，同一台機器換個工具就會落進「大概是你自己另一個視窗」的 🟡，
      而同機器通常就是同一個工作樹——兩個 agent 即時互相覆寫，比跨機器那個洞更貴。`check_docs.py` 第 6 項會擋。
-   - **工具名用慣用寫法**（`Claude Code`／`Codex CLI`／`Gemini CLI`／`Antigravity`）：hook 比的是這個字串，
+   - **工具名用慣用寫法**（`Claude Code`／`Codex CLI`／`Gemini CLI`）：hook 比的是這個字串，
      寫同義詞只會讓它多報一次 🔴——那是加嚴的方向，不會放行，但也是噪音。
    - 記 session 名稱比只記機器名有用——有側欄的工具可以直接拿它把那個 session 點開。
 
@@ -1106,14 +1107,14 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 
 > 三層防呆（SessionStart／`hooks.json`／pre-push）擋不住這件事：它們全都掛在
 > 「下一個動作」上。Claude Code 與 Codex 另外有 `SessionEnd`（2026-10-30 查），但它不能擋下
-> 結束、預算只有 1.5 秒，推不了東西上去，Antigravity 更是沒有這個事件。所以這仍然是**程序
+> 結束、預算只有 1.5 秒，推不了東西上去。所以這仍然是**程序
 > 責任，不是工具責任**。
 ````
 
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -1282,7 +1283,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -1357,7 +1358,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
