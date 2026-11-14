@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-14 11:10（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（本 repo 自己的交接制度對齊 v3：開場 hook 換成 3.10 副本、補裝 push 前 hook、拿掉動作提醒 hook）
+- **交接時間**：2026-11-14 11:19（+08）
+- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（實測本 repo 的 Claude Code push 前 hook）
 
 ## 任務目標
 
@@ -11,20 +11,20 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：無（`feature/v3` 保留不刪，它那份 HANDOFF 指回 `main`）。
-- **工作中**：Mac ／ Claude Code ／ ㊣　11.14.11｜驗push前hook｜工作中｜交棒0次（開工 2026-11-14 11:20 +08）
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-14`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；沒有 `python` 指令，用 `python3`。桌面 App 內附 Claude Code 2.1.321。這台的全域 `~/.claude`、`~/.codex` handoff skill 已是 v2026-11-14。
 
 ## 已完成
 
-2026-11-14 本 session，每項都經使用者在聊天中要求或決定（使用者問「交接制度有完全合乎 v3 嗎？沒有就先合規」，之後逐項回「裝」「拿掉」「改掉」）：
+2026-11-14 前一個 session，每項都經使用者在聊天中要求或決定（使用者問「交接制度有完全合乎 v3 嗎？沒有就先合規」，之後逐項回「裝」「拿掉」「改掉」）：
 
 - **開場 hook**：`.claude/hooks/repo-git-check.sh` 從自己寫的判讀版（🔴／🟡、全綠行）換成 3.10 `git-freshness.sh` 的逐字副本，只印 `[facts]`。驗證項「本 repo 開場 hook」逐位元組比對；「本 repo 工作中判讀」「全綠行」退場。`.gitignore` 加 `.claude/.bootstrap-version`。
 - **AGENTS.md 開工段**改名「跟部署出去的專案不同的地方」，只寫事實，不再要求先走 A 模式（v3 D12、第 5 節）。
 - **補裝 push 前 hook**：`.claude/hooks/repo-pre-push.sh` 是 3.11 的逐字副本，兩份接線都接 PreToolUse。ARCHITECT 的已宣告例外剩 handoff skill 與 `check_docs.py` 兩項。驗證項「本 repo push 前 hook」含 7 個接線負向測試。
 - **拿掉 `repo-action-rules.sh`** 與它的 PostToolUse 接線、驗證項「動作當下送規則」。
 - **能力表** `loads-skill` 的替代做法不再指向已不存在的「開工第一件事」；`kit.md` 的 Codex 截斷提醒改指共用制度；部署包重生（`VERSION` 不動，skill 六檔沒改）。
-- **Claude Code 的 push 前 hook 在本 repo 實測三條路**（11:2x 的 session，使用者回「做第 2 項」）：用本機暫時的空 commit 配 `git push --dry-run`，origin「工作中」為「無（已交棒）」時被擋（exit 2、訊息進 context）；推開工標記（差異含 `HANDOFF.md`）時放行；標記推上去後的 dry-run 也放行。兩個暫時 commit 都沒推，已用 `reset --soft` 拿掉。
+- **Claude Code 的 push 前 hook 在本 repo 實測三條路**（本 session 11:1x，使用者回「做第 2 項」；開工標記上寫的 11:20 是誤植，實際約 11:14）：用本機暫時的空 commit 配 `git push --dry-run`，origin「工作中」為「無（已交棒）」時被擋（exit 2、訊息進 context）；推開工標記（差異含 `HANDOFF.md`）時放行；標記推上去後的 dry-run 也放行。兩個暫時 commit 都沒推，已用 `reset --soft` 拿掉。
 - 同日稍早的 session：時間戳改 `MM.DD.HH`、`sync_project.py` 同步共用制度、四個專案與全域升 v2026-11-14、Q33／Q34／F10 定案（細節在 git log 與 ARCHITECT 表頭）。
 
 ## 未完成／下一步
@@ -50,8 +50,9 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-14 11:0x 在 `main`：`verify_bootstrap.py` 與 `--staged` exit 0（66 項 ok、0 skip；退兩項、加兩項、換一項）；`uv run --locked pytest` 435 通過；`verify_v2.py` 通過（P0 實驗回歸）。
+- 2026-11-14 11:18 在 `main`（aca3ab8，本 session 只改 `HANDOFF.md`）：`verify_bootstrap.py` exit 0（66 項 ok、0 skip）；`uv run --locked pytest` 435 通過。`verify_v2.py` 本 session 沒重跑（上次 11:0x 通過）。
 - B3：本 repo 沒有 `verify_state.py`，用 `verify_bootstrap.py`。B4：沒有 `check_docs.py`（已宣告例外）。B5：本 repo 的 Codex 接線**有改**，重新審核與實際執行驗收**沒做**（見下一步 1）。
+- push 前 hook：Claude Code 這邊擋下與兩種放行都實測過（見已完成）；Codex 那邊沒測。
 - 模型呼叫：本 session 沒有額外的模型呼叫。
 
 ## 懸置事項（AI 勿自行處理）
