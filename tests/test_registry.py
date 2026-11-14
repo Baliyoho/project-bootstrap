@@ -43,14 +43,10 @@ class RegistryTests(unittest.TestCase):
         spec.loader.exec_module(legacy)
         report = {'harness_passed': True, 'strict_ready': False,
                   'tests': {'run': 1, 'failed': 0, 'errors': 0, 'skipped': 0, 'needs_uv': []},
-                  'findings': [{'id': name, 'counterexample_observed': True, 'requirement_result': '不通過'}
-                               for name in ('same-uid-journal-bypass', 'direct-git-object-bypass',
-                                            'running-context-still-uses-old-premise')],
-                  'isolation_probe': {'result': '未驗證'}, 'supervisor_probe': {'result': '通過'},
-                  'broker_probe': {'result': '通過'}, 'managed_probe': {'result': '通過'}}
+                  'archived': 'archive/v2-barrier/（v3 Q33）'}
         self.assertEqual(legacy.v2_report_problem(report), '')
-        for change in ('empty', 'skip', 'ready', 'missing', 'false-pass', 'no-reproduction',
-                       'supervisor', 'broker', 'managed-missing', 'managed-failed', 'needs-uv-missing'):
+        for change in ('empty', 'skip', 'ready', 'archived-missing', 'archived-elsewhere',
+                       'needs-uv-missing'):
             mutant = copy.deepcopy(report)
             if change == 'empty':
                 mutant['tests']['run'] = 0
@@ -58,22 +54,12 @@ class RegistryTests(unittest.TestCase):
                 mutant['tests']['skipped'] = 1
             elif change == 'ready':
                 mutant['strict_ready'] = True
-            elif change == 'missing':
-                mutant['findings'].pop()
-            elif change == 'false-pass':
-                mutant['findings'][0]['requirement_result'] = '通過'
-            elif change == 'supervisor':
-                mutant.pop('supervisor_probe')
-            elif change == 'broker':
-                mutant.pop('broker_probe')
-            elif change == 'managed-missing':
-                mutant.pop('managed_probe')
-            elif change == 'managed-failed':
-                mutant['managed_probe']['result'] = '不通過'
-            elif change == 'needs-uv-missing':
-                mutant['tests'].pop('needs_uv')
+            elif change == 'archived-missing':
+                mutant.pop('archived')
+            elif change == 'archived-elsewhere':
+                mutant['archived'] = 'somewhere/else'
             else:
-                mutant['findings'][0]['counterexample_observed'] = False
+                mutant['tests'].pop('needs_uv')
             with self.subTest(change=change):
                 self.assertTrue(legacy.v2_report_problem(mutant))
 

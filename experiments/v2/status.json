@@ -256,63 +256,63 @@
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "src/project_bootstrap/feasibility.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/feasibility.py",
           "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
         },
         {
-          "path": "src/project_bootstrap/broker_fixture.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         },
         {
-          "path": "tests/test_recovery.py",
+          "path": "archive/v2-barrier/tests/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
         },
         {
-          "path": "tests/test_launcher.py",
+          "path": "archive/v2-barrier/tests/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         },
         {
-          "path": "tests/test_lifecycle.py",
+          "path": "archive/v2-barrier/tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL 後以本次啟動紀錄續接，監護失效、無監護與錯誤紀錄負向對照；非任意後代或全 OS 保證"
         },
         {
-          "path": "tests/test_managed_fixture.py",
+          "path": "archive/v2-barrier/tests/test_managed_fixture.py",
           "scope": "macOS 單 worker：父程序 SIGKILL 後依持久前提與回收證據重建，作廢未完成計算並重送原始請求；過期要先明確續期"
         },
         {
-          "path": "src/project_bootstrap/tree_probe.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/tree_probe.py",
           "scope": "POSIX 程序群組候選：一般後代退場、setsid 脫離後仍持鎖；證明此候選不足以涵蓋任意後代"
         },
         {
-          "path": "src/project_bootstrap/vm_probe.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/vm_probe.py",
           "scope": "Mac 兩條獨立路徑：舊 host worker／共享 scratch 的逐 epoch 退場探針，及無共享 guest 的固定受管 shell 工具。後者在 guest 內載入前提、兩 epoch 經專用 console 發原始寫入請求，parent outbox 保存原 bytes，broker 套用合成工作樹；pending 舊寫入拒絕、新 epoch 寫入有事件關聯。新路徑經 guest_runs 帳本持久記錄 run 身分與 host 停機證據，重開資料庫核對；父程序 SIGKILL 後重開仍阻擋，再以真 runner 停機紀錄加合成終端替身走崩潰解除，guest console 日誌被拒；outbox 已存未送時崩潰，解除後重送只套用一次。未接真實工具或可信 guest 身分"
         },
         {
-          "path": "src/project_bootstrap/guest_runs.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/guest_runs.py",
           "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明。parent 可另給錨點檔（資料庫以外，2026-11-11）：第一次開啟先寫隨機帳本 id 到錨點再存進資料庫，之後兩邊都在且相同才開；帳本遺失、清空或被換掉而錨點還在就拒絕。同 UID 可同時刪兩者，只擋意外遺失；解除是人手動確認後刪錨點"
         },
         {
-          "path": "tests/test_guest_runs.py",
+          "path": "archive/v2-barrier/tests/test_guest_runs.py",
           "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗。錨點（2026-11-11）：帳本被刪／清空／換成另一份、錨點不見、錨點是符號連結／目錄／格式不對、路徑非絕對都拒絕且不補寫；錨點與目錄都 fsync；同時建立時不覆蓋；mutants.json 新增 15 個刪改全部 killed"
         },
         {
-          "path": "src/project_bootstrap/crash_release.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/crash_release.py",
           "scope": "父程序崩潰後的人工解除（Q1 (a)）：先讀開機前登記的 runner stderr 檔，必須逐行等於乾淨無共享停機的四行；有證據才在 /dev/tty（非 stdin）出新挑戰碼要人照打，SSH 或無控制終端拒絕；兩者都過才在帳本同交易退場並輪換 capability。同 UID 可偽造 host 檔與偽終端，不是真人證明"
         },
         {
-          "path": "tests/test_crash_release.py",
+          "path": "archive/v2-barrier/tests/test_crash_release.py",
           "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
-          "path": "tests/test_host_crash.py",
+          "path": "archive/v2-barrier/tests/test_host_crash.py",
           "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋；沒登記開機識別的 run 沒有解除途徑，有登記的要重開機後識別不同、再經本機終端確認才解除（決策書 Q15 (a)，2026-11-10）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：parent 沒給錨點時，帳本檔遺失或變空檔讀起來跟第一次啟動一樣；給了錨點（2026-11-11，決策書 Q19 (b)）同樣的遺失以 ledger-lost 拒絕，前提是錨點檔本身還在"
         },
         {
-          "path": "tests/test_vm_guest_scripts.py",
+          "path": "archive/v2-barrier/tests/test_vm_guest_scripts.py",
           "scope": "guest 殼層腳本的離線測試（不開 VM、不用 busybox）：把腳本的 busybox 路徑換成殼層內建、console 換成暫存檔後在 host 的 dash 與 sh 執行，回覆直接餵給 vm_probe 的 host 解析函式；逐條驗受管工具的錯誤代碼、被拒的行不結束程式也不改已載入的前提，以及舊共享路徑請求迴圈的格式。mutants.json 18 個刪改全部 killed。不涵蓋掛載、virtiofs、序列埠與 busybox ash 本身"
         },
         {
-          "path": "src/project_bootstrap/vm_managed_worker.sh",
+          "path": "archive/v2-barrier/src/project_bootstrap/vm_managed_worker.sh",
           "scope": "封入無共享 guest initramfs 的固定合成工具；一次載入前提，後續由 guest 產生受限 broker 請求。非通用工具或正式身分證明"
         },
         {
@@ -324,35 +324,35 @@
           "scope": "父程序持有的 agent RPC，身分來自繼承管道，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/guardian.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/guardian.py",
           "scope": "直接子程序監護與生命週期管道，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "tests/test_guardian.py",
+          "path": "archive/v2-barrier/tests/test_guardian.py",
           "scope": "直接驅動 guardian.py 子程序的 9 個測試：父端先死或期限已過不啟動 worker、父端 EOF／意外資料／期限到都停並回收、忽略 SIGTERM 的子程序寬限後 SIGKILL、guardian 被 terminate 仍回收、worker 不繼承控制描述元；mutants.json 10 個刪改全部 killed。不涵蓋 guardian 自己被 SIGKILL"
         },
         {
-          "path": "src/project_bootstrap/launcher.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/launcher.py",
           "scope": "受信父程序啟動權與耐久請求 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/lifecycle.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/lifecycle.py",
           "scope": "受監護 worker 生命週期與票據保管，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/managed_fixture.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/managed_fixture.py",
           "scope": "單一受限 worker 整合前提屏障與 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "tests/test_broker_fixture.py",
+          "path": "archive/v2-barrier/tests/test_broker_fixture.py",
           "scope": "broker_fixture 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/vm_guest_init.sh",
+          "path": "archive/v2-barrier/src/project_bootstrap/vm_guest_init.sh",
           "scope": "無共享 guest 的 init，vm_probe 載入，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/vm_runner.swift",
+          "path": "archive/v2-barrier/src/project_bootstrap/vm_runner.swift",
           "scope": "Virtualization.framework runner，vm_probe 編譯，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
@@ -370,11 +370,11 @@
           "scope": "決策書第 4 節對應子項完整門檻",
           "evidence": [
             {
-              "path": "src/project_bootstrap/feasibility.py",
+              "path": "archive/v2-barrier/src/project_bootstrap/feasibility.py",
               "scope": "同 UID／直接 Git 的合成繞過反例"
             },
             {
-              "path": "src/project_bootstrap/isolation.py",
+              "path": "archive/v2-barrier/src/project_bootstrap/isolation.py",
               "scope": "Mac 單一受包覆子程序 OS 邊界；不是全部工具隔離"
             },
             {
@@ -382,23 +382,23 @@
               "scope": "依 parent 管道身分關聯完整事件；可信 launcher 的正式資格尚未驗收"
             },
             {
-              "path": "src/project_bootstrap/materializer.py",
+              "path": "archive/v2-barrier/src/project_bootstrap/materializer.py",
               "scope": "prepared／applied 關聯內容事件；受隔離合成工作樹，非任意外部寫入歸因"
             },
             {
-              "path": "tests/test_launcher.py",
+              "path": "archive/v2-barrier/tests/test_launcher.py",
               "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
             },
             {
-              "path": "tests/test_lifecycle.py",
+              "path": "archive/v2-barrier/tests/test_lifecycle.py",
               "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
             },
             {
-              "path": "tests/test_tree_probe.py",
+              "path": "archive/v2-barrier/tests/test_tree_probe.py",
               "scope": "程序群組對一般後代有效但 setsid 可脫離；移除逃逸後負向測試失敗，不能作任意後代完整歸因保證"
             },
             {
-              "path": "src/project_bootstrap/vm_probe.py",
+              "path": "archive/v2-barrier/src/project_bootstrap/vm_probe.py",
               "scope": "Mac 真 VM 無共享目錄的固定合成 shell 工具：guest 載入 epoch／factor，原始請求由持久 outbox 送 broker；兩個 epoch 的事件歸同一 principal，pending 舊寫入拒絕；寫入前須帳本確認該 run 為唯一存活 run。非通用工具、可信 guest 身分或完整覆寫歸因"
             }
           ],
@@ -431,23 +431,23 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
       "evidence": [
         {
-          "path": "tests/test_recovery.py",
+          "path": "archive/v2-barrier/tests/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
         },
         {
-          "path": "tests/test_launcher.py",
+          "path": "archive/v2-barrier/tests/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         },
         {
-          "path": "tests/test_lifecycle.py",
+          "path": "archive/v2-barrier/tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         },
         {
-          "path": "src/project_bootstrap/launcher.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/launcher.py",
           "scope": "請求保存與恢復，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/lifecycle.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/lifecycle.py",
           "scope": "中斷後未解決 run 的阻擋，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
@@ -465,19 +465,19 @@
           "scope": "決策書第 4 節對應子項完整門檻",
           "evidence": [
             {
-              "path": "tests/test_recovery.py",
+              "path": "archive/v2-barrier/tests/test_recovery.py",
               "scope": "四個程序終止點重連同一事件；不補造當時未記錄的推理，不等於斷電或裝置遺失保證"
             },
             {
-              "path": "tests/test_launcher.py",
+              "path": "archive/v2-barrier/tests/test_launcher.py",
               "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
             },
             {
-              "path": "tests/test_lifecycle.py",
+              "path": "archive/v2-barrier/tests/test_lifecycle.py",
               "scope": "POSIX 固定啟動／監護回收；真 parent SIGKILL 後以本次啟動紀錄續接，SIGSTOP 後監護到期回收；監護失效或證據缺失保持阻擋"
             },
             {
-              "path": "tests/test_managed_fixture.py",
+              "path": "archive/v2-barrier/tests/test_managed_fixture.py",
               "scope": "Mac 合成執行面四個父程序 SIGKILL 階段：切換中恢復同一通知，已啟用時復原前提與原請求"
             }
           ],
@@ -806,19 +806,19 @@
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "src/project_bootstrap/feasibility.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/feasibility.py",
           "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
         },
         {
-          "path": "src/project_bootstrap/supervisor.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/supervisor.py",
           "scope": "固定合成子程序已可中止、重建上下文、確認新 context digest 後啟用；尚非真實工具／模型"
         },
         {
-          "path": "tests/test_managed_fixture.py",
+          "path": "archive/v2-barrier/tests/test_managed_fixture.py",
           "scope": "macOS 單 worker 實測：封住舊 epoch、guardian 回收、確認新前提再啟用；父程序重啟恢復同一通知與 outbox；另以失敗 VM gate 驗證退場未確認時切換和重啟均阻擋"
         },
         {
-          "path": "src/project_bootstrap/tree_probe.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/tree_probe.py",
           "scope": "程序群組停止一般後代但 setsid 脫離仍存活；多程序切換不能憑 leader 退場放行"
         },
         {
@@ -826,55 +826,55 @@
           "scope": "Mac VM 候選的本機邊界、合成 guest 實測結果與未驗範圍"
         },
         {
-          "path": "src/project_bootstrap/vm_probe.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/vm_probe.py",
           "scope": "可重跑的 Mac Apple silicon 合成 VM：專用雙向 virtio console 回傳固定算術；setsid 後代持鎖與共享寫入，stop／host SIGKILL／控制管道 EOF 後 heartbeat 停止；受管切換先持久確認 VM 退場，再啟用新 epoch 與 outbox；父程序 SIGKILL 後因缺持久證據阻擋恢復，無共享路徑再以真 runner 停機紀錄加合成終端替身走崩潰解除、guest console 日誌被拒；另一台在 outbox 已存、未送出時 SIGKILL 父程序，解除後替代 parent 重送原 bytes 只套用一次；2026-11-10 再加 guest_unread_request：guest 已產生寫入請求（console 有標記）、parent 還沒讀就被 SIGKILL，解除後沒有可重送的請求，帳本與工作樹都沒有效果；兩 VM 的 virtiofs flock 不協調；不是真實工具驗收；2026-11-10 guest_runner_sigkill：父程序活著、直接 SIGKILL VM runner，host 檔沒有停機行，退場與寫入都拒絕，重開帳本阻擋，崩潰解除不開終端就拒絕（Q1 退回 (c)）"
         },
         {
-          "path": "src/project_bootstrap/vm_managed_worker.sh",
+          "path": "archive/v2-barrier/src/project_bootstrap/vm_managed_worker.sh",
           "scope": "無共享 guest 中的固定合成工具，載入 epoch／factor 並產生受限寫入請求；真 VM 測兩個 epoch、舊請求拒絕與新寫入"
         },
         {
-          "path": "src/project_bootstrap/guest_runs.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/guest_runs.py",
           "scope": "無共享 guest 的持久 run 帳本：開機前記 parent 選定的映像／腳本 digest 與 run id，host 停機證據（停機標記＋runner 結束碼）才退場；未退場列阻擋新 guest、application ACK、寫入與重啟；每台 run 綁一個 channel capability 雜湊，退場同交易輪換 capability，舊 channel 由 broker 拒絕。身分是 parent 標籤，非 VM 證明。parent 可另給錨點檔（資料庫以外，2026-11-11）：第一次開啟先寫隨機帳本 id 到錨點再存進資料庫，之後兩邊都在且相同才開；帳本遺失、清空或被換掉而錨點還在就拒絕。同 UID 可同時刪兩者，只擋意外遺失；解除是人手動確認後刪錨點"
         },
         {
-          "path": "tests/test_guest_runs.py",
+          "path": "archive/v2-barrier/tests/test_guest_runs.py",
           "scope": "帳本離線負向控制：重開資料庫後未退場阻擋、開機確認前崩潰、guest 標記／錯 probe／非零結束碼／多餘欄位、共享目錄、錯 epoch、舊 run ACK、他人／過期 channel 與退場後舊 capability；移除任一守門後測試失敗。錨點（2026-11-11）：帳本被刪／清空／換成另一份、錨點不見、錨點是符號連結／目錄／格式不對、路徑非絕對都拒絕且不補寫；錨點與目錄都 fsync；同時建立時不覆蓋；mutants.json 新增 15 個刪改全部 killed"
         },
         {
-          "path": "src/project_bootstrap/crash_release.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/crash_release.py",
           "scope": "父程序崩潰後的人工解除（Q1 (a)）：先讀開機前登記的 runner stderr 檔，必須逐行等於乾淨無共享停機的四行；有證據才在 /dev/tty（非 stdin）出新挑戰碼要人照打，SSH 或無控制終端拒絕；兩者都過才在帳本同交易退場並輪換 capability。同 UID 可偽造 host 檔與偽終端，不是真人證明"
         },
         {
-          "path": "tests/test_crash_release.py",
+          "path": "archive/v2-barrier/tests/test_crash_release.py",
           "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
-          "path": "tests/test_host_crash.py",
+          "path": "archive/v2-barrier/tests/test_host_crash.py",
           "scope": "host 整機崩潰後可能留下的磁碟狀態的離線盤點（沒有真的讓機器崩潰）：runner 紀錄在任一位元組截斷或補零都不算停機證據；host 在 run 中途或開機確認前死掉時維持阻擋；沒登記開機識別的 run 沒有解除途徑，有登記的要重開機後識別不同、再經本機終端確認才解除（決策書 Q15 (a)，2026-11-10）；停機行已寫出但 runner 非 0 結束時 retire 拒絕、要走崩潰解除；帳本檔被截短時不是讀不了就是仍阻擋。反例：parent 沒給錨點時，帳本檔遺失或變空檔讀起來跟第一次啟動一樣；給了錨點（2026-11-11，決策書 Q19 (b)）同樣的遺失以 ledger-lost 拒絕，前提是錨點檔本身還在"
         },
         {
-          "path": "tests/test_vm_guest_scripts.py",
+          "path": "archive/v2-barrier/tests/test_vm_guest_scripts.py",
           "scope": "guest 殼層腳本的離線測試（不開 VM、不用 busybox）：把腳本的 busybox 路徑換成殼層內建、console 換成暫存檔後在 host 的 dash 與 sh 執行，回覆直接餵給 vm_probe 的 host 解析函式；逐條驗受管工具的錯誤代碼、被拒的行不結束程式也不改已載入的前提，以及舊共享路徑請求迴圈的格式。mutants.json 18 個刪改全部 killed。不涵蓋掛載、virtiofs、序列埠與 busybox ash 本身"
         },
         {
-          "path": "tests/test_vm_probe.py",
+          "path": "archive/v2-barrier/tests/test_vm_probe.py",
           "scope": "退場後仍寫入、後代未脫離 session、共享 scratch 偽造結果、錯 epoch／context ACK／base、截斷回覆、無共享路徑缺啟動標記／虛報 mount，及 guest console 偽造 host 啟動／停機標記的離線負向控制；不代替 VM 實跑"
         },
         {
-          "path": "src/project_bootstrap/managed_fixture.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/managed_fixture.py",
           "scope": "前提屏障與 outbox，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "tests/test_supervisor.py",
+          "path": "archive/v2-barrier/tests/test_supervisor.py",
           "scope": "supervisor 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/vm_guest_init.sh",
+          "path": "archive/v2-barrier/src/project_bootstrap/vm_guest_init.sh",
           "scope": "guest init，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/vm_runner.swift",
+          "path": "archive/v2-barrier/src/project_bootstrap/vm_runner.swift",
           "scope": "VM runner，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         }
       ],
@@ -1234,23 +1234,23 @@
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "src/project_bootstrap/broker_fixture.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         },
         {
-          "path": "tests/test_recovery.py",
+          "path": "archive/v2-barrier/tests/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
         },
         {
-          "path": "tests/test_launcher.py",
+          "path": "archive/v2-barrier/tests/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         },
         {
-          "path": "tests/test_lifecycle.py",
+          "path": "archive/v2-barrier/tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         },
         {
-          "path": "tests/test_approvals.py",
+          "path": "archive/v2-barrier/tests/test_approvals.py",
           "scope": "合成刪除以固定公開金鑰驗分離簽章；竄改、異簽署者、錯範圍、舊 epoch、重播與缺收據不授權"
         },
         {
@@ -1262,23 +1262,23 @@
           "scope": "RPC 無管理方法與任意命令，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/launcher.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/launcher.py",
           "scope": "啟動授權，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/lifecycle.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/lifecycle.py",
           "scope": "票據保管，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "tests/test_broker_fixture.py",
+          "path": "archive/v2-barrier/tests/test_broker_fixture.py",
           "scope": "broker_fixture 的測試，實作檔；行為證據是同 ID 已列的測試，本列只讓改動影響圖能認領它，不是額外證據"
         },
         {
-          "path": "src/project_bootstrap/crash_release.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/crash_release.py",
           "scope": "父程序崩潰後的人工解除（Q1 (a)）：先讀開機前登記的 runner stderr 檔，必須逐行等於乾淨無共享停機的四行；有證據才在 /dev/tty（非 stdin）出新挑戰碼要人照打，SSH 或無控制終端拒絕；兩者都過才在帳本同交易退場並輪換 capability。同 UID 可偽造 host 檔與偽終端，不是真人證明"
         },
         {
-          "path": "tests/test_crash_release.py",
+          "path": "archive/v2-barrier/tests/test_crash_release.py",
           "scope": "崩潰解除離線負向控制：缺檔／無停機／停機錯誤／未開機／共享／混入 guest 行／重複停機／停機後活動／非 ASCII／超長、符號連結與目錄都不問人且維持阻擋；錯答、預先輸入、SSH、無終端、非 tty、未登記日誌、偽造證據或確認與舊帳本都拒絕；mutants.json 23 個刪改全部 killed"
         },
         {
@@ -1304,11 +1304,11 @@
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "src/project_bootstrap/feasibility.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/feasibility.py",
           "scope": "目前同 UID 原型的反例；執行結果須在當輪重新取得"
         },
         {
-          "path": "src/project_bootstrap/broker_fixture.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         }
       ],
@@ -1320,11 +1320,11 @@
           "scope": "決策書第 4 節對應子項完整門檻",
           "evidence": [
             {
-              "path": "src/project_bootstrap/feasibility.py",
+              "path": "archive/v2-barrier/src/project_bootstrap/feasibility.py",
               "scope": "同 UID／直接 Git 的合成繞過反例"
             },
             {
-              "path": "src/project_bootstrap/isolation.py",
+              "path": "archive/v2-barrier/src/project_bootstrap/isolation.py",
               "scope": "Mac 單一受包覆子程序 OS 邊界；不是全部工具隔離"
             }
           ],
@@ -1427,15 +1427,15 @@
       "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
       "evidence": [
         {
-          "path": "src/project_bootstrap/broker_fixture.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         },
         {
-          "path": "tests/test_lifecycle.py",
+          "path": "archive/v2-barrier/tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         },
         {
-          "path": "tests/test_tree_probe.py",
+          "path": "archive/v2-barrier/tests/test_tree_probe.py",
           "scope": "POSIX 程序群組候選的正反例與失效變異；不是 Windows Job Object 或真實工具驗收"
         },
         {
@@ -1477,23 +1477,23 @@
           "scope": "可重跑的合成契約與負向輸入；不是真實 surface 驗收"
         },
         {
-          "path": "src/project_bootstrap/broker_fixture.py",
+          "path": "archive/v2-barrier/src/project_bootstrap/broker_fixture.py",
           "scope": "可重跑的 Mac 受隔離合成 agent：管道身分、管理 RPC 缺席、資源／序號／讀寫邊界；非真實工具驗收"
         },
         {
-          "path": "tests/test_recovery.py",
+          "path": "archive/v2-barrier/tests/test_recovery.py",
           "scope": "POSIX 合成工作樹：真子程序四個中斷點、持久收據、重連去重與失敗回滾；不是實際斷電／外部服務驗收"
         },
         {
-          "path": "tests/test_launcher.py",
+          "path": "archive/v2-barrier/tests/test_launcher.py",
           "scope": "合成 parent 限期資格／票據重連／請求 outbox；兩個真子程序終止點及負向對照，非正式人類授權或真實工具驗收"
         },
         {
-          "path": "tests/test_lifecycle.py",
+          "path": "archive/v2-barrier/tests/test_lifecycle.py",
           "scope": "POSIX 固定啟動／監護回收／私有票據；真 parent SIGKILL、失去監護及無監護負向對照，未解狀態不以 PID 認領；非任意後代或全 OS 保證"
         },
         {
-          "path": "tests/test_approvals.py",
+          "path": "archive/v2-barrier/tests/test_approvals.py",
           "scope": "合成額度簽核綁種類、資源、期限、epoch、次數與額度來源；Mac 隔離 agent 消耗一次合成 paid-api，無付費或模型呼叫"
         }
       ],
@@ -1511,7 +1511,7 @@
           "scope": "一鍵重取時間、OS／Python、repo 輸入與所列執行檔 digest；不可用元件明示未驗證"
         },
         {
-          "path": "tests/test_lifecycle.py",
+          "path": "archive/v2-barrier/tests/test_lifecycle.py",
           "scope": "真 guardian 啟動後修改腳本內容，原計畫不能用於替換或重啟續接"
         },
         {

@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-14（session 名稱時間戳改 `MM.DD.HH`，`VERSION` `2026-11-14`；`sync_project.py` 會同步 `AGENTS.md` 的共用制度，驗證項加「同步共用制度」）。前次 2026-11-13（v3 第 1 期：部署包改成 v3 形狀）：骨架 27 → 24 檔，`VERSION` `2026-11-13`。3.1 `AGENTS.md` 範本有開始／結束標記夾住的共用制度（≤40 行）；3.10 開場 hook 只報事實（最多五行 `[facts]`）；3.8 handoff skill 降為碰到才讀的參考；舊 3.18–3.20（Antigravity 轉接層、shim、`.agents/hooks.json`）移除，`sync_project.py` 不再處理 `.agents/hooks.json`，`owners.json` 少三列。驗證項的取捨記在「`tools/verify_bootstrap.py` 守的東西」表下方。
+> 最後更新：2026-11-14（v3 Q33：執行屏障模組與測試封存到 [archive/v2-barrier/](archive/v2-barrier/README.md)，`verify_v2.py` 不再跑探針；前面同日：session 名稱時間戳改 `MM.DD.HH`，`VERSION` `2026-11-14`；`sync_project.py` 會同步 `AGENTS.md` 的共用制度，驗證項加「同步共用制度」）。前次 2026-11-13（v3 第 1 期：部署包改成 v3 形狀）：骨架 27 → 24 檔，`VERSION` `2026-11-13`。3.1 `AGENTS.md` 範本有開始／結束標記夾住的共用制度（≤40 行）；3.10 開場 hook 只報事實（最多五行 `[facts]`）；3.8 handoff skill 降為碰到才讀的參考；舊 3.18–3.20（Antigravity 轉接層、shim、`.agents/hooks.json`）移除，`sync_project.py` 不再處理 `.agents/hooks.json`，`owners.json` 少三列。驗證項的取捨記在「`tools/verify_bootstrap.py` 守的東西」表下方。
 >
 > 前次 2026-11-13（需求決策書 v3 與 handoff-ab 實測）：新增 `project-bootstrap-requirements-decision-v3.md` 當現行需求權威，v2 決策書並存供工具讀取（v3 Q32 (b)）；新增 `experiments/handoff-ab/`（對照實測，v3 的依據）。部署包、`VERSION`、驗證項都沒動。
 
@@ -158,12 +158,11 @@
 - 錨點拒絕的解除是人工步驟：確認那份帳本沒有 guest 還可能在跑，再手動刪錨點檔；沒有做成工具，agent 不要自己刪。
 - 制度只改 `src/kit/`，改完跑 `python3 -X utf8 tools/build_kit.py` 重生 `PROJECT-BOOTSTRAP.md`，同一個 commit；手改部署包會被「部署包由來源生成」擋。handoff skill 的六個檔改 `src/kit/files/.claude/skills/handoff/*.tmpl`，六個 `source:` 標記與 `VERSION` 要同版本；同一天再改要加序號。改到逐字搬來的行，「skill 拆分」會擋：要嘛還原，要嘛在 `tools/skill_split_baseline.json` 的 `rewritten` 寫明去處。改了模式檔的段落標題，「skill 規則對照表」會擋，要一起改 `reasons.md` 對照表。改完要重新覆蓋這台的兩個全域目錄。
 - 各原型都是**偵測**或合成阻擋，沒有接進任何工具。不要寫成保障。崩潰解除的終端確認只抬高 agent 代答門檻；開機識別登記值與錨點都在同 UID 可寫的地方。
-- 改 `vm_guest_init.sh`／`vm_managed_worker.sh` 之後要重跑真 VM `vm_probe.py`（離線測試不是 busybox）；`mutants.json` 對應原文也要一起改（重構 `guest_runs.py`／`crash_release.py` 會讓舊原文失配，`mutants.py --only` 會報）。
+- VM 腳本、`guest_runs.py`、`crash_release.py` 2026-11-14 起封存在 `archive/v2-barrier/`，不再維護（v3 Q33）。
 - `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書第 6 節的 `Q` 編號（或 `- 無。`）。決策書第 7 節每條要有 `理由：`；第 6 節有裁定的項目底下子項格式是「採用理由／未選／暫緩」。
 - 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗。
 - AGENTS.md 只有規則；新增或改規則時在 [AGENTS-reasons.md](AGENTS-reasons.md) 補段落與錨點。
 - 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。新守門用 `denied(code, ...)` 寫法。
-- 帳本列未 `retired` 時重啟一律阻擋，不要人工改列；解除走 `PYTHONPATH=src python3 -X utf8 -m project_bootstrap.crash_release DB RUN_ID`，必須人在 host 本機終端。
 - 僅合成暫存 fixture；原檔、票據、金鑰與合成 Git object 不進本 repo。
 - 推含 `.github/workflows/` 改動的 commit，`gh` 權杖要有 `workflow` 權限，否則 GitHub 拒收（2026-11-11 E2 踩到）；補權限要使用者自己跑 `gh auth refresh -h github.com -s workflow`。
 - 發正式包：在要發的 commit 上 push `release-request/<channel>` tag，使用者在 GitHub 核准 `release` environment；不要代按核准。workflow 從 tag 名取 channel，所以每次發布都用同一個觸發 tag：第二次起要先刪掉遠端舊的 `release-request/<channel>` 再重推（2026-11-12 發 `beta` epoch 2 時第一次碰到，刪之前問過使用者）；它只是觸發器，刪掉不影響 `channel/…` 發布紀錄。channel tag 沒有伺服器端保護（決策書 Q23），不要為了測試在 `beta`／`stable` 建、移或刪 tag。
@@ -208,7 +207,8 @@
 | 本檔 | 結構 | 只有結構變動 |
 | [LICENSE](LICENSE) | MIT（2026-09-07 起公開） | 授權改變 |
 | [pyproject.toml](pyproject.toml)、[uv.lock](uv.lock) | **P1 開發骨架**（2026-11-11）：依賴、最低 Python 3.12、pytest 設定，以及鎖檔裡每個套件的授權表；`uv.lock` 鎖版本與 sha256。`[tool.uv] package = false`，打包屬 P2。不部署、不同步；A4 不需要它們 | 加減依賴時兩檔一起改（`uv lock`），新套件同時登記授權 |
-| [src/project_bootstrap/](src/project_bootstrap/__init__.py) | v2 原型程式（2026-11-11 從 `experiments/v2` 搬來，內容不變）：契約、broker、受管 worker、VM 探針、偵測原型與 `mutants.py`／`mutants.json`。仍是合成 fixture 原型，不部署；只用標準函式庫，A4 的 `verify_v2.py` 不需要 uv 就能 import | 改原型時；之後的模組分組另做 |
+| [src/project_bootstrap/](src/project_bootstrap/__init__.py) | v2 原型程式（2026-11-11 從 `experiments/v2` 搬來，內容不變）：契約、broker、偵測原型與 `mutants.py`／`mutants.json`。2026-11-14 起受管 worker、VM 探針等執行屏障模組封存在 `archive/v2-barrier/`（v3 Q33）。仍是合成 fixture 原型，不部署；只用標準函式庫，A4 的 `verify_v2.py` 不需要 uv 就能 import | 改原型時；之後的模組分組另做 |
+| [archive/v2-barrier/](archive/v2-barrier/README.md) | v3 Q33 封存的 v2 執行屏障模組、測試與變異組（2026-11-14 從 `src/`、`tests/` 用 `git mv` 搬來，內容不改）。pytest、`verify_v2.py`、A4 都不跑；要重跑照它的 README 在暫存目錄拼回 | 只有要重新研究執行屏障時；不要把它搬回 `src/` 而不先改 Q33 |
 | [tests/](tests/test_layout.py) | 全部測試（unittest 寫法，pytest 與 `verify_v2.py` 都跑）：v2 原型的測試加上開發骨架自己的 `test_layout.py`。讀本 repo 真文件的測試叫 `*_repo.py`，不放進 mutation 群組 | 加測試時 |
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
 | [tools/skill_split_baseline.json](tools/skill_split_baseline.json) | 拆分前單檔 `SKILL.md`（`VERSION` `2026-11-03`）每一行的雜湊，加上 11 行刻意改寫的去處。`verify_bootstrap.py`「skill 拆分」用它確認沒有行被弄丟。不部署、不同步 | 只有刻意改寫或刪掉舊文本的某一行時，並寫明去處 |

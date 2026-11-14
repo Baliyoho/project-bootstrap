@@ -28,7 +28,7 @@
 1. **各專案與全域 skill 已升到 v2026-11-14（2026-11-14，使用者授權）**：NAA_TR（在 `feature/W15-research-shell`）、NAS_MAINT、grist-workflow、鍵鼠同部署_mac 逐個開工、`sync_project.py --owner --write`、check_docs 通過、push、清標記；AGENTS.md 補上共用制度，標記外的舊交接段落沒有矛盾，照使用者定的原則保留不動。全域 `~/.claude` 與 `~/.codex` 的 handoff skill 換成 v3（v2 備份只在本機暫存目錄）；本 repo 的 AGENTS.md 貼入共用制度副本（理由在 AGENTS-reasons 的 shared）。別台機器的全域副本還沒換：那台接棒時開場 hook 會印家目錄與專案不同。
 2. **ARCHITECT 驗證項表下方那四項已由使用者定案（2026-11-14）**：push hook 維持 exit 2（依 D13，跟 F10 字面的差異記在 ARCHITECT）、check_docs 壞格式 exit 2 保留、兩項 skill 句子契約檢查保留、README 拿掉 Antigravity 欄與檔案樹的 Antigravity 檔。剩一件等使用者決定：F10 的字要不要改成跟 D13 一致。
 3. 第 2 期 Codex＋macOS：同一套 handoff-ab 兩輪＋互動驗證，換 Codex 跑。開始前先問使用者。
-4. v3 第 8 節未定：凍結的執行屏障模組要不要封存（Q33）、各專案何時換新骨架（Q34）。
+4. v3 第 8 節 Q33、Q34 已由使用者定案（2026-11-14）：Q34 登記為已決（四個專案與全域已換骨架）；Q33 封存——除了 `broker` 的執行屏障模組與測試搬到 `archive/v2-barrier/`，pytest 651 → 435、`verify_v2` 跑 428 個測試。`approvals.py` 留在 `src/` 但沒有測試了；mutation 重跑了測試清單有變的兩組：session 19 個全擋；broker 有 2 個只靠封存測試擋的變異，移到封存的 mutants.json。其餘各組沒重跑。
 
 ## 地雷與注意事項
 

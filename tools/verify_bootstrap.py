@@ -4731,30 +4731,21 @@ def step_architecture_summary(dest):
 
 
 def v2_report_problem(report):
-    """Reject an empty/partial/optimistic report, including a false ready claim."""
+    """Reject an empty/partial/optimistic report, including a false ready claim.
+
+    2026-11-14（v3 Q33）：執行屏障模組、探針與三個同 UID 反例封存到 archive/v2-barrier/，
+    報告不再有 findings 與各探針；改為要求報告明寫封存位置，免得探針靜默消失卻沒人知道。
+    """
     try:
-        tests, findings = report['tests'], report['findings']
+        tests = report['tests']
         if report['harness_passed'] is not True or report['strict_ready'] is not False:
             return 'P0 回歸失敗或不當宣稱 strict ready'
         if tests['run'] < 1 or any(tests[key] != 0 for key in ('failed', 'errors', 'skipped')):
             return '測試為空、失敗或有未驗證項'
         if not isinstance(tests.get('needs_uv'), list):
             return '報告沒列出 A4 不跑的測試檔'
-        expected = {'same-uid-journal-bypass', 'direct-git-object-bypass',
-                    'running-context-still-uses-old-premise'}
-        if len(findings) != len(expected) or {row['id'] for row in findings} != expected:
-            return '缺少架構反例'
-        if any(row['counterexample_observed'] is not True or row['requirement_result'] != '不通過'
-               for row in findings):
-            return '反例未重現或把需求誤報通過'
-        if report['isolation_probe']['result'] not in ('通過', '不通過', '未驗證'):
-            return 'OS 探針未揭露結果'
-        if report['supervisor_probe']['result'] != '通過':
-            return '合成上下文替換探針未通過'
-        if report['broker_probe']['result'] not in ('通過', '未驗證'):
-            return '管道身分／管理分權探針失敗'
-        if report['managed_probe']['result'] not in ('通過', '未驗證'):
-            return '受管前提切換／outbox 探針失敗'
+        if 'archive/v2-barrier/' not in str(report['archived']):
+            return '報告沒寫執行屏障探針封存在哪'
     except (KeyError, TypeError):
         return 'v2 報告缺失或無效'
     return ''
@@ -4768,13 +4759,12 @@ def step_v2():
         problem = v2_report_problem(report)
         valid = result.returncode == 0 and not problem
         needs_uv = report['tests'].get('needs_uv', [])
-        detail = problem or ('%s 個契約／索引測試%s；三個預期反例重現；strict_ready=%s；'
-                  'OS 子程序探針=%s、管道分權=%s、受管前提切換／outbox=%s（非桌面工具驗收）' % (
+        detail = problem or ('%s 個契約／索引測試%s；strict_ready=%s；'
+                  '執行屏障模組、探針與同 UID 反例已封存於 archive/v2-barrier/（v3 Q33），不在 A4 執行' % (
                       report['tests']['run'],
                       '（另有 %d 個測試檔要外部套件，A4 不跑、要 uv run pytest：%s）' % (
                           len(needs_uv), '、'.join(needs_uv)) if needs_uv else '',
-                      report['strict_ready'], report['isolation_probe']['result'],
-                      report['broker_probe']['result'], report['managed_probe']['result']))
+                      report['strict_ready']))
     except (ValueError, KeyError, TypeError):
         valid, detail = False, 'v2 報告缺失或無效'
     record('OK' if valid else 'FAIL', 'v2 P0 原型回歸（非需求達標）', detail)
