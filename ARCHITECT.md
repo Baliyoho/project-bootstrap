@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-14（v3 Q33：執行屏障模組與測試封存到 [archive/v2-barrier/](archive/v2-barrier/README.md)，`verify_v2.py` 不再跑探針；前面同日：session 名稱時間戳改 `MM.DD.HH`，`VERSION` `2026-11-14`；`sync_project.py` 會同步 `AGENTS.md` 的共用制度，驗證項加「同步共用制度」）。前次 2026-11-13（v3 第 1 期：部署包改成 v3 形狀）：骨架 27 → 24 檔，`VERSION` `2026-11-13`。3.1 `AGENTS.md` 範本有開始／結束標記夾住的共用制度（≤40 行）；3.10 開場 hook 只報事實（最多五行 `[facts]`）；3.8 handoff skill 降為碰到才讀的參考；舊 3.18–3.20（Antigravity 轉接層、shim、`.agents/hooks.json`）移除，`sync_project.py` 不再處理 `.agents/hooks.json`，`owners.json` 少三列。驗證項的取捨記在「`tools/verify_bootstrap.py` 守的東西」表下方。
+> 最後更新：2026-11-14（本 repo 交接制度對齊 v3：`.claude/hooks/repo-git-check.sh` 換成 3.10 `git-freshness.sh` 的逐字副本，只印 `[facts]`；驗證項「本 repo 工作中判讀」與「全綠行」退場，換成「本 repo 開場 hook」逐位元組比對；`.gitignore` 加 `.claude/.bootstrap-version`；`AGENTS.md` 開工段改名「跟部署出去的專案不同的地方」、只寫事實。前面同日：v3 Q33：執行屏障模組與測試封存到 [archive/v2-barrier/](archive/v2-barrier/README.md)，`verify_v2.py` 不再跑探針；前面同日：session 名稱時間戳改 `MM.DD.HH`，`VERSION` `2026-11-14`；`sync_project.py` 會同步 `AGENTS.md` 的共用制度，驗證項加「同步共用制度」）。前次 2026-11-13（v3 第 1 期：部署包改成 v3 形狀）：骨架 27 → 24 檔，`VERSION` `2026-11-13`。3.1 `AGENTS.md` 範本有開始／結束標記夾住的共用制度（≤40 行）；3.10 開場 hook 只報事實（最多五行 `[facts]`）；3.8 handoff skill 降為碰到才讀的參考；舊 3.18–3.20（Antigravity 轉接層、shim、`.agents/hooks.json`）移除，`sync_project.py` 不再處理 `.agents/hooks.json`，`owners.json` 少三列。驗證項的取捨記在「`tools/verify_bootstrap.py` 守的東西」表下方。
 >
 > 前次 2026-11-13（需求決策書 v3 與 handoff-ab 實測）：新增 `project-bootstrap-requirements-decision-v3.md` 當現行需求權威，v2 決策書並存供工具讀取（v3 Q32 (b)）；新增 `experiments/handoff-ab/`（對照實測，v3 的依據）。部署包、`VERSION`、驗證項都沒動。
 
@@ -133,7 +133,7 @@
 ## 一句話
 
 唯一產出物是 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)——一份自帶所有檔案範本的部署包，複製到新專案資料夾就能生出整套制度。
-其餘每個檔案都是它的**說明、指標或測試**，沒有第二個產出物（例外是下面那支本 repo 自己的開場檢查 hook——它誰的副本都不是——以及 `HANDOFF.md`，它是範本 3.3 的*實例*，承載當下交接快照與「工作中」標記）。
+其餘每個檔案都是它的**說明、指標或測試**，沒有第二個產出物（例外是 `HANDOFF.md`，它是範本 3.3 的*實例*，承載當下交接快照與「工作中」標記）。
 
 ## 碰到才讀的文件
 
@@ -216,7 +216,7 @@
 | [tools/migrate_project.py](tools/migrate_project.py) | P2 第 5 片（決策書 Q25）：把舊專案一次搬到包＋指標。預演只讀（不 fetch、不刷新 index），逐專案列要換、要補、要合併與要人工比對的檔；寫入只能單一專案、要 `--owner` 與一次正式發布，只換本 repo 發過的舊版，客製就整個專案不寫（CRLF 當 LF 比，Q26）。重用 `sync_project.py` 的合併與占用檢查。不 commit、不部署 | 遷移規則改變時；真實專案寫入要逐專案授權 |
 | [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
 | `.claude/hooks/repo-action-rules.sh` | 本 repo 自己的動作當下提醒（2026-11-10，決策書 Q6 (a)，F22 第二階段第 (2) 點試行）：只接 `.claude/settings.json` 的 PreToolUse（Bash／Edit／Write／MultiEdit）與 PostToolUse（Bash），準備 push、push 剛完成、改部署包、改 hook 時送對應規則摘要；永遠 exit 0、不擋。Codex 那份刻意不接。看原始 JSON 字串判斷，會誤報（指令文字裡提到 git push 也會送）。不在副本拓撲裡 | 試行結果決定去留 |
-| `.claude/settings.json`＋`.codex/hooks.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart 檢查：git 新鮮度＋`HANDOFF.md` 的「工作中」判讀＋開工改名提示。兩份接線掛的都是**同一支** `repo-git-check.sh`（2026-11-01 補 Codex 這一面），所以它們**不是部署包 3.9／3.17 的副本**，那支 hook 也不是 3.10 的副本——都不在副本拓撲裡、不要用 `sync_project.py` 同步（檔頭寫了為什麼不抄 3.10；2026-11-01 起那支腳本會直接拒絕） | 幾乎不動 |
+| `.claude/settings.json`＋`.codex/hooks.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart 檢查。兩份接線掛的都是**同一支** `repo-git-check.sh`（2026-11-01 補 Codex 這一面），所以它們**不是部署包 3.9／3.17 的副本**。2026-11-14 起那支 hook 是 3.10 `git-freshness.sh` 的**手貼逐字副本**（v3 D12：只報事實，最多五行 `[facts]`），「本 repo 開場 hook」逐位元組比對；在那之前是本 repo 自己的判讀版（🔴／🟡、全綠行）。三個檔都不在 `sync_project.py` 的拓撲裡（它直接拒絕本 repo），改了 3.10 要手動重貼，理由在 AGENTS-reasons 的副本規則 7 | 改 3.10 時重貼 |
 | `.gitignore`、`.gitattributes` | `dist/`、`.venv/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
 | `dist/` | 建置產物（`--zip` 產出的骨架壓縮檔），**不進 Git** | 要發佈就重跑一次，不要留在 repo 裡跟部署包唱反調 |
 
@@ -307,7 +307,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 來源／產物文件同組情境（F46 部分） | 同一份合成文件在來源文件檢查與部署後 `check_docs.py` 各跑一次：20 種正反例涵蓋根目錄及巢狀文件的缺檔、死連結、程式碼、角括號加 title、片段、日期及佔位符；沿用來源實際檢查函式 | 同樣的文件缺陷在來源與產物給出不同結論；其他文件項仍待驗 |
 | 來源／產物文件設定同組情境（F46 部分） | 9 種合成設定情境對照非 Markdown 已知佔位符、未知樣板、專案自訂過期字串、同列歷史文字與連結／佔位符／過期字串路徑豁免；來源端同時掃自己受管的非 Markdown 檔 | 來源非 Markdown 檔殘留部署欄位，或來源與產物對相同設定給出不同結果；任意專案設定與跨工具遵循仍待驗 |
 | 來源提交候選一致性（F46 部分） | 來源 `verify_bootstrap.py --staged` 拒絕未暫存或未追蹤檔；完整／部分 stage 與產物 `check_docs.py --staged` 跑同組 fixture，並對來源未追蹤檔作負向測試 | 用未提交的工作樹內容證明另一份 staged 內容；只驗提交候選形狀，不代表實際接手流程已驗收 |
-| 本 repo 工作中判讀 | `repo-git-check.sh` 讀 `origin` 的 `HANDOFF.md` 後每種狀態各印對應結論，且跟 3.10 用同一個欄位字串與**同一張情境表**（含 2026-11-02 的 F01 五項） | 這個 repo 的跨機器防呆靜默失效，或兩支 hook 的欄位格式悄悄分岔 |
+| 本 repo 開場 hook | `repo-git-check.sh` 跟部署包 3.10 逐位元組相同；多一行與檔案不存在兩個負向測試（2026-11-14 取代「本 repo 工作中判讀」，那一項測的是已退場的判讀版） | 改了 3.10 卻沒重貼，本 repo 開場印的跟共用制度說的不一樣，或退回會下指示的判讀版 |
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
 | 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（2026-11-02／F02、F03） |
 | 同步升級 mode | 替換前複製既存 mode；複製失敗保留原檔；新依賴仍可建立；移除複製的負向變異必須失敗。POSIX 另驗 0755／0640、開場 hook 直接執行、Git 無 mode diff | 新 inode 預設權限會讓更新後的 POSIX hook 無法執行；Windows 通過不代表 POSIX 實測 |
@@ -333,7 +333,6 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | AGENTS.md 共用制度 | 開始／結束標記成對、26 條必備條件（v3 第 5 節；第 26 條是 F50 互動驗證後補的「選項卡片也算停下來」）、共用 ≤40 行、全檔 ≤100 行（v3 D11）、開始標記的版本等於 `VERSION`；30 個負向測試（2026-11-13 新增） | 每個 session 都載入的那一層缺了條件、長過預算，或版本提示失準。只證明文字在，不證明模型照做 |
 | 同步補齊模式檔 | 只有單檔的舊專案會補上五個新檔、入口最後寫、不認得的檔列為 EXTRA；1 個負向測試 | 同步後新入口指向不存在的模式檔 |
 | 同步共用制度 | `AGENTS.md` 沒有共用制度就插在第一個「## 」前、舊版整段換掉、標記外不動、已是權威版不寫、壞標記 FAIL 不寫、舊交接段落列 MIGRATE、先於 skill 入口寫；1 個負向測試 | 新 skill 指向舊專案 `AGENTS.md` 裡不存在的共用制度（2026-11-14 加，v3 Q34 前置） |
-| 全綠行 | 本 repo 的 `repo-git-check.sh` 在真 Git fixture 上：正常才印含分支與 SHA 的全綠行，10 種不正常狀態都不印；拿掉條件的腳本會被看出來。部署 hook 2026-11-13 起不印全綠行 | 不該綠的時候印了全綠，正常路徑會跳過完整判讀表 |
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
 | 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，clone 後開場 hook 印出 `[facts]`；5 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit |
 | 部署包由來源生成 | `src/kit` 生成結果與 `PROJECT-BOOTSTRAP.md` 逐位元組相同、每個範本剛好用一次、範本集合等於 `EXPECTED`；9 個負向測試（手改部署包、改範本或散文沒重生、多／少範本、指錯、重複、缺結尾換行、範本含收尾圍籬） | 有人手改了部署包，或改了來源沒重生 |
@@ -385,7 +384,8 @@ check_docs.py
 
 **本 repo 自己的兩份接線（`.claude/settings.json`、`.codex/hooks.json`）不在上面這張圖裡。**
 它們跟 3.9／3.17 路徑同名、形狀也幾乎一樣，但掛的是這個 repo 自己那支 `repo-git-check.sh`——
-所以是**同名而非同源**，沒有同步義務，也不跳 `source:` 版本。而「路徑同名」本身就是風險：
+所以是**同名而非同源**，沒有同步義務，也不跳 `source:` 版本。（那支 hook 本身 2026-11-14 起是 3.10 的手貼逐字副本，
+由「本 repo 開場 hook」逐位元組比對，不靠 `sync_project.py`。）而「路徑同名」本身就是風險：
 `sync_project.py` 的 `WIRING` 清單認的是路徑，手打一次 `sync_project.py <本 repo>` 就會把它們
 改成指向這裡不存在的 `git-freshness.sh`。2026-11-01 起那支腳本直接拒絕本 repo（`--all` 本來就
 掃不到它），`verify_bootstrap.py` 的「sync 拒絕本 repo」與「本 repo 兩份接線」兩項各守一端。

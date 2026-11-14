@@ -1,6 +1,6 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-14（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
+> 最後更新：2026-11-14（本 repo 交接制度對齊 v3：開場 hook 換成部署包 3.10 的逐字副本，開工段改成只寫事實）；前次同日（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
 > 本檔只放規則；每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 <!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-14 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
@@ -38,11 +38,12 @@
 
 上面兩個標記之間是部署包 3.1 共用制度的逐字副本，給全域 handoff skill 指向；裡面的 skill 連結指的是部署後的路徑，本 repo 讀全域那份。不要就地改：改 `src/kit/files/AGENTS.md.tmpl` 後手動重貼，驗證器比對逐字相同。和下面規則重疊時兩邊都要守。[為什麼](AGENTS-reasons.md#shared)
 
-## 開工第一件事
+## 跟部署出去的專案不同的地方
 
-- **先走接棒程序 A 模式，A 沒跑完不改任何檔案**；收工走 B，中途同步走 C。程序在全域 `~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/`），本 repo 刻意沒有專案層那份；這台機器沒有全域副本就讀 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的「3.8」節，不要搬檔或憑記憶重刻。
-- **A4 跑 `python -X utf8 tools/verify_bootstrap.py`，exit 0 才算改完**；B7 先明確 stage，再加 `--staged` 跑。沒有 `check_docs.py` 與 pre-push 防呆，B4 與擋 push 的關卡不存在。
-- `HANDOFF.md` 是交接快照兼「工作中」標記：A5 寫標記，B6 核對並覆寫整份。
+- 驗證入口是 `python3 -X utf8 tools/verify_bootstrap.py`（不是 `verify_state.py`），exit 0 才算改完；提交前先逐檔 stage，再加 `--staged` 跑。
+- 沒有 `check_docs.py`，也沒有 pre-push hook：推 `main` 時沒有機械關卡檢查開工標記，上面不可違反的條件 1 在這裡沒有 hook 擋。
+- 開場 hook 是 `.claude/hooks/repo-git-check.sh`，內容是部署包 3.10 的逐字副本；要重查就重跑它。
+- 沒有專案層的 handoff skill。要看參考程序就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）；這台機器沒有就讀 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的「3.8」節，不要搬檔或憑記憶重刻。
 - 其他文件碰到那件事才讀，對照表在 [ARCHITECT.md](ARCHITECT.md) 的「碰到才讀的文件」。
 
 這些寫在這裡而不只放 hook，是因為有些工具不跑 hook。[為什麼](AGENTS-reasons.md#start)
@@ -70,7 +71,7 @@ AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-B
 - 接線路徑一律相對、不假設 cwd：前面掛 `$(git rev-parse --show-cdup)`；Antigravity 刻意不跟。[為什麼](AGENTS-reasons.md#copy-4)
 - `.agents/` 只放指標與接線，skill 指標的 `description` 寫滿觸發詞。[為什麼](AGENTS-reasons.md#copy-5)
 - Codex 啟動器也要同步（`sync_project.py --codex-only`）；接線改過要重新審核並驗收實際執行。[為什麼](AGENTS-reasons.md#copy-6)
-- 本 repo 自己的 `HANDOFF.md`、兩支 `repo-*.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在拓撲裡，`sync_project.py` 不碰。[為什麼](AGENTS-reasons.md#copy-7)
+- 本 repo 自己的 `HANDOFF.md`、兩支 `repo-*.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在拓撲裡，`sync_project.py` 不碰；其中 `repo-git-check.sh` 是 3.10 的手貼副本，改了範本要手動重貼，驗證器比對逐字相同。[為什麼](AGENTS-reasons.md#copy-7)
 
 ## 本 repo 的交接快照
 

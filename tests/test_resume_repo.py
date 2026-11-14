@@ -14,7 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 class ResumeRepoTests(unittest.TestCase):
     def test_empty_home_finds_the_procedure_in_the_package(self):
         with tempfile.TemporaryDirectory(prefix='bootstrap-v2-resume-home-') as home:
-            result = check(ROOT, home)
+            # 2026-11-14 (decision v3 D12): the start-of-work section only states facts;
+            # it is named for what differs from a deployed project.
+            result = check(ROOT, home, heading='跟部署出去的專案不同的地方')
         self.assertEqual((result['result'], result['reasons'], result['missing']),
                          ('通過', [], []))
         self.assertIn('PROJECT-BOOTSTRAP.md', [p['path'] for p in result['procedures']])

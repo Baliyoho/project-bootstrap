@@ -14,3 +14,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .venv/
+
+# 開場 hook 的上游版本快取（本 repo 的 repo-git-check.sh 是部署包 3.10 的逐字副本，會寫這個檔）
+.claude/.bootstrap-version

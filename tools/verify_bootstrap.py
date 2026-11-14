@@ -69,7 +69,10 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   附負向測試；只驗程序文字沒有退化，不宣稱量到外部工具真的逐訊息改名
   工作中標記   ——HANDOFF.md 範本要有「工作中」欄位，且 git-freshness 讀 origin 那一份後
                   別台機器印 🔴、自己這台印 🟡、已交棒印 ✅、欄位不存在印 🟡。這條鏈斷掉
-                  不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入）
+                  不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入；2026-11-13 起
+                  改成照原文印出、不分符號，判讀交給模型）
+  本 repo 開場 hook——repo-git-check.sh 要跟部署包 3.10 逐位元組相同（2026-11-14，v3 D12；
+                  取代原本的「本 repo 工作中判讀」與「全綠行」），附負向測試
   本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
   來源例外可見性——逐項印出三項已宣告減項，核對來源缺而產物有；漏宣告、來源增項及
@@ -887,93 +890,6 @@ def strip_clock(out):
     return re.sub(r'時間 \S+ \S+ \S+（session 名用 [0-9]{2}\.[0-9]{2}\.[0-9]{2}）', '時間 <t>', out)
 
 
-def busy_cases(push_busy, me):
-    """兩支 hook 共用的「工作中」情境表（2026-10-31 起含工具欄）。
-
-    刻意只有一份：3.10 的 `git-freshness.sh` 與本 repo 的 `repo-git-check.sh` 是分開維護的
-    兩支腳本（檔頭寫了為什麼不抄），但它們該印的結論必須一樣——而「期望值有兩份」就是
-    下一個會悄悄分岔的地方。
-
-    回傳 (情境清單, 最後一次輸出)；最後一次輸出只給失敗時貼現場用。
-    """
-    sess = '`㊣　10.30.09｜測試｜工作中`'
-    claude = tool_env(CLAUDECODE='1')
-    cases = []
-
-    out = push_busy('`other-box` ／ `Claude Code` ／ ' + sess, claude)
-    cases.append(('別台機器→🔴', '🔴 另一台機器正在' in out and 'other-box' in out))
-
-    out = push_busy('`%s` ／ `Claude Code` ／ %s' % (me, sess), claude)
-    cases.append(('同機器同工具→🟡', '🟡 這台機器' in out and '「Claude Code」' in out
-                  and '另一個工具正在' not in out))
-
-    out = push_busy('`%s` ／ `Codex CLI` ／ %s' % (me, sess), claude)
-    cases.append(('同機器不同工具→🔴', '🔴 同一台機器' in out and 'Codex CLI' in out))
-
-    # 認不出自己是哪個工具 → 不准放行，但也不准假裝知道：印 🟡 並把「你自己是不是 X」
-    # 明文丟給模型答。模型知道答案，hook 不知道——這是整段設計的支點。
-    out = push_busy('`%s` ／ `Codex CLI` ／ %s' % (me, sess), tool_env())
-    cases.append(('認不出自己→🟡且把問題丟回', '🟡 這台機器' in out
-                  and '你自己是不是' in out and '另一個工具正在' not in out))
-
-    # 兩家簽章同時在場＝在別的工具殼層裡被啟動、變數被繼承，這時不猜（實測見部署包
-    # 「工具身分」一節：從 Claude Code 的殼層跑 codex，CLAUDECODE 整批都還在）。
-    out = push_busy('`%s` ／ `Codex CLI` ／ %s' % (me, sess),
-                    tool_env(CLAUDECODE='1', CODEX_VERSION='0.164.0'))
-    cases.append(('兩家簽章同時在場→不猜', '🟡 這台機器' in out
-                  and '另一個工具正在' not in out))
-
-    out = push_busy('`%s` ／ %s' % (me, sess), claude)
-    cases.append(('同機器舊格式→🟡', '🟡 這台機器' in out and '舊格式' in out
-                  and '另一個工具正在' not in out))
-
-    out = push_busy('無（已交棒）', claude)
-    cases.append(('已交棒→✅', '✅ 「工作中」是' in out and '另一台機器正在' not in out
-                  and '還有一個 session' not in out))
-
-    # 開工改名提示（2026-11-01）。放進這張共用表，是因為它正是「期望值有兩份就會分岔」的
-    # 下一個候選；而它消失的時候完全沒有徵兆——agent 只會回頭自己去 date 一次，或者更糟，
-    # 拿系統提示裡的日期猜一個小時，寫出一個不存在的時刻。所以連格式一起釘：全形空格、
-    # MM.DD.HH（2026-11-14 前是八位數字）、全形豎線，少一樣側欄上就排不整齊，而排不整齊就等於沒改名。
-    cases.append(('印開工改名提示', '開工改名用' in out
-                  and re.search(r'㊣　[0-9]{2}\.[0-9]{2}\.[0-9]{2}｜', out) is not None))
-
-    # ── F01 的負向測試（2026-11-02）。舊版 `case "$busy" in *無*)` 拿整列當子字串比，
-    # 機器名比對也拿整列當乾草堆，所以下面前四個情境在舊版上全是錯的，而且錯的方向
-    # 都是「放行」：前兩個直接印 ✅、第三個把別台機器讀成自己這台、第四個讓 head -1
-    # 替你選一列。第五個是反向保險——修法不能嚴到連正常的已交棒值都認不出來。
-    free = '✅ 「工作中」是'
-    other = '🔴 另一台機器正在'
-
-    out = push_busy('`other-box` ／ `Codex CLI` ／ `㊣　26110209｜修無效連結｜工作中｜交棒0次`',
-                    claude)
-    cases.append(('主題含「無」→🔴', other in out and free not in out))
-
-    out = push_busy('`無人機-box` ／ `Codex CLI` ／ ' + sess, claude)
-    cases.append(('機器名含「無」→🔴', other in out and free not in out))
-
-    # 機器名互為子字串：舊版拿 $me 當針、整列當乾草堆，所以 `<me>-2` 會被讀成「同一台」。
-    out = push_busy('`%s-2` ／ `Claude Code` ／ %s' % (me, sess), claude)
-    cases.append(('機器名互為子字串→🔴', other in out and '🟡 這台機器' not in out))
-
-    # 兩列欄位，第一列寫「無（已交棒）」、第二列是真的占用標記。舊版只讀第一列，
-    # 於是一行字就能無聲關掉整個防呆。
-    out = push_busy('無（已交棒）\n- **工作中**：`other-box` ／ `Codex CLI` ／ ' + sess, claude)
-    cases.append(('欄位重複→🔴不猜', '列「工作中」欄位' in out and free not in out))
-
-    # 機器欄空白：F01 新加的「解析不出來就當成有人在做」那條分支。順便釘住訊息的字面
-    # 寫法——它原本用反引號包欄位名，而反引號在雙引號裡是**命令替換**，shell 會真的去
-    # 執行「機器」，那三個欄位名就變成空白。改回反引號的話這串字會被吃掉，這一項就 FAIL。
-    out = push_busy('／ `Codex CLI` ／ ' + sess, claude)
-    cases.append(('機器欄空白→🔴且不猜',
-                  '解析不出機器欄' in out and free not in out
-                  and '「機器 ／ 工具 ／ session 名」' in out))
-
-    out = push_busy('　無（已交棒）　', claude)
-    cases.append(('已交棒前後有空白→✅', free in out and other not in out))
-    return cases, out
-
-
 def step_busy(dest, work):
     """「工作中」標記防呆（2026-10-30，2026-10-31 加工具欄）。
 
@@ -1048,61 +964,36 @@ def step_busy(dest, work):
     return True
 
 
-def step_repo_busy(work):
-    """本 repo 自己那支 hook 的「工作中」判讀（2026-10-30）。
+def repo_hook_problems(hook_text, deployed_text):
+    if hook_text is None:
+        return ['repo-git-check.sh 不存在']
+    if hook_text != deployed_text:
+        return ['repo-git-check.sh 跟部署包 3.10 的 git-freshness.sh 不同：'
+                '改完部署包要手動重貼（sync_project 拒絕本 repo）']
+    return []
 
-    這個 repo 從多機維護開始就靠 `.claude/hooks/repo-git-check.sh` 擋誤接棒，而它刻意**不是**
-    3.10 的副本（檔頭寫了為什麼：sync_project.py 的 discover() 掃不到這個 repo，抄整份就會
-    變成唯一落後又沒有徵兆的那一份）。代價是 step_busy 測不到它——兩支各自演化的話，這裡
-    就會變成「看起來有防護、實際上沒有」，而那正是這個機制要擋的那件事。
 
-    順便釘住欄位字串：兩支讀的必須是同一個欄位。哪天 3.10 改了格式而這支沒跟上，它會對著
-    一個永遠配不到的字串安靜放過每一次檢查。
+def step_repo_busy(dest):
+    """本 repo 的開場 hook（2026-11-14 起，需求決策書 v3 第 5 節、D12）。
+
+    2026-10-30 到 2026-11-13 這支是本 repo 自己寫的判讀版（🔴／🟡、全綠行、工具身分猜測），
+    理由是 sync_project.py 掃不到這個 repo，抄 3.10 會變成唯一落後又沒有徵兆的副本。v3 把
+    部署出去的 hook 改成只報事實之後，那支判讀版反而跟本 repo AGENTS.md 的共用制度副本
+    （「印出 [facts] 開頭的幾行」）矛盾，也違反 D12。所以改成 3.10 的逐字副本，落後的風險
+    由這一項逐位元組比對擋下——跟 AGENTS.md 共用制度副本同一種做法。部署 hook 的行為由
+    「git-freshness 工作中標記」「Git 異常提示」等項實跑，相同內容不重跑。
     """
-    field = '**工作中**'
-    hook = ROOT / '.claude' / 'hooks' / 'repo-git-check.sh'
-    if not hook.exists():
-        record('FAIL', '本 repo 工作中判讀', 'repo-git-check.sh 不存在')
-        return False
-    if field not in hook.read_text(encoding='utf-8'):
-        record('FAIL', '本 repo 工作中判讀',
-               'repo-git-check.sh 沒讀「工作中」欄位——這個 repo 的跨機器防呆沒有依據')
-        return False
-
-    bash = find_bash()
-    if not bash:
-        record('SKIP', '本 repo 工作中判讀', '找不到看得懂 Windows 路徑的 bash')
-        return None
-    if work is None:
-        record('SKIP', '本 repo 工作中判讀', 'hook fixture 沒建起來，缺少有 origin 的 repo 可測')
-        return None
-
-    me = run([bash, '-c', 'echo "${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}"'],
-             cwd=work).stdout.strip()
-    target = work / 'HANDOFF.md'
-    # step_busy 收尾時把欄位整列拿掉了，所以這裡自己重建一列，不依賴前一步留下的狀態。
-    base = [l for l in target.read_text(encoding='utf-8').split('\n') if field not in l]
-
-    def push_busy(value, env=None):
-        body = '\n'.join(base)
-        if value is not None:
-            body = body.rstrip('\n') + '\n- %s：%s\n' % (field, value)
-        write_lf(target, body)
-        git(['commit', '-qam', 'chore: repo busy'], work)
-        git(['push', '-q', 'origin', 'main'], work)
-        return run([bash, hook.as_posix()], cwd=work, env=env or tool_env()).stdout
-
-    cases, out = busy_cases(push_busy, me)
-    out = push_busy(None, tool_env())
-    cases.append(('欄位不存在→🟡', '沒有「工作中」欄位' in out))
-
-    bad = [n for n, good in cases if not good]
-    if bad:
-        record('FAIL', '本 repo 工作中判讀',
-               '、'.join(bad) + '\n           最後一次輸出：' + out.strip()[:200])
-        return False
-    record('OK', '本 repo 工作中判讀', '、'.join(n for n, _ in cases) + '，欄位字串與 3.10 一致')
-    return True
+    path = ROOT / REPO_START_HOOK
+    hook = read_lf(path) if path.is_file() else None
+    deployed = read_lf(dest / '.claude/hooks/git-freshness.sh')
+    bad = repo_hook_problems(hook, deployed)
+    if not repo_hook_problems(deployed + 'echo "[repo-check] 全綠"\n', deployed):
+        bad.append('負向測試未重現：多印一行的副本應該被擋')
+    if not repo_hook_problems(None, deployed):
+        bad.append('負向測試未重現：hook 不存在應該被擋')
+    record('FAIL' if bad else 'OK', '本 repo 開場 hook', '；'.join(bad) if bad else
+           'repo-git-check.sh 跟部署包 3.10 逐位元組相同（只報事實、最多 5 行）；2 個負向測試')
+    return not bad
 
 
 def step_version_check(work):
@@ -2047,8 +1938,9 @@ def handoff_flow_case(kind, dest, tmp, bash):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(initial / rel, target)
         hook_rel = '.claude/hooks/repo-git-check.sh'
-        free_mark, foreign_mark = '✅ 「工作中」是', '🔴 另一台機器正在'
-        needle = 'origin/$branch:HANDOFF.md'
+        # 2026-11-14 起本 repo 的開場 hook 是 3.10 的逐字副本，印法跟部署出去的一樣。
+        free_mark, foreign_mark = '- **工作中**：無（已交棒）', '- **工作中**：`other-box`'
+        needle = 'origin/${branch}:HANDOFF.md'
 
     handoff = writer / 'HANDOFF.md'
     busy_line = next(line for line in read_lf(handoff).splitlines()
@@ -2127,7 +2019,7 @@ def handoff_flow_case(kind, dest, tmp, bash):
     writer = reader
     set_busy('`%s` ／ `Claude Code` ／ `㊣　26110816｜測試｜工作中｜交棒0次`' % me,
              'own claim')
-    check_hook('🟡 這台機器' if kind == 'source' else '- **工作中**：`%s`' % me)
+    check_hook('- **工作中**：`%s`' % me)
     (reader / 'README.md').open('a', encoding='utf-8', newline='').write('\n合成任務。\n')
     must(git(['add', '--', 'README.md'], reader), 'stage task')
     must(git(['commit', '-qm', 'synthetic task'], reader), 'commit task')
@@ -4181,15 +4073,14 @@ def step_flow_contract(dest, tmp):
     must(['clone', '-q', '-b', 'main', str(origin), str(peer)])
     write_lf(work / 'file', 'local\n')
     must(['commit', '-qam', 'local'], work)
-    scripts = [('部署 hook', read_lf(dest / '.claude/hooks/git-freshness.sh')),
-               ('本 repo hook', read_lf(ROOT / '.claude/hooks/repo-git-check.sh'))]
+    # 2026-11-14 起本 repo 的 repo-git-check.sh 是 3.10 的逐字副本（「本 repo 開場 hook」逐位元組比對），不重跑。
+    scripts = [('部署 hook', read_lf(dest / '.claude/hooks/git-freshness.sh'))]
     issues = []
     # 2026-11-13（v3 D12）：部署出去的 hook 只報事實，「停下來」寫在 AGENTS.md 共用制度的條件 8；
-    # 本 repo 自己的 hook 不在副本拓撲裡，照舊要求停止。兩者都不准建議 rebase。
+    # 不准建議 rebase。
     facts_marks = {'ahead-only': '落後 origin/main 0 個 commit、領先 1 個',
                    'diverged': '落後 origin/main 1 個 commit、領先 1 個',
                    'fetch failure': 'fetch origin 失敗'}
-    repo_marks = {'ahead-only': 'ahead-only', 'diverged': '已分岔', 'fetch failure': '無法 fetch'}
 
     def deployed_ok(state, out):
         return facts_marks[state] in out and 'git pull --rebase' not in out and not facts_output_problems(out)
@@ -4199,12 +4090,8 @@ def step_flow_contract(dest, tmp):
             path = tmp / 'flow-probe.sh'
             write_lf(path, source)
             r = run([bash, str(path)], cwd=work, env=tool_env(BOOTSTRAP_VERSION_CHECK='off'))
-            if name == '部署 hook':
-                if r.returncode or not deployed_ok(state, r.stdout):
-                    issues.append(name + ' ' + state + ' 沒有照實報出狀態，或給了 rebase 建議')
-            elif (r.returncode or repo_marks[state] not in r.stdout or '停下' not in r.stdout
-                  or '等待使用者指示' not in r.stdout or 'git pull --rebase' in r.stdout):
-                issues.append(name + ' ' + state + ' 未要求停止或仍建議 rebase')
+            if r.returncode or not deployed_ok(state, r.stdout):
+                issues.append(name + ' ' + state + ' 沒有照實報出狀態，或給了 rebase 建議')
     check_scripts('ahead-only')
     write_lf(peer / 'file', 'remote\n')
     must(['commit', '-qam', 'remote'], peer)
@@ -4226,7 +4113,7 @@ def step_flow_contract(dest, tmp):
         issues.append('負向測試未重現：拿掉停止條件應該被擋')
     record('FAIL' if issues else 'OK', 'Git 異常提示', '；'.join(issues) if issues else
            '部署 hook 實跑 ahead-only／分岔／fetch 失敗都照實報出、不建議 rebase，AGENTS.md 共用制度有停止條件；'
-           '本 repo hook 照舊要求停止；植入 rebase 建議與拿掉停止條件兩個負向測試')
+           '本 repo hook 是它的逐字副本；植入 rebase 建議與拿掉停止條件兩個負向測試')
 
 
 def core_priority_problems(skill, protocol, readme=None):
@@ -5155,119 +5042,6 @@ def step_sync_shared_section(dest, tmp):
            '3 種壞標記 FAIL 不寫、舊交接段落列 MIGRATE、AGENTS.md 先於 skill 入口；1 個負向測試')
 
 
-def step_all_green(dest, tmp):
-    """開場 hook 的「全綠」行（2026-11-10，F22）：全部條件成立才印，少一項就不能印。
-
-    這一行讓正常接棒可以不讀完整判讀表，所以它印錯的方向只有一個是危險的——不該綠的時候綠了。
-    每個條件各用一個真 Git fixture 打破一次。2026-11-13 起只跑本 repo 自己的 hook：部署出去的
-    hook 改成只報事實（v3 D12），不再印全綠行；它的輸出形狀由「git-freshness.sh」那一項守。
-    """
-    bash = find_bash()
-    if not bash:
-        record('SKIP', '全綠行', '缺少可用 bash')
-        return
-    scripts = [('本 repo hook', read_lf(ROOT / '.claude/hooks/repo-git-check.sh'))]
-    free = '# HANDOFF\n\n- **工作中**：無（已交棒）\n'
-    counter = [0]
-
-    def git(args, cwd=None):
-        r = run(['git', *args], cwd=cwd)
-        if r.returncode:
-            raise RuntimeError('Git fixture 失敗：' + ' '.join(args) + ' ' + r.stderr)
-        return r.stdout.strip()
-
-    def fixture(handoff=free):
-        counter[0] += 1
-        base = tmp / ('green-%d' % counter[0])
-        origin, work = base / 'origin.git', base / 'work'
-        base.mkdir()
-        git(['init', '-q', '--bare', str(origin)])
-        git(['init', '-q', '-b', 'main', str(work)])
-        write_lf(work / 'HANDOFF.md', handoff)
-        git(['add', 'HANDOFF.md'], work)
-        git(['commit', '-qm', 'init'], work)
-        git(['remote', 'add', 'origin', str(origin)], work)
-        git(['push', '-qu', 'origin', 'main'], work)
-        return origin, work
-
-    def green_line(source, work):
-        path = tmp / 'green-probe.sh'
-        write_lf(path, source)
-        out = run([bash, str(path)], cwd=work, env=tool_env(BOOTSTRAP_VERSION_CHECK='off')).stdout
-        return next((line for line in out.splitlines() if '] 全綠 ' in line), '')
-
-    def dirty(origin, work):
-        write_lf(work / 'untracked.txt', 'x\n')
-
-    def ahead(origin, work):
-        write_lf(work / 'HANDOFF.md', free + '\n本機多一個 commit\n')
-        git(['commit', '-qam', 'local'], work)
-
-    def behind(origin, work):
-        peer = work.parent / 'peer'
-        git(['clone', '-q', '-b', 'main', str(origin), str(peer)])
-        write_lf(peer / 'other.txt', 'x\n')
-        git(['add', 'other.txt'], peer)
-        git(['commit', '-qm', 'remote'], peer)
-        git(['push', '-q', 'origin', 'main'], peer)
-
-    def wrong_upstream(origin, work):
-        git(['push', '-q', 'origin', 'main:other'], work)
-        git(['fetch', '-q', 'origin'], work)
-        git(['branch', '-q', '-u', 'origin/other'], work)
-
-    def detached(origin, work):
-        git(['checkout', '-q', '--detach'], work)
-
-    def fetch_fails(origin, work):
-        git(['remote', 'set-url', 'origin', str(work.parent / 'missing.git')], work)
-
-    def remote_handoff(text):
-        def change(origin, work):
-            write_lf(work / 'HANDOFF.md', text)
-            git(['commit', '-qam', 'handoff'], work)
-            git(['push', '-q', 'origin', 'main'], work)
-        return change
-
-    breakers = (
-        ('未提交變更', dirty), ('ahead', ahead), ('behind', behind),
-        ('upstream 不是 origin/<分支>', wrong_upstream), ('detached HEAD', detached), ('fetch 失敗', fetch_fails),
-        ('有人佔用', remote_handoff('# HANDOFF\n\n- **工作中**：`other-box` ／ `Codex CLI`，2026-11-10 09:00 (+08) 開工\n')),
-        ('兩列工作中', remote_handoff(free + '- **工作中**：無（已交棒）\n')),
-        ('沒有工作中欄位', remote_handoff('# HANDOFF\n\n沒有欄位\n')),
-        ('任務名含「無」但有人佔用', remote_handoff('# HANDOFF\n\n- **工作中**：`box` ／ `Claude Code` ／ `㊣　26111009｜修無效連結｜工作中｜交棒0次`\n')),
-    )
-    issues = []
-    try:
-        for name, source in scripts:
-            origin, work = fixture()
-            line = green_line(source, work)
-            sha = git(['rev-parse', 'origin/main'], work)
-            if not line or 'branch=main' not in line or 'origin=' + sha not in line:
-                issues.append(name + ' 正常狀態沒有印全綠行或缺分支／SHA')
-            for label, breaker in breakers:
-                origin, work = fixture()
-                breaker(origin, work)
-                if green_line(source, work):
-                    issues.append('%s 在「%s」時仍印全綠' % (name, label))
-            # 儀器自檢：把 dirty 條件從腳本拿掉，dirty fixture 就必須看得到全綠行。
-            weakened = source.replace(' || [ "$dirty" -gt 0 ]; then green=0; fi', '; then green=0; fi')
-            origin, work = fixture()
-            dirty(origin, work)
-            if weakened == source or not green_line(weakened, work):
-                issues.append(name + ' 負向測試未重現：拿掉 dirty 條件後應該印出全綠')
-            unfree = source.replace('free=0\n', 'free=1\n', 1)
-            origin, work = fixture()
-            remote_handoff('# HANDOFF\n\n- **工作中**：`other-box` ／ `Codex CLI`\n')(origin, work)
-            if unfree == source or not green_line(unfree, work):
-                issues.append(name + ' 負向測試未重現：占用判定失效後應該印出全綠')
-    except RuntimeError as e:
-        issues.append(str(e))
-    record('FAIL' if issues else 'OK', '全綠行', '；'.join(issues) if issues else
-           '本 repo hook 實跑（部署 hook 2026-11-13 起不印全綠行）：正常狀態印出含分支與 origin SHA 的全綠行；%d 種不正常狀態都不印；'
-           '拿掉 dirty 或占用條件的腳本會被看出來（只證明 hook 的判定，不證明模型照它走）' % len(breakers))
-
-
 def run_checks(dest, tmp):
     work = None
     seen = step_regenerate(dest) and step_fill(dest)
@@ -5284,7 +5058,7 @@ def run_checks(dest, tmp):
         hooked = step_hook(dest, tmp)
         work = hooked if isinstance(hooked, pathlib.Path) else None
         step_busy(dest, work)
-        step_repo_busy(work)
+        step_repo_busy(dest)
         step_version_check(work)
         step_rename_line(dest)
         step_session_resume(dest)
@@ -5313,7 +5087,6 @@ def run_checks(dest, tmp):
     step_skill_rule_map(dest)
     step_sync_skill_parts(dest, tmp)
     step_sync_shared_section(dest, tmp)
-    step_all_green(dest, tmp)
     step_sync_scope(dest, tmp)
     step_sync_mode(dest, tmp)
     step_architecture_summary(dest)
