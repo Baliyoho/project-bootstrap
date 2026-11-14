@@ -23,15 +23,15 @@
 - **四個專案同步並刪接線檔**：鍵鼠同部署_mac、NAS_MAINT、grist-workflow、NAA_TR（在 `feature/W15-research-shell`）都跑了 `sync_project.py`（7 項），刪掉 `.agents/ag-hook.cmd`、`.agents/hooks.json`、`.claude/hooks/ag-wrap.sh`（刪前確認只互相引用），check_docs exit 0，四個都已交棒。
 - **全域 skill**：`~/.claude`、`~/.codex` 六個檔覆蓋成 v2026-11-14.2（覆蓋前比對過與舊版逐位元組相同）。
 - **NAS_MAINT 殘留**（12dd01e，11.14.12 session）：`AGENTS.md` 三處、`ARCHITECT.md` 兩處照 e7ddfb3 手改；README、handover-protocol 本來就沒有殘留；check_docs exit 0。
+- **NAA_TR 規則檔**（6963f21，在 `feature/W15-research-shell`）：使用者決定刪掉 `.agents/rules/handoff.md`，README 指路句一併拿掉；pre-push、AGENTS、handover-protocol 的歷史性提及保留；check_docs exit 0。
 - 同日稍早的 session：部署包範本拿掉 Antigravity（e7ddfb3）、開場 hook 換成 3.10 逐字副本、補裝 push 前 hook、時間戳改 `MM.DD.HH`（細節在 git log）。
 
 ## 未完成／下一步
 
 1. **本 repo 的 Codex 接線改過（多了 PreToolUse），還沒重新審核與驗收**：在 Codex 互動 CLI 的 `/hooks` 審核 `.codex/hooks.json`，再開新 session 確認開場 `[facts]` 進 context、`git push` 時 `repo-pre-push.sh` 有跑。要呼叫模型，先問使用者。
 2. 第 2 期 Codex＋macOS：同一套 handoff-ab 兩輪＋互動驗證，換 Codex 跑。要呼叫模型，開始前先問使用者；這個月的額外用量 2026-11-14 已到 94%（$7.54／$8）。
-3. NAA_TR 有專案自建的 `.agents/rules/handoff.md`（Antigravity 規則檔），清不清由使用者決定。
-4. 別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是舊版：從已同步的專案複製六個檔覆蓋。
-5. 各專案開場可能印「共用制度比上游新：本機 v2026-11-14.2，上游 v2026-11-14」：上游版本快取 720 分鐘，最晚 12 小時自己消失；要立刻消就由使用者刪該專案的 `.claude/.bootstrap-version`。
+3. 別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是舊版：從已同步的專案複製六個檔覆蓋。
+4. 各專案開場可能印「共用制度比上游新：本機 v2026-11-14.2，上游 v2026-11-14」：上游版本快取 720 分鐘，最晚 12 小時自己消失；要立刻消就由使用者刪該專案的 `.claude/.bootstrap-version`。
 
 ## 地雷與注意事項
 
