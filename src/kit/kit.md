@@ -402,7 +402,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ### 3.10 `.claude/hooks/git-freshness.sh`
 
-> **2026-11-13 起只報事實（v3 D12）**：fetch 一次，印出最多五行 `[facts]`，不下指示、不判讀。檔名沿用 `git-freshness.sh`，3.9 與 3.17 的接線因此不必改。
+> **2026-11-13 起只報事實（v3 D12）**：fetch 一次，把最多五行 `[facts]` 放入 SessionStart 的 `hookSpecificOutput.additionalContext`，不下指示、不判讀。2026-11-14 實測 Codex 0.169.0 會把裸的 `[facts]` 開頭輸出誤認為壞 JSON，丟掉整段 context；改用兩個工具都支援的 JSON 外殼。檔名沿用 `git-freshness.sh`，3.9 與 3.17 的接線因此不必改。
 >
 > Windows 需要 Git for Windows 附的 bash（Claude Code 內建可用）。建立後在 macOS／Linux 上加執行權限：`chmod +x .claude/hooks/git-freshness.sh`。
 

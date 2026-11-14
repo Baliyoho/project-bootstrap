@@ -243,6 +243,8 @@
 - **補裝 `repo-pre-push.sh`**：3.11 的手貼逐字副本，跟開場 hook 同一種做法；兩份接線都接 PreToolUse（Claude Code 的 matcher 跟 3.9 一樣是 `Bash|PowerShell`，Codex 經 `codex-hook.cmd`）。取名 `repo-*` 而不叫 `pre-push-handoff.sh`，是因為「本 repo 兩份接線」把指向 `pre-push-handoff.sh` 當成被 `sync_project.py` 覆蓋過的訊號，同名會讓那道守門失效。
 - **拿掉 `repo-action-rules.sh`**（2026-11-10 決策書 Q6 (a) 的試行）：它在 push、改部署包、改 hook 時把一段步驟摘要塞進 context。v3 的 D12 把逐步程序限定在碰到才讀的參考檔，D10 要求規則有准入與退場，這支試行一直沒有對照數據；使用者決定不留。驗證項「動作當下送規則」一起退場，換成「本 repo push 前 hook」。
 
+2026-11-14 Codex CLI 0.169.0 互動驗收：兩支 hook 在 `/hooks` 審核後，`repo-git-check.sh` 有執行，但裸的 `[facts]` 開頭 stdout 被 Codex 當成無效 JSON，顯示 `invalid session start JSON output` 並丟掉 context。部署包 3.10 改成把相同的事實行放在兩個工具都支援的 `hookSpecificOutput.additionalContext`，本 repo 逐字重貼；驗證器解析 JSON 外殼並檢查內文，另以新 Codex session 確認模型實際收到。PreToolUse 的成功放行不會在 TUI 顯示執行事件，所以以暫時探針量到一次 `git push --dry-run` 對應一次 hook 呼叫，隨後移除探針。
+
 
 <a id="snapshot"></a>
 

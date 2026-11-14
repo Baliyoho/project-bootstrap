@@ -818,9 +818,19 @@ FACTS_MAX_LINES = 5   # 需求決策書 v3 第 5 節：開場 hook 輸出 ≤ 5 
 
 
 def facts_output_problems(out):
-    """開場 hook（2026-11-13 起）的輸出形狀：每一行都是 [facts]、不超過五行、第一行有時間戳。"""
-    lines = [l for l in out.split('\n') if l.strip()]
+    """SessionStart JSON 裡的 context：每行 [facts]、最多五行、第一行有時間戳。"""
     bad = []
+    try:
+        envelope = json.loads(out)
+        hook = envelope['hookSpecificOutput']
+        if set(envelope) != {'hookSpecificOutput'} or hook['hookEventName'] != 'SessionStart':
+            return ['SessionStart JSON 外殼不正確']
+        facts = hook['additionalContext']
+        if not isinstance(facts, str):
+            return ['additionalContext 不是字串']
+    except (ValueError, TypeError, KeyError):
+        return ['不是有效的 SessionStart JSON']
+    lines = [l for l in facts.split('\n') if l.strip()]
     if not lines:
         return ['沒有輸出']
     if any(not l.startswith('[facts] ') for l in lines):
@@ -944,7 +954,7 @@ def step_busy(dest, work):
     original_hook = (work / hook).read_bytes()
     try:
         text = original_hook.decode('utf-8')
-        planted = text.replace('echo "[facts] origin 上的 HANDOFF：${busy:-讀不到「工作中」那一行}"', ':')
+        planted = text.replace('emit "[facts] origin 上的 HANDOFF：${busy:-讀不到「工作中」那一行}"', ':')
         if planted == text:
             cases.append(('負向測試找得到要拿掉的那一行', False))
         else:
@@ -3695,13 +3705,16 @@ def step_misc(dest, work=None):
     else:
         r = run([bash, '.claude/hooks/git-freshness.sh'], cwd=work)
         bad = facts_output_problems(r.stdout)
-        # 儀器自檢：多一行指示、多到六行，都要被看出來。
-        planted = [facts_output_problems(r.stdout + '[git-check] 先走 handoff skill\n'),
-                   facts_output_problems(r.stdout + '[facts] x\n' * 3)]
+        # 儀器自檢：JSON 仍有效時，多一行指示、多到六行，都要被看出來。
+        planted = []
+        for extra in ('\n[git-check] 先走 handoff skill', '\n[facts] x' * 3):
+            mutant = json.loads(r.stdout)
+            mutant['hookSpecificOutput']['additionalContext'] += extra
+            planted.append(facts_output_problems(json.dumps(mutant, ensure_ascii=False)))
         if not all(planted):
             bad.append('負向測試未重現：多一行指示或超過五行應該被擋')
         if r.returncode == 0 and not bad:
-            record('OK', 'git-freshness.sh', 'exit 0，只印 [facts] 行、不超過五行、含時間戳與「工作中」；2 個負向測試')
+            record('OK', 'git-freshness.sh', 'exit 0，SessionStart JSON 內只含 [facts] 行、不超過五行、含時間戳與「工作中」；2 個負向測試')
         else:
             record('FAIL', 'git-freshness.sh',
                    f'exit {r.returncode}：{"；".join(bad)}：{(r.stdout + r.stderr).strip()[:160]}')
