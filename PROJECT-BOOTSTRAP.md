@@ -11,6 +11,7 @@
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
 > 版本：**2026-11-14.4**（Codex 交接成本優化：補外層等待、摘要輸出與最小讀取用法；來源驗證器將獨立回歸與其他檢查重疊執行，檢查集合不減。六個 skill 檔與共用制度標記同版；實測範圍見 experiments/handoff-ab/CODEX-RESULTS.md。）
+> 2026-11-15（**只改 3.10 hook，刻意不跳 `VERSION`**）：本 repo 的 `origin` 若是權威 repo，成功 fetch 後直接讀 `origin/main:VERSION`，避免 12 小時快取蓋住剛更新的版本；HTTPS、SSH 都接受。其他已部署專案仍用原來的 12 小時快取。無效版本與 fetch 失敗不猜值。3.10 的 `source:` 標記更新到 `v2026-11-15`；沒有修改 handoff skill 目錄，所以 `VERSION` 與共用制度標記不動。未授權同步其他專案。
 > 前一版 **2026-11-14.3**（**handoff skill 加「跑得久的指令」一節**（使用者 2026-11-14 決定）：工具會在指令沒跑完就先交回時（Codex 的指令工具），一次把等待時間設到夠它跑完，不要每一兩秒輪詢。起因是同日一次 Codex 接棒 28 次模型呼叫裡有 15 次在等驗證腳本，理由與數字寫在 3.8 `reasons.md`。skill 有改，`VERSION`、六個 skill 檔與共用制度標記跳到 `v2026-11-14.3`（共用制度內文沒動，理由同前一版）。是否真的減少呼叫，要在 Codex 實際接棒一次才知道，尚未驗收。）
 > 前一版 **2026-11-14.2**（**handoff skill 與部署包敘述拿掉已退場的 Antigravity**（使用者 2026-11-14 決定）：3.8 `mode-a-stop.md` 三處（`SessionEnd` 理由裡「它沒有這個事件」的半句、工具名舉例）刪掉，`SessionEnd` 救不了的結論不變（擋不下結束、1.5 秒做不完 push）；本檔「工具名用慣用寫法」的舉例同步拿掉，`GEMINI.md` 維持指標寫法的理由改寫成不依賴 Antigravity。skill 有改，`VERSION`、六個 skill 檔與共用制度標記跳到 `v2026-11-14.2`（共用制度內文沒動，但開場 hook 拿共用制度標記比上游 `VERSION`，不跟著跳會讓每個專案一直印落後）。已部署專案裡的 Antigravity 接線檔，使用者同日決定刪掉。）
 > 前一版 **2026-11-14**（**session 名稱開頭的時間改成 `MM.DD.HH`**（使用者 2026-11-14 指定，例：`㊣　11.14.06｜主題｜工作中｜交棒0次`），取代 `YYMMDDHH`：同一年內不需要年份，加點分隔比八位數字好認。3.1 共用制度的「session 名稱」、3.8 handoff skill 各檔的格式與範例、3.10 開場 hook 第一行（`date +%m.%d.%H`）一起改；`VERSION` 與六個 skill 檔、共用制度標記、3.10 的 `source:` 跳到 `v2026-11-14`。已經用舊格式命名的 session 不必改名，「工作中」欄位的判讀靠全形豎線，新舊兩種都讀得懂。同日稍晚：「跨工具與跨平台」的能力矩陣拿掉 Antigravity 欄（v3 D8 已放棄，`capabilities.json` 那幾格留狀態不渲染），使用者 2026-11-14 定案；skill 沒動，`VERSION` 不跳。）
@@ -1582,7 +1583,7 @@ python -X utf8 tools/check_docs.py
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-14.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-15 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：fetch 一次，只報事實，不下指示（需求決策書 v3 第 5 節，D12）。
 # 用 SessionStart JSON 把最多 5 行 [facts] 放進 context；Codex 會把裸的 [facts] 誤認為壞 JSON。只讀：不 pull、不 push、不寫任何檔。
 # 怎麼判讀交給模型與 AGENTS.md 的共用制度；舊版的判讀表、全綠行與工具身分猜測在 2026-11-13 移除，
@@ -1647,12 +1648,32 @@ UPSTREAM_VERSION_URL=https://raw.githubusercontent.com/Baliyoho/project-bootstra
 if [ "${BOOTSTRAP_VERSION_CHECK:-}" != off ] && [ -f AGENTS.md ]; then
   mine=$(sed -n 's/.*共用制度開始 source: PROJECT-BOOTSTRAP\.md v\([0-9][0-9.-]*\).*/\1/p' AGENTS.md | head -1)
   cache=.claude/.bootstrap-version
-  if [ -n "$(find "$cache" -mmin -720 2>/dev/null)" ]; then
-    latest=$(cat "$cache" 2>/dev/null)
+  # 本 repo 的 origin/main 已在上面成功 fetch；只在它確為權威來源時讀取該 ref。
+  # 其他專案沒有這個 ref，仍沿用 12 小時快取與上游 HTTP。
+  origin_url=$(git remote get-url origin 2>/dev/null)
+  authority=0
+  case "$origin_url" in
+    https://github.com/Baliyoho/project-bootstrap|https://github.com/Baliyoho/project-bootstrap.git|git@github.com:Baliyoho/project-bootstrap|git@github.com:Baliyoho/project-bootstrap.git)
+      authority=1
+      latest=$(git show origin/main:VERSION 2>/dev/null | tr -d '\r\n \t') ;;
+  esac
+  if [ "$authority" -eq 1 ]; then
+    if [[ "$latest" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}(\.[0-9]+)?$ ]]; then
+      printf '%s' "$latest" > "$cache" 2>/dev/null
+    else
+      latest=''
+    fi
   else
-    latest=$(curl -fsS --max-time 5 "$UPSTREAM_VERSION_URL" 2>/dev/null | tr -d '\r\n \t')
-    [ -n "$latest" ] && printf '%s' "$latest" > "$cache" 2>/dev/null
+    if [ -n "$(find "$cache" -mmin -720 2>/dev/null)" ]; then
+      latest=$(cat "$cache" 2>/dev/null)
+    else
+      latest=$(curl -fsS --max-time 5 "$UPSTREAM_VERSION_URL" 2>/dev/null | tr -d '\r\n \t')
+      if [[ "$latest" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}(\.[0-9]+)?$ ]]; then
+        printf '%s' "$latest" > "$cache" 2>/dev/null
+      fi
+    fi
   fi
+  [[ "$latest" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}(\.[0-9]+)?$ ]] || latest=''
   # 版本號是 YYYY-MM-DD 或 YYYY-MM-DD.N；序號補成三位數後日期與序號能一起比字典序。
   verkey() {
     _d=${1%%.*}

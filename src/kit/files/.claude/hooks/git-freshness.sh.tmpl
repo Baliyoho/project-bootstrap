@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-14.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-15 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：fetch 一次，只報事實，不下指示（需求決策書 v3 第 5 節，D12）。
 # 用 SessionStart JSON 把最多 5 行 [facts] 放進 context；Codex 會把裸的 [facts] 誤認為壞 JSON。只讀：不 pull、不 push、不寫任何檔。
 # 怎麼判讀交給模型與 AGENTS.md 的共用制度；舊版的判讀表、全綠行與工具身分猜測在 2026-11-13 移除，
@@ -64,12 +64,32 @@ UPSTREAM_VERSION_URL=https://raw.githubusercontent.com/Baliyoho/project-bootstra
 if [ "${BOOTSTRAP_VERSION_CHECK:-}" != off ] && [ -f AGENTS.md ]; then
   mine=$(sed -n 's/.*共用制度開始 source: PROJECT-BOOTSTRAP\.md v\([0-9][0-9.-]*\).*/\1/p' AGENTS.md | head -1)
   cache=.claude/.bootstrap-version
-  if [ -n "$(find "$cache" -mmin -720 2>/dev/null)" ]; then
-    latest=$(cat "$cache" 2>/dev/null)
+  # 本 repo 的 origin/main 已在上面成功 fetch；只在它確為權威來源時讀取該 ref。
+  # 其他專案沒有這個 ref，仍沿用 12 小時快取與上游 HTTP。
+  origin_url=$(git remote get-url origin 2>/dev/null)
+  authority=0
+  case "$origin_url" in
+    https://github.com/Baliyoho/project-bootstrap|https://github.com/Baliyoho/project-bootstrap.git|git@github.com:Baliyoho/project-bootstrap|git@github.com:Baliyoho/project-bootstrap.git)
+      authority=1
+      latest=$(git show origin/main:VERSION 2>/dev/null | tr -d '\r\n \t') ;;
+  esac
+  if [ "$authority" -eq 1 ]; then
+    if [[ "$latest" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}(\.[0-9]+)?$ ]]; then
+      printf '%s' "$latest" > "$cache" 2>/dev/null
+    else
+      latest=''
+    fi
   else
-    latest=$(curl -fsS --max-time 5 "$UPSTREAM_VERSION_URL" 2>/dev/null | tr -d '\r\n \t')
-    [ -n "$latest" ] && printf '%s' "$latest" > "$cache" 2>/dev/null
+    if [ -n "$(find "$cache" -mmin -720 2>/dev/null)" ]; then
+      latest=$(cat "$cache" 2>/dev/null)
+    else
+      latest=$(curl -fsS --max-time 5 "$UPSTREAM_VERSION_URL" 2>/dev/null | tr -d '\r\n \t')
+      if [[ "$latest" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}(\.[0-9]+)?$ ]]; then
+        printf '%s' "$latest" > "$cache" 2>/dev/null
+      fi
+    fi
   fi
+  [[ "$latest" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}(\.[0-9]+)?$ ]] || latest=''
   # 版本號是 YYYY-MM-DD 或 YYYY-MM-DD.N；序號補成三位數後日期與序號能一起比字典序。
   verkey() {
     _d=${1%%.*}

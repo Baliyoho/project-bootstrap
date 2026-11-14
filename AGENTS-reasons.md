@@ -247,6 +247,8 @@
 
 2026-11-14 Codex CLI 0.169.0 互動驗收：兩支 hook 在 `/hooks` 審核後，`repo-git-check.sh` 有執行，但裸的 `[facts]` 開頭 stdout 被 Codex 當成無效 JSON，顯示 `invalid session start JSON output` 並丟掉 context。部署包 3.10 改成把相同的事實行放在兩個工具都支援的 `hookSpecificOutput.additionalContext`，本 repo 逐字重貼；驗證器解析 JSON 外殼並檢查內文，另以新 Codex session 確認模型實際收到。PreToolUse 的成功放行不會在 TUI 顯示執行事件，所以以暫時探針量到一次 `git push --dry-run` 對應一次 hook 呼叫，隨後移除探針。
 
+2026-11-15（交接成本第一階段）：本 repo 的 `repo-git-check.sh` 於 2026-11-14 開場仍從 12 小時快取讀到 `2026-11-14`，但同次 fetch 已取得的 `origin/main:VERSION` 是 `2026-11-14.4`。3.10 只在 origin URL 確認為權威 repo、fetch 成功時讀該 ref 的版本並更新快取；部署出去的其他專案沒有這個 ref，仍採 12 小時快取。這不是拿本機 `VERSION` 代替上游；無效版本與 fetch 失敗時不猜測。改範本後手貼本 repo 的逐字副本，驗證器維持比對。由於 skill 未改，`VERSION` 不跳，其他專案的落後提示不會通知這次 hook 改動；同步仍須逐專案授權。
+
 
 <a id="snapshot"></a>
 

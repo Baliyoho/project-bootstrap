@@ -1,12 +1,12 @@
 # 交接棒執行與量測改進計劃
 
-2026-11-15。使用者同意以「保證既有流程／規則正確執行，而不是繼續加長規則」為方針，要求留下供下一輪 Sol 執行的計劃。本文是工作計劃，實作與效果均待驗證。
+2026-11-15。使用者同意以「保證既有流程／規則正確執行，而不是繼續加長規則」為方針。本日已授權 Sol sub-agent 執行第一階段；離線改動見下，模型效果待第二階段驗證。
 
 ## 開始位置與範圍
 
 接棒依 AGENTS.md 與 HANDOFF.md 執行，接著讀本文。現行需求權威是根目錄的需求決策書 v3。碰到制度修改才讀相關理由與來源範本，避免為了解全貌展開歷史文件。先完成以下第一階段，再進入需要模型實測的第二階段。
 
-已有授權涵蓋方案記錄；後續使用者指示執行本計劃時可做第一階段。額外模型探針依 AGENTS.md 需取得授權、只用訂閱額度。其他已部署專案同步仍須另行授權。使用者詢問了指定 Sol sub-agent 的可行性，本輪未啟動代理或模型測試。
+第一階段在本聊天由 Sol sub-agent 實作。額外模型探針依 AGENTS.md 仍需取得授權、只用訂閱額度；其他已部署專案同步仍須另行授權。
 
 ## 已知證據與限制
 
@@ -18,6 +18,15 @@
 
 ## 第一階段：離線驗證與最小改動
 
+| 項目 | 已存在／執行落差／工具缺口 | 本輪處理 |
+|---|---|---|
+| 情境與評分 | `build.py`／`fixture.py` 建隔離 Git 情境；`score.py` 依 Git 結果評分。正常接棒仍曾展開異常參考、重複讀紀錄。 | 沿用既有情境與評分，不加守門；第二階段從完成後一次解析。 |
+| 驗證與等待 | `verify_bootstrap.py --quiet` 和 handoff skill 已寫驗證沿用與 Codex 外層 60000 ms 等待。落差是受測回合用了 1 秒外層等待、提交前多驗一次。 | 沒有再加程序；按失效條件重用證據，等待由執行者依當前工具 schema 設定。Claude Code 的等待行為待模型實測。 |
+| 用量 | `CODEX-RESULTS.md` 有手工觀測；沒有依指定 turn 解析兩種紀錄的工具。 | 新增只讀 `usage.py`。Codex 依 turn ID；Claude Code 依 user UUID，去重同 message ID 的串流。缺欄位或未完成回合輸出 `null`。原始紀錄與絕對路徑不入 repo。 |
+| 版本快取 | 3.10 的 720 分鐘快取曾讓本 repo 在 fetch 到 .4 後仍提示舊版。 | 權威 repo 的 HTTPS／SSH origin 在成功 fetch 後直接讀 `origin/main:VERSION` 並更新快取；其他專案仍維持 12 小時 TTL。無效版本或 fetch 失敗不猜值。 |
+
+離線核對：`usage.py` 對已記錄的 .4 Codex turn 重現 12 次模型回應、444,536 input、398,336 cached、46,200 noncached、3,368 output、194.283 秒；Claude Code 既有完整 turn 可解析出分列的 cache creation／read。共用欄位中 Claude cached 只計 cache read，noncached 計原始 input 加 cache creation；raw_usage 保留兩種快取原欄位，這些數字不換算訂閱額度。合成 fixture 覆蓋跨 turn、重複串流、未完成、缺欄位與 Codex 缺 response ID；hook fixture 覆蓋舊快取遇新版、有效快取、過期、無效回應、離線與 fetch 失敗。`usage.py` 用法：`python3 experiments/handoff-ab/usage.py codex <本機 rollout> <turn_id>` 或 `... claude <本機 session> <user_uuid>`；只回傳聚合 JSON。
+
 1. 先盤點現有 handoff-ab 工具與測試，找可重用的紀錄解析及評分邏輯。交付簡短的「已存在／執行落差／工具缺口」對照，放在本文件更新即可。最小讀取、有效驗證沿用與 Codex 等待已寫入制度，優先處理落實方式。
 2. 建立或延伸只讀用量解析工具，依明確指定的聊天／回合讀本機紀錄。Codex 以同 turn 的 token_usage_record 計數、最後 turn_token_usage 取累計、task_started/task_complete 算耗時。Claude Code 先查實際格式，處理串流、重複紀錄與快取欄位。缺欄位或未完成回合明記未知，不填零或猜值。
 3. 用既有紀錄及去識別化合成 fixture 核對解析結果。輸出共用欄位、工具原始欄位與限制。正式量測等回合完成後一次擷取，省去受測回合中的暫計落檔。原始聊天與本機路徑不提交公開 repo。
@@ -28,6 +37,8 @@
 每項改動附能抓到具體回歸的測試；新增守門附負向測試。制度來源改 src/kit，再 build_kit.py 重生部署包，同步副本與版本依 AGENTS.md。本 repo 手貼 hook、共用制度與全域 skill 的同步範圍先讀對應理由。提交逐檔 stage，執行 python3 -X utf8 tools/verify_bootstrap.py --staged --quiet；必要的針對性測試另跑。第一階段交付可審查的改動、離線測試結果與第二階段的確切模型呼叫清單。
 
 ## 第二階段：取得授權後的模型實測
+
+**待授權的呼叫清單（可分批）**：先可只核准 4 次煙霧測試：`clean` 正常接棒與新建的正常交棒 fixture，各由 Claude Code／Codex 跑本版一次。若它們通過且要量化改善，再核准完整對照：正常接棒、正常交棒各做前版／本版、兩種工具、每格 3 次，共 2 × 2 × 2 × 3＝24 次模型 session；煙霧測試是否計入這 24 次，須在版本、fixture 與設定凍結後決定。異常候選 busy、race、ahead、branch、drift、secret 六情境各工具一次，共最多 12 次，需另列授權。每次是一個獨立聊天與拋棄式 repo，接棒與交棒不共用聊天。現有 `midway` 是**半成品交棒**，不能冒充正常交棒，須先建新 fixture。Claude Code 與 Codex 分別沿用已驗證的腳本模型配置（目前 `claude-opus-5-5`／`gpt-6-sol`），實跑前再核對模型及各工具的推理設定；不假設跨工具的 `medium` 同義。版本、順序和每批呼叫上限在該批執行前凍結並交錯安排。每次先核對訂閱登入、fixture 隔離與呼叫記帳；不使用 API key。既有 `run.py`／`codex_run.py` 的一次一格模式可重用，但新 fixture、前後版和呼叫上限尚未建立，不能直接用現有腳本假稱已跑。
 
 - Claude Code 與 Codex 各自固定模型、推理設定、機器、起始 repo 及任務。使用獨立可拋棄 fixture，避免正式 repo 的占用影響比較。
 - 每工具、每版本的正常接棒與正常交棒各三次，前後版本合計至少 24 個情境執行；是否共用聊天與實際呼叫數在執行前清單說明。採交錯順序，記首輪／後續輪與快取差異。既有歷史數據僅供背景。
