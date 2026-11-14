@@ -18,6 +18,7 @@
 ## 已完成
 
 - **Codex 接線互動驗收與 3.10 修正（46f4a26）**：2026-11-14 12:40–12:49 在 Codex CLI 0.169.0 的 `/hooks` 逐支審核並信任；首次新 session 發現裸 `[facts]` 被判為壞 JSON，修正為 SessionStart `hookSpecificOutput.additionalContext` 後，模型不讀檔即正確回報 4 行、origin SHA 與工作中欄。PreToolUse 以暫時探針確認一次 `git push --dry-run` 觸發一次 hook，探針已移除。四個已部署專案的 3.10 副本同步並推送（NAS_MAINT 6069093、NAA_TR bb334fc、grist-workflow 5a9e797、鍵鼠同部署_mac 660d80b）；四份與範本逐位元組相同，兩份全域 skill 原已相同。Windows Codex 尚未實跑。
+- **四個專案與阻擋情境的互動驗收（2026-11-14 15:15–15:21）**：逐專案在 Codex CLI 的 `/hooks` 審核並信任 SessionStart／PreToolUse，重開 session 後，模型不讀檔即各自正確回報 4 行 `[facts]`、待續分支、origin SHA 與工作中欄。另建暫存 Git repo：origin 的工作中為已交棒，本機多一個沒改 HANDOFF 的 commit；Codex 對 `git push --dry-run origin main` 顯示 PreToolUse 擋下與 `[handoff-check]` 原因，rollout 的 `CommandExecution` 為 0、origin 未前進。暫存 repo 已清理。
 
 - **Windows/Codex 交棒沒做完（12:23–12:32）**：`DESKTOP-M8MRS05` 上那台的 Codex 還沒升級 bootstrap，接棒時只推了開工標記（2750f1d，只改「工作中」那一行），交棒卡住沒推上去。Mac 這邊查過，origin 沒有其他變更。使用者確認那個 session 已經關掉、沒留下要保留的東西後，Mac 才接手（1b7b36c）並交棒。
 
@@ -57,7 +58,7 @@
 - 2026-11-14 12:3x（Mac 接棒善後 session，只改 `HANDOFF.md`）：逐檔 stage 後 `verify_bootstrap.py --staged` exit 0；pytest 沒重跑。
 - 2026-11-14 12:3x（11.14.12 session，本 repo 只改 `HANDOFF.md`）：逐檔 stage 後 `verify_bootstrap.py --staged` exit 0；pytest 沒重跑。NAS_MAINT、NAA_TR 各自 check_docs exit 0，接線沒動。
 - 2026-11-14 11:5x 在 `main`（d35c36f 提交前的工作樹）：`verify_bootstrap.py` exit 0（0 skip），逐檔 stage 後 `--staged` exit 0；`uv run --locked pytest` 435 通過。`verify_v2.py` 本 session 沒跑。
-- 2026-11-14 12:40–12:49：Codex CLI 0.169.0 互動 `/hooks` 逐支審核、設為 Trusted；首次新 session 證實裸 `[facts]` 被判壞 JSON，改成 `hookSpecificOutput.additionalContext` 後再次開新 session，模型在不讀檔下正確回報 4 行、origin `8948816` 與工作中欄。PreToolUse 用暫時探針量到一次 `git push --dry-run` 對應一次 hook 呼叫，探針已移除；實際阻擋仍只由驗證器情境測試涵蓋，沒有在 Codex 互動中強造擋下情境。
+- 2026-11-14 12:40–15:21：本 repo 新 session 收到 4 行 `[facts]`（origin `8948816`）；PreToolUse 放行路徑由暫時探針確認執行。四個已部署專案的新 session 也各收到 4 行（origin 分別為 `6069093`／`bb334fc`／`5a9e797`／`660d80b`）；隔離 fixture 的阻擋路徑確認工具呼叫沒有執行。這些是 macOS Codex CLI 實測，Windows 尚未驗。
 - 同輪 `verify_bootstrap.py` exit 0，`uv run --locked pytest -q` 435 通過、369 subtests 通過；Windows CLI 未實跑。B3 本 repo 用 `verify_bootstrap.py`，B4 沒有 `check_docs.py`（已宣告例外）。
 - 四個已部署專案的 hook JSON 直接解析通過，`check_docs.py --staged` 都 exit 0；本輪 A4：NAS_MAINT errors=0 skipped=0，NAA_TR NOT_CONFIGURED，grist-workflow errors=0 skipped=2（缺 `.env`，exit 2），鍵鼠同部署_mac PASS:2 SKIP:3。未跑各專案的業務測試或 Windows CLI。
 - 模型呼叫：本輪 Codex 互動驗收用了額外模型呼叫，使用者於 2026-11-14 授權。
