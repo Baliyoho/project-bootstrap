@@ -1,7 +1,7 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-14 11:19（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（實測本 repo 的 Claude Code push 前 hook）
+- **交接時間**：2026-11-14 11:43（+08）
+- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（部署包範本與鍵鼠同部署_mac 拿掉已退場的 Antigravity）
 
 ## 任務目標
 
@@ -11,31 +11,30 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
 - **待續分支**：無（`feature/v3` 保留不刪，它那份 HANDOFF 指回 `main`）。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　11.14.11｜清Antigravity｜工作中｜交棒0次`，2026-11-14 11:27 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-14`
 - 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；沒有 `python` 指令，用 `python3`。桌面 App 內附 Claude Code 2.1.321。這台的全域 `~/.claude`、`~/.codex` handoff skill 已是 v2026-11-14。
 
 ## 已完成
 
-2026-11-14 前一個 session，每項都經使用者在聊天中要求或決定（使用者問「交接制度有完全合乎 v3 嗎？沒有就先合規」，之後逐項回「裝」「拿掉」「改掉」）：
+2026-11-14 本 session（使用者依序回「清 Antigravity 舊段落」「先修部署包範本」「同步過去」「交棒鍵鼠」「也交棒」）：
 
-- **開場 hook**：`.claude/hooks/repo-git-check.sh` 從自己寫的判讀版（🔴／🟡、全綠行）換成 3.10 `git-freshness.sh` 的逐字副本，只印 `[facts]`。驗證項「本 repo 開場 hook」逐位元組比對；「本 repo 工作中判讀」「全綠行」退場。`.gitignore` 加 `.claude/.bootstrap-version`。
-- **AGENTS.md 開工段**改名「跟部署出去的專案不同的地方」，只寫事實，不再要求先走 A 模式（v3 D12、第 5 節）。
-- **補裝 push 前 hook**：`.claude/hooks/repo-pre-push.sh` 是 3.11 的逐字副本，兩份接線都接 PreToolUse。ARCHITECT 的已宣告例外剩 handoff skill 與 `check_docs.py` 兩項。驗證項「本 repo push 前 hook」含 7 個接線負向測試。
-- **拿掉 `repo-action-rules.sh`** 與它的 PostToolUse 接線、驗證項「動作當下送規則」。
-- **能力表** `loads-skill` 的替代做法不再指向已不存在的「開工第一件事」；`kit.md` 的 Codex 截斷提醒改指共用制度；部署包重生（`VERSION` 不動，skill 六檔沒改）。
-- **Claude Code 的 push 前 hook 在本 repo 實測三條路**（本 session 11:1x，使用者回「做第 2 項」；開工標記上寫的 11:20 是誤植，實際約 11:14）：用本機暫時的空 commit 配 `git push --dry-run`，origin「工作中」為「無（已交棒）」時被擋（exit 2、訊息進 context）；推開工標記（差異含 `HANDOFF.md`）時放行；標記推上去後的 dry-run 也放行。兩個暫時 commit 都沒推，已用 `reset --soft` 拿掉。
-- 同日稍早的 session：時間戳改 `MM.DD.HH`、`sync_project.py` 同步共用制度、四個專案與全域升 v2026-11-14、Q33／Q34／F10 定案（細節在 git log 與 ARCHITECT 表頭）。
+- **部署包範本拿掉 Antigravity**（e7ddfb3）：`src/kit/files/` 的 `README.md.tmpl`、`ARCHITECT.md.tmpl`、`docs/ai-notes/handover-protocol.md.tmpl` 不再寫它會讀 `.agents/skills/`、hook 已接它、骨架附它的接線；部署包重生。skill 檔與 `kit.md` 的歷史紀錄沒動，`VERSION` 不跳。
+- **鍵鼠同部署_mac**：`AGENTS.md` 三處（2db9297）；README、ARCHITECT、handover-protocol 照上面的範本手改（4f72d86）——這三個在 `owners.json` 是 `seed`，`sync_project.py` 預演確認不會更新它們，其他共用檔已是最新版。該專案已交棒（「工作中」無）。
+- **NAS_MAINT 沒動**：當時 origin 上「工作中」是 `Mac mini` 11:13 開工的另一個 session（例行安全審查）。
+- 同日稍早的 session：開場 hook 換成 3.10 逐字副本、補裝 push 前 hook 並在 Claude Code 實測三條路、拿掉動作提醒 hook、時間戳改 `MM.DD.HH`、四個專案與全域升 v2026-11-14（細節在 git log 與 ARCHITECT 表頭）。
 
 ## 未完成／下一步
 
 1. **本 repo 的 Codex 接線改過（多了 PreToolUse），還沒重新審核與驗收**：在 Codex 互動 CLI 的 `/hooks` 審核 `.codex/hooks.json`，再開新 session 確認開場 `[facts]` 進 context、`git push` 時 `repo-pre-push.sh` 有跑。要呼叫模型，先問使用者。
 2. 第 2 期 Codex＋macOS：同一套 handoff-ab 兩輪＋互動驗證，換 Codex 跑。要呼叫模型，開始前先問使用者；這個月的額外用量 2026-11-14 已到 94%（$7.54／$8）。
-3. 別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是 v2：那台接棒時開場 hook 會印「家目錄與本專案不同」，從已同步的專案複製六個檔覆蓋。
-4. NAS_MAINT 與鍵鼠同部署_mac 的 `AGENTS.md` 舊段落還提到 Antigravity（過時，但照原則沒動），清不清等使用者決定。
+3. **NAS_MAINT 的 Antigravity 舊段落**：`AGENTS.md` 第 3、44、101 行，以及 README／ARCHITECT／handover-protocol（seed 檔，要照 e7ddfb3 手改）。等那邊的「工作中」清掉才能動。
+4. **Antigravity 殘留等使用者決定**：①skill 的 `mode-a-stop.md.tmpl` 還有三處（舉例與「它沒有 SessionEnd」），要改就得跳 `VERSION`、六檔標記同版再同步；②已部署專案裡的 `.agents/ag-hook.cmd`、`.agents/hooks.json`、`.claude/hooks/ag-wrap.sh` 照原則不刪；③`kit.md` 第 191、307 行的工具名舉例與 `GEMINI.md` 理由還提到它（非歷史紀錄，但沒說它被支援）。
+5. 別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是 v2：那台接棒時開場 hook 會印「家目錄與本專案不同」，從已同步的專案複製六個檔覆蓋。
 
 ## 地雷與注意事項
 
+- **seed 檔不會被同步**：README、ARCHITECT、handover-protocol 等 `owners.json` 標 `seed` 的範本只在建制時發一次；改了範本，已部署專案要逐個手改。
 - **本 repo 有三份手貼副本**：`AGENTS.md` 的共用制度（對 `AGENTS.md.tmpl`）、`repo-git-check.sh`（對 3.10）、`repo-pre-push.sh`（對 3.11）。改了範本要手動重貼（`sync_project.py` 拒絕本 repo），否則對應驗證項 FAIL。
 - **本 repo 現在推 `main` 會被擋**：沒寫開工標記、這次推送又沒改 `HANDOFF.md` 時 exit 2。照共用制度條件 1 先推開工標記就不會撞到。
 - 本 repo hook 不能改名成 `pre-push-handoff.sh`／`git-freshness.sh`：「本 repo 兩份接線」把指向這兩個名字當成被同步工具覆蓋過。
@@ -50,9 +49,9 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-14 11:18 在 `main`（aca3ab8，本 session 只改 `HANDOFF.md`）：`verify_bootstrap.py` exit 0（66 項 ok、0 skip）；`uv run --locked pytest` 435 通過。`verify_v2.py` 本 session 沒重跑（上次 11:0x 通過）。
-- B3：本 repo 沒有 `verify_state.py`，用 `verify_bootstrap.py`。B4：沒有 `check_docs.py`（已宣告例外）。B5：本 repo 的 Codex 接線**有改**，重新審核與實際執行驗收**沒做**（見下一步 1）。
-- push 前 hook：Claude Code 這邊擋下與兩種放行都實測過（見已完成）；Codex 那邊沒測。
+- 2026-11-14 11:3x 在 `main`（範本修正 e7ddfb3 提交前的工作樹）：`verify_bootstrap.py` exit 0（66 項 ok、0 skip），逐檔 stage 後 `--staged` exit 0；`uv run --locked pytest` 435 通過。`verify_v2.py` 本 session 沒跑。
+- B3：本 repo 沒有 `verify_state.py`，用 `verify_bootstrap.py`。B4：沒有 `check_docs.py`（已宣告例外）。B5：本 repo 的 Codex 接線**有改**（稍早 session），重新審核與實際執行驗收**沒做**（見下一步 1）。
+- push 前 hook：Claude Code 這邊擋下與兩種放行都實測過；Codex 那邊沒測。
 - 模型呼叫：本 session 沒有額外的模型呼叫。
 
 ## 懸置事項（AI 勿自行處理）
