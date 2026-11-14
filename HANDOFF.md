@@ -1,69 +1,41 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-14 12:3x（+08）
-- **交棒者**：Claude Code（Opus 5.5）／ `Mac`（收拾 Windows/Codex 沒做完的交棒）
+- **交接時間**：2026-11-14 20:57（+08）
+- **交棒者**：Codex／Mac（Codex 接線與第 2 期 macOS 制度驗收）
 
 ## 任務目標
 
-依[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)把 v2 的成果改成 v3 的形狀，分三期：第 1 期 Claude Code＋macOS（已完成並併回 `main`），第 2 期 Codex＋macOS，第 3 期兩個工具＋Windows；前一期驗過才開始下一期。Antigravity 放棄。v3 的一句話：制度只負責模型不會自己知道的事，不教模型怎麼做，也不自己造執行屏障。
+依[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)分期驗收交接制度：第 1 期 Claude Code＋macOS 已完成；第 2 期 Codex＋macOS 的 handoff-ab 已完成，桌面 App 標題項未驗；第 3 期兩工具＋Windows 尚未開始。
 
 ## Git 狀態
 
-- Repo：public `Baliyoho/project-bootstrap`；穩定分支 `main`。
-- **待續分支**：無（`feature/v3` 保留不刪，它那份 HANDOFF 指回 `main`）。
-- **工作中**：`Mac` ／ `Codex` ／ `㊣　11.14.12｜接棒｜工作中｜交棒0次`，2026-11-14 12:38 (+08) 開工
+- Repo：public `Baliyoho/project-bootstrap`；權威分支 `main`。
+- **待續分支**：無；`feature/v3` 保留但不是待續分支。
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-14.2`
-- 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；沒有 `python` 指令，用 `python3`。桌面 App 內附 Claude Code 2.1.321。這台的全域 `~/.claude`、`~/.codex` handoff skill 已是 v2026-11-14.2。
+- 本機：macOS 27.2、Python 3.15.2、uv 0.13.7；無 `python` 指令，使用 `python3`。本機兩份全域 handoff skill 與部署包相同。
 
 ## 已完成
 
-- **Codex 接線互動驗收與 3.10 修正（46f4a26）**：2026-11-14 12:40–12:49 在 Codex CLI 0.169.0 的 `/hooks` 逐支審核並信任；首次新 session 發現裸 `[facts]` 被判為壞 JSON，修正為 SessionStart `hookSpecificOutput.additionalContext` 後，模型不讀檔即正確回報 4 行、origin SHA 與工作中欄。PreToolUse 以暫時探針確認一次 `git push --dry-run` 觸發一次 hook，探針已移除。四個已部署專案的 3.10 副本同步並推送（NAS_MAINT 6069093、NAA_TR bb334fc、grist-workflow 5a9e797、鍵鼠同部署_mac 660d80b）；四份與範本逐位元組相同，兩份全域 skill 原已相同。Windows Codex 尚未實跑。
-- **四個專案與阻擋情境的互動驗收（2026-11-14 15:15–15:21）**：逐專案在 Codex CLI 的 `/hooks` 審核並信任 SessionStart／PreToolUse，重開 session 後，模型不讀檔即各自正確回報 4 行 `[facts]`、待續分支、origin SHA 與工作中欄。另建暫存 Git repo：origin 的工作中為已交棒，本機多一個沒改 HANDOFF 的 commit；Codex 對 `git push --dry-run origin main` 顯示 PreToolUse 擋下與 `[handoff-check]` 原因，rollout 的 `CommandExecution` 為 0、origin 未前進。暫存 repo 已清理。
-- **第 2 期 Codex＋macOS 制度實測（2026-11-14 15:45–16:23）**：現行部署包的 handoff-ab 完整組第一輪 12／12、第二輪 6／6 通過，損害格 0；18 份 rollout 都是 `gpt-6-sol`、收到 SessionStart `[facts]` 並載入專案 skill。F50 在同一個 Codex CLI 聊天跑完五輪，Git 接棒／兩次交棒／只讀續聊／停下等決定及要求的 `session：` 行都符合；CLI 沒有改名工具，依規則寫不適用，桌面 App 的標題項尚未驗。方法與結果在 `experiments/handoff-ab/CODEX-RESULTS.md`。
-
-- **Windows/Codex 交棒沒做完（12:23–12:32）**：`DESKTOP-M8MRS05` 上那台的 Codex 還沒升級 bootstrap，接棒時只推了開工標記（2750f1d，只改「工作中」那一行），交棒卡住沒推上去。Mac 這邊查過，origin 沒有其他變更。使用者確認那個 session 已經關掉、沒留下要保留的東西後，Mac 才接手（1b7b36c）並交棒。
-
-2026-11-14 稍早兩個 session：11.14.11（使用者選「Antigravity 殘留」，依序回「改，並同步」「刪掉」「兩處都改」，最後「五個都交棒」）與 11.14.12（使用者依序選「清 NAS_MAINT 殘留」「NAA_TR 規則檔：刪檔＋改 README」「三邊都交棒」）：
-
-- **部署包 v2026-11-14.2**（d35c36f）：skill `mode-a-stop.md` 三處、`kit.md` 工具名舉例拿掉 Antigravity；`GEMINI.md` 指標寫法的理由改寫成不依賴它。`VERSION`、六個 skill 檔、共用制度標記一起跳版（共用制度內文沒動，但開場 hook 拿那個標記比上游 `VERSION`）；本 repo `AGENTS.md` 副本重貼；`tools/skill_split_baseline.json` 的 `rewritten` 登記三行改寫。
-- **四個專案同步並刪接線檔**：鍵鼠同部署_mac、NAS_MAINT、grist-workflow、NAA_TR（在 `feature/W15-research-shell`）都跑了 `sync_project.py`（7 項），刪掉 `.agents/ag-hook.cmd`、`.agents/hooks.json`、`.claude/hooks/ag-wrap.sh`（刪前確認只互相引用），check_docs exit 0，四個都已交棒。
-- **全域 skill**：`~/.claude`、`~/.codex` 六個檔覆蓋成 v2026-11-14.2（覆蓋前比對過與舊版逐位元組相同）。
-- **NAS_MAINT 殘留**（12dd01e，已交棒）：`AGENTS.md` 三處、`ARCHITECT.md` 兩處照 e7ddfb3 手改；README、handover-protocol 本來就沒有殘留；check_docs exit 0。
-- **NAA_TR 規則檔**（6963f21，在 `feature/W15-research-shell`，已交棒）：使用者決定刪掉 `.agents/rules/handoff.md`，README 指路句一併拿掉；pre-push、AGENTS、handover-protocol 的歷史性提及保留；check_docs exit 0。
-- 同日稍早的 session：部署包範本拿掉 Antigravity（e7ddfb3）、開場 hook 換成 3.10 逐字副本、補裝 push 前 hook、時間戳改 `MM.DD.HH`（細節在 git log）。
+- Codex SessionStart hook 修正為 `hookSpecificOutput.additionalContext` JSON（`46f4a26`），本 repo 與四個已部署專案的開場事實已在 Codex CLI 互動驗收；PreToolUse 放行路徑與隔離 repo 的阻擋路徑也已實測。詳見 [CODEX-RESULTS.md](experiments/handoff-ab/CODEX-RESULTS.md) 與 Git 歷史。
+- 2026-11-14 第 2 期 Codex＋macOS：handoff-ab 完整組第一輪 12／12、第二輪 6／6 通過，損害格 0；18 份 rollout 都是 `gpt-6-sol`、收到 `[facts]` 並載入專案 skill。F50 在同一個 CLI 聊天跑完五輪：Git 接棒、兩次交棒、只讀續聊、等決定與要求的 `session：` 行符合。CLI 無改名工具，桌面 App 標題項沒有宣稱通過。方法、原始資料位置與限制在 [CODEX-RESULTS.md](experiments/handoff-ab/CODEX-RESULTS.md)。
+- 新增 `codex_run.py` 與六項正負向探針 `codex_selfcheck.py`；原始受測 repo 與 JSONL 留在系統暫存目錄，未進公開 repo。使用者授權用訂閱額度，逐格查用量；沒有使用額外點數。
 
 ## 未完成／下一步
 
-1. 第 2 期剩餘：在 Codex 桌面 App 的獨立測試聊天驗 F50 標題、狀態符號、起始時間與交棒累計。CLI 無改名工具，不能把五輪 CLI 結果當桌面標題驗收；使用者這輪決定先記錄 CLI 結果，不建立測試聊天。額外用量不可用；本輪逐格查訂閱用量並在五小時窗重置後才呼叫。
-2. Windows Codex 的新版 SessionStart JSON 接線尚未實跑；別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是舊版（`DESKTOP-M8MRS05` 已確認是舊的）。從已同步的專案複製六個檔覆蓋，然後在那台跑 `git status`／`git log origin/main..HEAD`，有沒推的殘留就直接丟掉，不要推。
-3. 各專案開場可能印「共用制度比上游新：本機 v2026-11-14.2，上游 v2026-11-14」：上游版本快取 720 分鐘，最晚 12 小時自己消失；要立刻消就由使用者刪該專案的 `.claude/.bootstrap-version`。
+1. 使用者已決定先記錄 CLI 結果，不建立桌面 App 測試聊天。之後若要完成第 2 期 F50，須在獨立 Codex 桌面 App 聊天驗標題符號、固定起始時間、狀態與交棒累計；CLI 的 `不適用` 不能代替此項。
+2. 第 3 期在 Windows 驗兩工具；Windows Codex 的新版 SessionStart JSON 接線尚未實跑，當地全域 handoff skill 仍舊。先同步 skill，核對本機 Git 殘留，不要推舊 session 的未推 commit。
 
 ## 地雷與注意事項
 
-- **seed 檔不會被同步**：README、ARCHITECT、handover-protocol 等 `owners.json` 標 `seed` 的範本只在建制時發一次；改了範本，已部署專案要逐個手改。
-- **本 repo 有三份手貼副本**：`AGENTS.md` 的共用制度（對 `AGENTS.md.tmpl`）、`repo-git-check.sh`（對 3.10）、`repo-pre-push.sh`（對 3.11）。改了範本要手動重貼（`sync_project.py` 拒絕本 repo），否則對應驗證項 FAIL。
-- **改 skill 檔的既有行要登記 `tools/skill_split_baseline.json`**：拆分前的舊行不在任何檔、也不在 `rewritten`，「skill 拆分」就 FAIL。
-- **跳 `VERSION` 時共用制度標記也要跳**：開場 hook 拿 `AGENTS.md` 共用制度標記比上游 `VERSION`，只跳 skill 會讓每個專案一直印落後。
-- **本 repo 現在推 `main` 會被擋**：沒寫開工標記、這次推送又沒改 `HANDOFF.md` 時 exit 2。照共用制度條件 1 先推開工標記就不會撞到。
-- 本 repo hook 不能改名成 `pre-push-handoff.sh`／`git-freshness.sh`：「本 repo 兩份接線」把指向這兩個名字當成被同步工具覆蓋過。
-- **`approvals.py` 留在 `src/` 但沒有測試**：測試靠 `launcher`，跟著封存了；`release` 只用它的 `VERIFIER`。
-- **一致性檢查對 v2 已決的題號很敏感**：在 `README`、`AGENTS`、`ARCHITECT`、`HANDOFF` 裡，提到 v2 題號的那一行不要同時出現「待決」兩個字，否則 `test_contradictions_repo` 會誤判。
-- **待決登記處有兩個**：工具認得的是 v2 決策書第 6 節；v3 新增的題目在 v3 第 8 節。「懸置事項」只能寫 v2 已登記的題目；v3 的題目等使用者決定時寫在「未完成／下一步」。
-- **跨工具表**：README 那張是部署包能力矩陣（`src/kit/capabilities.json`）的轉述，一致性檢查綁住；有 `text` 的格一定要被渲染一次。
-- 帳號允許超額，撞到訂閱上限會直接扣額外用量而不報錯。handoff-ab 的 `run.py` 有用量守門，不要拿掉；互動測試沒有守門。
-- Claude Code 會用家目錄的 handoff skill 蓋掉專案那份；受測期間要把全域副本暫時換成受測版、跑完換回。
-- 改這個 repo 的其他地雷在 [ARCHITECT.md](ARCHITECT.md)「開發注意事項」，碰到對應的檔才讀。
+- 制度權威在 `src/kit/`；改範本後重生部署包、同步所有副本，並驗證實際 hook。這個 repo 的三份手貼副本不由 `sync_project.py` 更新，詳見 [AGENTS.md](AGENTS.md)。
+- 公開 repo 不放部署專案的私有細節或憑證。`main` 測試須維持通過；功能分支合併仍要使用者驗收。
+- 初次 Codex 煙霧測試的 `workspace-write` 沙箱擋 `.git/FETCH_HEAD`，屬測試環境限制；另建乾淨 fixture 用可寫 Git 的模式重跑，18 個有效結果未計該次。
 
 ## 服務查證與期望快照
 
-- 2026-11-14 12:3x（Mac 接棒善後 session，只改 `HANDOFF.md`）：逐檔 stage 後 `verify_bootstrap.py --staged` exit 0；pytest 沒重跑。
-- 2026-11-14 12:3x（11.14.12 session，本 repo 只改 `HANDOFF.md`）：逐檔 stage 後 `verify_bootstrap.py --staged` exit 0；pytest 沒重跑。NAS_MAINT、NAA_TR 各自 check_docs exit 0，接線沒動。
-- 2026-11-14 11:5x 在 `main`（d35c36f 提交前的工作樹）：`verify_bootstrap.py` exit 0（0 skip），逐檔 stage 後 `--staged` exit 0；`uv run --locked pytest` 435 通過。`verify_v2.py` 本 session 沒跑。
-- 2026-11-14 12:40–15:21：本 repo 新 session 收到 4 行 `[facts]`（origin `8948816`）；PreToolUse 放行路徑由暫時探針確認執行。四個已部署專案的新 session 也各收到 4 行（origin 分別為 `6069093`／`bb334fc`／`5a9e797`／`660d80b`）；隔離 fixture 的阻擋路徑確認工具呼叫沒有執行。這些是 macOS Codex CLI 實測，Windows 尚未驗。
-- 同輪 `verify_bootstrap.py` exit 0，`uv run --locked pytest -q` 435 通過、369 subtests 通過；Windows CLI 未實跑。B3 本 repo 用 `verify_bootstrap.py`，B4 沒有 `check_docs.py`（已宣告例外）。
-- 四個已部署專案的 hook JSON 直接解析通過，`check_docs.py --staged` 都 exit 0；本輪 A4：NAS_MAINT errors=0 skipped=0，NAA_TR NOT_CONFIGURED，grist-workflow errors=0 skipped=2（缺 `.env`，exit 2），鍵鼠同部署_mac PASS:2 SKIP:3。未跑各專案的業務測試或 Windows CLI。
-- 模型呼叫：本輪 Codex 互動驗收用了額外模型呼叫，使用者於 2026-11-14 授權。
-- 2026-11-14 第 2 期：Codex 訂閱額度，兩輪 18 次有效；一次 `workspace-write` 沙箱擋 `.git/FETCH_HEAD` 的初次煙霧測試不計入結果，另建乾淨 fixture 重跑。F50 CLI 五輪另計。`codex_selfcheck.py` 六項正負向探針通過；新增實驗執行器與結果文件後 `verify_bootstrap.py` exit 0、`uv run --locked pytest -q` 435 passed／369 subtests。桌面 App 改名未驗。
+- 2026-11-14 20:53 Mac：`python3 -X utf8 tools/verify_bootstrap.py` exit 0；本次只改 `HANDOFF.md`，提交前仍須逐檔 stage 後跑 `--staged`。本輪未改程式／hook，故無需重跑互動驗收。
+- 2026-11-14 第 2 期提交前：`uv run --locked pytest -q` 435 passed、369 subtests passed；本次只覆寫交接快照，pytest 未重跑。
 
 ## 懸置事項（AI 勿自行處理）
 
