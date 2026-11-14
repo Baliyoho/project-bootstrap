@@ -143,7 +143,7 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 - **Windows 的 Codex 接線已補 Git Bash 啟動器（2026-11-01）**：真 repo 上實跑舊接線，互動 TUI 報 exit 1、context 沒收到訊息；同一支腳本經 PATH 的 WSL `bash` 報缺 `/bin/bash`，經 Git Bash 則 exit 0。新接線用 `commandWindows` 指向 3.17 的 `.cmd`，只做管線；另對 stdout 加純文字標頭，避開本版把 `[` 開頭當 JSON 的實測問題。修正後 CLI `0.166.0` 與桌面 App 內附 runtime `0.166.0-alpha.5.1` 的互動測試都收到 `HOOK_PRESENT`（後者是以該 binary 的 TUI 驗收，不冒充 App UI 已驗）。**稍早那組 exec／TUI 探針的差異仍未回溯查明，不能用新案例替它補原因。**
 - 🔴 **「叫 agent 把注入背出來」這個測法在 Codex 上不成立。** 2026-10-31 實測：它回「I can't repeat hidden system or developer instructions」**直接拒絕複述**（Antigravity 那一面可以，見下）。要量注入有沒有到，就讓 hook 自己寫檔，或問一個不必複述的是非題（「只回 YES／NO：你的 context 裡有沒有以 `[git-check]` 開頭的行」）。**拿複述當儀器會得到假陰性，而假陰性長得就跟「hook 沒跑」一模一樣。**
 - **skill 來源看得到，不必猜**：`codex debug prompt-input` 會印一張「Skill roots」表。2026-10-30 實測 0.164.0 列出 `~/.codex/skills`（**官方文件已經不列這個路徑，但實際仍然讀**）**與 repo 的 `.agents/skills`**。官方另外列 `$CWD/../.agents/skills`、`$HOME/.agents/skills`、`/etc/codex/skills`。
-- `project_doc_max_bytes` 會截 `AGENTS.md`，所以**「開工第一件事」那一段必須待在 `AGENTS.md` 最上面**。
+- `project_doc_max_bytes` 會截 `AGENTS.md`，所以**共用制度那一節必須待在 `AGENTS.md` 最上面**（2026-11-14 前這裡寫「開工第一件事」，那一節 v3 起已併進共用制度）。
 
 ### Antigravity：2026-11-13 起不支援
 

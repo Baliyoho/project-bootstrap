@@ -19,8 +19,8 @@
     "loads-skill": {
       "label": "自動載入程序檔",
       "strict": false,
-      "impact": "交接程序不會自己出現，要靠 agent 照 AGENTS.md 去開檔",
-      "alternative": "照 AGENTS.md「開工第一件事」手動讀全域 handoff 程序檔"
+      "impact": "參考程序（逐步程序、異常判讀、理由）不會自己出現；必守條件在 AGENTS.md 的共用制度，不受影響",
+      "alternative": "碰到異常或交棒時，照 AGENTS.md 共用制度「你不會自己知道的事」寫的路徑開 handoff 參考檔"
     },
     "hooks": {
       "label": "Hooks",

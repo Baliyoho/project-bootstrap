@@ -14,24 +14,12 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|Edit|Write|MultiEdit",
+        "matcher": "Bash|PowerShell",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/repo-action-rules.sh\" pre",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/repo-action-rules.sh\" post",
-            "timeout": 10
+            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/repo-pre-push.sh\"",
+            "timeout": 15
           }
         ]
       }

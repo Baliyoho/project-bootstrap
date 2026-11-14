@@ -73,9 +73,11 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   改成照原文印出、不分符號，判讀交給模型）
   本 repo 開場 hook——repo-git-check.sh 要跟部署包 3.10 逐位元組相同（2026-11-14，v3 D12；
                   取代原本的「本 repo 工作中判讀」與「全綠行」），附負向測試
+  本 repo push 前 hook——repo-pre-push.sh 要跟部署包 3.11 逐位元組相同，兩份接線的 PreToolUse
+                  都指向它（2026-11-14 v3 F10 補裝，取代「動作當下送規則」），接線守門附負向測試
   本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
-  來源例外可見性——逐項印出三項已宣告減項，核對來源缺而產物有；漏宣告、來源增項及
+  來源例外可見性——逐項印出已宣告減項（2026-11-14 起剩 handoff skill 與 check_docs.py 兩項），核對來源缺而產物有；漏宣告、來源增項及
                   產物缺項均有負向變異。不代表 F46 全部同組情境已驗收（2026-11-08）
   交接快照同組情境——有效、整份缺失、占用欄缺失／重複、章節缺失、超行數，用同一份
                   合成輸入跑來源檢查與部署後 check_docs；仍非 F46 整項驗收
@@ -1437,7 +1439,6 @@ def step_reason_links():
 
 SOURCE_EXCEPTIONS = (
     ('handoff skill', '.claude/skills/handoff/SKILL.md'),
-    ('pre-push-handoff.sh', '.claude/hooks/pre-push-handoff.sh'),
     ('check_docs.py', 'tools/check_docs.py'),
 )
 
@@ -1495,7 +1496,8 @@ def step_source_exceptions(dest, tmp):
         return
     record('OK', '來源例外可見性（F46 部分）',
            '已宣告例外：' + '；'.join(label + '（來源缺、產物有）' for label, _ in SOURCE_EXCEPTIONS)
-           + '；三類負向變異通過；未驗收來源／產物全部同組情境')
+           + '；三類負向變異通過；未驗收來源／產物全部同組情境'
+           + '（pre-push 2026-11-14 起補裝，改由「本 repo push 前 hook」守）')
 
 
 def step_handoff_parity(dest):
@@ -2052,26 +2054,25 @@ def step_handoff_flow_parity(dest, tmp):
 
 
 REPO_START_HOOK = '.claude/hooks/repo-git-check.sh'
-REPO_ACTION_HOOK = '.claude/hooks/repo-action-rules.sh'
-# 2026-11-10 決策書 Q6 (a)：動作當下送規則只在 Claude Code 那份試行，Codex 那份仍只准 SessionStart。
-REPO_ACTION_EVENTS = {'.claude/settings.json': ('PreToolUse', 'PostToolUse'),
-                      '.codex/hooks.json': ()}
+REPO_PRE_PUSH_HOOK = '.claude/hooks/repo-pre-push.sh'
+REPO_WIRING = ('.claude/settings.json', '.codex/hooks.json')
 
 
 def repo_wiring_problems(root):
     """本 repo 兩份接線的問題清單。
 
     兩份接線一起查（2026-11-01 加上 `.codex/hooks.json`）。這個 repo 的接線指的是它
-    自己那支 `repo-git-check.sh`，所以它們跟部署包 3.9／3.17 只是長得像、不是副本；
-    也因此沒有 `source:` 標記、落後偵測看不到它們，唯一的守門人就是這一項。
+    自己的 `repo-*.sh`，所以它們跟部署包 3.9／3.17 只是長得像、不是副本；也因此沒有
+    `source:` 標記、落後偵測看不到它們，唯一的守門人就是這一項。
     連「有沒有被 sync_project.py 覆蓋過」一起釘：那會把它們改成指向這裡不存在的
-    `git-freshness.sh`，開場檢查於是靜默失效——看起來有防護、實際上沒有。
-    2026-11-10（Q6 (a)）：原本只准 SessionStart；現在 Claude Code 那份可以多接
-    PreToolUse／PostToolUse，但每個 handler 都只能指向 repo-action-rules.sh，其他事件仍拒絕。
-    抽成函式是為了讓負向測試能對暫存目錄跑。
+    `git-freshness.sh`／`pre-push-handoff.sh`，開場檢查於是靜默失效。
+    2026-11-14（v3 F10，使用者決定補裝）：兩份都要接 PreToolUse，而且只能指向
+    repo-pre-push.sh；2026-11-10 試行的動作提醒（repo-action-rules.sh、PostToolUse）
+    同日由使用者決定拿掉，其他事件一律拒絕。抽成函式是為了讓負向測試能對暫存目錄跑。
     """
     problems, present = [], []
-    for rel, extra in REPO_ACTION_EVENTS.items():
+    targets = {'SessionStart': REPO_START_HOOK, 'PreToolUse': REPO_PRE_PUSH_HOOK}
+    for rel in REPO_WIRING:
         cfg = root / rel
         if not cfg.exists():
             problems.append('%s 不存在' % rel)
@@ -2091,23 +2092,21 @@ def repo_wiring_problems(root):
         for event, groups in hooks.items():
             commands = [h.get('command', '') + ' ' + h.get('commandWindows', '')
                         for g in (groups or []) for h in (g.get('hooks') or [])]
-            if event == 'SessionStart':
-                if not commands or any(REPO_START_HOOK not in c for c in commands):
-                    problems.append('%s 的 SessionStart 沒有都指向 %s' % (rel, REPO_START_HOOK))
-            elif event in extra:
-                if not commands or any(REPO_ACTION_HOOK not in c for c in commands):
-                    problems.append('%s 的 %s 只能指向 %s' % (rel, event, REPO_ACTION_HOOK))
+            if event in targets:
+                if not commands or any(targets[event] not in c for c in commands):
+                    problems.append('%s 的 %s 沒有都指向 %s' % (rel, event, targets[event]))
             else:
-                problems.append('%s 接了 %s，但這個 repo 只允許 SessionStart%s'
-                                % (rel, event, ('＋' + '／'.join(extra)) if extra else ''))
-        if 'SessionStart' not in hooks:
-            problems.append('%s 沒接 SessionStart' % rel)
-    if not (root / REPO_START_HOOK).exists():
-        problems.append('%s 不存在——兩份接線都指著一個不在的腳本' % REPO_START_HOOK)
-    if REPO_ACTION_HOOK in ''.join(
-            (root / r).read_text(encoding='utf-8') for r in REPO_ACTION_EVENTS
-            if (root / r).exists()) and not (root / REPO_ACTION_HOOK).exists():
-        problems.append('%s 不存在——接線指著一個不在的腳本' % REPO_ACTION_HOOK)
+                problems.append('%s 接了 %s，但這個 repo 只允許 SessionStart＋PreToolUse' % (rel, event))
+        for event in targets:
+            if event not in hooks:
+                problems.append('%s 沒接 %s' % (rel, event))
+        if rel == '.claude/settings.json':
+            matchers = [g.get('matcher') for g in hooks.get('PreToolUse') or []]
+            if matchers and any(m != 'Bash|PowerShell' for m in matchers):
+                problems.append('%s 的 PreToolUse matcher 不是 Bash|PowerShell（跟部署包 3.9 不同）' % rel)
+    for rel in (REPO_START_HOOK, REPO_PRE_PUSH_HOOK):
+        if not (root / rel).exists():
+            problems.append('%s 不存在——接線指著一個不在的腳本' % rel)
     return problems, present
 
 
@@ -2157,169 +2156,67 @@ def step_self():
         record('SKIP', '本 repo 兩份接線', '都不存在——開場沒有 git 檢查，接棒全靠人記得')
     else:
         record('OK', '本 repo 兩份接線',
-               '%s 都是合法 JSON、SessionStart 指向 repo-git-check.sh；動作提醒只接在 Claude Code 那份'
+               '%s 都是合法 JSON、SessionStart 指向 repo-git-check.sh、PreToolUse 指向 repo-pre-push.sh'
                % '＋'.join(present))
     return ok
 
 
-# 指令本身沒有 push，只有輸出裡換行後出現 git push（git 自己的 hint 就長這樣）。
-OUTPUT_ONLY_PUSH = {'tool_name': 'Bash', 'tool_input': {'command': 'git status -sb'},
-                    'tool_response': {'stdout': 'hint:\n    git push --set-upstream origin x\n'}}
+def step_repo_pre_push(dest, tmp):
+    """本 repo 的 push 前 hook（2026-11-14，v3 F10，使用者決定補裝）。
 
-
-def step_action_rules(tmp):
-    """動作當下送規則（決策書 Q6 (a)，2026-11-10）：實跑 repo-action-rules.sh，並對接線守門做負向測試。
-
-    只證明 hook 在該送的時候送出合法的 additionalContext、不該送的時候安靜、永遠不擋；
-    不證明 Claude Code 真的把它放進 context，也不證明模型照它做。
+    v3 唯一要「阻擋」的需求是 F10：推權威分支、這次推送沒改 HANDOFF.md、origin 的「工作中」
+    又是「無（已交棒）」時擋下。部署出去的專案有 3.11，本 repo 原本宣告為例外（2026-11-06）；
+    使用者 2026-11-14 改成補裝，做法跟開場 hook 一樣：放 3.11 的逐字副本、逐位元組比對，
+    行為由「AI push 提醒情境」對部署 hook 實跑，相同內容不重跑。接線另由「本 repo 兩份接線」守，
+    這裡再對接線守門跑負向測試。
     """
     issues = []
-    bash = find_bash()
-    script = ROOT / REPO_ACTION_HOOK
-    cases = [
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git add a && git push -q origin b'}}, '準備 push'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git -C /x push'}}, '準備 push'),
-        ('pre', {'tool_name': 'Edit', 'tool_input': {'file_path': '/r/PROJECT-BOOTSTRAP.md'}}, '正在改部署包'),
-        ('pre', {'tool_name': 'Edit', 'tool_input': {'file_path': '/r/src/kit/files/AGENTS.md.tmpl'}}, '正在改部署包'),
-        ('pre', {'tool_name': 'Write', 'tool_input': {'file_path': '/r/src/kit/kit.md'}}, '正在改部署包'),
-        ('pre', {'tool_name': 'Write', 'tool_input': {'file_path': '/r/.claude/hooks/x.sh'}}, '正在改 hook'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git status -sb'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git pushd'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo 提到 git push 而已'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'cat <<X\n說明 git push\nX'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git status\ngit push'}}, '準備 push'),
-        ('pre', {'tool_name': 'Edit', 'tool_input': {'file_path': '/r/README.md'}}, None),
-        ('pre', {'tool_name': 'Read', 'tool_input': {'file_path': '/r/PROJECT-BOOTSTRAP.md'}}, None),
-        ('post', {'tool_name': 'Bash', 'tool_input': {'command': 'git push'}}, 'push 指令剛執行完'),
-        ('post', {'tool_name': 'Bash', 'tool_input': {'command': 'git fetch origin'}}, None),
-        # 2026-11-10 第二版：只看 tool_input、照 shell 切詞。下面每一條第一版都判錯或沒測。
-        ('post', OUTPUT_ONLY_PUSH, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo "a && git push"'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': "printf 'x\\ngit push\\n'"}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': "printf 'x\ngit push\n'"}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git log --grep push'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'git stash push'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'cat <<X && git push\n內文\nX'}}, '準備 push'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': '(cd x && git push)'}}, '準備 push'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'if true; then git push; fi'}}, '準備 push'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'FOO=1 git -c a.b=c push origin x'}}, '準備 push'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo "沒關的引號 && git status'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo "沒關的引號\ngit push'}}, '準備 push'),
-        # 2026-11-12 第三版：shell -c 與 eval 裡的指令再看一層（第二版對這幾條漏報）。
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash -c "git push"'}}, '準備 push'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': "cd x && /bin/sh -lc 'git add a && git push -q'"}}, '準備 push'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'zsh -c "bash -c \\"git push\\""'}}, '準備 push'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'eval "git push origin x"'}}, '準備 push'),
-        ('post', {'tool_name': 'Bash', 'tool_input': {'command': 'bash -c "git push"'}}, 'push 指令剛執行完'),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash -c "git status" && echo "git push"'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash -c "echo git push"'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash script.sh "git push"'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'echo bash -c "git push"'}}, None),
-        ('pre', {'tool_name': 'Bash', 'tool_input': {'command': 'bash --norc -c'}}, None),
-    ]
-    if not bash:
-        issues.append('缺少可用 bash，腳本沒有實跑')
-    elif not script.exists():
-        issues.append('%s 不存在' % REPO_ACTION_HOOK)
-    else:
-        for compact in (True, False):
-            for phase, payload, want in cases:
-                event = 'PostToolUse' if phase == 'post' else 'PreToolUse'
-                body = dict(payload, hook_event_name=event)
-                text = json.dumps(body, ensure_ascii=False,
-                                  separators=(',', ':') if compact else (', ', ': '))
-                r = run([bash, str(script), phase], stdin=text)
-                label = '%s %s' % (phase, json.dumps(payload['tool_input'], ensure_ascii=False))
-                if r.returncode:
-                    issues.append(label + ' 結束碼 %d' % r.returncode)
-                    continue
-                if want is None:
-                    if r.stdout.strip():
-                        issues.append(label + ' 不該送卻送了')
-                    continue
-                try:
-                    out = json.loads(r.stdout)['hookSpecificOutput']
-                except Exception:
-                    issues.append(label + ' 輸出不是合法 JSON')
-                    continue
-                if out.get('hookEventName') != event or want not in out.get('additionalContext', ''):
-                    issues.append(label + ' 沒送對應要點')
-                if 'permissionDecision' in out or 'decision' in r.stdout:
-                    issues.append(label + ' 不該做任何放行／阻擋決定')
+    path = ROOT / REPO_PRE_PUSH_HOOK
+    deployed = read_lf(dest / '.claude/hooks/pre-push-handoff.sh')
+    if not path.is_file():
+        issues.append('%s 不存在' % REPO_PRE_PUSH_HOOK)
+    elif read_lf(path) != deployed:
+        issues.append('%s 跟部署包 3.11 不同：改完部署包要手動重貼（sync_project 拒絕本 repo）'
+                      % REPO_PRE_PUSH_HOOK)
 
-        # 負向測試：關掉 JSON 解析、退回第一版的原始字串比對，「只有輸出提到 git push」那個情境
-        # 必須誤報——證明上面那條情境真的分得出兩版；同時確認退路仍送得出提醒、仍 exit 0。
-        text = script.read_text(encoding='utf-8')
-        if text.count('parser=auto\n') != 1:
-            issues.append('腳本沒有唯一的 parser=auto，退路負向測試做不了')
-        else:
-            legacy = tmp / 'action-rules-legacy.sh'
-            legacy.write_text(text.replace('parser=auto\n', 'parser=off\n'), encoding='utf-8', newline='')
-            for payload, want in ((OUTPUT_ONLY_PUSH, True),
-                                  ({'tool_name': 'Bash', 'tool_input': {'command': 'git push'}}, True),
-                                  ({'tool_name': 'Bash', 'tool_input': {'command': 'git push --dry-run'},
-                                    'tool_response': {'stdout': 'x'}}, True),
-                                  ({'tool_name': 'Bash', 'tool_input': {'command': 'echo push'}}, False)):
-                r = run([bash, str(legacy), 'post'], stdin=json.dumps(payload, ensure_ascii=False))
-                if r.returncode or bool(r.stdout.strip()) != want:
-                    issues.append('退路（原始字串比對）對 %s 的結果不符預期'
-                                  % json.dumps(payload['tool_input'], ensure_ascii=False))
-
-        # 負向測試（2026-11-12）：拿掉 shell -c／eval 再看一層，這兩條必須回到第二版的漏報，
-        # 證明上面的案例真的在測第三版的規則，不是被別的路徑剛好接住。
-        nested = 'shells = {"bash", "sh", "zsh", "dash"}\n'
-        if text.count(nested) != 1 or text.count('elif name == "eval" and depth < 3:') != 1:
-            issues.append('腳本沒有唯一的 shells 清單或 eval 分支，第三版的負向測試做不了')
-        else:
-            flat = tmp / 'action-rules-flat.sh'
-            flat.write_text(text.replace(nested, 'shells = set()\n').replace(
-                'elif name == "eval" and depth < 3:', 'elif False:'), encoding='utf-8', newline='')
-            for command in ('bash -c "git push"', 'eval "git push origin x"'):
-                payload = {'tool_name': 'Bash', 'tool_input': {'command': command}}
-                r = run([bash, str(flat), 'pre'], stdin=json.dumps(payload, ensure_ascii=False))
-                if r.returncode or r.stdout.strip():
-                    issues.append('拿掉第三版規則後 %s 仍送出提醒，案例沒有測到它' % command)
-
-    # 接線守門的負向測試：每一種錯接都要被 repo_wiring_problems 看出來。
-    good = {rel: (ROOT / rel).read_text(encoding='utf-8') for rel in REPO_ACTION_EVENTS}
+    good = {rel: (ROOT / rel).read_text(encoding='utf-8') for rel in REPO_WIRING}
 
     def wiring(edit=None, drop=()):
-        base = tmp / ('action-wiring-%d' % len(list(tmp.glob('action-wiring-*'))))
+        base = tmp / ('pre-push-wiring-%d' % len(list(tmp.glob('pre-push-wiring-*'))))
         for rel, text in good.items():
             data = json.loads(text)
             if edit and rel in edit:
                 edit[rel](data)
             (base / rel).parent.mkdir(parents=True, exist_ok=True)
             (base / rel).write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
-        for rel in (REPO_START_HOOK, REPO_ACTION_HOOK):
+        for rel in (REPO_START_HOOK, REPO_PRE_PUSH_HOOK):
             if rel not in drop:
                 (base / rel).parent.mkdir(parents=True, exist_ok=True)
                 (base / rel).write_text('#!/bin/sh\n', encoding='utf-8')
         return repo_wiring_problems(base)[0]
 
-    def handler(cmd):
-        return [{'matcher': 'Bash', 'hooks': [{'type': 'command', 'command': cmd}]}]
+    def handler(cmd, matcher='Bash|PowerShell'):
+        return [{'matcher': matcher, 'hooks': [{'type': 'command', 'command': cmd}]}]
 
-    action_cmd = 'bash "%s" pre' % REPO_ACTION_HOOK
+    push_cmd = 'bash "%s"' % REPO_PRE_PUSH_HOOK
     if wiring():
         issues.append('現行接線複本被判有問題：' + '；'.join(wiring()))
     breakers = {
-        'Codex 也接 PreToolUse': {'.codex/hooks.json': lambda d: d['hooks'].update(PreToolUse=handler(action_cmd))},
-        'Claude Code 的 PreToolUse 指向別支': {'.claude/settings.json': lambda d: d['hooks'].update(PreToolUse=handler('bash other.sh'))},
-        'Claude Code 多接 Stop': {'.claude/settings.json': lambda d: d['hooks'].update(Stop=handler(action_cmd))},
-        'SessionStart 指向動作提醒': {'.claude/settings.json': lambda d: d['hooks'].update(SessionStart=handler(action_cmd))},
-        '拿掉 SessionStart': {'.claude/settings.json': lambda d: d['hooks'].pop('SessionStart')},
+        'Codex 沒接 PreToolUse': {'.codex/hooks.json': lambda d: d['hooks'].pop('PreToolUse')},
+        'Claude Code 沒接 PreToolUse': {'.claude/settings.json': lambda d: d['hooks'].pop('PreToolUse')},
+        'PreToolUse 指向別支': {'.claude/settings.json': lambda d: d['hooks'].update(PreToolUse=handler('bash other.sh'))},
+        'matcher 只剩 Bash': {'.claude/settings.json': lambda d: d['hooks'].update(PreToolUse=handler(push_cmd, 'Bash'))},
+        '接回動作提醒的 PostToolUse': {'.claude/settings.json': lambda d: d['hooks'].update(PostToolUse=handler(push_cmd))},
+        'SessionStart 指向 push 前 hook': {'.claude/settings.json': lambda d: d['hooks'].update(SessionStart=handler(push_cmd))},
     }
     for name, edit in breakers.items():
         if not wiring(edit):
             issues.append('負向測試沒擋住：' + name)
-    if not wiring(drop=(REPO_ACTION_HOOK,)):
-        issues.append('負向測試沒擋住：動作提醒腳本不存在')
-
-    record('FAIL' if issues else 'OK', '動作當下送規則', '；'.join(issues) if issues else
-           '實跑 %d 個情境（兩種 JSON 排版）：push 前後、改部署包、改 hook 送對應要點，其餘安靜、永遠 exit 0、'
-           '不做放行／阻擋決定；只看 tool_input、不被指令輸出或引號內文字誤觸發，退回原始比對的負向測試確實誤報；接線守門 %d 個負向測試都擋住（不證明 Claude Code 放進 context 或模型照做）'
-           % (len(cases) * 2, len(breakers) + 1))
+    if not wiring(drop=(REPO_PRE_PUSH_HOOK,)):
+        issues.append('負向測試沒擋住：push 前 hook 腳本不存在')
+    record('FAIL' if issues else 'OK', '本 repo push 前 hook', '；'.join(issues) if issues else
+           'repo-pre-push.sh 跟部署包 3.11 逐位元組相同，兩份接線的 PreToolUse 都指向它；接線守門 %d 個負向測試都擋住'
+           '（行為由「AI push 提醒情境」對部署 hook 實跑）' % (len(breakers) + 1))
 
 
 def step_sync_self_guard():
@@ -5064,11 +4961,11 @@ def run_checks(dest, tmp):
         step_session_resume(dest)
     step_eol(dest)
     step_self()
-    step_action_rules(tmp)
     step_repo_handoff()
     step_reason_links()
     if seen:
         step_source_exceptions(dest, tmp)
+        step_repo_pre_push(dest, tmp)
         step_handoff_parity(dest)
         step_document_parity(dest, tmp)
         step_document_policy_parity(dest, tmp)

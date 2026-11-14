@@ -1,6 +1,6 @@
 # AGENTS 規則的理由與事故
 
-> 最後更新：2026-11-14（「開工第一件事」與「副本規則 7」補 v3 對齊的理由）；前次同日（新增「共用制度副本」一段）；前次 2026-11-11（F22 第二輪：每段末尾補入口壓縮前的完整措辭）
+> 最後更新：2026-11-14（補裝 push 前 hook、拿掉動作提醒 hook 的理由補在「這個 repo 是什麼」與「副本規則 7」）；前次同日（「開工第一件事」與「副本規則 7」補 v3 對齊的理由）；前次同日（新增「共用制度副本」一段）；前次 2026-11-11（F22 第二輪：每段末尾補入口壓縮前的完整措辭）
 > 這裡是 [AGENTS.md](AGENTS.md) 每條規則的完整原文、理由與事故。2026-11-10（F22）從 AGENTS.md 逐字搬來：規則留在入口，理由住這裡，由入口的「為什麼」連結指過來。**不是每輪必讀**；要改、要質疑或想繞過某條規則之前先讀對應那一段。
 > 這裡的段落保存搬家當時的完整措辭；之後規則有變，先改 AGENTS.md，再在這裡對應段落補帶日期的理由，不要刪舊事故。
 
@@ -84,6 +84,8 @@
 > - 不部署的例外：`tools/verify_bootstrap.py`（部署包的測試）；`src/project_bootstrap/`、`tests/`、`experiments/v2/`（說明與現況索引）與 `tools/verify_v2.py`（隔離原型，只用合成 fixture，不保存其他專案資料；**原型通過不授權切換程序或宣稱跨工具強保障**）；`pyproject.toml`／`uv.lock`（P1 開發骨架，A4 不需要）；`tools/build_kit.py`（由 `src/kit/` 生成部署包）；[HANDOFF.md](HANDOFF.md)；本檔的理由檔。
 > - 刻意沒有 handoff skill、`pre-push-handoff.sh`、`check_docs.py`。這是**已宣告的例外**，不是空白；宣告不等於 F46 已達成；撤銷宣告改成補裝是使用者的決定。
 
+
+2026-11-14（使用者決定「pre-push 防呆：裝」）：刻意沒有的三項減成兩項，`pre-push-handoff.sh` 改成補裝（本 repo 叫 `repo-pre-push.sh`，3.11 的逐字副本）。理由：v3 的 F10 是 v3 唯一保留「阻擋」的需求，擋的是「推權威分支、這次推送沒改 `HANDOFF.md`、origin 的『工作中』又是『無（已交棒）』」；部署出去的專案有這一層，來源沒有，就違背 F46「來源自身的保護不低於產物」。2026-11-01 不裝的理由是「它攔不住待辦凍結的 stale 事故，還會讓人誤信狀態已被驗證」——v3 已經把它的保證收窄成只擋沒寫開工標記的推送，不再宣稱驗證交接內容，所以那個理由不再擋得住補裝。handoff skill 與 `check_docs.py` 的例外不變。
 
 <a id="rule-1"></a>
 
@@ -236,6 +238,10 @@
 > - **本 repo 自己的 `HANDOFF.md`、`.claude/hooks/repo-git-check.sh`、`.claude/hooks/repo-action-rules.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在副本拓撲裡**，`sync_project.py` 不要碰它們；它已明確拒絕把本 repo 當目標。
 
 2026-11-14（v3 對齊）：`repo-git-check.sh` 從「誰的副本都不是」改成**部署包 3.10 `git-freshness.sh` 的逐字副本**。原本不抄的理由是「`sync_project.py --all` 掃不到這個 repo，抄過來會變成唯一落後又沒有徵兆的那一份」，所以自己寫一支判讀版（🔴／🟡、全綠行、工具身分猜測）。v3 D12 把部署出去的 hook 改成只報事實、最多 5 行之後，那支判讀版跟本 repo AGENTS.md 的共用制度副本（「session 開始時會自動 fetch 一次，印出 `[facts]` 開頭的幾行」）直接矛盾，也違反 D12 的「只報事實，不下指示」。落後沒有徵兆的老問題改用跟共用制度副本同一種做法解決：`verify_bootstrap.py` 的「本 repo 開場 hook」逐位元組比對 3.10，不同就 FAIL（有負向測試），同時退掉只為判讀版而存在的「本 repo 工作中判讀」與「全綠行」兩項。它仍不在 `sync_project.py` 的拓撲裡（同步器拒絕本 repo），改了範本要手動重貼。3.10 第 4 行的版本提示會在這裡寫 `.claude/.bootstrap-version` 快取，所以本 repo 的 `.gitignore` 同時加了這一行。舊判讀版的事故紀錄（F01 子字串誤判、同機器換工具）在 git 歷史與 ARCHITECT 的變更紀錄裡，不在這裡重抄。
+
+2026-11-14 同日（使用者決定）：
+- **補裝 `repo-pre-push.sh`**：3.11 的手貼逐字副本，跟開場 hook 同一種做法；兩份接線都接 PreToolUse（Claude Code 的 matcher 跟 3.9 一樣是 `Bash|PowerShell`，Codex 經 `codex-hook.cmd`）。取名 `repo-*` 而不叫 `pre-push-handoff.sh`，是因為「本 repo 兩份接線」把指向 `pre-push-handoff.sh` 當成被 `sync_project.py` 覆蓋過的訊號，同名會讓那道守門失效。
+- **拿掉 `repo-action-rules.sh`**（2026-11-10 決策書 Q6 (a) 的試行）：它在 push、改部署包、改 hook 時把一段步驟摘要塞進 context。v3 的 D12 把逐步程序限定在碰到才讀的參考檔，D10 要求規則有准入與退場，這支試行一直沒有對照數據；使用者決定不留。驗證項「動作當下送規則」一起退場，換成「本 repo push 前 hook」。
 
 
 <a id="snapshot"></a>

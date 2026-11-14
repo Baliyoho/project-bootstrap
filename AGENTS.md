@@ -1,6 +1,6 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-14（本 repo 交接制度對齊 v3：開場 hook 換成部署包 3.10 的逐字副本，開工段改成只寫事實）；前次同日（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
+> 最後更新：2026-11-14（補裝 push 前 hook、拿掉動作提醒 hook；前面同日：本 repo 交接制度對齊 v3：開場 hook 換成部署包 3.10 的逐字副本，開工段改成只寫事實）；前次同日（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
 > 本檔只放規則；每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 <!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-14 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
@@ -41,8 +41,7 @@
 ## 跟部署出去的專案不同的地方
 
 - 驗證入口是 `python3 -X utf8 tools/verify_bootstrap.py`（不是 `verify_state.py`），exit 0 才算改完；提交前先逐檔 stage，再加 `--staged` 跑。
-- 沒有 `check_docs.py`，也沒有 pre-push hook：推 `main` 時沒有機械關卡檢查開工標記，上面不可違反的條件 1 在這裡沒有 hook 擋。
-- 開場 hook 是 `.claude/hooks/repo-git-check.sh`，內容是部署包 3.10 的逐字副本；要重查就重跑它。
+- 沒有 `check_docs.py`。開場 hook `.claude/hooks/repo-git-check.sh` 與 push 前 hook `.claude/hooks/repo-pre-push.sh` 是部署包 3.10、3.11 的逐字副本；要重查開場事實就重跑前者。
 - 沒有專案層的 handoff skill。要看參考程序就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）；這台機器沒有就讀 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的「3.8」節，不要搬檔或憑記憶重刻。
 - 其他文件碰到那件事才讀，對照表在 [ARCHITECT.md](ARCHITECT.md) 的「碰到才讀的文件」。
 
@@ -50,7 +49,7 @@
 
 ## 這個 repo 是什麼
 
-AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)（用法見 [README.md](README.md)）；不是知識庫，不存各專案的知識或狀態。現行需求權威是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）；[v2](project-bootstrap-requirements-decision.md) 並存供工具讀取與 Q1–Q31 追溯，衝突以 v3 為準。不部署的例外（測試、v2 原型、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`pre-push-handoff.sh`、`check_docs.py` 列在 ARCHITECT：那是已宣告的例外，不是空白，改成補裝由使用者決定。原型通過不授權切換程序。[為什麼](AGENTS-reasons.md#what)
+AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)（用法見 [README.md](README.md)）；不是知識庫，不存各專案的知識或狀態。現行需求權威是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）；[v2](project-bootstrap-requirements-decision.md) 並存供工具讀取與 Q1–Q31 追溯，衝突以 v3 為準。不部署的例外（測試、v2 原型、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`check_docs.py` 列在 ARCHITECT：那是已宣告的例外，不是空白，改成補裝由使用者決定。原型通過不授權切換程序。[為什麼](AGENTS-reasons.md#what)
 
 ## 鐵律
 
@@ -71,7 +70,7 @@ AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-B
 - 接線路徑一律相對、不假設 cwd：前面掛 `$(git rev-parse --show-cdup)`；Antigravity 刻意不跟。[為什麼](AGENTS-reasons.md#copy-4)
 - `.agents/` 只放指標與接線，skill 指標的 `description` 寫滿觸發詞。[為什麼](AGENTS-reasons.md#copy-5)
 - Codex 啟動器也要同步（`sync_project.py --codex-only`）；接線改過要重新審核並驗收實際執行。[為什麼](AGENTS-reasons.md#copy-6)
-- 本 repo 自己的 `HANDOFF.md`、兩支 `repo-*.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在拓撲裡，`sync_project.py` 不碰；其中 `repo-git-check.sh` 是 3.10 的手貼副本，改了範本要手動重貼，驗證器比對逐字相同。[為什麼](AGENTS-reasons.md#copy-7)
+- 本 repo 自己的 `HANDOFF.md`、兩支 `repo-*.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在拓撲裡，`sync_project.py` 不碰；其中 `repo-git-check.sh`、`repo-pre-push.sh` 是 3.10、3.11 的手貼副本，改了範本要手動重貼，驗證器比對逐字相同。[為什麼](AGENTS-reasons.md#copy-7)
 
 ## 本 repo 的交接快照
 

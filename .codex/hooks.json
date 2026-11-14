@@ -12,6 +12,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-cdup).claude/hooks/repo-pre-push.sh\"",
+            "commandWindows": "cmd /d /c \"$((git rev-parse --show-cdup) -replace '/','\\').claude\\hooks\\codex-hook.cmd\" repo-pre-push.sh; exit $LASTEXITCODE",
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }
