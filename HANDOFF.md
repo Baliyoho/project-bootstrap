@@ -19,6 +19,7 @@
 
 - **Codex 接線互動驗收與 3.10 修正（46f4a26）**：2026-11-14 12:40–12:49 在 Codex CLI 0.169.0 的 `/hooks` 逐支審核並信任；首次新 session 發現裸 `[facts]` 被判為壞 JSON，修正為 SessionStart `hookSpecificOutput.additionalContext` 後，模型不讀檔即正確回報 4 行、origin SHA 與工作中欄。PreToolUse 以暫時探針確認一次 `git push --dry-run` 觸發一次 hook，探針已移除。四個已部署專案的 3.10 副本同步並推送（NAS_MAINT 6069093、NAA_TR bb334fc、grist-workflow 5a9e797、鍵鼠同部署_mac 660d80b）；四份與範本逐位元組相同，兩份全域 skill 原已相同。Windows Codex 尚未實跑。
 - **四個專案與阻擋情境的互動驗收（2026-11-14 15:15–15:21）**：逐專案在 Codex CLI 的 `/hooks` 審核並信任 SessionStart／PreToolUse，重開 session 後，模型不讀檔即各自正確回報 4 行 `[facts]`、待續分支、origin SHA 與工作中欄。另建暫存 Git repo：origin 的工作中為已交棒，本機多一個沒改 HANDOFF 的 commit；Codex 對 `git push --dry-run origin main` 顯示 PreToolUse 擋下與 `[handoff-check]` 原因，rollout 的 `CommandExecution` 為 0、origin 未前進。暫存 repo 已清理。
+- **第 2 期 Codex＋macOS 制度實測（2026-11-14 15:45–16:23）**：現行部署包的 handoff-ab 完整組第一輪 12／12、第二輪 6／6 通過，損害格 0；18 份 rollout 都是 `gpt-6-sol`、收到 SessionStart `[facts]` 並載入專案 skill。F50 在同一個 Codex CLI 聊天跑完五輪，Git 接棒／兩次交棒／只讀續聊／停下等決定及要求的 `session：` 行都符合；CLI 沒有改名工具，依規則寫不適用，桌面 App 的標題項尚未驗。方法與結果在 `experiments/handoff-ab/CODEX-RESULTS.md`。
 
 - **Windows/Codex 交棒沒做完（12:23–12:32）**：`DESKTOP-M8MRS05` 上那台的 Codex 還沒升級 bootstrap，接棒時只推了開工標記（2750f1d，只改「工作中」那一行），交棒卡住沒推上去。Mac 這邊查過，origin 沒有其他變更。使用者確認那個 session 已經關掉、沒留下要保留的東西後，Mac 才接手（1b7b36c）並交棒。
 
@@ -33,7 +34,7 @@
 
 ## 未完成／下一步
 
-1. 第 2 期 Codex＋macOS：同一套 handoff-ab 兩輪＋互動驗證，換 Codex 跑。要呼叫模型，開始前先問使用者；這個月的額外用量 2026-11-14 已到 94%（$7.54／$8）。
+1. 第 2 期剩餘：在 Codex 桌面 App 的獨立測試聊天驗 F50 標題、狀態符號、起始時間與交棒累計。CLI 無改名工具，不能把五輪 CLI 結果當桌面標題驗收；使用者這輪決定先記錄 CLI 結果，不建立測試聊天。額外用量不可用；本輪逐格查訂閱用量並在五小時窗重置後才呼叫。
 2. Windows Codex 的新版 SessionStart JSON 接線尚未實跑；別台機器的全域 `~/.claude`、`~/.codex` handoff skill 還是舊版（`DESKTOP-M8MRS05` 已確認是舊的）。從已同步的專案複製六個檔覆蓋，然後在那台跑 `git status`／`git log origin/main..HEAD`，有沒推的殘留就直接丟掉，不要推。
 3. 各專案開場可能印「共用制度比上游新：本機 v2026-11-14.2，上游 v2026-11-14」：上游版本快取 720 分鐘，最晚 12 小時自己消失；要立刻消就由使用者刪該專案的 `.claude/.bootstrap-version`。
 
@@ -62,6 +63,7 @@
 - 同輪 `verify_bootstrap.py` exit 0，`uv run --locked pytest -q` 435 通過、369 subtests 通過；Windows CLI 未實跑。B3 本 repo 用 `verify_bootstrap.py`，B4 沒有 `check_docs.py`（已宣告例外）。
 - 四個已部署專案的 hook JSON 直接解析通過，`check_docs.py --staged` 都 exit 0；本輪 A4：NAS_MAINT errors=0 skipped=0，NAA_TR NOT_CONFIGURED，grist-workflow errors=0 skipped=2（缺 `.env`，exit 2），鍵鼠同部署_mac PASS:2 SKIP:3。未跑各專案的業務測試或 Windows CLI。
 - 模型呼叫：本輪 Codex 互動驗收用了額外模型呼叫，使用者於 2026-11-14 授權。
+- 2026-11-14 第 2 期：Codex 訂閱額度，兩輪 18 次有效；一次 `workspace-write` 沙箱擋 `.git/FETCH_HEAD` 的初次煙霧測試不計入結果，另建乾淨 fixture 重跑。F50 CLI 五輪另計。`codex_selfcheck.py` 六項正負向探針通過；新增實驗執行器與結果文件後 `verify_bootstrap.py` exit 0、`uv run --locked pytest -q` 435 passed／369 subtests。桌面 App 改名未驗。
 
 ## 懸置事項（AI 勿自行處理）
 

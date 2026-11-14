@@ -1,6 +1,6 @@
 # handoff-ab：完整版與極簡版骨架的對照實測
 
-> 最後更新：2026-11-13（24 次已跑完，結果見 [RESULTS.md](RESULTS.md)；下文是跑之前的設計，跑的過程中改過的三處記在結果檔）
+> 最後更新：2026-11-14（新增 Codex＋macOS 執行入口；原始 Claude Code 實測結果見 [RESULTS.md](RESULTS.md)；下文是跑之前的設計，跑的過程中改過的三處記在結果檔）
 > 第二輪（六個較難的情境，12 次，已跑完）的設計在 [ROUND2.md](ROUND2.md)，結果併在 RESULTS.md。
 > 這是實驗，不是制度：不改 `src/kit/`、部署包、全域 skill 或任何專案，結果出來之前不授權改需求決策書。
 
@@ -23,6 +23,24 @@
 | `common.py` | 情境清單、開場訊息、受測環境 |
 
 ## 怎麼跑
+
+### Codex＋macOS（v3 第 2 期）
+
+`codex_run.py` 沿用本目錄的 fixture 與機器評分，只跑現行部署包的 `full` 組，與第 1 期 Claude Code 的 `full` 組對照；結果見 [CODEX-RESULTS.md](CODEX-RESULTS.md)。兩輪分開使用 `HANDOFF_AB_ROOT`，第一輪 12 格，第二輪 6 格。每格前要讀 Codex 帳號的訂閱用量；五小時窗或七天窗已用到 85% 就停。Codex JSONL 沒有訂閱窗用量，因此這項守門由呼叫者執行，不靠 `codex_run.py` 自行判斷。
+
+工作區必須在 repo 之外。先在各工作區的 `codex-home/auth.json` 建立指向目前 ChatGPT 登入檔的 symlink；隔離的 `CODEX_HOME` 不會載入家目錄的 handoff skill，`preflight` 會確認仍用 ChatGPT 登入，且不會輸出憑證。`codex debug prompt-input` 可在第一格開始前核對專案 `AGENTS.md` 與 `.agents/skills/handoff/` 已載入。
+
+```bash
+python3 -X utf8 codex_selfcheck.py
+HANDOFF_AB_ROOT=/tmp/pb-codex-ab-r1 python3 -X utf8 codex_run.py preflight
+HANDOFF_AB_ROOT=/tmp/pb-codex-ab-r1 python3 -X utf8 codex_run.py plan
+HANDOFF_AB_ROOT=/tmp/pb-codex-ab-r1 python3 -X utf8 codex_run.py one clean 1 --approved
+HANDOFF_AB_ROUND=2 HANDOFF_AB_ROOT=/tmp/pb-codex-ab-r2 python3 -X utf8 codex_run.py preflight
+```
+
+每格的 Codex JSONL、stderr、`score.json` 與 origin/work 留在工作區。`score.json` 的結果檢查沿用 `score.py`；CLI 是否正常結束另由 `codex_run.py` 檢查。每個 FAIL／INVALID 都要人工看原始紀錄；PASS 也按原規格抽查。第一格先當煙霧測試，確認 SessionStart hook、模型名稱、repo 寫入與本機 bare origin 推送都真的運作，再跑其餘格。
+
+### Claude Code（原始對照）
 
 都在這個目錄下執行。前兩步不呼叫模型。
 
