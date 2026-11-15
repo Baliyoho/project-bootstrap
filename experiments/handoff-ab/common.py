@@ -56,7 +56,8 @@ def config_dir(root):
     它只放登入狀態與 Claude Code 自己同步的通用 skill，preflight 每次都會查裡面沒有交接程序。
     HANDOFF_AB_CONFIG（2026-11-13 第 1 期加）指定一個設定目錄，讓另開工作區的兩輪也只登入一次。"""
     if os.environ.get('HANDOFF_AB_CONFIG'):
-        return pathlib.Path(os.environ['HANDOFF_AB_CONFIG']).resolve()
+        # 不 resolve：macOS 的登入憑證依設定目錄的路徑字串存放，/var 與 /private/var 是兩筆。
+        return pathlib.Path(os.path.abspath(os.environ['HANDOFF_AB_CONFIG']))
     if os.environ.get('HANDOFF_AB_ROOT'):
         return root / 'claude-config'
     return (pathlib.Path(tempfile.gettempdir()) / 'pb-handoff-ab' / 'claude-config').resolve()

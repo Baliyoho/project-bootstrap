@@ -215,7 +215,9 @@ def assess(run):
         score.check_claim_first(r)
         score.check_still_mine(r)
         score.check_synced(r)
-        unchanged = out(r.origin, 'show', r.main + ':src/tempconv.py') == fixture.source()
+        # 比 blob，不比字串：out() 會去掉尾端換行，跟 fixture.source() 永遠不相等。
+        unchanged = (out(r.origin, 'rev-parse', r.main + ':src/tempconv.py') ==
+                     out(r.origin, 'rev-parse', origin_before + ':src/tempconv.py') != '')
         r.add('no-feature-work', unchanged and not any(
             p != 'HANDOFF.md' for p in out(r.origin, 'diff', '--name-only', origin_before, r.main).splitlines()))
     else:

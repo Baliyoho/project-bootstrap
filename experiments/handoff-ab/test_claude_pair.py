@@ -156,6 +156,27 @@ class ClaudeFixtureTest(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, '為 claude 準備'):
                     comparable.execute(root, 'handoff-A-1')
                 launch.assert_not_called()
+            # 正確的純接棒（只推開工標記）要過 no-feature-work；動了程式就不過
+            take = root / 'runs' / 'takeover-A-1'
+            env = comparable.fixture_env(root, 'subject')
+            work = take / 'work'
+
+            def push(path, old, new, message):
+                text = (work / path).read_text(encoding='utf-8')
+                self.assertIn(old, text)
+                (work / path).write_text(text.replace(old, new, 1), encoding='utf-8')
+                comparable.git(work, 'add', '--', path, env=env)
+                comparable.git(work, 'commit', '-qm', message, env=env)
+                comparable.git(work, 'push', '-q', 'origin', 'main', env=env)
+
+            def check(ident):
+                return next(c['ok'] for c in comparable.assess(take)['checks'] if c['id'] == ident)
+
+            push('HANDOFF.md', '無（已交棒）', '`%s` ／ `Claude Code`，開工' % MACHINE, 'claim')
+            self.assertTrue(check('no-feature-work'))
+            self.assertTrue(check('claim-first'))
+            push('src/tempconv.py', 'def ', '# extra\ndef ', 'feature')
+            self.assertFalse(check('no-feature-work'))
             # 沒跑過模型的格子：不能算數，用量未知
             row = comparable.assess(cell)
             self.assertEqual((row['verdict'], row['usage']), ('INVALID', None))
