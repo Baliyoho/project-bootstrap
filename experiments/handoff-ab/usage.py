@@ -63,7 +63,8 @@ def codex(path, turn_id):
 
 
 def human_user(row):
-    if row.get('type') != 'user' or row.get('isSidechain'):
+    # isMeta rows are harness-injected text (e.g. a loaded skill body), not a new turn.
+    if row.get('type') != 'user' or row.get('isSidechain') or row.get('isMeta'):
         return False
     content = (row.get('message') or {}).get('content')
     return isinstance(content, str) or (isinstance(content, list) and any(

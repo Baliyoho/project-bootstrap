@@ -66,4 +66,20 @@
 
 機器評分檢查開工標記先推、末態占用、沒有開發、交棒釋回、成果不變、main 綠、本機同步與禁止操作。遠端確認是否真正比對 own marker、必要驗證是否按順序且有效、實際讀取範圍／等待及是否有多做任務，需看每格原始命令與輸出人工判定。每格 `review.json` 由審查者填 `subject_verification`、`task_scope`、`remote_confirmation` 的布林值或 `null`；審查說明另記於 repo 外，交棒的遠端確認項由 runner 內部標不適用。缺人工核對時總判定是 `PENDING_REVIEW`，不能宣稱全程 PASS；任何人工項 false 是 FAIL。CLI exit 非 0／timeout 一律 INVALID。每格 `run-config.json` 記實際 CLI 版本、模型與推理參數、JSON 事件格式、提示與起點雜湊；rollout 的模型另由有效性檢查。報告先列每格正確性與實際動作，再以配對的全程秒數、token 中位數與範圍及快取比例描述；樣本不足、動作未分化或差異落在波動範圍，寫未定，不推算訂閱額度收益。
 
+## Claude Code 介面（2026-11-15，離線驗證完成，模型尚未執行）
+
+`comparable.py` 以 `HANDOFF_AB_TOOL=claude` 切到 `claude_pair.py`；不設就是原本的 Codex 路徑，行為不變。兩個工具各用自己的 `HANDOFF_AB_ROOT`，`paired-plan.json` 記工具名，拿錯工作區會在啟動模型前拒跑。設計、提示、交錯順序、起點雜湊與污染檢查同上一節，結果只在 Claude 內部比較。
+
+- **環境**：這台機器的 CLI 是桌面 App 內建的 Claude Code 2.1.325，不在 PATH，由 `CLAUDE_CODE_EXECPATH` 或 `CLAUDE_BIN` 指定。受測用隔離設定目錄需使用者自己登入一次（不搬憑證）；`run.py preflight` 會印出登入指令並檢查訂閱登入。
+- **固定設定**：模型 `claude-opus-5-5`（沿用前兩輪 Claude 受測）、`--effort medium`；跟 Codex 的 medium 不同義。工具清單與權限模式同 `run.py`，拿掉 `--no-session-persistence` 並指定 `--session-id`，回合後才有唯一的 session 紀錄。
+- **交棒起點**：占用標記的工具名改成 `Claude Code`。沿用 Codex fixture 的話，受測者會把它當成別人的占用而依規則停下。
+- **有效性**：沿用 `score.validity` 的串流檢查（模型、handoff skill、第一則回覆前的 `[facts]`、沒碰測試 repo 外的制度檔、正常結束），再加 init 剛好一個且 session id 相符、result 剛好一個 success、唯一 session 紀錄、紀錄裡剛好一則人類訊息。任一不成立即 INVALID。
+- **用量**：`usage.py claude` 依唯一 user UUID 解析。本輪修了一個邊界：載入 skill 時 harness 會插一則 `isMeta` 文字訊息，舊判定把它當成下一輪，整個回合會回報未完成（全部未知）；真實紀錄已確認有這種列。現在略過 `isMeta`。CLI 在 result 事件自報的 `duration_ms`／`num_turns` 另存 `cli_reported` 當對照。
+- **用量守門**：每格前後讀串流最後一筆 `rate_limit_event`；超額、被限流或五小時窗到 85% 就不跑下一格，`score.json` 的 `limit` 會有字。
+- **可觀測動作**：Read／Grep／Glob 與 Bash 讀取、驗證命令、git 命令、Skill 呼叫與工具呼叫總數，同一個 tool_use id 只算一次；耗時、等待回合與重試沒有可靠事件，維持 `null`。
+
+離線測試 `test_claude_pair.py` 5 項：合成串流與 session 紀錄的有效格、重複串流去重、`isMeta` 不切斷回合、模型不符／缺 `[facts]`／session id 不符／錯誤結束／缺 result／碰 repo 外制度檔各自 INVALID、多一則人類訊息／未完成／缺紀錄／紀錄不唯一時用量為未知、指令保留 session 紀錄、Claude fixture 的占用標記與拿錯工作區拒跑。拿掉 `isMeta` 修正時測試會失敗（已實際試過）。串流與 session 紀錄的實際欄位只對過既有真實 session 紀錄與前兩輪的解析碼，2.1.325 的 `-p` 串流要等第一格煙霧才算驗過。
+
+執行：`HANDOFF_AB_TOOL=claude HANDOFF_AB_ROOT=<repo 外新目錄> python3 -X utf8 experiments/handoff-ab/comparable.py prepare`，登入後 `run <CELL> --approved`。先跑 `takeover-A-1`、`takeover-B-1`、`handoff-B-1`、`handoff-A-1` 四格煙霧，有效才續跑其餘八格。
+
 回報已完成項目、實際改動、驗證結果與仍未驗證事項。第一階段完成即可提供具體第二階段測試清單供使用者授權。使用者要求交棒時再覆寫 HANDOFF 並釋回占用。

@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Prepare, run, and assess paired pure takeover / handoff Codex fixtures.
+"""Prepare, run, and assess paired pure takeover / handoff fixtures.
 
 No model is called by prepare, plan, or assess. `run CELL --approved` calls one
-subscription-backed Codex turn. Raw logs and repositories stay under
+subscription-backed turn of the selected tool: Codex by default, Claude Code with
+HANDOFF_AB_TOOL=claude. Each tool needs its own HANDOFF_AB_ROOT; results are
+compared within a tool, never across tools. Raw logs and repositories stay under
 HANDOFF_AB_ROOT, outside this public repository.
 """
 import hashlib
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -14,14 +17,19 @@ import sys
 import time
 
 import build
+import claude_pair
 import codex_run
 import fixture
 import phase2_handoff_probe
+import run as claude_cli
 import score
 import usage
 from common import (IDLE, MACHINE, ancestor_problems, busy_value, fixture_env,
                     git, lab_root, out, read, stamp, write_lf)
 
+TOOL = os.environ.get('HANDOFF_AB_TOOL', 'codex')
+if TOOL not in ('codex', 'claude'):
+    raise SystemExit('HANDOFF_AB_TOOL 只能是 codex 或 claude')
 REPEATS = 3
 ARMS = ('A', 'B')
 KINDS = ('takeover', 'handoff')
@@ -43,6 +51,10 @@ ORDER = [(kind, arm, n) for n in range(1, REPEATS + 1)
          for kind, arms in (('takeover', ('A', 'B') if n % 2 else ('B', 'A')),
                             ('handoff', ('B', 'A') if n % 2 else ('A', 'B')))
          for arm in arms]
+
+
+def events_name():
+    return claude_pair.EVENTS if TOOL == 'claude' else 'codex-events.jsonl'
 
 
 def cell_name(kind, arm, n):
@@ -86,7 +98,8 @@ def make_master(root, kind, n):
     old = root / 'runs' / 'normal-handoff-full-1'
     if old.exists():
         raise RuntimeError('保留既有 fixture，不覆寫：%s' % old)
-    phase2_handoff_probe.prepare(root)
+    # 交棒起點的占用者必須是受測工具自己，否則受測者會把它當成別人的標記而停下來。
+    phase2_handoff_probe.prepare(root, claude_pair.MARKER_TOOL if TOOL == 'claude' else 'Codex CLI')
     new = root / 'runs' / ('pair-handoff-%d' % n)
     old.rename(new)
     return new
@@ -130,14 +143,15 @@ def prepare(root):
             pairs.append({'kind': kind, 'repeat': n, 'snapshot_sha256': hashes[0],
                           'head': out(a / 'work', 'rev-parse', 'HEAD')})
     write_lf(root / 'paired-plan.json', json.dumps({
-        'model': codex_run.MODEL, 'reasoning': 'medium', 'arm_A': 'task only',
+        'tool': TOOL, 'model': claude_pair.MODEL if TOOL == 'claude' else codex_run.MODEL,
+        'reasoning': claude_pair.EFFORT if TOOL == 'claude' else 'medium', 'arm_A': 'task only',
         'arm_B': 'same task plus execution guidance', 'order': [cell_name(*x) for x in ORDER],
         'pairs': pairs}, ensure_ascii=False, indent=2) + '\n')
     return pairs
 
 
 def events(run):
-    path = run / 'codex-events.jsonl'
+    path = run / events_name()
     if not path.exists():
         return None
     try:
@@ -157,6 +171,8 @@ def commands(run):
 
 def observation(run):
     """Count only observable CLI tool calls; unavailable durations remain null."""
+    if TOOL == 'claude':
+        return claude_pair.observation(run)
     cmds = commands(run)
     if cmds is None:
         return {key: None for key in ('read_commands', 'verify_commands', 'git_commands',
@@ -214,7 +230,8 @@ def assess(run):
         score.check_synced(r)
     invalid = []
     if events(run) is not None:
-        invalid = codex_run.codex_validity(run)
+        invalid = (claude_pair.validity(run.parent.parent, run) if TOOL == 'claude'
+                   else codex_run.codex_validity(run))
     else:
         invalid = ['缺模型事件或事件不可解析']
     wall = json.loads(read(run / 'wall.json')) if (run / 'wall.json').exists() else {}
@@ -231,8 +248,13 @@ def assess(run):
               'wall_seconds': wall.get('seconds'),
               'manual_review': review,
               'usage': None}
+    if TOOL == 'claude':
+        result['usage'] = claude_pair.usage_for(run.parent.parent, run)
+        result['cli_reported'] = claude_pair.cli_reported(run)
+        # 只用訂閱額度：超額、被限流或五小時窗到 85% 時這裡會有字，看到就停，不跑下一格。
+        result['limit'] = claude_cli.limit_problem(run) if events(run) is not None else None
     ids = [e.get('thread_id') for e in (events(run) or []) if e.get('type') == 'thread.started']
-    if len(ids) == 1:
+    if TOOL == 'codex' and len(ids) == 1:
         rollouts = list((run.parent.parent / 'codex-home' / 'sessions').rglob('*%s*.jsonl' % ids[0]))
         if len(rollouts) == 1:
             starts = [e.get('payload', {}).get('turn_id') for e in usage.records(rollouts[0])
@@ -246,14 +268,20 @@ def assess(run):
 
 def execute(root, name):
     run = root / 'runs' / name
-    if not (run / 'meta.json').exists() or (run / 'codex-events.jsonl').exists():
+    if not (run / 'meta.json').exists() or (run / events_name()).exists():
         raise RuntimeError('fixture 不存在或此格已跑')
     if codex_run.calls(root) >= len(ORDER):
         raise RuntimeError('本計劃 12 次模型回合已達上限')
+    planned = json.loads(read(root / 'paired-plan.json')).get('tool', 'codex')
+    if planned != TOOL:
+        raise RuntimeError('這個工作區是為 %s 準備的，現在選的是 %s' % (planned, TOOL))
     meta = json.loads(read(run / 'meta.json'))
     problems = starting_state_errors(run, meta)
     if problems:
         raise RuntimeError('受測前 fixture 已變：' + '；'.join(problems))
+    if TOOL == 'claude':
+        claude_pair.launch(root, run, meta, name)
+        return assess(run)
     if codex_run.preflight(root):
         raise RuntimeError('Codex preflight 未過')
     prompt = meta['prompt']
