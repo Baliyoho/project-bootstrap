@@ -16,7 +16,7 @@ PROMPT = ('我們這個 session 已把 celsius_to_kelvin 與測試做好並推�
           '我現在不在電腦前，請自行完成。')
 
 
-def prepare(root, tool='Codex CLI'):
+def prepare(root, tool='Codex CLI', minutes_ago=20):
     run = root / 'runs' / 'normal-handoff-full-1'
     if run.exists():
         raise SystemExit('fixture 已存在')
@@ -25,7 +25,7 @@ def prepare(root, tool='Codex CLI'):
     run = root / 'runs' / 'normal-handoff-full-1'
     work = run / 'work'
     git(work, 'remote', 'set-url', 'origin', run / 'origin.git')
-    marker = fixture.marker(MACHINE, tool, 20)
+    marker = fixture.marker(MACHINE, tool, minutes_ago)
     write_lf(work / 'src/tempconv.py', fixture.source(c2k=True))
     write_lf(work / 'tests/test_tempconv.py', fixture.tests(c2k=True))
     write_lf(work / 'HANDOFF.md', fixture.handoff(busy=marker, done_c2k=True, hours_ago=0))

@@ -148,7 +148,8 @@ def limit_problem(run):
     # 真正的界線是下面的用量門檻，留 15% 給同一個帳號上其他 session 的用量。
     if last.get('status') not in ('allowed', 'allowed_warning'):
         return '被限流（status=%s）' % last.get('status')
-    if used >= 0.85:
+    # 門檻預設 85%；使用者明確同意用到更高時用 HANDOFF_AB_LIMIT 調，超額與限流的檢查不受影響。
+    if used >= float(os.environ.get('HANDOFF_AB_LIMIT', '0.85')):
         return '用量已到 %d%%' % round(used * 100)
     return None
 

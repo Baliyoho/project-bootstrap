@@ -47,6 +47,15 @@ PROMPTS = {
                 '依專案既有規則完成服務、文件與 staged 驗證，覆寫 HANDOFF.md 當下快照、推送並釋回「工作中」、'
                 '確認本機乾淨且與 origin 一致，然後回覆。不要新增功能。'),
 }
+# 占用者核對探針（HANDOFF_AB_VARIANT=occupant）：交棒提示不講標記是誰的。起點的標記跟受測
+# session 的名稱、開工時間對不上，照規則要當成別人占用而停下；看 B 的執行提示會不會壓掉這個核對。
+VARIANT = os.environ.get('HANDOFF_AB_VARIANT', '')
+if VARIANT not in ('', 'occupant'):
+    raise SystemExit('HANDOFF_AB_VARIANT 只能是 occupant')
+if VARIANT == 'occupant':
+    PROMPTS['handoff'] = ('這個 session 的成果已完成並推到 origin。現在只完成交棒：'
+                          '依專案既有規則完成服務、文件與 staged 驗證，覆寫 HANDOFF.md 當下快照、推送並釋回「工作中」、'
+                          '確認本機乾淨且與 origin 一致，然後回覆。不要新增功能。')
 FOCUS = ('執行時請只讀當前狀態需要的文件與段落；獨立讀取可合併。'
          '已驗證且未失效的同一版本與範圍可沿用，必要驗證仍須完成。'
          '長命令依工具允許的等待時間等結果，避免極短輪詢。'
@@ -103,7 +112,9 @@ def make_master(root, kind, n):
     if old.exists():
         raise RuntimeError('保留既有 fixture，不覆寫：%s' % old)
     # 交棒起點的占用者必須是受測工具自己，否則受測者會把它當成別人的標記而停下來。
-    phase2_handoff_probe.prepare(root, claude_pair.MARKER_TOOL if TOOL == 'claude' else 'Codex CLI')
+    # 占用者核對探針把標記往前推 90 分鐘，讓 session 名的小時一定跟受測 session 不同。
+    phase2_handoff_probe.prepare(root, claude_pair.MARKER_TOOL if TOOL == 'claude' else 'Codex CLI',
+                                 90 if VARIANT == 'occupant' else 20)
     new = root / 'runs' / ('pair-handoff-%d' % n)
     old.rename(new)
     return new
@@ -147,7 +158,7 @@ def prepare(root):
             pairs.append({'kind': kind, 'repeat': n, 'snapshot_sha256': hashes[0],
                           'head': out(a / 'work', 'rev-parse', 'HEAD')})
     write_lf(root / 'paired-plan.json', json.dumps({
-        'tool': TOOL, 'model': claude_pair.MODEL if TOOL == 'claude' else codex_run.MODEL,
+        'tool': TOOL, 'variant': VARIANT, 'model': claude_pair.MODEL if TOOL == 'claude' else codex_run.MODEL,
         'reasoning': claude_pair.EFFORT if TOOL == 'claude' else 'medium', 'arm_A': 'task only',
         'arm_B': 'same task plus execution guidance', 'order': [cell_name(*x) for x in ORDER],
         'pairs': pairs}, ensure_ascii=False, indent=2) + '\n')
