@@ -119,6 +119,46 @@ def usage_for(root, run):
     return usage.claude(path, ident) if ident else None
 
 
+def tool_timings(root, run):
+    """每個工具呼叫的實際耗時（session 紀錄裡 tool_use 到 tool_result 的時間差）。
+    找不到唯一紀錄回 None；個別呼叫缺時間戳或沒有結果，那一筆的秒數是 None。"""
+    path = session_file(root, run_config(run).get('session_id'))
+    if path is None:
+        return None
+    started, rows = {}, []
+    try:
+        for row in usage.records(path):
+            content = (row.get('message') or {}).get('content')
+            if row.get('isSidechain') or not isinstance(content, list):
+                continue
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if row.get('type') == 'assistant' and block.get('type') == 'tool_use' \
+                        and block.get('id') not in started:
+                    args = block.get('input') or {}
+                    command = str(args.get('command', ''))
+                    entry = {'name': block.get('name', ''), 'seconds': None,
+                             'timeout_ms': args.get('timeout'),
+                             'background': bool(args.get('run_in_background')),
+                             'verify': any(t in command for t in VERIFY_TOKENS)}
+                    started[block.get('id')] = (row.get('timestamp'), entry)
+                    rows.append(entry)
+                elif row.get('type') == 'user' and block.get('type') == 'tool_result' \
+                        and block.get('tool_use_id') in started:
+                    begin, entry = started[block['tool_use_id']]
+                    entry['seconds'] = usage.seconds(begin, row.get('timestamp'))
+    except (OSError, ValueError):
+        return None
+    known = [r['seconds'] for r in rows]
+    verify = [r['seconds'] for r in rows if r['verify']]
+    total = lambda values: round(sum(values), 3) if values and None not in values else None
+    return {'calls': rows, 'tool_seconds': total(known), 'verify_seconds': total(verify),
+            'verify_calls': len(verify), 'longest_seconds': max(known) if known and None not in known else None,
+            'background_calls': sum(r['background'] for r in rows),
+            'timeouts_set': [r['timeout_ms'] for r in rows if r['timeout_ms'] is not None]}
+
+
 def cli_reported(run):
     """CLI 自己在 result 事件回報的值，只當對照，不取代 usage.py。"""
     parsed = score.transcript(run)

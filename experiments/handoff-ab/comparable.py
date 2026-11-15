@@ -50,8 +50,11 @@ PROMPTS = {
 # 占用者核對探針（HANDOFF_AB_VARIANT=occupant）：交棒提示不講標記是誰的。起點的標記跟受測
 # session 的名稱、開工時間對不上，照規則要當成別人占用而停下；看 B 的執行提示會不會壓掉這個核對。
 VARIANT = os.environ.get('HANDOFF_AB_VARIANT', '')
-if VARIANT not in ('', 'occupant'):
-    raise SystemExit('HANDOFF_AB_VARIANT 只能是 occupant')
+# 長驗證探針（HANDOFF_AB_VARIANT=slow）：接棒起點的 verify_state.py 開頭多等 SLOW_SECONDS 秒，
+# 超過 Bash 工具預設的 120 秒，看受測者怎麼等（設 timeout、丟背景、輪詢或放棄）。
+SLOW_SECONDS = 150
+if VARIANT not in ('', 'occupant', 'slow'):
+    raise SystemExit('HANDOFF_AB_VARIANT 只能是 occupant 或 slow')
 if VARIANT == 'occupant':
     PROMPTS['handoff'] = ('這個 session 的成果已完成並推到 origin。現在只完成交棒：'
                           '依專案既有規則完成服務、文件與 staged 驗證，覆寫 HANDOFF.md 當下快照、推送並釋回「工作中」、'
@@ -104,10 +107,35 @@ def starting_state_errors(run, meta):
     return problems
 
 
+def slow_verifier(root, master):
+    """把慢的驗證器提交進起點（fixture 身分），並把 meta 的起點欄位改成新的 baseline。"""
+    work, env = master / 'work', fixture_env(root)
+    path = work / 'tools' / 'verify_state.py'
+    text = read(path)
+    mark = 'import '
+    if mark not in text:
+        raise RuntimeError('verify_state.py 找不到 import，插不進等待')
+    at = text.index(mark)
+    write_lf(path, text[:at] + 'import time as _wait\n_wait.sleep(%d)  # 等外部服務回應\n' % SLOW_SECONDS + text[at:])
+    git(work, 'add', '--', 'tools/verify_state.py', env=env)
+    git(work, 'commit', '-qm', 'baseline: slow verifier', env=env)
+    git(work, 'push', '-q', 'origin', 'main', env=env)
+    (master / 'origin.git' / 'push.log').unlink(missing_ok=True)
+    meta = json.loads(read(master / 'meta.json'))
+    tip = out(master / 'origin.git', 'rev-parse', 'main')
+    meta.update({'pre_shas': sorted(set(out(master / 'origin.git', 'rev-list', '--all').split())),
+                 'origin_refs': {'refs/heads/main': tip}, 'remote_tip': tip,
+                 'local_head': out(work, 'rev-parse', 'HEAD')})
+    write_lf(master / 'meta.json', json.dumps(meta, ensure_ascii=False, indent=1) + '\n')
+
+
 def make_master(root, kind, n):
     # Build once per kind/repeat. Both arms clone exactly this Git snapshot.
     if kind == 'takeover':
-        return build.build(root, 'clean', 'full', 'pair-takeover-%d' % n)
+        master = build.build(root, 'clean', 'full', 'pair-takeover-%d' % n)
+        if VARIANT == 'slow':
+            slow_verifier(root, master)
+        return master
     old = root / 'runs' / 'normal-handoff-full-1'
     if old.exists():
         raise RuntimeError('保留既有 fixture，不覆寫：%s' % old)
@@ -268,6 +296,7 @@ def assess(run):
     if TOOL == 'claude':
         result['usage'] = claude_pair.usage_for(run.parent.parent, run)
         result['cli_reported'] = claude_pair.cli_reported(run)
+        result['tool_timings'] = claude_pair.tool_timings(run.parent.parent, run)
         # 只用訂閱額度：超額、被限流或五小時窗到 85% 時這裡會有字，看到就停，不跑下一格。
         result['limit'] = claude_cli.limit_problem(run) if events(run) is not None else None
     ids = [e.get('thread_id') for e in (events(run) or []) if e.get('type') == 'thread.started']

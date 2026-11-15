@@ -96,6 +96,31 @@ class ClaudePairTest(unittest.TestCase):
         self.assertIsNone(seen['waiting_seconds'])
         self.assertEqual(claude_pair.cli_reported(self.run_dir)['num_turns'], 6)
 
+    def test_tool_timings_from_session_record(self):
+        def use(ident, when, **args):
+            return {'type': 'assistant', 'timestamp': when, 'message': {'id': 'm' + ident, 'content': [
+                {'type': 'tool_use', 'id': ident, 'name': 'Bash', 'input': args}]}}
+
+        def done(ident, when):
+            return {'type': 'user', 'timestamp': when, 'message': {'content': [
+                {'type': 'tool_result', 'tool_use_id': ident, 'content': 'ok'}]}}
+        rows = [{'type': 'user', 'uuid': 'u1', 'message': {'content': 'start'}},
+                use('a', '2026-01-01T00:00:00Z', command='git status'),
+                use('a', '2026-01-01T00:00:00Z', command='git status'),      # 重複串流
+                done('a', '2026-01-01T00:00:01.500Z'),
+                use('b', '2026-01-01T00:00:02Z', command='python3 tools/verify_state.py',
+                    timeout=300000),
+                done('b', '2026-01-01T00:02:32Z'),
+                use('c', '2026-01-01T00:02:33Z', command='sleep 1', run_in_background=True)]
+        self.write(self.projects / (SID + '.jsonl'), rows)
+        got = claude_pair.tool_timings(self.root, self.run_dir)
+        self.assertEqual([c['seconds'] for c in got['calls']], [1.5, 150.0, None])
+        self.assertEqual((got['verify_seconds'], got['verify_calls'], got['timeouts_set'],
+                          got['background_calls']), (150.0, 1, [300000], 1))
+        self.assertIsNone(got['tool_seconds'])          # 有一筆沒結果，總和未知，不當成 0
+        (self.projects / (SID + '.jsonl')).unlink()
+        self.assertIsNone(claude_pair.tool_timings(self.root, self.run_dir))
+
     def test_stream_problems_are_invalid(self):
         for rows, expect in (
                 (stream(model='claude-sonnet-5-5'), '模型是'),
@@ -137,6 +162,24 @@ class ClaudePairTest(unittest.TestCase):
 
 
 class ClaudeFixtureTest(unittest.TestCase):
+    def test_slow_variant_puts_wait_in_baseline(self):
+        with tempfile.TemporaryDirectory(prefix='pb-claude-slow-') as folder, \
+                mock.patch.object(comparable, 'TOOL', 'claude'), \
+                mock.patch.object(comparable, 'VARIANT', 'slow'):
+            root = pathlib.Path(folder).resolve()
+            comparable.prepare(root)
+            for arm in comparable.ARMS:
+                cell = root / 'runs' / ('takeover-%s-1' % arm)
+                meta = json.loads((cell / 'meta.json').read_text(encoding='utf-8'))
+                text = out(cell / 'origin.git', 'show', 'main:tools/verify_state.py')
+                self.assertIn('_wait.sleep(%d)' % comparable.SLOW_SECONDS, text)
+                compile(text, 'verify_state.py', 'exec')
+                self.assertEqual(comparable.starting_state_errors(cell, meta), [])
+                self.assertEqual(meta['remote_tip'], out(cell / 'origin.git', 'rev-parse', 'main'))
+                self.assertFalse((cell / 'origin.git' / 'push.log').exists())
+            self.assertNotIn('_wait', out(root / 'runs' / 'handoff-A-1' / 'origin.git',
+                                          'show', 'main:tools/verify_state.py'))
+
     def test_claude_fixture_marker_and_tool_guard(self):
         with tempfile.TemporaryDirectory(prefix='pb-claude-fixture-') as folder, \
                 mock.patch.object(comparable, 'TOOL', 'claude'):

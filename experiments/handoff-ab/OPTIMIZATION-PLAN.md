@@ -82,4 +82,14 @@
 
 執行：`HANDOFF_AB_TOOL=claude HANDOFF_AB_ROOT=<repo 外新目錄> python3 -X utf8 experiments/handoff-ab/comparable.py prepare`，登入後 `run <CELL> --approved`。先跑 `takeover-A-1`、`takeover-B-1`、`handoff-B-1`、`handoff-A-1` 四格煙霧，有效才續跑其餘八格。macOS 上假家目錄存不了登入憑證，實跑用 `HANDOFF_AB_HOME=real` 並以 `HANDOFF_AB_CONFIG` 指定登入時用的同一個路徑字串。交棒提示 2026-11-15 起明講占用標記是受測 session 自己的，原因見結果檔；Codex 路徑共用這句，尚未實跑。
 
+## Claude Code 後續探針的介面（2026-11-15）
+
+使用者同意逐項測。結果寫在 [PHASE2-RESULTS.md](PHASE2-RESULTS.md)；這裡只記怎麼跑。都只支援 `HANDOFF_AB_TOOL=claude`，各用新的 `HANDOFF_AB_ROOT`。
+
+- **占用者核對**：`HANDOFF_AB_VARIANT=occupant` 再 `prepare`。交棒提示不講標記是誰的，起點標記早 90 分鐘；只跑 handoff 格。正解是停下，所以機器評分的 FAIL（沒推、沒釋回）在這個探針裡代表「停下」。
+- **長驗證等待**：`HANDOFF_AB_VARIANT=slow` 再 `prepare`。接棒起點的 `verify_state.py` 多等 150 秒，超過 Bash 工具預設的 120 秒；只跑 takeover 格。`score.json` 的 `tool_timings` 由 session 紀錄算每個工具呼叫的耗時、設了多少 timeout、有沒有丟背景；缺結果的呼叫秒數是 `null`，總和也跟著未知。
+- **同 session 先接棒再交棒**：一般 `prepare` 後用 `relay.py run takeover-<組>-<次> --approved`，每格兩次模型呼叫（第二回合 `--resume`）。第一回合照純接棒評分存 `score-turn1.json`；第二回合的用量只算第二則人類訊息之後，而且那一則的文字必須就是第二句提示，否則用量未知、該格 INVALID。人工審查填 `review2.json`。
+- **用量門檻**：預設 85%，`HANDOFF_AB_LIMIT` 可調；超額與限流的檢查不受影響。帳號開了超額時，五小時窗用滿會直接轉成超額計費，串流不報錯。
+- 離線測試：`test_claude_pair.py`（9 項）、`test_relay.py`（2 項）。
+
 回報已完成項目、實際改動、驗證結果與仍未驗證事項。第一階段完成即可提供具體第二階段測試清單供使用者授權。使用者要求交棒時再覆寫 HANDOFF 並釋回占用。

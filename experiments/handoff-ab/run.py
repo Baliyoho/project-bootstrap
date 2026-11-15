@@ -129,11 +129,11 @@ def command(prompt):
             '--no-session-persistence']
 
 
-def limit_problem(run):
+def limit_problem(run, name='stream.jsonl'):
     """只用訂閱額度（2026-11-13 第一格跑完後加）：帳號允許超額時，撞到上限會直接轉成超額計費，
     串流不會報錯。所以每格跑完讀最後一筆 rate_limit_event，有超額、被限流或五小時窗用到九成就停。"""
     last = None
-    for line in open(run / 'stream.jsonl', encoding='utf-8'):
+    for line in open(run / name, encoding='utf-8'):
         if '"rate_limit_event"' in line:
             try:
                 last = json.loads(line).get('rate_limit_info') or {}
