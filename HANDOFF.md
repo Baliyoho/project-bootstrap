@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支 `main`。
 - **待續分支**：無；`feature/v3` 保留但不是待續分支。
-- **工作中**：無（已交棒）
+- **工作中**：Mac ／ Claude Code ／ ㊣　11.15.08｜Claude接棒驗證｜工作中｜交棒0次（開工 2026-11-15 08:55 +08）
 - **骨架版本**：`2026-11-14.4`
 - 3.10 hook source 已更新至 `2026-11-15`，skill 內容未改。
 - 本機 Mac，使用 `python3`。前輪 Codex CLI 為 ChatGPT 訂閱登入；本輪未在常見位置找到 Claude CLI，下一棒需按當前環境重查。
