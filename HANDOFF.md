@@ -25,7 +25,7 @@
 
 ## 未完成／下一步
 
-1. 本輪 macOS CLI 測試計畫已完成。已在共用制度與交棒參考檔加上占用者核對，交棒前與推送釋回前都須查遠端。占用者探針尚未重跑。使用者指定本輪只處理占用者核對。
+1. 本輪 macOS CLI 測試計畫已完成。已在共用制度與交棒參考檔加上占用者核對，交棒前與推送釋回前都須查遠端。新版重跑占用者探針 6 格全數正確停下，零推送。詳見 [複驗結果](experiments/handoff-ab/PHASE2-RESULTS.md#codex-占用者核對複驗2026-11-15)。使用者指定本輪只處理占用者核對。
 2. Windows 實機驗收暫緩。桌面 App 的 F50 五步互動仍未驗，先前決定不另開測試聊天。CLI 既有 F50 結果見 [CODEX-RESULTS.md](experiments/handoff-ab/CODEX-RESULTS.md#f50-多輪互動codex-cli)。
 
 ## 地雷與注意事項
