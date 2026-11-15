@@ -90,6 +90,6 @@
 - **長驗證等待**：`HANDOFF_AB_VARIANT=slow` 再 `prepare`。接棒起點的 `verify_state.py` 多等 150 秒，超過 Bash 工具預設的 120 秒；只跑 takeover 格。`score.json` 的 `tool_timings` 由 session 紀錄算每個工具呼叫的耗時、設了多少 timeout、有沒有丟背景；缺結果的呼叫秒數是 `null`，總和也跟著未知。
 - **同 session 先接棒再交棒**：一般 `prepare` 後用 `relay.py run takeover-<組>-<次> --approved`，每格兩次模型呼叫（第二回合 `--resume`）。第一回合照純接棒評分存 `score-turn1.json`；第二回合的用量只算第二則人類訊息之後，而且那一則的文字必須就是第二句提示，否則用量未知、該格 INVALID。人工審查填 `review2.json`。
 - **用量門檻**：預設 85%，`HANDOFF_AB_LIMIT` 可調；超額與限流的檢查不受影響。帳號開了超額時，五小時窗用滿會直接轉成超額計費，串流不報錯。
-- 離線測試：`test_claude_pair.py`（9 項）、`test_relay.py`（2 項）。
+- 離線測試：`test_claude_pair.py`（7 項）、`test_relay.py`（2 項）。
 
 回報已完成項目、實際改動、驗證結果與仍未驗證事項。第一階段完成即可提供具體第二階段測試清單供使用者授權。使用者要求交棒時再覆寫 HANDOFF 並釋回占用。
