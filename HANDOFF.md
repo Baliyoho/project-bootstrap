@@ -1,54 +1,65 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-15 08:43（+08）
-- **交棒者**：Codex 桌面 App／Mac（交接棒效率驗證，交由 Claude Code 接續）
+- **交接時間**：2026-11-15 14:32（+08）
+- **交棒者**：Claude Code 桌面 App／Mac（Claude 端交接棒驗證全部做完，交回 Codex 做優化）
 
 ## 任務目標
 
-使用者要求 Claude Code 接棒做驗證。方針是落實既有流程／規則。補 Claude 執行介面與離線驗證，再做可比較的純接棒／純交棒測試。
+使用者決定：**Claude Code 這邊不用再測**，接下來在 Codex 那邊做優化。方針不變：落實既有流程／規則，不靠加長規則。本輪 Claude 的結果是 Codex 優化的參考依據，完整數字在 [PHASE2-RESULTS.md](experiments/handoff-ab/PHASE2-RESULTS.md) 後半（三節 Claude 結果）。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支 `main`。
 - **待續分支**：無；`feature/v3` 保留但不是待續分支。
-- **工作中**：Mac ／ Claude Code ／ ㊣　11.15.08｜Claude接棒驗證｜工作中｜交棒0次（開工 2026-11-15 08:55 +08）
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-14.4`
-- 3.10 hook source 已更新至 `2026-11-15`，skill 內容未改。
-- 本機 Mac，使用 `python3`。前輪 Codex CLI 為 ChatGPT 訂閱登入；本輪未在常見位置找到 Claude CLI，下一棒需按當前環境重查。
+- 本輪沒有動 `src/kit/`、部署包、hook、skill。
+- 本機 Mac，使用 `python3`。Claude CLI 是桌面 App 內建的 2.1.325，不在 PATH，用 `CLAUDE_CODE_EXECPATH`／`CLAUDE_BIN` 指定。
 
 ## 已完成
 
-- `eae27b0`：`usage.py` 支援指定 Codex turn／Claude user UUID 的離線解析，兩工具歷史完成紀錄已核對，缺欄位或未完成回合回報未知。
-- 同批修正權威 repo 版本提示，成功 fetch 後讀 `origin/main:VERSION`；來源範本、部署包、本 repo hook 同步。其他專案仍用原 TTL，未同步。
-- `0be5112`：Codex 接棒並完成 fixture 任務、正常交棒各 PASS；版本提示前後探針有效。每情境一次，效率改善未證實。見[第二階段結果](experiments/handoff-ab/PHASE2-RESULTS.md)。
-- `25e3270`：純任務同版 A/B 設計與 Codex runner `comparable.py` 已離線驗證；正式 12 回合未執行。見[計劃](experiments/handoff-ab/OPTIMIZATION-PLAN.md)。
+本輪全部在 `experiments/handoff-ab/`。
+
+- **Claude 受測介面**：`comparable.py` 以 `HANDOFF_AB_TOOL=claude` 切到 `claude_pair.py`；不設就是原本的 Codex 路徑。另有 `relay.py`（同 session 先接棒再交棒）與 `HANDOFF_AB_VARIANT=occupant`／`slow` 兩個探針。用法在 [OPTIMIZATION-PLAN.md](experiments/handoff-ab/OPTIMIZATION-PLAN.md) 末兩節。
+- **修掉三個量測／評分問題**（Codex 路徑也受益）：`usage.py` 把載入 skill 時插入的 `isMeta` 訊息當成下一輪；純接棒的「沒有多做開發」因尾端換行永遠不過（Codex 那 12 格沒跑過所以沒發現）；登入憑證依設定目錄路徑字串存放。
+- **交棒提示改了一句**（Codex 共用）：明講 origin 上的「工作中」標記是受測 session 自己的。不講的話新開的受測 session 會把標記當成別人占用而停下。
+- **Claude 實測共 66 次模型呼叫，全部有效、損害 0**（`claude-opus-5-5`、`--effort medium`）：
+  - 純接棒／純交棒 A/B 各 6 格共 24 格全 PASS。A 只給任務，B 加執行提示。
+  - 現行版本異常情境 10 格全 PASS（busy、ahead、race 正確停下）。
+  - 150 秒驗證 4 格：都一次把 timeout 設成 600 秒等到結果，沒有輪詢或重試。
+  - 同 session 先接棒再交棒 4 格、8 回合全過。
+  - 占用者核對探針 6 格、舊提示煙霧 4 格（其中 2 格交棒不併入比較）。
+
+## 給 Codex 優化的結論
+
+1. **執行提示的效果小**：接棒 B 中位數 24.6 秒對 A 27.5 秒（6 對裡快 5 對，範圍重疊）；交棒 37.8 對 38.5 秒，看不出差異。正確性都不受影響。
+2. **提示實際改變的行為**：B 不用 Skill 工具、直接讀參考檔（交棒非快取 input 少約 3,000–4,700）；交棒少跑一次未 stage 的文件檢查；同 session 交棒時沿用接棒的服務驗證、不重跑。
+3. **時間幾乎都是模型回應**：接棒一格 25 秒裡工具執行只占 0.8 秒。要省時間得減少模型回應次數，不是加快命令。
+4. **同 session 交棒比新 session 便宜**：非快取 input 約 11,000 對 23,000–27,000。
 
 ## 未完成／下一步
 
-1. 依 AGENTS 接棒，再讀計劃末段與第二階段結果。下面直接列出 Claude 可共用部分與待補介面，避免重讀整份歷史。
-2. **可共用設計**：現行 full 骨架、相同起始 Git 快照；純接棒停在開工標記推送與遠端核對，純交棒從成果已完成且已推送開始。兩組終點一致，必要驗證依既有規則。
-3. **可共用對照**：A 一般依規則執行，B 多最小讀取、有效驗證沿用與適當等待提示。每工具每情境 A/B 各 3 次，共 12 回合，交錯順序；B 額外提示計入成本。只能估計提示落實效果，不能稱制度版本改善。
-4. **可共用程式**：優先重用 `build.py`、`fixture.py`、`score.py`、`usage.py` 與 `comparable.py` 的起點雜湊、污染檢查及純任務條件。查看既有 Claude `run.py`、`selfcheck.py` 的登入、隔離與事件處理。`comparable.py` 直接依賴 `codex_run`，不能原樣跑 Claude。
-5. **Claude 自行確認**：實際 CLI 入口、版本、訂閱登入、模型／推理設定、hook/skill 載入、等待行為與事件格式。本輪「未找到 CLI」只是歷史資訊，不能據此阻擋當前可用環境；跨工具 medium 不視為同義。
-6. **Claude 補介面**：接上啟動、隔離設定、原始事件、唯一 user UUID、完成／失敗判定及回合後解析。重用 `usage.py` Claude 分支；快取讀取與建立分列，noncached 包含建立。以合成／既有紀錄驗串流去重、缺欄位、未完成及回合邊界。
-7. **公平性與評分**：A/B 固定模型、設定、起始 HEAD/tree/refs 與占用值。非零 exit／timeout 為 INVALID，污染拒跑。必要驗證、own marker 遠端確認及任務範圍需人工核對命令與輸出，未審為 PENDING_REVIEW；事後測試綠不能證明模型做過驗證。
-8. **執行與報告**：先離線驗 adapter 與負向案例，再每情境每組跑一格煙霧，有效後續三次配對。記 wall、回合秒數、模型回應、input/cached/noncached/output、可觀測動作及無效重試。回合後一次量測，記錄成本另列；缺等待／驗證耗時寫未知。Claude 與 Codex 各自比較。
-9. 使用者已授權第二階段並要求 Claude 接棒驗證，可在此範圍接續，只用訂閱額度。每格重查用量；前輪 84% 是歷史快照。停止條件及順序見計劃，不重跑與本輪差異無關的原定 24 格。
+1. Codex 的純任務 12 格從沒正式跑過（含新交棒提示）：`comparable.py prepare` 後 `run <CELL> --approved`，先四格煙霧。每格前查訂閱用量。
+2. 兩個制度問題，**本輪沒有改；改不改、怎麼改由使用者決定，AI 不自行處理**：
+   - 交棒前沒有要求核對占用者。新 session 被要求交棒、標記對不上自己時，6 格裡 3 格直接清掉；停下的 3 格都讀了 `mode-a-stop.md`，清掉的都沒讀，`mode-b.md` 沒有這一步。每組 3 格，是觀察不是因果。
+   - 開工標記第三欄：`AGENTS.md` 寫三欄，`mode-a.md` 寫「第三欄可省」；省掉後占用判讀只剩開工時間可對。
+3. 要改制度就改 `src/kit/`、重生部署包、同步副本，依 AGENTS 鐵律並保留理由。
 
 ## 地雷與注意事項
 
+- 帳號有開超額：五小時窗用滿會直接轉成超額計費，串流不報錯。`run.py` 的門檻預設 85%，`HANDOFF_AB_LIMIT` 可調；本輪經使用者同意用到 95%，結束時五小時窗 82%、七天窗 90%，沒有用到超額。
+- macOS 的假家目錄存不了 Claude 登入憑證，Claude 實跑用 `HANDOFF_AB_HOME=real` 加 `HANDOFF_AB_CONFIG`。Codex 路徑不受影響。
+- 受測工作區、原始串流、session 紀錄都在 repo 外的系統暫存目錄，重開機會清掉；報告只放聚合結果，不需要保留。
+- Claude 與 Codex 的數字不互相比較；跨工具 medium 不同義。
 - 其他已部署專案同步仍需另行授權。Windows 舊 session 殘留先核對，不推來源不明的未推 commit。
-
-- 既有 clean 包含程式任務，82.181 秒不能當純接棒；midway 是半成品交棒。純任務 fixture 與 Claude adapter 均需正式實跑。
-- 共用制度權威是 `src/kit/`，修改及同步依 AGENTS 並保留理由。原始聊天、憑證、本機絕對路徑留 repo 外，報告只放聚合結果。
-- 最小讀取、等待與驗證沿用已有規則，優先修執行與工具。原定 24 格已改列候選背景，非本輪必要待辦。
+- 原始聊天、憑證、本機絕對路徑留 repo 外。
 
 ## 服務查證與期望快照
 
-- `25e3270` 提交前純任務離線測試 2 項、`verify_bootstrap.py --staged --quiet` 66 項 exit 0。前輪 usage/cache 5 項、Codex validity 6 項通過。
-- 本次只覆寫交接文件，提交前對最終 staged 快照跑 `python3 -X utf8 tools/verify_bootstrap.py --staged --quiet`；程式未改，沿用上述測試。
-- 本 repo 無 `verify_state.py`／`check_docs.py`，使用 AGENTS 指定入口。此次未改 hook 接線，重新審核不適用。
-- Claude 正式模型驗證、兩工具純任務 12 回合、真 repo 前後效率、Windows 尚未驗。F50 桌面完整互動未驗，使用者先前決定不另建 F50 測試聊天。
+- 本輪最後一次程式改動後：離線測試 16 項通過（`test_claude_pair` 7、`test_comparable` 2、`test_usage` 2、`test_relay` 2、`test_version_cache` 3），`codex_selfcheck.py` 通過，`selfcheck.py` 兩輪通過。
+- 每次提交前 `python3 -X utf8 tools/verify_bootstrap.py --staged --quiet` 66 項 exit 0；本次交棒只覆寫本檔，同樣跑過。
+- 本 repo 無 `verify_state.py`／`check_docs.py`，使用 AGENTS 指定入口。本輪未改 hook 接線，重新審核不適用。
+- **未驗**：Codex 純任務 12 格與各探針的 Codex 對應、真 repo 前後效率、Windows、超過 600 秒的驗證。F50 桌面完整互動未驗，使用者先前決定不另建測試聊天。
 
 ## 懸置事項（AI 勿自行處理）
 
