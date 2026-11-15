@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-14.4**（Codex 交接成本優化：補外層等待、摘要輸出與最小讀取用法；來源驗證器將獨立回歸與其他檢查重疊執行，檢查集合不減。六個 skill 檔與共用制度標記同版；實測範圍見 experiments/handoff-ab/CODEX-RESULTS.md。）
+> 版本：**2026-11-15.2**（交棒先核對遠端開工標記是否屬於本 session，推送釋回前再核對遠端。六個 skill 檔與共用制度標記同版。）
+> 前一版 **2026-11-14.4**（Codex 交接成本優化：補外層等待、摘要輸出與最小讀取用法；來源驗證器將獨立回歸與其他檢查重疊執行，檢查集合不減。六個 skill 檔與共用制度標記同版；實測範圍見 experiments/handoff-ab/CODEX-RESULTS.md。）
 > 2026-11-15（**只改 3.10 hook，刻意不跳 `VERSION`**）：本 repo 的 `origin` 若是權威 repo，成功 fetch 後直接讀 `origin/main:VERSION`，避免 12 小時快取蓋住剛更新的版本；HTTPS、SSH 都接受。其他已部署專案仍用原來的 12 小時快取。無效版本與 fetch 失敗不猜值。3.10 的 `source:` 標記更新到 `v2026-11-15`；沒有修改 handoff skill 目錄，所以 `VERSION` 與共用制度標記不動。未授權同步其他專案。
 > 前一版 **2026-11-14.3**（**handoff skill 加「跑得久的指令」一節**（使用者 2026-11-14 決定）：工具會在指令沒跑完就先交回時（Codex 的指令工具），一次把等待時間設到夠它跑完，不要每一兩秒輪詢。起因是同日一次 Codex 接棒 28 次模型呼叫裡有 15 次在等驗證腳本，理由與數字寫在 3.8 `reasons.md`。skill 有改，`VERSION`、六個 skill 檔與共用制度標記跳到 `v2026-11-14.3`（共用制度內文沒動，理由同前一版）。是否真的減少呼叫，要在 Codex 實際接棒一次才知道，尚未驗收。）
 > 前一版 **2026-11-14.2**（**handoff skill 與部署包敘述拿掉已退場的 Antigravity**（使用者 2026-11-14 決定）：3.8 `mode-a-stop.md` 三處（`SessionEnd` 理由裡「它沒有這個事件」的半句、工具名舉例）刪掉，`SessionEnd` 救不了的結論不變（擋不下結束、1.5 秒做不完 push）；本檔「工具名用慣用寫法」的舉例同步拿掉，`GEMINI.md` 維持指標寫法的理由改寫成不依賴 Antigravity。skill 有改，`VERSION`、六個 skill 檔與共用制度標記跳到 `v2026-11-14.2`（共用制度內文沒動，但開場 hook 拿共用制度標記比上游 `VERSION`，不跟著跳會讓每個專案一直印落後）。已部署專案裡的 Antigravity 接線檔，使用者同日決定刪掉。）
@@ -311,7 +312,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 專案概觀與測試指令在 [README.md](README.md)。現在做到哪、下一步是什麼，在 [HANDOFF.md](HANDOFF.md)。使用者用 **{{LANG}}** 溝通。
 > 最後更新：{{TODAY}}（建立）
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-14.4 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-15.2 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -328,7 +329,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 1. 改任何檔案之前，本機要跟 origin 一致，而且 origin 上的「工作中」要先推成你自己（`機器 ／ 工具 ／ session 名`，加開工時間）。推不上去就不算。只讀、只回答問題的 session 不寫。
 2. origin 上的「工作中」是別人時，不改檔、不推送，停下來告訴使用者。
-3. 使用者要求交棒時才交棒。交棒完成的定義：所有成果都在 origin 上；`HANDOFF.md` 整份覆寫成當下狀態（欄位照現有格式，80 行以內，不累積歷史）；「工作中」改回 `無（已交棒）`；本機沒有留下沒推的東西。使用者沒要求就保留你的「工作中」。
+3. 使用者要求交棒時才交棒。交棒前先 fetch，確認 origin 上的「工作中」標記確由本 session 推上。無法確認就停下回報，不改檔、不推送。交棒完成的定義：所有成果都在 origin 上；`HANDOFF.md` 整份覆寫成當下狀態（欄位照現有格式，80 行以內，不累積歷史）；「工作中」改回 `無（已交棒）`；本機沒有留下沒推的東西。使用者沒要求就保留你的「工作中」。
 4. `main` 上的測試要一直是過的。沒做完的工作放分支推上去，在 `HANDOFF.md` 的「待續分支」寫明分支名。
 5. 沒驗證過的事不寫成已驗證。
 6. 不提交祕密或金鑰樣式的內容。提交前看 staged 清單，逐檔加入，不用 `git add -A` 或 `git add .`。
@@ -819,7 +820,7 @@ name: handoff
 description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-15.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（參考檔入口）
 
@@ -882,7 +883,7 @@ description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒�
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-15.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
@@ -943,7 +944,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場 `[facts]` 有不正常的值時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-15.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
@@ -1125,7 +1126,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-15.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -1149,6 +1150,10 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 九步，**順序就是執行順序**，做完一步再下一步。
 
 ### B1 收斂到安全點
+
+**動任何檔案、提交或推送前先核對占用。** 先 `git fetch origin`，從 origin 上持有開工標記的分支讀取 `HANDOFF.md`，記下該分支的 SHA。用本 session 開工時已確認推送的完整標記比對，含機器、工具、當時的 session 名（有填時）及開工時間。同一台機器、同一工具或使用者請你交棒，都不足以證明標記屬於本 session。
+
+**標記屬於別人、缺失、已釋回或無法確認歸屬就停下**，回報遠端狀態，不改檔、不提交、不推送。fetch 失敗也停下。2026-11-15 的 Codex 占用者探針中，六個新 session 在同機器同工具下都釋回了舊 session 的標記，因此在第一步核對。
 
 未完成的東西二選一：完成並驗證；或 commit／push 到分支並在 HANDOFF 標明風險與已知安全 commit。
 **不留來源不明的工作樹**，也不要把半成品併進 `main`。
@@ -1250,6 +1255,8 @@ git diff --cached -U0 | grep -nEi "(api[_-]?key|secret|token|passwd|password|BEG
 
 ### B8 發布
 
+推送會釋回標記前，fetch 後比對 B1 的占用分支 SHA 與完整標記。若本 session 在流程中已推送該分支，SHA 以自己推送且已從遠端確認標記仍相同的 commit 為準。兩者任一對不上就停下，不推送。
+
 ```bash
 git fetch origin && git status -sb
 ```
@@ -1294,7 +1301,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-15.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -1369,7 +1376,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-15.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
@@ -1513,7 +1520,7 @@ python -X utf8 tools/check_docs.py
 | mode-a-stop.md § A6 回推補交接（只有在 A1 判定「前一輪漏交棒」時才走） | 本段內文 |
 | mode-b.md § 同一 session 的交棒計數 | 本段內文 |
 | mode-b.md § B. 交棒 | reasons.md § 交棒由使用者決定（2026-11-12／Q31） |
-| mode-b.md § B1 收斂到安全點 | 沒有寫下理由 |
+| mode-b.md § B1 收斂到安全點 | 本段內文 |
 | mode-b.md § B2 持久知識落地（今天學到的寫進 repo，不要留在對話裡） | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-b.md § B3 服務驗證 | reasons.md § 反例（真的發生過，別重演） |
 | mode-b.md § B4 文檔驗證（動過任何 `.md` 就必跑） | 本段內文 |

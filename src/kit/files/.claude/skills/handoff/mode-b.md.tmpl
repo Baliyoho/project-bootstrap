@@ -1,4 +1,4 @@
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-14.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-15.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -22,6 +22,10 @@
 九步，**順序就是執行順序**，做完一步再下一步。
 
 ### B1 收斂到安全點
+
+**動任何檔案、提交或推送前先核對占用。** 先 `git fetch origin`，從 origin 上持有開工標記的分支讀取 `HANDOFF.md`，記下該分支的 SHA。用本 session 開工時已確認推送的完整標記比對，含機器、工具、當時的 session 名（有填時）及開工時間。同一台機器、同一工具或使用者請你交棒，都不足以證明標記屬於本 session。
+
+**標記屬於別人、缺失、已釋回或無法確認歸屬就停下**，回報遠端狀態，不改檔、不提交、不推送。fetch 失敗也停下。2026-11-15 的 Codex 占用者探針中，六個新 session 在同機器同工具下都釋回了舊 session 的標記，因此在第一步核對。
 
 未完成的東西二選一：完成並驗證；或 commit／push 到分支並在 HANDOFF 標明風險與已知安全 commit。
 **不留來源不明的工作樹**，也不要把半成品併進 `main`。
@@ -122,6 +126,8 @@ git diff --cached -U0 | grep -nEi "(api[_-]?key|secret|token|passwd|password|BEG
 確認沒有憑證、運行資料、備份、實際業務資料後才 commit。
 
 ### B8 發布
+
+推送會釋回標記前，fetch 後比對 B1 的占用分支 SHA 與完整標記。若本 session 在流程中已推送該分支，SHA 以自己推送且已從遠端確認標記仍相同的 commit 為準。兩者任一對不上就停下，不推送。
 
 ```bash
 git fetch origin && git status -sb

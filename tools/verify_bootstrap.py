@@ -3922,10 +3922,15 @@ def flow_contract_problems(skill):
         ('### A4 ', '開工標記 push 成功後'),
         ('### A5 ', '這是開工 push 例外'),
         ('### A5 ', 'push 成功後重讀 origin'),
+        ('### B1 ', '動任何檔案、提交或推送前先核對占用'),
+        ('### B1 ', '已確認推送的完整標記比對'),
+        ('### B1 ', '無法確認歸屬就停下'),
         ('### B7 ', 'B6 覆寫完成後'),
         ('### B7 ', 'tools/check_docs.py'),
         ('### B7 ', 'exit 0 才提交發布'),
         ('### B7 ', 'B3 後改過，連 B3 也重跑'),
+        ('### B8 ', '比對 B1 的占用分支 SHA 與完整標記'),
+        ('### B8 ', '兩者任一對不上就停下，不推送'),
         ('### B8 ', 'fetch 失敗 → **停下**'),
         ('## C.', '保留本 session 的「工作中」標記'),
         ('## C.', '不走 B6 的釋出標記與 B9 的交棒計數'),
@@ -3958,13 +3963,15 @@ def step_flow_contract(dest, tmp):
                  'B3 後改過，連 B3 也重跑', 'fetch 失敗 → **停下**',
                  '保留本 session 的「工作中」標記', '不走 B6 的釋出標記與 B9 的交棒計數',
                  '使用者沒要求就不得自行交棒', 'A5 開工標記與 C 中途安全點都不宣稱交棒')
-    mutations += ('tools/check_docs.py --staged', 'git diff --cached --name-only')
+    mutations += ('tools/check_docs.py --staged', 'git diff --cached --name-only',
+                  '動任何檔案、提交或推送前先核對占用', '已確認推送的完整標記比對', '無法確認歸屬就停下',
+                  '比對 B1 的占用分支 SHA 與完整標記', '兩者任一對不上就停下，不推送')
     for token in mutations:
         mutated = skill.replace(token, '移除契約')
         if mutated == skill or not flow_contract_problems(mutated):
             bad.append('負向測試未擋：' + token)
     record('FAIL' if bad else 'OK', '協作狀態契約', '；'.join(bad) if bad else
-           '六狀態與 A1／A2／A4／A5／B7／B8／C 契約齊備；21 個負向測試通過，含 R07 stage 順序（不代表模型遵循）')
+           '六狀態與 A1／A2／A4／A5／B1／B7／B8／C 契約齊備；26 個負向測試通過，含 R07 stage 順序（不代表模型遵循）')
 
     bash = find_bash()
     if not bash:
@@ -4615,6 +4622,7 @@ SHARED_MUST = (
     '`[facts]`', '.claude/skills/handoff/',
     '要先推成你自己', '推不上去就不算', '只讀、只回答問題的 session 不寫',
     'origin 上的「工作中」是別人時，不改檔、不推送，停下來告訴使用者',
+    '確認 origin 上的「工作中」標記確由本 session 推上', '無法確認就停下回報，不改檔、不推送',
     '使用者要求交棒時才交棒', '「工作中」改回 `無（已交棒）`', '使用者沒要求就保留你的「工作中」',
     '沒驗證過的事不寫成已驗證', '不提交祕密或金鑰樣式的內容', '不用 `git add -A` 或 `git add .`',
     '`reset --hard`', 'force push', '自行 stash',
