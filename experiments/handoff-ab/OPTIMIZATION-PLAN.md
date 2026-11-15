@@ -52,4 +52,18 @@
 
 ## 下一棒回報
 
+## 可比較的純任務設計（2026-11-15，離線準備完成，模型尚未執行）
+
+`comparable.py` 延用現行 `build.py`、`phase2_handoff_probe.py`、`score.py`、`codex_run.py` 與 `usage.py`。這是**同一版本的執行提示對照**，不能稱為制度版本或 hook 版本優化。A 是同一任務只按現有規則完成；B 另明示最小讀取、有效驗證沿用、等待及回合外量測。B 多出的提示字數進入實際 input 成本。若兩組實際讀取／驗證／等待行為相同，不能把時間差歸給提示。
+
+兩個任務分開：純接棒從無人占用、乾淨且同步的 repo 起步，執行 A4 等必要驗證、推自己的開工標記、從遠端確認、回覆後停住；HANDOFF 的下一項等後續指令，不開發。只讀或只回答的 session 本來不 claim；本 fixture 明確要求接棒並推開工標記，所以適用 A5。純交棒從 `celsius_to_kelvin` 已完成、已推送且本 session 占用的 repo 起步，只做 B3／B4／B6／B7／B8 等必要查核、快照、釋回與回覆，不再開發。兩組均不得省略必要驗證。
+
+每情境 A/B 各 3 次，共 **12 個獨立 Codex turn／12 次預計模型呼叫**；沒有額外版本探針或 Claude Code 格。每個情境只建立一份 master Git 狀態，再複製成 6 格；同情境六格的起始 HEAD、tree、refs SHA-256 完全相同。模型固定 `gpt-6-sol`、`medium`，Codex CLI 走同一隔離設定，兩組使用同一份現行 full 骨架、hook、環境與任務終點。交錯順序記在 `paired-plan.json`：第 1 輪接棒 A/B、交棒 B/A；第 2 輪反向；第 3 輪同第 1 輪。各格獨立 bare origin 與 work，不共享執行後 Git 狀態。原始紀錄、工作樹及認證連結只在 repo 外的 `HANDOFF_AB_ROOT`。
+
+離線準備：`HANDOFF_AB_ROOT=<repo 外新目錄> python3 -X utf8 experiments/handoff-ab/comparable.py prepare`；`plan` 列狀態；正式執行才用 `run <CELL> --approved`，完成後可用 `assess <CELL>` 重算。每格啟動前比對 origin snapshot、work HEAD、remote tracking ref、工作樹乾淨與占用值；任何差異拒跑。先各情境各組 1 格作煙霧測試；任一 INVALID、FAIL、損害、fixture 污染、CLI 非零退出或 timeout 即停，查明後才決定是否繼續。所有 12 格完成或既有訂閱用量守門觸發時停止；不自動補跑無效格，也不增加任意授權門檻。本輪只做設計與離線測試，正式 12 次**尚未啟動**。
+
+每格保留 CLI 外層完整 wall 秒數、CLI exit、完成後 `usage.py` 依唯一 turn 算的模型秒數、回應數與 input／cached／noncached／output 及原始欄位；無 rollout、未完成或缺欄位寫 `null`，不填零。CLI JSON 只能可靠計數可見的讀取、驗證、Git 命令；各項耗時、工具等待回合及重試若無可靠事件維持 `null`。回合結束後一次讀紀錄並評分，解析與寫報告的成本另外以離線計時記錄，不混進受測 wall 秒數；不在受測回合中做「途中量測暫計提交」。那個舊觀察是測量行為本身造成的開銷，不能作公平 A 組；如要估計，另用本地無模型的解析／記錄計時，沒有遞迴量測尾巴。
+
+機器評分檢查開工標記先推、末態占用、沒有開發、交棒釋回、成果不變、main 綠、本機同步與禁止操作。遠端確認是否真正比對 own marker、必要驗證是否按順序且有效、實際讀取範圍／等待及是否有多做任務，需看每格原始命令與輸出人工判定。每格 `review.json` 由審查者填 `subject_verification`、`task_scope`、`remote_confirmation` 的布林值或 `null`；審查說明另記於 repo 外，交棒的遠端確認項由 runner 內部標不適用。缺人工核對時總判定是 `PENDING_REVIEW`，不能宣稱全程 PASS；任何人工項 false 是 FAIL。CLI exit 非 0／timeout 一律 INVALID。每格 `run-config.json` 記實際 CLI 版本、模型與推理參數、JSON 事件格式、提示與起點雜湊；rollout 的模型另由有效性檢查。報告先列每格正確性與實際動作，再以配對的全程秒數、token 中位數與範圍及快取比例描述；樣本不足、動作未分化或差異落在波動範圍，寫未定，不推算訂閱額度收益。
+
 回報已完成項目、實際改動、驗證結果與仍未驗證事項。第一階段完成即可提供具體第二階段測試清單供使用者授權。使用者要求交棒時再覆寫 HANDOFF 並釋回占用。
