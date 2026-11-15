@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`；權威分支 `main`。
 - **待續分支**：無；`feature/v3` 保留但不是待續分支。
-- **工作中**：無（已交棒）
+- **工作中**：`Mac` ／ `Codex` ／ `㊣ 11.15.14｜交接流程優化｜工作中｜交棒0次`，2026-11-15 14:38 (+08) 開工
 - **骨架版本**：`2026-11-14.4`
 - 本輪沒有動 `src/kit/`、部署包、hook、skill。
 - 本機 Mac，使用 `python3`。Claude CLI 是桌面 App 內建的 2.1.325，不在 PATH，用 `CLAUDE_CODE_EXECPATH`／`CLAUDE_BIN` 指定。
