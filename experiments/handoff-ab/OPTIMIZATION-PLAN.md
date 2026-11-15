@@ -66,7 +66,7 @@
 
 機器評分檢查開工標記先推、末態占用、沒有開發、交棒釋回、成果不變、main 綠、本機同步與禁止操作。遠端確認是否真正比對 own marker、必要驗證是否按順序且有效、實際讀取範圍／等待及是否有多做任務，需看每格原始命令與輸出人工判定。每格 `review.json` 由審查者填 `subject_verification`、`task_scope`、`remote_confirmation` 的布林值或 `null`；審查說明另記於 repo 外，交棒的遠端確認項由 runner 內部標不適用。缺人工核對時總判定是 `PENDING_REVIEW`，不能宣稱全程 PASS；任何人工項 false 是 FAIL。CLI exit 非 0／timeout 一律 INVALID。每格 `run-config.json` 記實際 CLI 版本、模型與推理參數、JSON 事件格式、提示與起點雜湊；rollout 的模型另由有效性檢查。報告先列每格正確性與實際動作，再以配對的全程秒數、token 中位數與範圍及快取比例描述；樣本不足、動作未分化或差異落在波動範圍，寫未定，不推算訂閱額度收益。
 
-## Claude Code 介面（2026-11-15，離線驗證完成，模型尚未執行）
+## Claude Code 介面（2026-11-15；12 格已執行，結果見 PHASE2-RESULTS.md）
 
 `comparable.py` 以 `HANDOFF_AB_TOOL=claude` 切到 `claude_pair.py`；不設就是原本的 Codex 路徑，行為不變。兩個工具各用自己的 `HANDOFF_AB_ROOT`，`paired-plan.json` 記工具名，拿錯工作區會在啟動模型前拒跑。設計、提示、交錯順序、起點雜湊與污染檢查同上一節，結果只在 Claude 內部比較。
 
@@ -80,6 +80,6 @@
 
 離線測試 `test_claude_pair.py` 5 項：合成串流與 session 紀錄的有效格、重複串流去重、`isMeta` 不切斷回合、模型不符／缺 `[facts]`／session id 不符／錯誤結束／缺 result／碰 repo 外制度檔各自 INVALID、多一則人類訊息／未完成／缺紀錄／紀錄不唯一時用量為未知、指令保留 session 紀錄、Claude fixture 的占用標記與拿錯工作區拒跑。拿掉 `isMeta` 修正時測試會失敗（已實際試過）。串流與 session 紀錄的實際欄位只對過既有真實 session 紀錄與前兩輪的解析碼，2.1.325 的 `-p` 串流要等第一格煙霧才算驗過。
 
-執行：`HANDOFF_AB_TOOL=claude HANDOFF_AB_ROOT=<repo 外新目錄> python3 -X utf8 experiments/handoff-ab/comparable.py prepare`，登入後 `run <CELL> --approved`。先跑 `takeover-A-1`、`takeover-B-1`、`handoff-B-1`、`handoff-A-1` 四格煙霧，有效才續跑其餘八格。
+執行：`HANDOFF_AB_TOOL=claude HANDOFF_AB_ROOT=<repo 外新目錄> python3 -X utf8 experiments/handoff-ab/comparable.py prepare`，登入後 `run <CELL> --approved`。先跑 `takeover-A-1`、`takeover-B-1`、`handoff-B-1`、`handoff-A-1` 四格煙霧，有效才續跑其餘八格。macOS 上假家目錄存不了登入憑證，實跑用 `HANDOFF_AB_HOME=real` 並以 `HANDOFF_AB_CONFIG` 指定登入時用的同一個路徑字串。交棒提示 2026-11-15 起明講占用標記是受測 session 自己的，原因見結果檔；Codex 路徑共用這句，尚未實跑。
 
 回報已完成項目、實際改動、驗證結果與仍未驗證事項。第一階段完成即可提供具體第二階段測試清單供使用者授權。使用者要求交棒時再覆寫 HANDOFF 並釋回占用。
