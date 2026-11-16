@@ -42,6 +42,12 @@ OWNERS = {'core': {'whole', 'region'},
           'adapter': {'whole', 'wiring', 'key'},
           'project': {'seed', 'lines'}}
 EXECUTABLE_SUFFIX = '.sh'
+# Windows 沒有 POSIX 執行位元：os.chmod 只認唯讀旗標，Git 取出的檔案一律沒有 x，
+# 連「設了又讀回來」都辦不到。所以這一項在本平台不適用——不是放寬守門：POSIX 上
+# 的判準一字未改，Windows 上則是檔案系統記不住這件事，查了也只會永遠判錯。
+# 2026-11-16（本 repo AGENTS「Windows 的 exit 2 要用哪種解法」）：選平台感知，
+# 不做預期失敗清單；清單會隨文件內容漂移，基線不穩（39→45 只因改了一行 HANDOFF）。
+RECORDS_EXECUTE_BIT = os.name != 'nt'
 VERSION_RE = re.compile(r'^> 版本：\*\*([0-9]{4}-[0-9]{2}-[0-9]{2}(?:\.[0-9]+)?)\*\*', re.M)
 
 
@@ -172,9 +178,10 @@ def check(folder):
             continue
         if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
             problems.append('digest:' + relative)
-        runnable = bool(stat.S_IMODE(path.stat().st_mode) & 0o111)
-        if runnable != (relative in executable):
-            problems.append('mode:' + relative)
+        if RECORDS_EXECUTE_BIT:
+            runnable = bool(stat.S_IMODE(path.stat().st_mode) & 0o111)
+            if runnable != (relative in executable):
+                problems.append('mode:' + relative)
     return problems
 
 

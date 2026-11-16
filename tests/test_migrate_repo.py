@@ -31,7 +31,9 @@ import sync_project as sp  # noqa: E402
 import verify_bootstrap  # noqa: E402
 
 HAS_GIT = shutil.which('git') is not None
-SIGNS = (platform.system() in ('Darwin', 'Linux') and release_module.VERIFIER.is_file() and HAS_GIT)
+# 看能力，不看作業系統名字：release_module.VERIFIER 2026-11-16 起依平台指向
+# 各自的系統 ssh-keygen，Windows 也有。A4 不收 skip，能跑就該跑。
+SIGNS = release_module.VERIFIER.is_file() and HAS_GIT
 HOOK = '.claude/hooks/git-freshness.sh'
 SKILL = '.claude/skills/handoff/SKILL.md'
 LAUNCHER = '.claude/hooks/codex-hook.cmd'

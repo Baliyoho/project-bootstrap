@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 import time
 
-from project_bootstrap.approvals import VERIFIER
+from project_bootstrap.approvals import VERIFIER, verifier_env
 from project_bootstrap.broker import Broker
 from project_bootstrap.contracts import Denied
 
@@ -93,7 +93,7 @@ class WriteGate:
                     [str(VERIFIER), '-Y', 'verify', '-f', str(signers), '-I',
                      SIGNER.decode('ascii'), '-n', NAMESPACE, '-s', str(proof)],
                     input=document, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                    env={'PATH': os.defpath}, timeout=3)
+                    env=verifier_env(), timeout=3)
         except (OSError, subprocess.TimeoutExpired):
             raise Denied('channel-verifier-unavailable') from None
         if result.returncode:

@@ -174,7 +174,15 @@ def session_commands(surface, data):
 
 
 def _runnable(path):
-    return path.is_file() and os.access(path, os.X_OK)
+    """檔案在，而且（在記得住 x 位元的機器上）可執行。
+
+    2026-11-16：Windows 的檔案系統沒有 POSIX 執行位元，os.access(X_OK) 對任何
+    存在的檔都回 True，chmod 也清不掉。所以從 Windows 檢查 POSIX handler 時，
+    「可執行」這一項本平台不適用，只能確認檔案在；POSIX 上的判準一字未改。
+    """
+    if not path.is_file():
+        return False
+    return THIS_PLATFORM == 'windows' or os.access(path, os.X_OK)
 
 
 def _windows(surface, project, wiring, data):

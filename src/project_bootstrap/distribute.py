@@ -75,11 +75,21 @@ def report_bytes(report):
     return json.dumps(report, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode('ascii')
 
 
+def manifest_of(root):
+    """The package manifest as a dict (the package has already been checked)."""
+    return json.loads((Path(root) / package.MANIFEST).read_text(encoding='utf-8'))
+
+
 def pack(folder, out):
     """Reproducible tar.gz of a package folder, under one top folder named ``package``."""
     root = Path(folder)
     if package.check(root):
         raise Denied('bad-package')
+    # 封存裡的執行位元取自 manifest 的 executable 清單，不是本機檔案的 x 位元：
+    # Windows 記不住 x（package.RECORDS_EXECUTE_BIT 為 False），照本機讀會把 .sh
+    # 全部打成 0o644，macOS／Linux 解開後還要自己 chmod。manifest 是權威，
+    # check() 已經在會記錄 x 的平台上確認過兩者一致，所以這不會放過壞包。
+    executable = set(manifest_of(root).get('executable') or ())
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode='w', format=tarfile.PAX_FORMAT) as tar:
         names = sorted(p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file())
@@ -92,7 +102,7 @@ def pack(folder, out):
             data = (root / name).read_bytes()
             info = tarfile.TarInfo(ROOT_NAME + '/' + name)
             info.size, info.mtime = len(data), MTIME
-            info.mode = 0o755 if (root / name).stat().st_mode & 0o111 else 0o644
+            info.mode = 0o755 if name in executable else 0o644
             tar.addfile(info, io.BytesIO(data))
     with open(out, 'wb') as raw:
         with gzip.GzipFile(filename='', mode='wb', fileobj=raw, mtime=MTIME) as zipped:

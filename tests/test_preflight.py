@@ -35,7 +35,10 @@ class Fixture(unittest.TestCase):
                     'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@example.invalid',
                     'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@example.invalid',
                     'LC_ALL': 'C'}
-        self.supported = platform.system() in ('Darwin', 'Linux') and release.VERIFIER.is_file()
+        # 用「這台機器有沒有那支簽章驗證器」判斷，不用作業系統名字：
+        # release.VERIFIER 2026-11-16 起依平台指向各自的系統 ssh-keygen，
+        # Windows 也有。A4 不收 skip，能跑就該跑。
+        self.supported = release.VERIFIER.is_file()
         if self.supported:
             self.key = self.root / 'ci'
             subprocess.run([str(release.VERIFIER), '-q', '-t', 'ed25519', '-N', '', '-f',

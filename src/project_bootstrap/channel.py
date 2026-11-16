@@ -49,7 +49,7 @@ import tempfile
 import time
 
 from project_bootstrap import package, pointer
-from project_bootstrap.approvals import VERIFIER
+from project_bootstrap.approvals import VERIFIER, verifier_env
 from project_bootstrap.broker import Broker
 from project_bootstrap.contracts import Denied
 from project_bootstrap.publish import _verified_this_round, report_digest
@@ -134,7 +134,7 @@ def _verify(document, signature, keys):
                 [str(VERIFIER), '-Y', 'verify', '-f', str(signers), '-I', SIGNER,
                  '-n', NAMESPACE, '-s', str(proof)],
                 input=document, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                env={'PATH': os.defpath}, timeout=3)
+                env=verifier_env(), timeout=3)
     except (OSError, subprocess.TimeoutExpired):
         raise Denied('release-verifier-unavailable') from None
     if result.returncode:

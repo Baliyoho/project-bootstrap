@@ -49,7 +49,10 @@ DIGEST_RE = re.compile(r'[0-9a-f]{64}')
 CHANNEL_RE = re.compile(r'[a-z][a-z0-9-]{0,31}')
 DATE_RE = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}')
 # A remote Git URL or a local path; never starts with '-', so git cannot read it as an option.
-SOURCE_RE = re.compile(r'(?:https://|file:///|/)[^\s\x00-\x1f\x7f]{1,500}')
+# 2026-11-16：補上 Windows 的磁碟絕對路徑（C:\\… 或 C:/…）。原本只收 / 開頭，
+# 在 Windows 上任何本機來源都被判 invalid-pointer:source，migrate 的寫入測試因此失敗。
+# 開頭仍然不可能是 '-'，git 不會把它讀成選項。
+SOURCE_RE = re.compile(r'(?:https://|file:///|/|[A-Za-z]:[\\/])[^\s\x00-\x1f\x7f]{1,500}')
 
 
 def _relative(path):

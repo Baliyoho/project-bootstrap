@@ -7,7 +7,8 @@ import subprocess
 import tempfile
 import unittest
 
-from project_bootstrap.contracts import Denied, Lab, digest, mask_summary, scan_snapshot
+from project_bootstrap.contracts import (
+    Denied, Lab, digest, mask_summary, path_escapes, scan_snapshot)
 from project_bootstrap.session import HandoffReceipt, Session, rename
 
 
@@ -263,6 +264,27 @@ class ScanTests(unittest.TestCase):
             result = mask_summary(b'x' * (limit - 4) + secret, (secret,), limit)
             self.assertNotIn(b'SYNT', result)
             self.assertTrue(result.endswith(b'***'))
+
+
+class PathEscapeTests(unittest.TestCase):
+    r"""兩種分隔符都要擋，而且在哪個平台跑都一樣。
+
+    2026-11-16：原本 evidence／facts 各自寫 POSIX 版（開頭是 / 、'..' 在以 / 切開的
+    段落裡），Windows 上 \Users\x 與 C: 開頭的絕對路徑都過得去，根目錄外的
+    檔案被當成合法輸入讀走。這組斷言在 macOS 與 Windows 上結果相同。
+    """
+    def test_absolute_drive_unc_and_dotdot_escape(self):
+        for value in ('/etc/hosts', '../x', 'a/../../x', '',
+                      'C:\\Users\\x.txt', 'C:rel.txt',
+                      '\\server\\share', 'a\\..\\..\\x', '\\x'):
+            with self.subTest(value=value):
+                self.assertTrue(path_escapes(value))
+
+    def test_plain_relative_paths_are_kept(self):
+        for value in ('notes.md', 'tools/check.py', 'a/b/c.md', '.gitignore',
+                      'docs/..keep.md'):
+            with self.subTest(value=value):
+                self.assertFalse(path_escapes(value))
 
 
 if __name__ == '__main__':

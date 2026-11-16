@@ -9,6 +9,21 @@ import unittest
 from project_bootstrap import package
 from project_bootstrap.contracts import Denied
 
+
+def can_symlink(root):
+    """Windows 要開發人員模式或系統管理員才建得了 symlink（WinError 1314）。
+
+    2026-11-16：不用 skip（A4 不收 skip），不能造出這個破壞時改成斷言「造不出來」，
+    讓「本機沒這個權限」是被寫下來的事實，而不是悄悄變成通過。
+    """
+    probe = Path(root) / '_symlink-probe'
+    try:
+        probe.symlink_to(Path(root))
+    except OSError:
+        return False
+    probe.unlink()
+    return True
+
 PROSE = '# kit\n\n> 版本：**2026-11-11.3**（測試）\n'
 FILES = {
     '.claude/skills/handoff/SKILL.md': 'skill\n',
@@ -66,6 +81,13 @@ class PackageTests(unittest.TestCase):
 
     def test_modes(self):
         folder, _ = self.build()
+        if not package.RECORDS_EXECUTE_BIT:
+            # Windows：檔案系統記不住 POSIX 權限位元，這一項本平台不適用。
+            # 要斷言的是「不適用」有被說出來，而不是跳過：檔案照樣要在，
+            # 而且 check 不得因為模式判任何一個檔有問題。
+            self.assertTrue((Path(folder) / '.claude/hooks/check.sh').is_file())
+            self.assertEqual([p for p in package.check(folder) if p.startswith('mode:')], [])
+            return
         self.assertEqual(os.stat(folder).st_mode & 0o777, 0o755)
         self.assertEqual(os.stat(Path(folder) / '.claude/hooks/check.sh').st_mode & 0o777, 0o755)
         self.assertEqual(os.stat(Path(folder) / 'AGENTS.md').st_mode & 0o777, 0o644)
@@ -146,6 +168,17 @@ class PackageTests(unittest.TestCase):
         for expected, damage in cases.items():
             with self.subTest(expected=expected):
                 folder, _ = self.build()
+                if expected.startswith('mode:') and not package.RECORDS_EXECUTE_BIT:
+                    # 本平台不記錄執行位元：破壞造不出來，chmod 也改不動它。
+                    # 斷言這個守門在這裡是啞的（不會誤報），不是斷言它有抓到。
+                    damage(Path(folder))
+                    self.assertEqual(
+                        [p for p in package.check(folder) if p.startswith('mode:')], [])
+                    continue
+                if expected.startswith('symlink:') and not can_symlink(folder):
+                    with self.assertRaises(OSError):
+                        damage(Path(folder))
+                    continue
                 damage(Path(folder))
                 self.assertIn(expected, package.check(folder))
 
@@ -186,9 +219,16 @@ class PackageTests(unittest.TestCase):
         folder, _ = self.build()
         package.install(folder, foreign)
         (foreign / 'notes.txt').write_text('mine')
+        cases = {plain: '^out-not-a-package$', foreign: '^out-has-other-files$'}
         link = base / 'link'
-        link.symlink_to(plain)
-        cases = {plain: '^out-not-a-package$', foreign: '^out-has-other-files$', link: '^out-is-symlink$'}
+        if can_symlink(base):
+            link.symlink_to(plain)
+            cases[link] = '^out-is-symlink$'
+        else:
+            # 本機沒有建 symlink 的權限：把 out 是 symlink 這一格說成不適用，
+            # 其餘兩格照跑。開「開發人員模式」後這格會自己回來。
+            with self.assertRaises(OSError):
+                link.symlink_to(plain)
         for out, error in cases.items():
             with self.subTest(out=out.name):
                 folder, _ = self.build()

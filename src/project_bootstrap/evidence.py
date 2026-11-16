@@ -18,16 +18,16 @@ import hashlib
 import os
 from pathlib import Path
 
+from project_bootstrap.contracts import path_escapes
+
 RESULTS = {'PASS', 'FAIL', 'ERROR', 'SKIP', 'NOT_CONFIGURED'}
-
-
 def file_probe(root, environ=None):
     """Digest ``file:<relative path>`` and ``env:<NAME>`` inputs; anything else is None."""
     environ = os.environ if environ is None else environ
 
     def probe(name):
         kind, _, value = name.partition(':')
-        if kind == 'file' and value and not value.startswith('/') and '..' not in value.split('/'):
+        if kind == 'file' and not path_escapes(value):
             try:
                 return hashlib.sha256((Path(root) / value).read_bytes()).hexdigest()
             except OSError:

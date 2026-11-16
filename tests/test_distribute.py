@@ -104,8 +104,19 @@ class DistributeTests(unittest.TestCase):
         self.assertEqual(one[4:8], b'\0\0\0\0')  # gzip header mtime
         folder = distribute.unpack(self.root / 'one.tar.gz', self.root / 'out')
         self.assertEqual(package.check(folder), [])
-        self.assertEqual(os.stat(folder / '.claude/hooks/check.sh').st_mode & 0o777, 0o755)
-        self.assertEqual(os.stat(folder / 'AGENTS.md').st_mode & 0o777, 0o644)
+        if package.RECORDS_EXECUTE_BIT:
+            self.assertEqual(os.stat(folder / '.claude/hooks/check.sh').st_mode & 0o777, 0o755)
+            self.assertEqual(os.stat(folder / 'AGENTS.md').st_mode & 0o777, 0o644)
+        else:
+            # Windows 記不住 POSIX 權限位元：解出來的檔案要在、內容要對，
+            # 模式這一項本平台不適用（tar 裡的 0o755／0o644 不受影響，上面的
+            # package.check 與下面的 mtime 斷言照跑）。
+            self.assertTrue((folder / '.claude/hooks/check.sh').is_file())
+            with tarfile.open(self.root / 'one.tar.gz') as tar:
+                modes = {m.name.split('/', 1)[1]: m.mode & 0o777
+                         for m in tar.getmembers() if m.isfile()}
+            self.assertEqual(modes['.claude/hooks/check.sh'], 0o755)
+            self.assertEqual(modes['AGENTS.md'], 0o644)
         with tarfile.open(self.root / 'one.tar.gz') as tar:
             self.assertTrue(all(m.mtime == 0 for m in tar.getmembers()))
 
@@ -152,7 +163,11 @@ class DistributeTests(unittest.TestCase):
         self.assertEqual(distribute.seed(project, self.folder), sorted(FILES))
         self.assertEqual((project / 'docs/notes/a.md').read_text(), 'a\n')
         self.assertFalse((project / package.MANIFEST).exists())
-        self.assertEqual(os.stat(project / '.claude/hooks/check.sh').st_mode & 0o111, 0o111)
+        if package.RECORDS_EXECUTE_BIT:
+            self.assertEqual(os.stat(project / '.claude/hooks/check.sh').st_mode & 0o111, 0o111)
+        else:
+            # 本平台不記錄執行位元：只能驗檔案有被種下去，x 位元不適用。
+            self.assertTrue((project / '.claude/hooks/check.sh').is_file())
         self.denied('project-not-empty', distribute.seed, project, self.folder)
         empty = self.root / 'empty'
         empty.mkdir()
@@ -173,6 +188,18 @@ class DistributeTests(unittest.TestCase):
         self.denied('exception-present', distribute.write_pointer, project, 'beta', 'c' * 64,
                     'https://example.invalid/r.git')
         self.denied('invalid-pointer:source', distribute.write_pointer, self.root / 'q', 'beta', 'a' * 64, '-x')
+        # 2026-11-16：來源也收 Windows 的磁碟絕對路徑；開頭仍不可能是 '-'。
+        for bad in ('-C:\\\\repo', 'C:repo', 'repo', '1:\\\\x'):
+            with self.subTest(source=bad):
+                self.denied('invalid-pointer:source', distribute.write_pointer,
+                            self.root / 'q', 'beta', 'a' * 64, bad)
+        for good in ('C:\\\\repo\\\\kit', 'd:/repo/kit', '/srv/kit',
+                     'https://example.invalid/r.git'):
+            with self.subTest(source=good):
+                target = self.root / ('ok-' + good[:1])
+                distribute.write_pointer(target, 'beta', 'a' * 64, good)
+                self.assertEqual(pointer.parse(
+                    (target / pointer.POINTER).read_text())['source'], good)
         self.assertFalse((self.root / 'q' / pointer.POINTER).exists())
 
 

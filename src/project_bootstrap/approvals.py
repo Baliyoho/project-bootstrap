@@ -13,7 +13,38 @@ from project_bootstrap.broker import Broker, EFFECT_KINDS
 from project_bootstrap.contracts import Denied
 
 
-VERIFIER = Path('/usr/bin/ssh-keygen')
+def system_ssh_keygen():
+    r"""簽章驗證器的絕對路徑，依平台而定（不走 PATH）。
+
+    一直寫死 /usr/bin/ssh-keygen，是為了不讓 PATH 上任何一支同名程式被當成驗證器；
+    runtime_artifacts 也對這支算 digest。Windows 的 OpenSSH 不在那裡，於是整組簽章
+    相關測試在 Windows 全部 skip（A4 不收 skip），驗證永遠到不了綠燈。2026-11-16
+    改成依平台選一條同樣寫死的系統路徑：%SystemRoot%\System32\OpenSSH\ssh-keygen.exe。
+    仍然不查 PATH，POSIX 上的路徑一字未改。
+    """
+    if os.name == 'nt':
+        return Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'System32' / 'OpenSSH' / 'ssh-keygen.exe'
+    return Path('/usr/bin/ssh-keygen')
+
+
+VERIFIER = system_ssh_keygen()
+
+
+def verifier_env():
+    """呼叫 ssh-keygen 時的最小環境：不帶使用者的設定進去。
+
+    2026-11-16：原本固定 {'PATH': os.defpath}。Windows 上這樣起不來，
+    ssh-keygen 回 255、什麼都不印，簽章一律驗不過（三個 preflight 測試因此
+    看起來像 release:invalid-channel-signature）。逐一刪變數實測，Windows 的
+    OpenSSH 只差 ProgramData——它要靠這個找 ProgramData 底下 ssh 的系統設定；
+    另外補同屬系統的 SystemRoot、SystemDrive，其餘照樣不帶。
+    """
+    env = {'PATH': os.defpath}
+    if os.name == 'nt':
+        for name in ('ProgramData', 'SystemRoot', 'SystemDrive'):
+            if name in os.environ:
+                env[name] = os.environ[name]
+    return env
 NAMESPACE = 'project-bootstrap-v2-effect'
 SIGNER = b'fixture-authorizer'
 FIELDS = {'audience', 'id', 'actor', 'kind', 'resource', 'uses', 'funding', 'issued', 'expires', 'epoch'}
@@ -70,7 +101,7 @@ class SignedEffectApprovals:
                 result = subprocess.run([str(VERIFIER), '-Y', 'verify', '-f', str(signers),
                     '-I', SIGNER.decode('ascii'), '-n', NAMESPACE, '-s', str(proof)],
                     input=document, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                    env={'PATH': os.defpath}, timeout=3)
+                    env=verifier_env(), timeout=3)
         except (OSError, subprocess.TimeoutExpired):
             raise Denied('approval-verifier-unavailable') from None
         if result.returncode:

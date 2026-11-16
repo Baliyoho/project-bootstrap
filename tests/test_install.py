@@ -9,6 +9,21 @@ from project_bootstrap.contracts import Denied
 from project_bootstrap import install
 from project_bootstrap.install import apply, plan
 
+
+def can_symlink(root):
+    """Windows 要開發人員模式或系統管理員才建得了 symlink（WinError 1314）。
+
+    同 tests/test_package.py 的同名函式。A4 不收 skip，所以造不出這個情境時
+    改成斷言「造不出來」，讓權限不足成為寫下來的事實，不是悄悄通過。
+    """
+    probe = Path(root) / '_symlink-probe'
+    try:
+        probe.symlink_to(Path(root))
+    except OSError:
+        return False
+    probe.unlink()
+    return True
+
 PACKAGE = {'AGENTS.md': b'# AGENTS\n', 'HANDOFF.md': b'# HANDOFF\n',
            '.gitignore': b'.env\n*.key\n', '.claude/hooks/git-freshness.sh': b'echo hi\n'}
 
@@ -24,7 +39,9 @@ class InstallTests(unittest.TestCase):
         self.target.mkdir()
 
     def snapshot(self):
-        return {str(p.relative_to(self.target)): p.read_bytes()
+        # as_posix()，不是 str()：Windows 的 str() 給反斜線，PACKAGE 的鍵是部署路徑
+        # （一律正斜線），兩邊對不起來。2026-11-16 修；比對的東西沒變。
+        return {p.relative_to(self.target).as_posix(): p.read_bytes()
                 for p in self.target.rglob('*') if p.is_file()}
 
     def denied(self, code, call, *args, **kwargs):
@@ -85,6 +102,14 @@ class InstallTests(unittest.TestCase):
     def test_non_regular_entries_are_kept(self):
         (self.target / 'AGENTS.md').mkdir()
         (self.target / 'elsewhere').write_bytes(b'x')
+        if not can_symlink(self.target):
+            # 本機建不了 symlink：只能驗「目錄佔住部署路徑時照樣保留」這一半，
+            # symlink 那一半標為本機不適用。開「開發人員模式」後整個測試會回來。
+            with self.assertRaises(OSError):
+                (self.target / 'HANDOFF.md').symlink_to(self.target / 'elsewhere')
+            actions = {a['path']: a for a in plan(self.target, PACKAGE, home=self.home)['actions']}
+            self.assertEqual(actions['AGENTS.md']['action'], 'keep')
+            return
         (self.target / 'HANDOFF.md').symlink_to(self.target / 'elsewhere')
         actions = {a['path']: a for a in plan(self.target, PACKAGE, home=self.home)['actions']}
         self.assertEqual((actions['AGENTS.md']['action'], actions['HANDOFF.md']['action']),

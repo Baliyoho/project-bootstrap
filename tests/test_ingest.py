@@ -22,7 +22,10 @@ class IngestTests(unittest.TestCase):
         directory = tempfile.TemporaryDirectory(prefix='bootstrap-v2-ingest-')
         self.addCleanup(directory.cleanup)
         self.root = Path(directory.name)
-        (self.root / 'PROJECT-BOOTSTRAP.md').write_text('pack v1\n')
+        # write_bytes，不是 write_text：Windows 上 write_text 會把 LF 寫成 CRLF，
+        # 下一行的 digest 算的是 LF 版本，記錄一開始就對不起來（本 repo AGENTS
+        # 「行末」那條）。2026-11-16 在 Windows 上這讓首個斷言就失敗。
+        (self.root / 'PROJECT-BOOTSTRAP.md').write_bytes(b'pack v1\n')
         digest = hashlib.sha256(b'pack v1\n').hexdigest()
         self.meta = {'round': 'r2', 'command': 'python3 -X utf8 tools/verify_bootstrap.py',
                      'commit': 'abc1234', 'acquired_at': '2026-11-10T12:00:00+08:00',
@@ -72,7 +75,7 @@ class IngestTests(unittest.TestCase):
         records = from_bootstrap(real_lines(('OK', 'a')), 0, self.meta)
         self.assertEqual(resolve(['verify_bootstrap'], records, self.probe, 'r3')['rows'][0]['state'],
                          '沿用')
-        (self.root / 'PROJECT-BOOTSTRAP.md').write_text('pack v2\n')
+        (self.root / 'PROJECT-BOOTSTRAP.md').write_bytes(b'pack v2\n')
         row = resolve(['verify_bootstrap'], records, self.probe, 'r3')['rows'][0]
         self.assertEqual((row['state'], row['reason']),
                          ('未驗證', 'expired:file:PROJECT-BOOTSTRAP.md'))

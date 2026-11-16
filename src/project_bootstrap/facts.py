@@ -13,6 +13,8 @@ from pathlib import Path
 import re
 import subprocess
 
+from project_bootstrap.contracts import path_escapes
+
 
 def _git(repo, env, *args):
     result = subprocess.run(['git', '--no-optional-locks', '-C', str(repo), *args],
@@ -23,8 +25,9 @@ def _git(repo, env, *args):
 
 
 def _inside(repo, relative):
-    if (not isinstance(relative, str) or not relative or relative.startswith('/')
-            or '..' in relative.split('/')):
+    # path_escapes（contracts）認兩種分隔符與磁碟代號；原本這裡只認 POSIX，
+    # Windows 上 repo 外的絕對路徑會被當成合法相對路徑讀進來。2026-11-16 修。
+    if not isinstance(relative, str) or path_escapes(relative):
         raise LookupError('path outside repository')
     return Path(repo) / relative
 

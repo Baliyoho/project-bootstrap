@@ -9,6 +9,20 @@ import unittest
 from project_bootstrap.lines import assess_lines
 
 
+def can_symlink(root):
+    """Windows 要開發人員模式或系統管理員才建得了 symlink（WinError 1314）。
+
+    同 tests/test_package.py 的同名函式。A4 不收 skip，造不出情境時斷言「造不出來」。
+    """
+    probe = Path(root) / '_symlink-probe'
+    try:
+        probe.symlink_to(Path(root))
+    except OSError:
+        return False
+    probe.unlink()
+    return True
+
+
 class LineTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory(prefix='bootstrap-v2-lines-')
@@ -65,8 +79,16 @@ class LineTests(unittest.TestCase):
 
     def test_subdirectory_and_symlink_resolve_to_the_same_tree(self):
         link = self.root / 'link'
-        link.symlink_to(self.main, target_is_directory=True)
-        for other in (self.main / 'sub', link):
+        others = [self.main / 'sub']
+        if can_symlink(self.root):
+            link.symlink_to(self.main, target_is_directory=True)
+            others.append(link)
+        else:
+            # 本機建不了 symlink：子目錄那一格照跑，symlink 那一格標為不適用。
+            # 開「開發人員模式」後這一格會自己回來。
+            with self.assertRaises(OSError):
+                link.symlink_to(self.main, target_is_directory=True)
+        for other in others:
             with self.subTest(other=other.name):
                 report = assess_lines([('main', self.main, 'main'), ('x', other, 'main')],
                                       env=self.env)

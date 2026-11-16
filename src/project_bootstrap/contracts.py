@@ -5,12 +5,36 @@ contract testing. They are NOT an OS security boundary or real identity proof.
 Do not put real credentials/content here or expose this object to agents.
 """
 import hashlib
+import ntpath
+import posixpath
+import re
 import secrets
 import sqlite3
 import time
 import math
 from contextlib import contextmanager
 from datetime import datetime, timezone
+
+
+_SEPARATORS = re.compile(r'[\\/]')
+
+
+def path_escapes(value):
+    r"""True when ``value`` could name a file outside ``root``.
+
+    2026-11-16：原本的條件是 value.startswith("/") 加上 "." * 2 not in
+    value.split("/")，兩關都只認 POSIX。Windows 上 C:\Users\x\outside.txt
+    兩關都過，根目錄外的絕對路徑被當成合法的相對輸入收下（tests/test_facts 期待
+    「未知／query-failed」，實得「一致／compared」），往上爬的 ..\.. 也看不出來。
+    現在兩種分隔符、磁碟代號與開頭的分隔符在所有平台都檢查，POSIX 行為不變。
+    注意 ntpath.isabs 自 Python 3.13 起對 \server\share 這種「磁碟相對」路徑回
+    False，所以開頭的分隔符要自己擋，不能只靠它。
+    """
+    if not value or value[0] in "/\\":
+        return True
+    if posixpath.isabs(value) or ntpath.isabs(value) or ntpath.splitdrive(value)[0]:
+        return True
+    return ".." in _SEPARATORS.split(value)
 
 
 class Denied(Exception):

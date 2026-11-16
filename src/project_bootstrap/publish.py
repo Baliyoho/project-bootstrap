@@ -24,10 +24,11 @@ import re
 import subprocess
 import tempfile
 
+from project_bootstrap.approvals import system_ssh_keygen, verifier_env
 from project_bootstrap.contracts import Denied
 from project_bootstrap.release import KINDS, manifest_digest
 
-VERIFIER = Path('/usr/bin/ssh-keygen')
+VERIFIER = system_ssh_keygen()
 NAMESPACE = 'project-bootstrap-v2-publish'
 CI_SIGNER = 'fixture-ci'
 ATTESTATION_FIELDS = {'manifest', 'report'}
@@ -66,7 +67,7 @@ def _verify(ci_key, document, signature):
                 [str(VERIFIER), '-Y', 'verify', '-f', str(signers), '-I', CI_SIGNER,
                  '-n', NAMESPACE, '-s', str(proof)],
                 input=document, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                env={'PATH': os.defpath}, timeout=3)
+                env=verifier_env(), timeout=3)
     except (OSError, subprocess.TimeoutExpired):
         raise Denied('attestation-verifier-unavailable') from None
     if result.returncode:

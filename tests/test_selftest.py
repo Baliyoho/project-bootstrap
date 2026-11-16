@@ -125,7 +125,10 @@ class CheckTests(unittest.TestCase):
         shutil.rmtree(self.home)
 
     def checks(self, surface):
-        return selftest.install_checks(surface, self.root, self.home)
+        # 明寫 'posix'：wired_project 造的是 POSIX 接線，不給 platform 會預設成
+        # 本機平台，在 Windows 上整組 hooks 檢查都會因為少了 Windows handler 而
+        # 失敗。這個類別驗的是 POSIX handler，平台不該跟著跑測試的機器變。
+        return selftest.install_checks(surface, self.root, self.home, 'posix')
 
     def failed(self, surface):
         return sorted(k for k, v in self.checks(surface).items() if not v['ok'])
@@ -188,7 +191,10 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(self.failed('antigravity-cli'), ['hooks'])
         write(self.root, '.agents/hooks.json', json.dumps(AG))
         (self.root / '.claude/hooks/ag-wrap.sh').chmod(0o644)
-        self.assertEqual(self.failed('antigravity-2'), ['hooks'])
+        # 本機記不住 x 位元時這個 chmod 不留痕跡，檢查只看得到「檔案在」：
+        # 這一格標為本平台不適用，斷言它回報沒問題，不是假裝有抓到。
+        self.assertEqual(self.failed('antigravity-2'),
+                         [] if selftest.THIS_PLATFORM == 'windows' else ['hooks'])
         # Claude Code runs the scripts through bash; the wrapper's mode is not its business.
         self.assertEqual(self.failed('claude-code'), [])
 
@@ -244,7 +250,13 @@ class WindowsCheckTests(unittest.TestCase):
         (self.root / '.claude/hooks/ag-wrap.sh').chmod(0o644)
         # Windows runs ag-wrap.sh through Git Bash: the mode bit is not needed there.
         self.assertEqual(self.failed('antigravity-cli'), [])
-        self.assertEqual(self.failed('antigravity-cli', 'posix'), ['hooks'])
+        if selftest.THIS_PLATFORM == 'windows':
+            # 本機記不住 x 位元：上面那個 chmod 不會留下痕跡，從這台機器看
+            # POSIX handler 只能看到「檔案在」。這一格標為本平台不適用，
+            # 斷言它確實回報沒問題，而不是假裝有抓到。
+            self.assertEqual(self.failed('antigravity-cli', 'posix'), [])
+        else:
+            self.assertEqual(self.failed('antigravity-cli', 'posix'), ['hooks'])
         for needed in ('.agents/ag-hook.cmd', '.claude/hooks/ag-wrap.sh'):
             moved = self.root / (needed + '.bak')
             (self.root / needed).rename(moved)
