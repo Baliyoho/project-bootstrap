@@ -10,7 +10,7 @@ bootstrap v3 的跨平台驗收。**四種組合（Codex／Claude Code × macOS�
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
-- **待續分支**：無。
+- **待續分支**：`fix/windows-platform-aware`（Windows 平台感知；已推上 origin，未併入 `main`）。
 - **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　11.16.20｜待指派｜工作中｜交棒0次`，2026-11-16 20:17 (+08) 開工
 - **骨架版本**：`2026-11-16.6`
 - 本棒沒改 skill／hook 內容，刻意不跳版；部署包與所有副本未動。
