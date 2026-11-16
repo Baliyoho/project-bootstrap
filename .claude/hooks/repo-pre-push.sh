@@ -3,11 +3,12 @@
 # 起因：push 完才想起沒寫 HANDOFF，下一棒拿到過期狀態。
 # 只看殼層指令（tool_input.command）裡的字面 git push、目前分支與 origin 追蹤 ref，不解析選項／remote／refspec。
 # GUI／script 可能漏判，指令裡僅提到 git push 也可能誤擋；檢查已提交的 HANDOFF 差異。
-# 比對目前分支與本機 origin 追蹤參照。釋回或替換占用時，既有標記的 session-id 必須相符。
-# 非 push、非殼層工具、feature 分支中途推進度照常放行。
+# 其他情況（非 push 指令、非殼層工具、feature 分支中途推進度、判斷不了）一律放行——寧可漏擋，不要誤擋。
 # 退出碼：0＝放行；2＝擋下並把 stderr 交給模型（模型會看到訊息並改走交棒程序）。
-# HANDOFF_HOOK=off 只停用原本的權威分支開工提醒，仍核對既有占用。
-# source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# 臨時停用：HANDOFF_HOOK=off
+# source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+
+[ "$HANDOFF_HOOK" = "off" ] && exit 0
 
 payload=$(cat 2>/dev/null)
 case "$payload" in
@@ -25,46 +26,16 @@ printf '%s' "$payload" \
 
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$root" || exit 0
-branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
-git rev-parse --quiet --verify "refs/remotes/origin/$branch" >/dev/null 2>&1 || exit 0
-[ -n "$(git rev-list "origin/$branch..HEAD" 2>/dev/null)" ] || exit 0
-
-owner_field='^[[:space:]]*-[[:space:]]+\*\*工作中\*\*(：|:)'
-old_owner=$(git show "origin/$branch:HANDOFF.md" 2>/dev/null | grep -E "$owner_field")
-new_owner=$(git show HEAD:HANDOFF.md 2>/dev/null | grep -E "$owner_field")
-idle="$owner_field"'[[:space:]]*無（已交棒）[[:space:]]*$'
-owner_suffix=' \[session-id=([A-Za-z0-9_-]{1,128})\]$'
-if [ -n "$old_owner" ] && [ "$old_owner" != "$new_owner" ] &&
-    { [[ "$old_owner" == *$'\n'* ]] || ! [[ "$old_owner" =~ $idle ]]; }; then
-  owner_id=''
-  if [[ "$old_owner" != *$'\n'* && "$old_owner" =~ $owner_suffix ]]; then
-    owner_id=${BASH_REMATCH[1]}
-  fi
-  session_id=''
-  if [ -n "$owner_id" ]; then
-    json='import json, re, sys
-value = json.load(sys.stdin).get("session_id")
-if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", value):
-    print(value)'
-    for py in python3 python; do
-      if session_id=$(printf '%s' "$payload" | "$py" -X utf8 -c "$json" 2>/dev/null) && [ -n "$session_id" ]; then
-        break
-      fi
-    done
-  fi
-  if [ -z "$owner_id" ] || [ "$owner_id" != "$session_id" ]; then
-    >&2 echo "[handoff-check] 無法以本次 hook 的 session-id 核對 origin 的開工者。已擋下更改「工作中」欄位的推送。保留原標記並照 B1 回報；舊標記依 A2.5／A6 處理。"
-    exit 2
-  fi
-fi
-
-[ "$HANDOFF_HOOK" = "off" ] && exit 0
 [ -f HANDOFF.md ] || exit 0                    # 沒有這套交接制度就不管
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
 main=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
 main=${main#origin/}
 [ -n "$main" ] || main=main
 [ "$branch" = "$main" ] || exit 0               # feature 分支中途推進度不擋
 
+git rev-parse --quiet --verify "refs/remotes/origin/$branch" >/dev/null 2>&1 || exit 0
+[ -n "$(git rev-list "origin/$branch..HEAD" 2>/dev/null)" ] || exit 0   # 沒有要推的 commit
 git diff --name-only "origin/$branch..HEAD" 2>/dev/null | grep -qx 'HANDOFF.md' && exit 0
 # 2026-11-12（決策書 Q31）：origin 上的「工作中」不是「無（已交棒）」＝有人開工、還沒交棒，
 # 這次 push 是中途安全點，不必更新 HANDOFF。看不出是哪個 session，別台機器的標記也會放行——

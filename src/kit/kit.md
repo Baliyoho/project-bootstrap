@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-16.2**（開場提供工具的 session ID，開工標記留存。AI push hook 在可辨識的目前分支推送中比對原開工者，阻擋未經核對的釋回或替換。）
+> 版本：**2026-11-16.3**（撤回 2026-11-16.2 的 session ID 占用核對：它讓 AI push hook 在缺 ID、缺 Python、feature 分支與 `HANDOFF_HOOK=off` 時都擋下，把開工標記從訊號變成鎖（D1），擴大 F10 的阻擋範圍卻沒有使用者定案與 D14 對照。3.10、3.11 回到原本「寧可漏擋」的行為；保留 Windows 的 `python3`／`python` 回退與 B1 斷線例子。使用者 2026-11-16 決定：一套共用規則，工具與平台的差異只寫成碰到才讀的說明，不改變共用狀態的判讀。六個 skill 檔與共用制度標記同版。）
+> 前一版 **2026-11-16.2**（開場提供工具的 session ID，開工標記留存。AI push hook 在可辨識的目前分支推送中比對原開工者，阻擋未經核對的釋回或替換。已由 2026-11-16.3 撤回。）
 > 前一版 **2026-11-16**（交棒核對補上斷線後新開 session 的例子。Windows `midway` 曾照舊評分通過，卻在新 session 直接清掉舊開工標記。六個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-15.2**（交棒先核對遠端開工標記是否屬於本 session，推送釋回前再核對遠端。六個 skill 檔與共用制度標記同版。）
 > 2026-11-15.3（3.10 hook）：Windows Git Bash 能找到 WindowsApps 的 `python3` 別名，但該別名可能執行失敗，讓 Codex 收不到開場事實。hook 依次用 `python3`、`python` 實際產生 UTF-8 JSON，兩者都失敗時回報錯誤。驗證器覆蓋失效別名及兩個指令都失敗的情境。
@@ -419,8 +420,8 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ### 3.11 `.claude/hooks/pre-push-handoff.sh`（AI push 提醒）
 
-> **AI push 提醒的覆蓋範圍。** 只對殼層指令（payload 的 `command` 欄位）含字面 `git push` 的呼叫，依目前分支與本機 `origin` 追蹤 ref 判斷。此路徑未解析 shell、選項、實際 remote 或 refspec。`git -c … push`、GUI、間接執行的 script 可能漏判，指令裡只是提到 `git push`（例如 `echo`）也可能誤擋。編輯檔案等非殼層工具的內容提到它會放行（2026-11-12，決策書 Q27）。現有 feature 分支仍核對占用變更，保留標記的安全點照常放行。需要跨所有推送路徑的硬閘門時另評估 Git 原生 pre-push 與伺服器保護。
-> 2026-11-16／F10：開場 hook 從工具 payload 取得 session ID。開工者將它記在標記行尾。釋回、替換或刪除已占用欄位時，用工具送給 PreToolUse 的頂層 session ID 比對原標記。舊標記缺值時，先由使用者核對並處理遷移。`HANDOFF_HOOK=off` 只停用原本的權威分支開工提醒，仍核對既有占用。
+> **AI push 提醒，不是 Git 原生 pre-push 或發布保證。** 只對殼層指令（payload 的 `command` 欄位）含字面 `git push` 的呼叫，依目前分支與本機 `origin` 追蹤 ref 判斷；不解析 shell、選項、實際 remote 或 refspec。`git -c … push`、GUI、間接執行的 script 可能漏判，指令裡只是提到 `git push`（例如 `echo`）也可能誤擋；編輯檔案等非殼層工具的內容提到它不算（2026-11-12，決策書 Q27）；feature 分支與判斷不了時放行。需要硬閘門時另評估 Git 原生 pre-push 與伺服器保護。
+> 2026-11-16：2026-11-16.2 曾在這裡加 session ID 占用核對（釋回或替換標記時比對工具送來的 session ID），同日由 2026-11-16.3 撤回：缺資訊就擋，違反本段「判斷不了時放行」與 D1「標記是訊號不是鎖」，也沒有使用者定案。要重新加入，先依 D14 對照、由使用者決定，而且四種工具／平台組合用同一條規則。
 > 2026-11-02／F06：移除「工作樹正在改，等一下會提交」的放行假設。staged／unstaged 修改都不會隨 push 上傳，只有已提交的 HANDOFF 差異才算；開工標記與交棒快照都能通過，**不代表內容已驗證或已交棒**。
 > 退出碼 2 會擋下該次 Bash 呼叫並把訊息交給模型——這是唯一能讓 agent「當場改走交棒程序」的機制，警告訊息模型不一定看得到。
 

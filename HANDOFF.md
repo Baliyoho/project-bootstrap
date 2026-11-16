@@ -12,24 +12,24 @@
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無。
 - **工作中**：`Mac` ／ `Claude Code` ／ `㊣　11.16.11｜待指派｜工作中｜交棒0次`，2026-11-16 11:57 (+08) 開工 [session-id=21ce82be-d8be-4ea6-8e4d-be0342978050]
-- **骨架版本**：`2026-11-16.2`
+- **骨架版本**：`2026-11-16.3`
 
 ## 已完成
 
-- 共用開場 hook 以可執行的 Python 產生 UTF-8 JSON，並從工具 payload 取得 session ID。開工標記留存 ID。AI push hook 釋回、替換或刪除已占用標記時，核對原標記與工具 ID。缺 ID 的舊標記先由使用者核對遷移。既有開工提醒保留。
+- 共用開場 hook 以可執行的 Python 產生 UTF-8 JSON（Windows 依序試 `python3`、`python`）。`2026-11-16.2` 的 session ID 占用核對已在 `2026-11-16.3` 撤回：違反 D1、D14 與 3.11「判斷不了時放行」。
 - Windows 原生 Codex CLI `0.166.0` 已驗開場、PreToolUse、異 session 攔截及同 session 正常釋回。工作區沙箱下的 Git 推送也已驗證單次核准可使測試遠端與本機追蹤參照同步。
 - 十個 Windows 真實情境與兩個占用探針的結果已記錄。較早版本 `midway` 兩次誤釋回舊占用。新版 `2026-11-16.2` 依同一提示重跑 PASS，遠端 refs、標記、本機 HEAD 和工作樹全數保留，推送為零。舊評分保留供對照。[原生 Windows 結果](experiments/handoff-ab/CODEX-RESULTS.md#windows-離線驗證2026-11-16)
 - 測試器已支援原生 Windows fixture、評分和 Codex developer 訊息中的開場 JSON。既有五個 OpenSSH 簽章 fixture 可在 Linux 實跑。
 
 ## 未完成／下一步
 
-1. 在 macOS 取用 `2026-11-16.2`，按[跨平台驗證清單](experiments/handoff-ab/CODEX-RESULTS.md#通用改動與跨平台驗證清單2026-11-16)先跑完整驗證，再用兩個隔離的 CLI session 檢查異 session 拒絕、同 session 放行、舊標記與待續分支。實際審核 hook 信任後再判讀。
-2. macOS 以相同版本、相同 `midway` 提示和 B1 保全判準與 Windows 對照。先前 macOS 規則複驗是 `2026-11-15.2`。[macOS 歷史結果](experiments/handoff-ab/PHASE2-RESULTS.md#codex-占用者核對複驗2026-11-15) 額外模型呼叫按訂閱與使用者授權執行。
+1. 把散在 `kit.md` 與 `mode-*.md` 的工具差異（Codex／Claude）和平台差異（macOS／Windows）整理成碰到才讀的差異說明。差異說明只寫環境怪癖與操作提醒，不改共用狀態的判讀（Q35）。
+2. macOS 以 `2026-11-16.3`、同一個 `midway` 提示和 B1 保全判準複驗，判斷 Windows 的失敗是平台還是情境造成。額外模型呼叫按訂閱與使用者授權執行。[macOS 歷史結果](experiments/handoff-ab/PHASE2-RESULTS.md#codex-占用者核對複驗2026-11-15)
 3. 其他已部署專案與選用的全域 skill 副本仍待同步。先核對現有占用，再依 `AGENTS-reasons.md` 的副本規則與 `tools/sync_project.py` 處理。桌面 App 的 F50 五步互動沿用既有暫緩決定。
 
 ## 地雷與注意事項
 
-- 本版 hook 比對目前分支的已提交內容與本機追蹤參照。覆蓋範圍是可辨識的 AI 殼層推送。交棒前仍要 fetch 核對。舊標記缺 ID 時由使用者處理遷移。
+- AI push hook 回到只擋「推權威分支、沒改 `HANDOFF.md`、origin 標記是無（已交棒）」一種情形。斷線 session 的舊標記只靠 B1 文字保護，Windows Codex 曾兩次誤釋回。
 - Windows 的 HTTP push 可以送達遠端且 exit 0，本機追蹤參照卻仍因無法鎖定 `.git` 而停在舊 SHA。核對遠端和本機兩者，必要時用單次命令審核。
 - 隔離倉庫、原始串流、模擬請求及登入配置留在本機。公開 repo 僅留聚合結果和復現條件。
 

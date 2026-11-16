@@ -779,7 +779,6 @@ def step_hook(dest, tmp):
     git(['push', '-q', 'origin', 'main'], work)
     write_lf(handoff, read_lf(handoff).replace('`fixture` ／ `Codex CLI`', '無（已交棒）'))
     git(['commit', '-qam', 'chore: release'], work)
-    cases.append(('舊標記沒有 session-id，AI 不能清除', 2, fire(push)))
     git(['push', '-q', 'origin', 'main'], work)
     (work / 'README.md').open('a', encoding='utf-8', newline='').write('\n交棒後又改\n')
     git(['commit', '-qam', 'docs: after release'], work)
@@ -805,44 +804,6 @@ def step_hook(dest, tmp):
 
     git(['checkout', '-q', 'main'], work)
     cases.append(('HANDOFF_HOOK=off', 0, fire(push, env=dict(GIT_ENV, HANDOFF_HOOK='off'))))
-
-    claimed = read_lf(handoff).replace('`fixture` ／ `Codex CLI`',
-                                     '`fixture` ／ `Codex CLI` [session-id=owner-01]')
-    write_lf(handoff, claimed)
-    git(['commit', '-qam', 'claim with session ID'], work)
-    git(['push', '-q', 'origin', 'main'], work)
-
-    def session_push(session=None, **tool_fields):
-        payload = {'tool_input': {'command': 'git push origin main', **tool_fields}}
-        if session is not None:
-            payload['session_id'] = session
-        return fire(json.dumps(payload))
-
-    write_lf(handoff, claimed.replace('`fixture` ／ `Codex CLI` [session-id=owner-01]', '無（已交棒）'))
-    git(['commit', '-qam', 'release with session ID'], work)
-    cases.append(('同 session 釋回', 0, session_push('owner-01')))
-    cases.append(('別的 session 清除標記', 2, session_push('owner-02')))
-    cases.append(('停用原提醒仍核對占用', 2, fire(push, env=dict(GIT_ENV, HANDOFF_HOOK='off'))))
-    cases.append(('缺 session_id 或只有巢狀替身', 2, session_push(session_id='owner-01')))
-    cases.append(('工具輸入內的假 session_id 不會覆過真值', 2, session_push('owner-02', session_id='owner-01')))
-    write_lf(handoff, claimed.replace('owner-01', 'owner-02'))
-    git(['commit', '-qam', 'replace existing owner'], work)
-    cases.append(('別的 session 換成自己', 2, session_push('owner-02')))
-    git(['rm', '-q', 'HANDOFF.md'], work)
-    git(['commit', '-qm', 'remove the handoff file'], work)
-    cases.append(('刪除 HANDOFF 也不能釋回舊標記', 2, session_push('owner-02')))
-    write_lf(handoff, claimed)
-    git(['add', 'HANDOFF.md'], work)
-    git(['commit', '-qm', 'restore original marker'], work)
-    cases.append(('保留現有標記的安全點', 0, session_push('owner-02')))
-    git(['checkout', '-qb', 'feature/owned'], work)
-    git(['push', '-qu', 'origin', 'feature/owned'], work)
-    write_lf(handoff, claimed.replace('owner-01', 'owner-02'))
-    git(['commit', '-qam', 'replace owner on continuation branch'], work)
-    cases.append(('待續分支上的既有標記同樣受保護', 2, fire(json.dumps({
-        'session_id': 'owner-02', 'tool_input': {'command': 'git push origin feature/owned'},
-    }))))
-    git(['checkout', '-q', 'main'], work)
 
     bad = [f'{n}：期望 {want}、實得 {got}' for n, want, got in cases if want != got]
     if bad:
@@ -3704,14 +3665,12 @@ python() {
 '''
     cmd = [bash, '-c', wrapper, 'facts-python-probe', hook]
     env = dict(GIT_ENV, BOOTSTRAP_VERSION_CHECK='off', BOOTSTRAP_VERIFY_PYTHON=sys.executable)
-    start_payload = '{"session_id":"owner-probe","tool_input":{"session_id":"nested-ignored"}}'
+    start_payload = '{}'
     fallback = run(cmd, cwd=work, stdin=start_payload, env=dict(env, BOOTSTRAP_VERIFY_DISABLE_PYTHON='0'))
     unavailable = run(cmd, cwd=work, stdin=start_payload, env=dict(env, BOOTSTRAP_VERIFY_DISABLE_PYTHON='1'))
     bad = []
     if fallback.returncode != 0 or facts_output_problems(fallback.stdout) or fallback.stderr:
         bad.append('python3 執行失敗時，未由 python 輸出純 SessionStart JSON')
-    elif '；session-id=owner-probe' not in fallback.stdout or 'nested-ignored' in fallback.stdout:
-        bad.append('開場事實未保留頂層 session-id')
     if (unavailable.returncode != 1 or unavailable.stdout
             or 'Git facts unavailable:' not in unavailable.stderr):
         bad.append('兩個 Python 指令都失敗時，未以 stderr 與 exit 1 回報')

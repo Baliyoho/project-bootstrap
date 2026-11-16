@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-16.2**（開場提供工具的 session ID，開工標記留存。AI push hook 在可辨識的目前分支推送中比對原開工者，阻擋未經核對的釋回或替換。）
+> 版本：**2026-11-16.3**（撤回 2026-11-16.2 的 session ID 占用核對：它讓 AI push hook 在缺 ID、缺 Python、feature 分支與 `HANDOFF_HOOK=off` 時都擋下，把開工標記從訊號變成鎖（D1），擴大 F10 的阻擋範圍卻沒有使用者定案與 D14 對照。3.10、3.11 回到原本「寧可漏擋」的行為；保留 Windows 的 `python3`／`python` 回退與 B1 斷線例子。使用者 2026-11-16 決定：一套共用規則，工具與平台的差異只寫成碰到才讀的說明，不改變共用狀態的判讀。六個 skill 檔與共用制度標記同版。）
+> 前一版 **2026-11-16.2**（開場提供工具的 session ID，開工標記留存。AI push hook 在可辨識的目前分支推送中比對原開工者，阻擋未經核對的釋回或替換。已由 2026-11-16.3 撤回。）
 > 前一版 **2026-11-16**（交棒核對補上斷線後新開 session 的例子。Windows `midway` 曾照舊評分通過，卻在新 session 直接清掉舊開工標記。六個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-15.2**（交棒先核對遠端開工標記是否屬於本 session，推送釋回前再核對遠端。六個 skill 檔與共用制度標記同版。）
 > 2026-11-15.3（3.10 hook）：Windows Git Bash 能找到 WindowsApps 的 `python3` 別名，但該別名可能執行失敗，讓 Codex 收不到開場事實。hook 依次用 `python3`、`python` 實際產生 UTF-8 JSON，兩者都失敗時回報錯誤。驗證器覆蓋失效別名及兩個指令都失敗的情境。
@@ -315,7 +316,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 專案概觀與測試指令在 [README.md](README.md)。現在做到哪、下一步是什麼，在 [HANDOFF.md](HANDOFF.md)。使用者用 **{{LANG}}** 溝通。
 > 最後更新：{{TODAY}}（建立）
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -333,8 +334,6 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 1. 改任何檔案之前，本機要跟 origin 一致，而且 origin 上的「工作中」要先推成你自己（`機器 ／ 工具 ／ session 名`，加開工時間）。推不上去就不算。只讀、只回答問題的 session 不寫。
 2. origin 上的「工作中」是別人時，不改檔、不推送，停下來告訴使用者。
 3. 使用者要求交棒時才交棒。交棒前先 fetch，確認 origin 上的「工作中」標記確由本 session 推上。無法確認就停下回報，不改檔、不推送。交棒完成的定義：所有成果都在 origin 上；`HANDOFF.md` 整份覆寫成當下狀態（欄位照現有格式，80 行以內，不累積歷史）；「工作中」改回 `無（已交棒）`；本機沒有留下沒推的東西。使用者沒要求就保留你的「工作中」。
-
-開工時，把開場 hook 提供的 `session-id=` 值寫在「工作中」行尾的 `[session-id=…]`。AI push hook 只在工具送來的身分與現有標記相符時放行釋回或替換。
 4. `main` 上的測試要一直是過的。沒做完的工作放分支推上去，在 `HANDOFF.md` 的「待續分支」寫明分支名。
 5. 沒驗證過的事不寫成已驗證。
 6. 不提交祕密或金鑰樣式的內容。提交前看 staged 清單，逐檔加入，不用 `git add -A` 或 `git add .`。
@@ -825,7 +824,7 @@ name: handoff
 description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（參考檔入口）
 
@@ -888,7 +887,7 @@ description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒�
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
@@ -932,8 +931,6 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 
 回報完就改 session 名稱（規則在 `AGENTS.md` 的「session 名稱」）。**只讀、只問問題的 session 不寫開工標記。** 確定要改檔才做下面四步，做完才開始改：
 
-如果開場第一行有 `session-id=`，逐字將該值加到「工作中」行尾，例如 ` [session-id=example-session]`。開場沒有提供時，保留原格式並先查 hook 接線；後續交棒的 AI push hook 需要用這個值核對開工者。
-
 1. 把 `HANDOFF.md` 的「工作中」改成本機與本 session（沒有這一欄就在「Git 狀態」補一列）：
 
    ```markdown
@@ -951,7 +948,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場 `[facts]` 有不正常的值時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
@@ -1086,8 +1083,6 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **首次接棒回報完就改 session 名稱**成 `㊣　MM.DD.HH｜<主題>｜工作中｜交棒<N>次`（規則見「session 命名」）；**已交棒後續聊在收到新訊息時就先恢復工作中，不等 A5**。然後把實際結果寫進模板最後那行 `session：`——改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>` 並附交棒次數，不必為此停下來問使用者。**那一行不能省**：寫不出來就是沒做，而這是唯一看得出來的地方。這一步跟下面的開工標記是兩件事，**不要等它**。
 
 **確定要動手改東西，才寫開工標記。** 只讀、只問問題的 session 不寫——那會在權威分支的歷史裡堆一堆沒有內容的 commit，而被灌爆的歷史沒人會認真看。
-
-補寫開工標記時，若開場第一行含 `session-id=`，把該值逐字記到「工作中」行尾 ` [session-id=<值>]`。既有標記沒有此值時，AI push hook 無法驗證誰能替換它。依舊占用恢復流程，由使用者核對並處理舊標記後再接手。
 **開工標記是協調訊號，不是互斥鎖**；先確認同一工作樹只有一個 writer。遠端 SHA 與 A2.5 觀測值不同就停止；失敗的開工不能當一般 merge 衝突合併。push 後重讀 owner 只確認遠端標記內容，不等於取得原子 claim。
 
 1. 把該分支 `HANDOFF.md` 的「工作中」欄位改成本機與本 session。舊專案沒有這一欄，就在「Git 狀態」那節補一列（這就是該專案的升級點，不用另外安排一次升級）：
@@ -1135,7 +1130,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -1165,8 +1160,6 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **標記屬於別人、缺失、已釋回或無法確認歸屬就停下**，回報遠端狀態，不改檔、不提交、不推送。fetch 失敗也停下。2026-11-15 的 Codex 占用者探針中，六個新 session 在同機器同工具下都釋回了舊 session 的標記，因此在第一步核對。
 
 **斷線後開了新 session，確認舊工作的歸屬仍須停在 B1。** 例如使用者說「上一個 session 斷線了，工作中標記和未提交修改都是我們自己的，請交棒」。這確認了舊工作的歸屬。先保留舊標記和工作樹，連保存到待續分支也等本 session 核對自己推上的開工標記。要接手此前的工作，先依 `mode-a-stop.md` 的 A2.5 與 A6 處理舊占用與補交接。
-
-AI push hook 另比對開工標記行尾的 `[session-id=…]` 與工具送給 hook 的 session ID。舊標記缺值或不一致時，保留標記並回報。若須遷移舊標記，先由使用者核對歸屬並處理遷移。
 
 未完成的東西二選一：完成並驗證；或 commit／push 到分支並在 HANDOFF 標明風險與已知安全 commit。
 **不留來源不明的工作樹**，也不要把半成品併進 `main`。
@@ -1314,7 +1307,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -1389,7 +1382,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
@@ -1603,7 +1596,7 @@ python -X utf8 tools/check_docs.py
 
 ````bash
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：fetch 一次，只報事實，不下指示（需求決策書 v3 第 5 節，D12）。
 # 用 SessionStart JSON 把最多 5 行 [facts] 放進 context；Codex 會把裸的 [facts] 誤認為壞 JSON。只讀：不 pull、不 push、不寫任何檔。
 # 怎麼判讀交給模型與 AGENTS.md 的共用制度；舊版的判讀表、全綠行與工具身分猜測在 2026-11-13 移除，
@@ -1612,8 +1605,6 @@ python -X utf8 tools/check_docs.py
 cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
 me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
-hook_input=''
-[ -t 0 ] || IFS= read -r -d '' -t 1 hook_input || true
 
 facts=''
 emit() { facts="${facts}${facts:+
@@ -1621,20 +1612,11 @@ emit() { facts="${facts}${facts:+
 finish() {
   local py json output
   [ -n "$facts" ] || return
-  json='import json, re, sys
-payload, facts = sys.stdin.read().split(chr(0), 1)
-try:
-    session = json.loads(payload).get("session_id")
-except (ValueError, AttributeError):
-    session = None
-if isinstance(session, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", session):
-    lines = facts.split("\n", 1)
-    lines[0] += "；session-id=" + session
-    facts = "\n".join(lines)
-print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": facts}}, ensure_ascii=False))'
+  json='import json, sys
+print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": sys.stdin.read()}}, ensure_ascii=False))'
   # Windows 的 python3 可能只是一個 PATH 找得到、實際執行會失敗的別名。
   for py in python3 python; do
-    if output=$(printf '%s\0%s' "$hook_input" "$facts" | "$py" -X utf8 -c "$json" 2>/dev/null) && [ -n "$output" ]; then
+    if output=$(printf '%s' "$facts" | "$py" -X utf8 -c "$json" 2>/dev/null) && [ -n "$output" ]; then
       printf '%s\n' "$output"
       return
     fi
@@ -1748,8 +1730,8 @@ exit 0
 
 ### 3.11 `.claude/hooks/pre-push-handoff.sh`（AI push 提醒）
 
-> **AI push 提醒的覆蓋範圍。** 只對殼層指令（payload 的 `command` 欄位）含字面 `git push` 的呼叫，依目前分支與本機 `origin` 追蹤 ref 判斷。此路徑未解析 shell、選項、實際 remote 或 refspec。`git -c … push`、GUI、間接執行的 script 可能漏判，指令裡只是提到 `git push`（例如 `echo`）也可能誤擋。編輯檔案等非殼層工具的內容提到它會放行（2026-11-12，決策書 Q27）。現有 feature 分支仍核對占用變更，保留標記的安全點照常放行。需要跨所有推送路徑的硬閘門時另評估 Git 原生 pre-push 與伺服器保護。
-> 2026-11-16／F10：開場 hook 從工具 payload 取得 session ID。開工者將它記在標記行尾。釋回、替換或刪除已占用欄位時，用工具送給 PreToolUse 的頂層 session ID 比對原標記。舊標記缺值時，先由使用者核對並處理遷移。`HANDOFF_HOOK=off` 只停用原本的權威分支開工提醒，仍核對既有占用。
+> **AI push 提醒，不是 Git 原生 pre-push 或發布保證。** 只對殼層指令（payload 的 `command` 欄位）含字面 `git push` 的呼叫，依目前分支與本機 `origin` 追蹤 ref 判斷；不解析 shell、選項、實際 remote 或 refspec。`git -c … push`、GUI、間接執行的 script 可能漏判，指令裡只是提到 `git push`（例如 `echo`）也可能誤擋；編輯檔案等非殼層工具的內容提到它不算（2026-11-12，決策書 Q27）；feature 分支與判斷不了時放行。需要硬閘門時另評估 Git 原生 pre-push 與伺服器保護。
+> 2026-11-16：2026-11-16.2 曾在這裡加 session ID 占用核對（釋回或替換標記時比對工具送來的 session ID），同日由 2026-11-16.3 撤回：缺資訊就擋，違反本段「判斷不了時放行」與 D1「標記是訊號不是鎖」，也沒有使用者定案。要重新加入，先依 D14 對照、由使用者決定，而且四種工具／平台組合用同一條規則。
 > 2026-11-02／F06：移除「工作樹正在改，等一下會提交」的放行假設。staged／unstaged 修改都不會隨 push 上傳，只有已提交的 HANDOFF 差異才算；開工標記與交棒快照都能通過，**不代表內容已驗證或已交棒**。
 > 退出碼 2 會擋下該次 Bash 呼叫並把訊息交給模型——這是唯一能讓 agent「當場改走交棒程序」的機制，警告訊息模型不一定看得到。
 
@@ -1759,11 +1741,12 @@ exit 0
 # 起因：push 完才想起沒寫 HANDOFF，下一棒拿到過期狀態。
 # 只看殼層指令（tool_input.command）裡的字面 git push、目前分支與 origin 追蹤 ref，不解析選項／remote／refspec。
 # GUI／script 可能漏判，指令裡僅提到 git push 也可能誤擋；檢查已提交的 HANDOFF 差異。
-# 比對目前分支與本機 origin 追蹤參照。釋回或替換占用時，既有標記的 session-id 必須相符。
-# 非 push、非殼層工具、feature 分支中途推進度照常放行。
+# 其他情況（非 push 指令、非殼層工具、feature 分支中途推進度、判斷不了）一律放行——寧可漏擋，不要誤擋。
 # 退出碼：0＝放行；2＝擋下並把 stderr 交給模型（模型會看到訊息並改走交棒程序）。
-# HANDOFF_HOOK=off 只停用原本的權威分支開工提醒，仍核對既有占用。
-# source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# 臨時停用：HANDOFF_HOOK=off
+# source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+
+[ "$HANDOFF_HOOK" = "off" ] && exit 0
 
 payload=$(cat 2>/dev/null)
 case "$payload" in
@@ -1781,46 +1764,16 @@ printf '%s' "$payload" \
 
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$root" || exit 0
-branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
-git rev-parse --quiet --verify "refs/remotes/origin/$branch" >/dev/null 2>&1 || exit 0
-[ -n "$(git rev-list "origin/$branch..HEAD" 2>/dev/null)" ] || exit 0
-
-owner_field='^[[:space:]]*-[[:space:]]+\*\*工作中\*\*(：|:)'
-old_owner=$(git show "origin/$branch:HANDOFF.md" 2>/dev/null | grep -E "$owner_field")
-new_owner=$(git show HEAD:HANDOFF.md 2>/dev/null | grep -E "$owner_field")
-idle="$owner_field"'[[:space:]]*無（已交棒）[[:space:]]*$'
-owner_suffix=' \[session-id=([A-Za-z0-9_-]{1,128})\]$'
-if [ -n "$old_owner" ] && [ "$old_owner" != "$new_owner" ] &&
-    { [[ "$old_owner" == *$'\n'* ]] || ! [[ "$old_owner" =~ $idle ]]; }; then
-  owner_id=''
-  if [[ "$old_owner" != *$'\n'* && "$old_owner" =~ $owner_suffix ]]; then
-    owner_id=${BASH_REMATCH[1]}
-  fi
-  session_id=''
-  if [ -n "$owner_id" ]; then
-    json='import json, re, sys
-value = json.load(sys.stdin).get("session_id")
-if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", value):
-    print(value)'
-    for py in python3 python; do
-      if session_id=$(printf '%s' "$payload" | "$py" -X utf8 -c "$json" 2>/dev/null) && [ -n "$session_id" ]; then
-        break
-      fi
-    done
-  fi
-  if [ -z "$owner_id" ] || [ "$owner_id" != "$session_id" ]; then
-    >&2 echo "[handoff-check] 無法以本次 hook 的 session-id 核對 origin 的開工者。已擋下更改「工作中」欄位的推送。保留原標記並照 B1 回報；舊標記依 A2.5／A6 處理。"
-    exit 2
-  fi
-fi
-
-[ "$HANDOFF_HOOK" = "off" ] && exit 0
 [ -f HANDOFF.md ] || exit 0                    # 沒有這套交接制度就不管
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
 main=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
 main=${main#origin/}
 [ -n "$main" ] || main=main
 [ "$branch" = "$main" ] || exit 0               # feature 分支中途推進度不擋
 
+git rev-parse --quiet --verify "refs/remotes/origin/$branch" >/dev/null 2>&1 || exit 0
+[ -n "$(git rev-list "origin/$branch..HEAD" 2>/dev/null)" ] || exit 0   # 沒有要推的 commit
 git diff --name-only "origin/$branch..HEAD" 2>/dev/null | grep -qx 'HANDOFF.md' && exit 0
 # 2026-11-12（決策書 Q31）：origin 上的「工作中」不是「無（已交棒）」＝有人開工、還沒交棒，
 # 這次 push 是中途安全點，不必更新 HANDOFF。看不出是哪個 session，別台機器的標記也會放行——
