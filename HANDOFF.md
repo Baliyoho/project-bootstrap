@@ -1,51 +1,52 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-16 15:00（+08）
-- **交棒者**：Claude Code／Windows `DESKTOP-M8MRS05`（四種組合最後一格的實測、Windows 可攜性修正、六個專案的 v3 對齊）
+- **交接時間**：2026-11-17 06:30（+08）
+- **交棒者**：Claude Code／Windows `DESKTOP-M8MRS05`（Windows 平台感知、Q37／Q38 登記、骨架 2026-11-16.7 全面同步）
 
 ## 任務目標
 
-bootstrap v3 的跨平台驗收。**四種組合（Codex／Claude Code × macOS／Windows）到此全部實測過**，本棒補上最後一格「Claude Code × Windows」。制度方向仍依需求決策書 v3 Q35：一套共用規則，工具與平台的差異只寫在碰到才讀的 `.claude/skills/handoff/env.md`，不改變共用狀態的判讀。
+bootstrap v3 的跨平台驗收已完成四種組合（Codex／Claude Code × macOS／Windows）全部實測。本棒把 Windows 從「固定 exit 2 的平台基線」改成真正 exit 0：平台不適用的檢查改成平台感知地斷言不適用（不收 `skip`），順手修掉四個真的可攜性 bug。制度方向仍依需求決策書 v3 Q35：一套共用規則，工具與平台差異只寫在碰到才讀的 `.claude/skills/handoff/env.md`。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
-- **待續分支**：無（`fix/windows-platform-aware` 已快轉併入 `main`，分支保留不刪）。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　11.16.20｜Win 平台感知｜工作中｜交棒0次`，2026-11-16 20:17 (+08) 開工
+- **待續分支**：無（`fix/windows-platform-aware` 已以 `--no-ff` 併入 `main`，分支保留不刪）。
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-16.7`
-- 本棒沒改 skill／hook 內容，刻意不跳版；部署包與所有副本未動。
+- 本棒改了 `.claude/skills/handoff/env.md` 的內容，因此跳版到 `2026-11-16.7`；七個 skill 檔的 `source:` 標記同版本，部署包已重生，所有副本已覆蓋。
 
 ## 已完成
 
-- **Claude Code × Windows 首次實測 PASS**：開場 `[facts]` 有進 context；`bash` 是 Git for Windows 那支；push 前 hook 在規定情形回 exit 2、三種放行情形回 0（在 scratchpad 的隔離 clone 做，沒拿 `main` 當試驗場）。整個 session 另外在 8 個 repo 做了 18 次 push，沒有一次遇到 `env.md` 記的「HTTP 推送成功但追蹤參照停在舊 SHA」——是沒遇到，不是反證。
-- **這台機器的全域 skill 同步到 `2026-11-16.6`**：`~/.claude/skills/handoff/` 與 `~/.codex/skills/handoff/` 從單檔 v2026-11-03 換成七檔，逐檔 byte-identical。
-- **桌面上 8 個裝過骨架的專案**：4 個只是沒拉（ff 後本來就是 `2026-11-16.6`），2 個實際同步（摘要skill設計 `38865e8`、第三批56箱後檢查 `4d73450`）；序號卡與解決網路速度問題依使用者指示不動。
-- **六個專案的舊交接段落對齊 v3**（HANDOFF 前一棒的第 4 項）：刪掉與共用制度重疊的 Git 同步與 single writer 兩條（舊版漏掉開工標記、把協調訊號寫成互斥鎖），開工段改成指向共用制度，段尾引文改指 skill 與理由檔分工；標題改成名實相符，`sync_project.py` 的 MIGRATE 從 6 筆降到 0。各專案的加嚴句、`.obsidian` 例外、`hooksPath` 設定都保留。
-- **修掉兩個 POSIX 假設**（`eda4702`）：`surfaces.py` 寫死 `/bin/sh`、Git 唯讀檔刪不掉（新增 `package.force_rmtree`）。Windows 的測試失敗 66 → 39（errors 35 → 8），逐項比對沒有新的失敗。
-- **README 對齊現況**（`f22315c`）：skill 五個檔改七個、三層表改四層並把「必守條件在 `AGENTS.md`」獨立一層、開場 hook 描述改成只印 `[facts]`、`python3`／`python` 順序照實寫、補 Windows 的 exit 2 現況。
+- **Windows 首次 exit 0**（`3a66a1b`，併入 `main`）：68 項全過，`verify_v2` 434 項 run、skipped=0。原本 exit 2 的構成經逐項判讀為：32 個平台不適用、3 個真的可攜性 bug、5 個簽章 skip（`/usr/bin/ssh-keygen` 寫死）、6 個與平台無關的內容失敗（macOS 也會紅，等於前一棒交棒後的 `main` 兩邊都是紅的）。
+- **平台感知而非 skip**：`package.RECORDS_EXECUTE_BIT`、`selftest._runnable` 的 Windows 分支、測試裡的 `can_symlink(root)`；照本 repo「A4 不收 skip」的慣例，能力不存在就斷言不適用結果。
+- **四個真 bug**（兩平台都受益）：`contracts.path_escapes` 取代兩份 POSIX-only 的路徑逃脫判斷（`\server\share`、磁碟機相對路徑原本過得去）；`distribute.pack` 改讀 manifest 決定 tar mode，不再靠本機檔案權限；`approvals.system_ssh_keygen()` 平台釘死絕對路徑、`verifier_env()` 補上 Windows `ssh-keygen -Y verify` 唯一需要的 `ProgramData`；`pointer.SOURCE_RE` 認得 `C:\` 開頭的來源。
+- **Q37／Q38 登記在需求決策書 v3 §8**（`404670d`、`3f5002c`）：Q37 平台感知（已決）、Q38 Windows 驗證耗時寫進 `env.md`（已決）。一致性檢查器的 registry 從 v2 改指 v3 §8，`REPO_DOCS` 補上 v3；這是「HANDOFF 懸置只放指向編號的指標」這條規則第一次真的做得到。
+- **骨架 2026-11-16.7 全面同步**（`5a65da9`、`0f73944`）：`env.md` 新增 Windows 驗證耗時那條 → 重生部署包 → 本 repo `AGENTS.md` 共用制度區塊重貼 → 兩份全域 `skills/handoff/`（`~/.claude`、`~/.codex`，14 檔 byte-identical）→ 桌面六個專案各自走完整流程（Grist_test `7ce1935`、NAA_TR `95d5f66`、NAS_MAINT `8ab3a35`、摘要skill設計 `668e04a`、第三批56箱後檢查 `42a1db9`、鍵鼠同佈署 `d03cd0a`），每個都刪掉 `.claude/.bootstrap-version`。
 
 ## 未完成／下一步
 
-1. **Windows 上 `verify_bootstrap.py` 固定 exit 2 怎麼處理**（見懸置）。在決定之前，Windows 的接棒者要比對的是「有沒有**新的**失敗」，不是「有沒有失敗」；基線是 39 個（3 個 symlink 權限、36 個 POSIX 執行位元及其下游）。
-2. 使用者若願意開 Windows 的「開發人員模式」，那 3 個 symlink 失敗會自己消失，基線降到 36。
-3. `learn coding with ai agent` 仍未同步：不在這台機器的桌面上，掃不到，應是 Mac 那邊的事。
-4. 序號卡（`.codex/hooks.json` 有無法確認所有權的命令，且專案已完結）與解決網路速度問題（兩個已知的未提交變更）依使用者指示刻意停在舊版，不是漏掉。
-5. 桌面 App 的 F50 五步互動沿用既有暫緩決定。
+1. `learn coding with ai agent` 仍未同步：不在這台機器的桌面上，掃不到，應是 Mac 那邊的事。
+2. 序號卡（`.codex/hooks.json` 有無法確認所有權的命令，且專案已完結）與解決網路速度問題（兩個已知的未提交變更，同步器判 dirty 整個跳過）依使用者 2026-11-17 指示刻意停在舊版，不是漏掉。
+3. 使用者若開 Windows「開發人員模式」，`can_symlink` 的分支會走到真的建 symlink 那條，覆蓋率提高；現在不開也 exit 0。
+4. 桌面 App 的 F50 五步互動沿用既有暫緩決定。
 
 ## 地雷與注意事項
 
-- **Windows 上 `python3` 是 WindowsApps 別名**（rc=49），要用 `python`；hook 的 `python3 → python` 回退正常運作。
-- **全套驗證在原生 Windows 跑約 160–240 秒**，超過指令工具預設的 120 秒上限，要提高 timeout 或丟背景。這點還沒寫進 `env.md`（見懸置）。
-- **驗證器的 README 負向測試曾把整句標題寫死當錨點**：改標題就會讓測試自己壞掉而不是擋住錯誤。本棒改成不含層數的半句並放寬成「層自動發生」，守的東西沒變。日後改入口文件的標題仍要留意這類錨點。
-- `sync_project.py` 的 MIGRATE **只比對標題字串、不看內容**，所以改完內容不會讓它閉嘴，要連標題一起改。
-- AI push hook 只擋「推權威分支、沒改 `HANDOFF.md`、origin 標記是無（已交棒）」一種情形；斷線 session 的舊標記仍靠 B1／A2.5 文字，使用者明確確認歸屬才可接手。
-- 跨專案寫入一律先在該專案推開工標記、再用 `--owner` 聲明；`--write` 不吃批次。
+- **全套驗證在原生 Windows 約 3–4 分鐘**（2026-11-17 三次 224／234／244 秒，`verify_v2` 單獨 213 秒占九成），超過指令工具預設 120 秒上限，要提高 timeout 或丟背景；timeout 不等於失敗。這條已寫進 `env.md`。
+- **`--staged` 在 index 空的時候 0 秒回 exit 2**，印「沒有 staged 提交候選」。那既不是過也不是失敗，別讀成「變快了」。
+- **Windows 上 `python3` 是 WindowsApps 別名**（rc=49），要用 `python`；hook 的回退正常運作。
+- **`ssh-keygen -Y verify` 在最小環境下回 255 且無 stderr**：唯一必要的變數是 `ProgramData`，已由 `verifier_env()` 處理；再遇到類似靜默失敗，用貪婪法收斂環境變數。
+- 用腳本改 Python 時，`r'[\/]'`、`b'pack v1\n'` 這類反斜線在 heredoc 裡會被吃掉；本棒用 `B = chr(92)` 組字串並 grep 回驗。含 `C:\Users` 或 `\.` 的 docstring 要寫成 raw。
+- **跳版時別忘了根目錄的 `VERSION` 檔**：本棒漏過一次，`--staged` 直接五項失敗。
+- 跨專案寫入一律先在該專案推開工標記、再用 `--owner` 聲明；`--write` 不吃批次。同步完要刪該專案的 `.claude/.bootstrap-version`，否則它最多 12 小時不知道有新版，且毫無徵兆。
+- `sync_project.py` 的 MIGRATE **只比對標題字串、不看內容**，改完內容要連標題一起改。
+- AI push hook 只擋「推權威分支、沒改 `HANDOFF.md`、origin 標記是無（已交棒）」一種情形。
 
 ## 服務查證與期望快照
 
-- 2026-11-16 Windows `DESKTOP-M8MRS05`：`python -X utf8 tools/verify_bootstrap.py --staged --quiet` → **exit 2**，唯一失敗項是「v2 P0 原型回歸（非需求達標）」，其餘全過。unittest 436 項：failures=31、errors=8、skipped=5。
-- 同日 Mac 的基線是 66 項全過 exit 0（前一棒紀錄）；Windows 的 exit 2 是平台基線，不是回歸。
-- 六個專案的 `check_docs.py --staged` 全部 exit 0。
+- 2026-11-17 Windows `DESKTOP-M8MRS05`：`python -X utf8 tools/verify_bootstrap.py --staged` → **exit 0**，68 項全過，無 skip。`verify_v2` 434 項 run、failures=0、errors=0、skipped=0（另有 3 個需外部套件的測試檔 A4 不跑，要 `uv run pytest`）。
+- Windows 的「39 個平台失敗基線」已作廢，接棒者在 Windows 看到任何失敗都是回歸。macOS 本棒沒有重跑，前一棒紀錄是 68 項全過。
+- 桌面六個專案 `env.md` 皆為 `v2026-11-16.7`，與 origin 一致、未提交 0 個、標記皆「無（已交棒）」；`sync_project.py --all` 預演只剩上述兩個刻意不動的目標。
 
 ## 懸置事項（AI 勿自行處理）
 
