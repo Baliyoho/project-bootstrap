@@ -190,7 +190,7 @@
 | [project-bootstrap-reaudit-2026-11-03.md](project-bootstrap-reaudit-2026-11-03.md) | **第二輪複審快照**：R01–R09 的證據、改善與驗收門檻、原 F01–F16 的複審判定；2026-11-03 使用者要求下一輪先讀，2026-11-10 使用者同意改成動到同步工具、驗證器、hook 或 R01–R09 相關處才讀。不部署、不同步，原始探針留在審查聊天產物 | 查核結論需勘誤時；當下實作進度看 HANDOFF |
 | [project-bootstrap-efficiency-plan.md](project-bootstrap-efficiency-plan.md) | **效率改進設計提案**：接棒分流、驗證分層、必讀內容精簡、原始碼與部署產物分離；尚未實施，不部署、不同步，不取代現行程序 | 設計決策改變時；實作進度看 HANDOFF |
 | [project-bootstrap-skill-split-design.md](project-bootstrap-skill-split-design.md) | **handoff skill 依模式拆分設計稿**（F22 第二階段 (1)(3)）：2026-11-10 實測、甲乙方案比較、檔案配置、開場 hook 全綠行、要改的守門與推出順序。等使用者審閱（決策書 Q9），未實施，不部署、不同步 | 設計改變時；實作進度看 HANDOFF |
-| [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md) | **現行需求權威（決策版本 3，2026-11-13）**：適用範圍、依據、D1–D15、51 條需求的處置與強度、目標部署形狀、驗收、待決 Q32 起。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
+| [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md) | **現行需求權威（決策版本 3，2026-11-13）**：適用範圍、依據、D1–D15、51 條需求的處置與強度、目標部署形狀、驗收、Q32 起的決策登記處。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
 | [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 決策版本 2，2026-11-13 起由 v3 取代為現行權威，**並存不刪**：驗證器、`test_trail_repo`、`test_registry`、一致性檢查與 v2 現況索引仍讀這個檔名；Q1–Q31 與逐條否決理由只在這裡。衝突以 v3 為準 | 只補工具需要的登記與帶日期的註記 |
 | [experiments/handoff-ab/](experiments/handoff-ab/README.md) | 完整版與極簡版骨架的對照實測（2026-11-13 兩輪、36 次）：極簡版骨架、情境搭建、執行、評分與結果。v3 的依據 E1。實驗用，不部署、不同步；原始資料在 gitignored 的 `dist/` | 加跑或改情境時 |
 | [project-bootstrap-implementation-plan.md](project-bootstrap-implementation-plan.md) | 依決策書評估既有程式與開源工具；推薦技術棧、50 項映射、可行性門檻、遷移與驗收。不承載滾動達成狀態，不部署、不同步 | 選型或實現方案改變時 |
