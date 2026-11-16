@@ -87,7 +87,7 @@ def by_update(updates, kind):
 UPDATES = load_updates()
 
 # 整份覆蓋就對的檔：純制度內容，沒有任何專案專屬的值。
-# handoff skill 2026-11-10 起是一個目錄（決策書 F22）：入口 SKILL.md 加五個模式／理由檔。
+# handoff skill 2026-11-10 起是一個目錄（決策書 F22）：入口 SKILL.md 加模式／理由檔；2026-11-16.4 起多一個環境差異檔 env.md。
 # 模式檔排在入口前面寫：寫到一半失敗時，舊入口還在而且不會提到模式檔，多出來的檔不會被讀到；
 # 反過來先換入口，就會留下一個指向不存在檔案的新入口。
 SKILL_DIR = '.claude/skills/handoff/'

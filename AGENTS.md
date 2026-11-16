@@ -1,9 +1,9 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-16（共用制度副本重貼到 v2026-11-16.3：撤回 session ID 占用核對）；前次 2026-11-14（補裝 push 前 hook、拿掉動作提醒 hook；前面同日：本 repo 交接制度對齊 v3：開場 hook 換成部署包 3.10 的逐字副本，開工段改成只寫事實）；前次同日（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
+> 最後更新：2026-11-16（共用制度副本重貼到 v2026-11-16.4；handoff skill 改七個檔，多 `env.md`）；前次同日（v2026-11-16.3：撤回 session ID 占用核對）；前次 2026-11-14（補裝 push 前 hook、拿掉動作提醒 hook；前面同日：本 repo 交接制度對齊 v3：開場 hook 換成部署包 3.10 的逐字副本，開工段改成只寫事實）；前次同日（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
 > 本檔只放規則；每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -53,7 +53,7 @@ AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-B
 
 ## 鐵律
 
-1. **制度權威是 `src/kit/`**：改 `src/kit/kit.md` 或 `src/kit/files/<部署路徑>.tmpl`，跑 `python3 -X utf8 tools/build_kit.py` 重生 `PROJECT-BOOTSTRAP.md`，兩者同一個 commit；不要手改部署包，也不要在單一專案就地改 skill 或 hook。覆蓋到專案用 `tools/sync_project.py`，用法與前提先讀理由。只有 `.claude/skills/handoff/` 目錄裡的檔真的改了內容才跳 `VERSION`，六個檔的 `source:` 標記同版本。[為什麼](AGENTS-reasons.md#rule-1)
+1. **制度權威是 `src/kit/`**：改 `src/kit/kit.md` 或 `src/kit/files/<部署路徑>.tmpl`，跑 `python3 -X utf8 tools/build_kit.py` 重生 `PROJECT-BOOTSTRAP.md`，兩者同一個 commit；不要手改部署包，也不要在單一專案就地改 skill 或 hook。覆蓋到專案用 `tools/sync_project.py`，用法與前提先讀理由。只有 `.claude/skills/handoff/` 目錄裡的檔真的改了內容才跳 `VERSION`，七個檔的 `source:` 標記同版本。[為什麼](AGENTS-reasons.md#rule-1)
 2. **改 skill／hook 內容時同步更新檔頭的 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`**；同一天第二次起加 `.2`、`.3`，序號算的是當天第幾個帶 `source:` 標記的改動，跟部署包「版本」行不保證同號。[為什麼](AGENTS-reasons.md#rule-2)
 3. **保留每條規則的「為什麼」**：可以搬到理由檔，不能刪；驗證器會擋。[為什麼](AGENTS-reasons.md#rule-3)
 4. **改完跑 `verify_bootstrap.py`，exit 0 才算改完**；印 `skip` 的項目會回傳 1，照實回報。[為什麼](AGENTS-reasons.md#rule-4)

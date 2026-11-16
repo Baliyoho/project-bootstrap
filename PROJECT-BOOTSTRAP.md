@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-16.3**（撤回 2026-11-16.2 的 session ID 占用核對：它讓 AI push hook 在缺 ID、缺 Python、feature 分支與 `HANDOFF_HOOK=off` 時都擋下，把開工標記從訊號變成鎖（D1），擴大 F10 的阻擋範圍卻沒有使用者定案與 D14 對照。3.10、3.11 回到原本「寧可漏擋」的行為；保留 Windows 的 `python3`／`python` 回退與 B1 斷線例子。使用者 2026-11-16 決定：一套共用規則，工具與平台的差異只寫成碰到才讀的說明，不改變共用狀態的判讀。六個 skill 檔與共用制度標記同版。）
+> 版本：**2026-11-16.4**（handoff skill 新增第七個檔 `env.md`：工具（Codex／Claude Code）與平台（macOS／Windows）的差異，碰到才讀，只寫環境怪癖與操作提醒、不改共用狀態的判讀（決策書 v3 Q35）。入口「跑得久的指令」與 `mode-b.md` 的 Codex hook 驗收逐字搬進去；3.17 的 Windows 沙箱提醒原本只在部署包、不會部署到專案，現在進了 `env.md`。七個 skill 檔與共用制度標記同版。）
+> 前一版 **2026-11-16.3**（撤回 2026-11-16.2 的 session ID 占用核對：它讓 AI push hook 在缺 ID、缺 Python、feature 分支與 `HANDOFF_HOOK=off` 時都擋下，把開工標記從訊號變成鎖（D1），擴大 F10 的阻擋範圍卻沒有使用者定案與 D14 對照。3.10、3.11 回到原本「寧可漏擋」的行為；保留 Windows 的 `python3`／`python` 回退與 B1 斷線例子。使用者 2026-11-16 決定：一套共用規則，工具與平台的差異只寫成碰到才讀的說明，不改變共用狀態的判讀。六個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.2**（開場提供工具的 session ID，開工標記留存。AI push hook 在可辨識的目前分支推送中比對原開工者，阻擋未經核對的釋回或替換。已由 2026-11-16.3 撤回。）
 > 前一版 **2026-11-16**（交棒核對補上斷線後新開 session 的例子。Windows `midway` 曾照舊評分通過，卻在新 session 直接清掉舊開工標記。六個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-15.2**（交棒先核對遠端開工標記是否屬於本 session，推送釋回前再核對遠端。六個 skill 檔與共用制度標記同版。）
@@ -285,7 +286,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 │   ├─ hooks/pre-push-handoff.sh    ← PreToolUse：AI push 提醒（有限覆蓋，見 3.11）
 │   ├─ hooks/codex-hook.cmd         ← Codex 的 Windows 啟動器：找 Git Bash、加純文字標頭、保留結束碼
 │   ├─ skills/handoff/SKILL.md      ← 交接程序的參考入口（碰到才讀；必守條件在 AGENTS.md）
-│   ├─ skills/handoff/mode-*.md、reasons.md ← 參考檔：模式步驟與理由（共五個，與入口同版本）
+│   ├─ skills/handoff/mode-*.md、reasons.md、env.md ← 參考檔：模式步驟、理由與環境差異（共六個，與入口同版本）
 │   └─ skills/<其他>/SKILL.md       ← 需要時才建：可重複使用的操作食譜（權威版）
 ├─ .codex/hooks.json                ← Codex 讀這裡：掛上面同樣那兩個腳本，不另寫一份
 ├─ .agents/skills/handoff/SKILL.md  ← Codex 讀 .agents/skills/：指向權威版的指標
@@ -316,7 +317,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 專案概觀與測試指令在 [README.md](README.md)。現在做到哪、下一步是什麼，在 [HANDOFF.md](HANDOFF.md)。使用者用 **{{LANG}}** 溝通。
 > 最後更新：{{TODAY}}（建立）
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -810,11 +811,11 @@ README 的「檔案結構」只列到人看得懂的程度；**細節與理由�
 <!-- 完成的項目用 ~~R1~~ ✅ 標記並保留，狀態欄寫「YYYY-MM-DD 完成」＋指向細節文件的連結。 -->
 ````
 
-### 3.8 `.claude/skills/handoff/SKILL.md`、`.claude/skills/handoff/mode-a.md`、`.claude/skills/handoff/mode-a-stop.md`、`.claude/skills/handoff/mode-b.md`、`.claude/skills/handoff/mode-0.md`、`.claude/skills/handoff/reasons.md`（交接程序，本骨架的核心）
+### 3.8 `.claude/skills/handoff/SKILL.md`、`.claude/skills/handoff/mode-a.md`、`.claude/skills/handoff/mode-a-stop.md`、`.claude/skills/handoff/mode-b.md`、`.claude/skills/handoff/mode-0.md`、`.claude/skills/handoff/reasons.md`、`.claude/skills/handoff/env.md`（交接程序，本骨架的核心）
 
 > **這一份就是「教 agent 自動交接同步」的東西。** 內容照抄不要改，包含檔頭的 `source:` 版本標記——它讓你日後能一眼看出某個專案的副本是不是落後了。
 > 檔案裡的 `docs/ai-notes/handover-protocol.md` 刻意寫成純路徑而非連結，這樣同一份文字放進全域 `~/.claude/skills/` 也不會產生死連結。
-> **2026-11-10 起這支 skill 是一個目錄、六個檔**（決策書 F22：單檔 22,040 字元，正常接棒只需要其中一小部分）。入口與 `mode-a.md` 是新寫的摘要，其餘四個檔是從單檔逐字搬來的；六個檔的 `source:` 標記必須是同一個版本，同步時整個目錄一起覆蓋。下面六個區塊依序對應標題上的六個檔名。
+> **2026-11-10 起這支 skill 是一個目錄，2026-11-16.4 起七個檔（加 `env.md`）**（決策書 F22：單檔 22,040 字元，正常接棒只需要其中一小部分）。入口與 `mode-a.md` 是新寫的摘要，其餘四個檔是從單檔逐字搬來的；六個檔的 `source:` 標記必須是同一個版本，同步時整個目錄一起覆蓋。下面六個區塊依序對應標題上的六個檔名。
 
 **`.claude/skills/handoff/SKILL.md`**——參考檔入口：碰到才讀（2026-11-13 起，v3 第 5 節）。適用判斷、要細節時讀哪個檔、全程禁令、必須停下來問人的清單；session 命名指回 `AGENTS.md`。
 
@@ -824,7 +825,7 @@ name: handoff
 description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（參考檔入口）
 
@@ -850,22 +851,15 @@ description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒�
 | 接棒、續作、換機器；已交棒後又要改檔 | **A 接棒** | `mode-a.md`（正常路徑）；開場 `[facts]` 有不正常的值讀 `mode-a-stop.md` |
 | **使用者要求**交棒／收工／換人接手 | **B 交棒** | `mode-b.md` |
 | 工作告一段落；想拉最新或推一個安全點 | **C 同步** | `mode-b.md` 的 C 節 |
+| 在 Codex 或 Windows 上：指令跑得久、hook 接線有改、開場沒有 `[facts]`、Git 寫不進 `.git` | 任何模式 | `env.md`（依工具、依平台各讀一節） |
 
 - **使用者沒要求就不得自行交棒**：告一段落時自己判斷要不要 commit／push（C），不改 `↗`、不加次數。A5 開工標記與 C 中途安全點都不宣稱交棒。
 - **模式檔與本檔同目錄**：專案有 `.claude/skills/handoff/` 就讀那裡，沒有就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）。
-- 要改、質疑或想繞過任何一條規則之前先讀 `reasons.md`。`mode-a.md` 與 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 衝突時以後四者為準；它們全部與 `AGENTS.md` 衝突時以 `AGENTS.md` 為準。
+- 要改、質疑或想繞過任何一條規則之前先讀 `reasons.md`。`mode-a.md` 與 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 衝突時以後四者為準；`env.md` 只寫環境差異，不改變共用狀態的判讀；它們全部與 `AGENTS.md` 衝突時以 `AGENTS.md` 為準。
 
 ## 全程禁令
 
 🚫 全程禁止：`reset --hard`、`push --force`、自行 `stash`、覆寫他人 commit、刪 branch。
-
-## 跑得久的指令
-
-驗證仍照專案要求執行；省的是工具往返與輸出，不省檢查。以下是 Codex 桌面 App 2026-11-14 的實測用法，參數上限以當前工具 schema 為準：
-
-- `exec_command` 可先等 30000 ms；有 `session_id` 才用 `write_stdin` 等結果，勿每一兩秒輪詢。若透過 `functions.exec`，外層也要設 `// @exec: {"yield_time_ms": 60000}`，否則內層等 60 秒，外層仍在 30 秒交回。可在同一段 JS 先 `await exec_command`，尚未結束再 `await write_stdin` 等 30000 ms；超過一分鐘仍未完才回報進度並繼續等，不丟棄執行中的 promise。
-- 已在上下文讀過的規則不再整份讀；正常接棒不展開理由與歷史。必要的獨立讀取合併一批；驗證、stage、commit、fetch 比對、push 等有相依的動作維持順序，任一步失敗就停。
-- 成功驗證只回傳摘要與 exit code，完整輸出留本機暫存日誌；FAIL／SKIP 要讀細節。工具提供摘要選項才使用，不猜選項或吞掉結束碼。交棒已取得的結果依 B7 的失效條件決定是否重跑。
 
 ## 必須停下來問使用者（不得自行決定）
 
@@ -887,7 +881,7 @@ description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒�
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
@@ -948,7 +942,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場 `[facts]` 有不正常的值時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
@@ -1130,7 +1124,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -1195,7 +1189,7 @@ python -X utf8 tools/check_docs.py
 本專案若有固定流程（部署、版本號 bump、測試、備份），對照 `AGENTS.md` 鐵律：這輪有動到就執行並記錄；沒動到就在 HANDOFF 明記「不適用」。
 **不要靜默略過**——接手者無法分辨「沒做」與「不用做」。
 
-**Codex hook 接線有改或同步過，就重新檢查信任並驗收實際執行。** 在互動 CLI 的 `/hooks` 或桌面 App 的 Hooks 設定審核當前定義，再於新 session 送出一則最小測試訊息；確認 hook 成功、輸出確實進入 context。只看檔案或信任狀態不算驗收：2026-11-01 在 Windows 的真專案上量到 hook 已信任，卻因 PATH 的 `bash` 指向缺少 `/bin/bash` 的 WSL 而 exit 1。模型呼叫仍依專案原有的額度與授權規則，不因這一項自動取得授權。
+**hook 接線有改或同步過，就驗收實際執行**；Codex 的信任審核與驗收方法見 `env.md` 的「Codex」。
 
 ### B6 更新 `HANDOFF.md`（覆寫，≤80 行，不累積歷史）
 
@@ -1307,7 +1301,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -1382,7 +1376,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
@@ -1507,7 +1501,13 @@ python -X utf8 tools/check_docs.py
 | SKILL.md § 適用判斷（先做這一步） | reasons.md § 適用判斷：為什麼沒人提就不建<br>reasons.md § 反例（真的發生過，別重演） |
 | SKILL.md § 需要細節時讀哪個檔 | reasons.md § 前言原文<br>reasons.md § 交棒由使用者決定（2026-11-12／Q31）<br>reasons.md § 模式 0 為什麼留在每一份副本裡<br>mode-a-stop.md § A／B／C 狀態轉移（2026-11-02／F11） |
 | SKILL.md § 全程禁令 | 沒有寫下理由 |
-| SKILL.md § 跑得久的指令 | reasons.md § 跑得久的指令為什麼一次等完（2026-11-14） |
+| env.md § Codex | 分節標題 |
+| env.md § 跑得久的指令 | reasons.md § 跑得久的指令為什麼一次等完（2026-11-14） |
+| env.md § hook 接線有改或同步過 | 本段內文 |
+| env.md § 全域 skill 位置 | 沒有寫下理由 |
+| env.md § Claude Code | 本段內文 |
+| env.md § Windows | 本段內文 |
+| env.md § macOS | 分節標題 |
 | SKILL.md § 必須停下來問使用者（不得自行決定） | reasons.md § 停下來問人時為什麼要改名<br>mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>mode-0.md § 0-1 先確認你在對的資料夾、對的情境 |
 | SKILL.md § session 命名（每則訊息都適用） | reasons.md § session 命名（每輪必做；工具做不到就在回報裡寫「不適用」）<br>reasons.md § 已交棒後續聊（每則新訊息的入口）<br>reasons.md § 其他命名規則<br>reasons.md § 反例（真的發生過，別重演） |
 | mode-a.md § A1＋A2.5 同步與占用：讀開場的 [facts] | mode-a-stop.md § A1 先同步 Git（未同步前不要相信本機任何文件，包括 HANDOFF）<br>mode-a-stop.md § A2.5 檢查這條分支有沒有人正在工作（跨機器誤接棒防呆）<br>reasons.md § 反例（真的發生過，別重演） |
@@ -1547,7 +1547,52 @@ python -X utf8 tools/check_docs.py
 | mode-0.md § 0-8 刪掉部署包，回報 | 本段內文<br>reasons.md § 反例（真的發生過，別重演） |
 ````
 
-**同步規則（重要）**：這個 skill 目錄（六個檔）會同時存在於 ①本部署包 ②每個專案的 `.claude/skills/handoff/` ③（選用）全域 `~/.claude/skills/handoff/`。
+**`.claude/skills/handoff/env.md`**——工具與平台差異（2026-11-16.4 起，決策書 v3 Q35）。在 Codex 或 Windows 上碰到對應狀況才讀；只寫環境怪癖與操作提醒，不改變共用狀態的判讀，要加會讓交接結果不同的規則就不放這裡。
+
+````markdown
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+
+# 工具與平台差異（碰到才讀）
+
+本檔只寫環境怪癖與操作提醒，**不改變共用狀態的判讀**。「工作中」標記、`HANDOFF.md`、交棒完成的定義、push 前 hook 的行為，在 Codex／Claude Code × macOS／Windows 四種組合都一樣，照 `AGENTS.md` 的共用制度與模式檔；本檔和它們衝突時以它們為準。
+
+先讀你所在工具的一節，再讀平台的一節。沒寫的就是目前沒有已知差異。
+
+**新增條目的條件**：觀察到重複發生的失敗，寫明工具版本、平台與日期（需求決策書 v3 D10）。只限某工具或平台、會讓交接結果不同的規則（例如只在 Windows 擋下某種推送）不放這裡；它屬於共用制度，要四種組合一起加，並先經 D14 對照與使用者決定（v3 Q35）。
+
+## Codex
+
+### 跑得久的指令
+
+驗證仍照專案要求執行；省的是工具往返與輸出，不省檢查。以下是 Codex 桌面 App 2026-11-14 的實測用法，參數上限以當前工具 schema 為準：
+
+- `exec_command` 可先等 30000 ms；有 `session_id` 才用 `write_stdin` 等結果，勿每一兩秒輪詢。若透過 `functions.exec`，外層也要設 `// @exec: {"yield_time_ms": 60000}`，否則內層等 60 秒，外層仍在 30 秒交回。可在同一段 JS 先 `await exec_command`，尚未結束再 `await write_stdin` 等 30000 ms；超過一分鐘仍未完才回報進度並繼續等，不丟棄執行中的 promise。
+- 已在上下文讀過的規則不再整份讀；正常接棒不展開理由與歷史。必要的獨立讀取合併一批；驗證、stage、commit、fetch 比對、push 等有相依的動作維持順序，任一步失敗就停。
+- 成功驗證只回傳摘要與 exit code，完整輸出留本機暫存日誌；FAIL／SKIP 要讀細節。工具提供摘要選項才使用，不猜選項或吞掉結束碼。交棒已取得的結果依 B7 的失效條件決定是否重跑。
+
+### hook 接線有改或同步過
+
+**Codex hook 接線有改或同步過，就重新檢查信任並驗收實際執行。** 在互動 CLI 的 `/hooks` 或桌面 App 的 Hooks 設定審核當前定義，再於新 session 送出一則最小測試訊息；確認 hook 成功、輸出確實進入 context。只看檔案或信任狀態不算驗收：2026-11-01 在 Windows 的真專案上量到 hook 已信任，卻因 PATH 的 `bash` 指向缺少 `/bin/bash` 的 WSL 而 exit 1。模型呼叫仍依專案原有的額度與授權規則，不因這一項自動取得授權。
+
+### 全域 skill 位置
+
+專案沒有 `.claude/skills/handoff/` 時，讀 `~/.codex/skills/handoff/`。
+
+## Claude Code
+
+- 家目錄 `~/.claude/skills/handoff/` 與專案 `.claude/skills/handoff/` 都有時，Skill 工具載入的是家目錄那份（2.1.321，2026-11-12 實測）。專案有這個目錄就改讀專案那份（入口「模式檔與本檔同目錄」那條）。
+
+## Windows
+
+- **開場沒有 `[facts]`**：開場 hook 依序用 `python3`、`python` 產生輸出，WindowsApps 的 `python3` 別名可能找得到卻執行失敗（Codex CLI `0.166.0`，2026-11-16）。兩者都失敗時 hook 會在 stderr 報錯；照 `AGENTS.md` 手動重跑開場 hook，仍失敗就回報使用者需要可執行的 Python，不憑記憶當作狀態正常。
+- **工作區沙箱下的 Git 更新**：若已授權的 Git 操作被沙箱拒絕寫入 `.git`，用 Codex 的單次命令審核核准該操作，並保留目前的工作區沙箱。推送後核對遠端分支與本機追蹤參照。Windows 實測 HTTP 推送可以在遠端收到 commit 且命令回傳 0 時，仍因無法鎖定 `.git` 而留下舊追蹤參照（Codex CLI `0.166.0`，2026-11-16）。
+
+## macOS
+
+目前沒有已知差異。
+````
+
+**同步規則（重要）**：這個 skill 目錄（七個檔）會同時存在於 ①本部署包 ②每個專案的 `.claude/skills/handoff/` ③（選用）全域 `~/.claude/skills/handoff/`。
 ⚠️ **在 Claude Code 裡，③ 會蓋掉 ②**（2026-11-12 在 2.1.321 實測，決策書 Q28）：兩處都有同名 skill 時，skill 清單與 Skill 工具用的是家目錄那份，專案那份只靠入口一句「專案有就讀那裡」救回來。所以全域副本一定要跟部署包同版；不同時 3.10 的開場 hook 會印一行 🟡 列出哪些檔不一樣。
 **權威版是本部署包**；要改就改這裡，再覆蓋下去，不要在單一專案裡就地改——那正是「同一個事實有多個家」的典型失控起點。
 
@@ -2534,7 +2579,7 @@ description: 指標檔，權威版在 .claude/skills/handoff/SKILL.md——交�
 
 **`PreToolUse` 的 Windows 命令末尾必須保留 `; exit $LASTEXITCODE`。** 2026-11-01 補做真阻擋驗收時發現：只在原生 cmd 測到 exit 2 還不夠；Codex 外層的 PowerShell `-Command` 會把最後一個 native 命令的失敗折成 exit 1，於是畫面只報 Hook failed、工具仍被放行。加上明確 exit 才把 2 交回 Codex。驗證器同時測完整 PowerShell → cmd → Git Bash 啟動鏈與拿掉明確 exit 的負向情境，避免再用少一層的測試報成功。
 
-**Windows 工作區沙箱下的 Git 更新。** 若已授權的 Git 操作被沙箱拒絕寫入 `.git`，用 Codex 的單次命令審核核准該操作，並保留目前的工作區沙箱。推送後核對遠端分支與本機追蹤參照。Windows 實測 HTTP 推送可以在遠端收到 commit 且命令回傳 0 時，仍因無法鎖定 `.git` 而留下舊追蹤參照。
+**Windows 工作區沙箱下的 Git 更新**：執行時要知道的作法在 3.8 的 `env.md`「Windows」一節（2026-11-16.4 起；以前只寫在這裡，不會部署到專案）。
 
 保持 **ASCII、全 LF、單行 if、沒有 label 與多行括號區塊**。尋找順序是 PATH 上 `git.exe` 的安裝位置、兩種 Program Files、使用者安裝位置；刻意不執行 PATH 上未驗明來源的 `bash`，以免又選到 WSL。找不到 Git Bash 就在 stderr 明確報錯並 exit 1，不假裝驗收成功。另量到 `0.166.0` 對以 `[` 開頭的純文字 stdout 會報 `invalid session start JSON output`；同一支腳本只加上 `Git status check:` 標頭後，互動驗收由 `HOOK_ABSENT` 變成 `HOOK_PRESENT`。所以標頭留在啟動器，不改兩支共用 `.sh` 的既有標記。
 
@@ -2693,7 +2738,7 @@ git status -sb
 
 **每次開工／收工**：直接 `/handoff`（Claude Code），或用 README「換一個 AI 接手工作」的兩段 prompt 指路給其他模型。**順序永遠是先交棒、後接棒**（舊 session 先把狀態寫進 `HANDOFF.md` 並 push，新 session 才讀得到）。那兩段刻意沒有自己的字母編號（2026-11-02／F15）。
 
-**改到 skill 或 hook 時**：權威版在本部署包 → 改這裡 → 覆蓋各專案 `.claude/skills/handoff/` 整個目錄（六個檔一起，與選用的全域副本）→ 檔頭 `source:` 標記跳版。
+**改到 skill 或 hook 時**：權威版在本部署包 → 改這裡 → 覆蓋各專案 `.claude/skills/handoff/` 整個目錄（七個檔一起，與選用的全域副本）→ 檔頭 `source:` 標記跳版。
 
 標記的格式是 **`v<日期>`，同一天改第二次起在日期後面加序號**（`v2026-10-24.2`、`.3`），當天第一次不加。序號算的是**當天第幾個帶 `source:` 標記的改動**，不是單一檔案的、也不是當天第幾次碰部署包——只改敘述而沒有任何標記動過的那幾次不算。標記寫的本來就是「這份副本來自部署包的哪一版」。⚠️ **它跟本檔開頭的「版本」行不保證同號**：那一行與 `VERSION` 只跟著 handoff skill 目錄走（鐵律 1；2026-11-10 起 skill 是 3.8 的六個檔，之前是單檔 `SKILL.md`），所以當天後續沒動到 skill 目錄的改動會讓標記序號**超前**版本行——2026-11-02 就是這樣，標記到 `.2` 而版本行仍是裸的 `2026-11-02`。舊版這裡寫「算的是部署包當天的第幾次修改（跟版本行同一個號）」，兩個斷言都不成立，而 `AGENTS.md` 鐵律 2 寫的是另一種算法——同一條規則兩個家、兩種說法（2026-11-02／F15 一起修）。2026-10-24 那天這份 skill 改了三次，三次的標記卻都是 `v2026-10-24`——副本明明落後，標記顯示一樣新，於是把「舊版 session 名稱少一個全形空格」誤判成同步漏掉，白查一輪。日期粒度只能證明「不早於那一天」，證明不了最新。
 

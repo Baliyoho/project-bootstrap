@@ -33,7 +33,7 @@ from common import (ARMS, BUDGET, MODEL, PROMPTS, REPEATS, SCENARIOS, TIMEOUT,
                     run_env, sh, stamp)
 
 TOOLS = ['Bash', 'Read', 'Edit', 'Write', 'Glob', 'Grep', 'Skill']
-SKILL_FILES = ('SKILL.md', 'mode-a.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md', 'reasons.md')
+SKILL_FILES = ('SKILL.md', 'mode-a.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md', 'reasons.md', 'env.md')
 
 
 def claude_bin():

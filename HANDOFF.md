@@ -12,7 +12,7 @@
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無。
 - **工作中**：`Mac` ／ `Claude Code` ／ `㊣　11.16.11｜待指派｜工作中｜交棒0次`，2026-11-16 11:57 (+08) 開工 [session-id=21ce82be-d8be-4ea6-8e4d-be0342978050]
-- **骨架版本**：`2026-11-16.3`
+- **骨架版本**：`2026-11-16.4`
 
 ## 已完成
 
@@ -23,7 +23,7 @@
 
 ## 未完成／下一步
 
-1. 把散在 `kit.md` 與 `mode-*.md` 的工具差異（Codex／Claude）和平台差異（macOS／Windows）整理成碰到才讀的差異說明。差異說明只寫環境怪癖與操作提醒，不改共用狀態的判讀（Q35）。
+1. 已建 handoff skill 第七個檔 `env.md`（`2026-11-16.4`）：Codex／Claude Code、macOS／Windows 的差異碰到才讀，不改共用狀態判讀（Q35）。下次同步各專案與全域副本時要連同新檔一起覆蓋；Claude Code／Windows 尚無實測，該節目前空白。
 2. macOS 以 `2026-11-16.3`、同一個 `midway` 提示和 B1 保全判準複驗，判斷 Windows 的失敗是平台還是情境造成。額外模型呼叫按訂閱與使用者授權執行。[macOS 歷史結果](experiments/handoff-ab/PHASE2-RESULTS.md#codex-占用者核對複驗2026-11-15)
 3. 其他已部署專案與選用的全域 skill 副本仍待同步。先核對現有占用，再依 `AGENTS-reasons.md` 的副本規則與 `tools/sync_project.py` 處理。桌面 App 的 F50 五步互動沿用既有暫緩決定。
 

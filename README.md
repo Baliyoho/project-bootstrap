@@ -70,7 +70,7 @@ override 只可加嚴或填補專案設定，使用者明確指示仍優先。�
 mkdir -p ~/.claude/skills/handoff && cp <某個已部署專案>/.claude/skills/handoff/*.md ~/.claude/skills/handoff/
 ```
 
-Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那六個檔（2026-11-10 起 skill 是一個目錄，少複製一個，入口就會指向不存在的檔）。沒裝全域副本也可以——把 `PROJECT-BOOTSTRAP.md`
+Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-16.4 起多 `env.md`；2026-11-10 起 skill 是一個目錄，少複製一個，入口就會指向不存在的檔）。沒裝全域副本也可以——把 `PROJECT-BOOTSTRAP.md`
 複製進資料夾，用最上面那段 prompt 手動指路，結果一樣。
 
 模式 0 有兩條硬規定，都對應會實際發生的事：
@@ -168,7 +168,7 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 `--all`／inventory 僅供批次預演；`--write` 必須指定單一專案與 owner，空閒標記不能寫入。同步後留在該專案完成 B7 最終檔案檢查、B8 發布與清標記；若要中途安全點則走 C，保留占用。這修正了舊工具「正常 A5 writer 被拒絕、陳舊空閒 checkout 卻能寫」的矛盾。
 
-handoff skill 目錄（六個檔）會同時存在於：**本 repo 的 `src/kit/files/.claude/skills/handoff/`**（權威來源，生成進部署包）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
+handoff skill 目錄（七個檔）會同時存在於：**本 repo 的 `src/kit/files/.claude/skills/handoff/`**（權威來源，生成進部署包）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
 
 - 要改就**改本 repo 的 `src/kit/files/.claude/skills/handoff/*.tmpl`**，跑 `tools/build_kit.py` 重生部署包，再覆蓋下去；不要在單一專案裡就地改，也不要手改 `PROJECT-BOOTSTRAP.md`。
 - 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，用它辨識落後的副本（同一天改第二次起加序號，如 `v2026-10-24.2`）。

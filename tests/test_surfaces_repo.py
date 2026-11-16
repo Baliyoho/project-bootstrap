@@ -213,7 +213,7 @@ class RepoProcedureTests(Fixture):
         claude, codex = result['runs']['claude-code'], result['runs']['codex-cli']
         self.assertEqual(claude['entry'], '專案 .claude/skills/handoff/SKILL.md')
         self.assertEqual(codex['entry'], '專案 .agents/skills/handoff/SKILL.md')
-        self.assertEqual(sorted(codex['files']), ['SKILL.md', 'mode-0.md', 'mode-a-stop.md', 'mode-a.md',
+        self.assertEqual(sorted(codex['files']), ['SKILL.md', 'env.md', 'mode-0.md', 'mode-a-stop.md', 'mode-a.md',
                                                   'mode-b.md', 'reasons.md'])
         # Found 2026-11-12: the pointer's description had lost the mode 0 sentence and
         # three trigger words the authoritative one gained, so Codex and Antigravity

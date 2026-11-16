@@ -1,4 +1,4 @@
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -63,7 +63,7 @@ python -X utf8 tools/check_docs.py
 本專案若有固定流程（部署、版本號 bump、測試、備份），對照 `AGENTS.md` 鐵律：這輪有動到就執行並記錄；沒動到就在 HANDOFF 明記「不適用」。
 **不要靜默略過**——接手者無法分辨「沒做」與「不用做」。
 
-**Codex hook 接線有改或同步過，就重新檢查信任並驗收實際執行。** 在互動 CLI 的 `/hooks` 或桌面 App 的 Hooks 設定審核當前定義，再於新 session 送出一則最小測試訊息；確認 hook 成功、輸出確實進入 context。只看檔案或信任狀態不算驗收：2026-11-01 在 Windows 的真專案上量到 hook 已信任，卻因 PATH 的 `bash` 指向缺少 `/bin/bash` 的 WSL 而 exit 1。模型呼叫仍依專案原有的額度與授權規則，不因這一項自動取得授權。
+**hook 接線有改或同步過，就驗收實際執行**；Codex 的信任審核與驗收方法見 `env.md` 的「Codex」。
 
 ### B6 更新 `HANDOFF.md`（覆寫，≤80 行，不累積歷史）
 

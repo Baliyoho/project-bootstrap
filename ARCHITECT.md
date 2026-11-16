@@ -252,7 +252,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 3.5 | `ARCHITECT.md` | 結構的唯一權威（2026-09-07 加入） |
 | 3.6 | `docs/ai-notes/handover-protocol.md` | 交接的規則與理由 |
 | 3.7 | `docs/ai-notes/roadmap.md` | 持久待辦與決策記錄 |
-| 3.8 | `.claude/skills/handoff/` 六個檔：`SKILL.md`、`mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` | **本骨架的核心**，**一節產六檔**（2026-11-10 拆分）：入口每次讀；`mode-a.md` 是正常接棒摘要；其餘四個逐字搬自單檔，依模式或異常才讀 |
+| 3.8 | `.claude/skills/handoff/` 七個檔：`SKILL.md`、`mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md`、`env.md`（2026-11-16.4 加） | **本骨架的核心**，**一節產六檔**（2026-11-10 拆分）：入口每次讀；`mode-a.md` 是正常接棒摘要；其餘四個逐字搬自單檔，依模式或異常才讀 |
 | 3.9 | `.claude/settings.json` | 兩個 hook 的接線 |
 | 3.10 | `.claude/hooks/git-freshness.sh` | SessionStart：fetch 一次，只報事實（最多五行 `[facts]`，2026-11-13 起） |
 | 3.11 | `.claude/hooks/pre-push-handoff.sh` | PreToolUse：AI push 提醒（有限覆蓋，見部署包 3.11） |
@@ -355,7 +355,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 ## 副本拓撲（同一份東西存在於多個地方的，只有這些）
 
 ```text
-handoff skill 目錄（2026-11-10 起六個檔，同版本、整個目錄一起覆蓋）
+handoff skill 目錄（2026-11-10 起六個檔，2026-11-16.4 起七個，同版本、整個目錄一起覆蓋）
   部署包 3.8（權威）
     └─→ 各專案 .claude/skills/handoff/
           ├─→ （選用）~/.claude/skills/handoff/   ← 模式 0 建制真正會被載入的地方

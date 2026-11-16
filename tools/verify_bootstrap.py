@@ -157,6 +157,7 @@ EXPECTED = {
     '.claude/skills/handoff/SKILL.md', '.claude/skills/handoff/mode-a.md',
     '.claude/skills/handoff/mode-a-stop.md', '.claude/skills/handoff/mode-b.md',
     '.claude/skills/handoff/mode-0.md', '.claude/skills/handoff/reasons.md',
+    '.claude/skills/handoff/env.md',
     '.claude/settings.json',
     '.claude/hooks/git-freshness.sh', '.claude/hooks/pre-push-handoff.sh',
     '.codex/hooks.json', '.agents/skills/handoff/SKILL.md',
@@ -302,7 +303,7 @@ def write_lf(path, text, encoding='utf-8'):
 SKILL_DIR = '.claude/skills/handoff/'
 # 入口排最前、新寫的正常路徑摘要排最後：下面依標題找段落的檢查（「### A5 」之類）要先碰到
 # 逐字搬來的原文，摘要另外由「skill 入口與常態必讀量」那一項守。
-SKILL_FILES = ('SKILL.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md', 'reasons.md', 'mode-a.md')
+SKILL_FILES = ('SKILL.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md', 'reasons.md', 'env.md', 'mode-a.md')
 SKILL_ROUTINE = ('SKILL.md', 'mode-a.md')       # 正常接棒要讀的兩個檔
 SKILL_ROUTINE_LIMIT = 6000                       # 設計稿第 3 節；F22 的 12,000 還要留給專案文件
 
@@ -4803,14 +4804,14 @@ def step_skill_split(dest):
         if not skill_split_problems(*args):
             bad.append('負向測試未擋：' + name)
     record('FAIL' if bad else 'OK', 'skill 拆分', '；'.join(bad) if bad else
-           '六個檔齊全、同版本、都在同步清單；常態必讀（入口＋mode-a.md）%d／%d 字元；入口 %d 條、mode-a %d 條必備句；'
+           '%d 個檔齊全、同版本、都在同步清單；常態必讀（入口＋mode-a.md）%d／%d 字元；入口 %d 條、mode-a %d 條必備句；'
            '拆分前 %d 行逐字留存、%d 行列為已改寫；%d 個負向測試（不代表模型會去讀模式檔）'
-           % (size, SKILL_ROUTINE_LIMIT, len(ENTRY_MUST), len(MODE_A_MUST),
+           % (len(SKILL_FILES), size, SKILL_ROUTINE_LIMIT, len(ENTRY_MUST), len(MODE_A_MUST),
               len(baseline['lines']) - len(baseline['rewritten']), len(baseline['rewritten']), len(cases)))
 
 
 RULE_MAP_HEAD = '## 規則 → 理由在哪（對照表）'
-RULE_MAP_SOURCES = ('SKILL.md', 'mode-a.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md')
+RULE_MAP_SOURCES = ('SKILL.md', 'mode-a.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md', 'env.md')
 RULE_MAP_WORDS = ('本段內文', '沒有寫下理由', '分節標題')
 
 

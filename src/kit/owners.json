@@ -7,6 +7,7 @@
     ".claude/skills/handoff/mode-b.md": {"owner": "core", "update": "whole"},
     ".claude/skills/handoff/mode-0.md": {"owner": "core", "update": "whole"},
     ".claude/skills/handoff/reasons.md": {"owner": "core", "update": "whole"},
+    ".claude/skills/handoff/env.md": {"owner": "core", "update": "whole"},
     ".claude/hooks/git-freshness.sh": {"owner": "core", "update": "whole"},
     ".claude/hooks/pre-push-handoff.sh": {"owner": "core", "update": "whole"},
     "tools/check_docs.py": {"owner": "core", "update": "region"},

@@ -3,7 +3,7 @@ name: handoff
 description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（參考檔入口）
 
@@ -29,22 +29,15 @@ description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒�
 | 接棒、續作、換機器；已交棒後又要改檔 | **A 接棒** | `mode-a.md`（正常路徑）；開場 `[facts]` 有不正常的值讀 `mode-a-stop.md` |
 | **使用者要求**交棒／收工／換人接手 | **B 交棒** | `mode-b.md` |
 | 工作告一段落；想拉最新或推一個安全點 | **C 同步** | `mode-b.md` 的 C 節 |
+| 在 Codex 或 Windows 上：指令跑得久、hook 接線有改、開場沒有 `[facts]`、Git 寫不進 `.git` | 任何模式 | `env.md`（依工具、依平台各讀一節） |
 
 - **使用者沒要求就不得自行交棒**：告一段落時自己判斷要不要 commit／push（C），不改 `↗`、不加次數。A5 開工標記與 C 中途安全點都不宣稱交棒。
 - **模式檔與本檔同目錄**：專案有 `.claude/skills/handoff/` 就讀那裡，沒有就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）。
-- 要改、質疑或想繞過任何一條規則之前先讀 `reasons.md`。`mode-a.md` 與 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 衝突時以後四者為準；它們全部與 `AGENTS.md` 衝突時以 `AGENTS.md` 為準。
+- 要改、質疑或想繞過任何一條規則之前先讀 `reasons.md`。`mode-a.md` 與 `mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 衝突時以後四者為準；`env.md` 只寫環境差異，不改變共用狀態的判讀；它們全部與 `AGENTS.md` 衝突時以 `AGENTS.md` 為準。
 
 ## 全程禁令
 
 🚫 全程禁止：`reset --hard`、`push --force`、自行 `stash`、覆寫他人 commit、刪 branch。
-
-## 跑得久的指令
-
-驗證仍照專案要求執行；省的是工具往返與輸出，不省檢查。以下是 Codex 桌面 App 2026-11-14 的實測用法，參數上限以當前工具 schema 為準：
-
-- `exec_command` 可先等 30000 ms；有 `session_id` 才用 `write_stdin` 等結果，勿每一兩秒輪詢。若透過 `functions.exec`，外層也要設 `// @exec: {"yield_time_ms": 60000}`，否則內層等 60 秒，外層仍在 30 秒交回。可在同一段 JS 先 `await exec_command`，尚未結束再 `await write_stdin` 等 30000 ms；超過一分鐘仍未完才回報進度並繼續等，不丟棄執行中的 promise。
-- 已在上下文讀過的規則不再整份讀；正常接棒不展開理由與歷史。必要的獨立讀取合併一批；驗證、stage、commit、fetch 比對、push 等有相依的動作維持順序，任一步失敗就停。
-- 成功驗證只回傳摘要與 exit code，完整輸出留本機暫存日誌；FAIL／SKIP 要讀細節。工具提供摘要選項才使用，不猜選項或吞掉結束碼。交棒已取得的結果依 B7 的失效條件決定是否重跑。
 
 ## 必須停下來問使用者（不得自行決定）
 
