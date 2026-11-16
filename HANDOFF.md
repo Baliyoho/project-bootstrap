@@ -24,7 +24,7 @@
 ## 未完成／下一步
 
 1. 已建 handoff skill 第七個檔 `env.md`（`2026-11-16.4`）：Codex／Claude Code、macOS／Windows 的差異碰到才讀，不改共用狀態判讀（Q35）。下次同步各專案與全域副本時要連同新檔一起覆蓋；Claude Code／Windows 尚無實測，該節目前空白。
-2. macOS 以 `2026-11-16.3`、同一個 `midway` 提示和 B1 保全判準複驗，判斷 Windows 的失敗是平台還是情境造成。額外模型呼叫按訂閱與使用者授權執行。[macOS 歷史結果](experiments/handoff-ab/PHASE2-RESULTS.md#codex-占用者核對複驗2026-11-15)
+2. macOS 同版 `midway` 已複驗（`2026-11-16.4`，有效 1 格）：Codex 照 A2.5 選項 2 釋回斷線 session 的標記，與 B1 斷線例子衝突；失敗與平台無關。待使用者決定兩份參考檔以哪個為準。[結果](experiments/handoff-ab/CODEX-RESULTS.md#macos-同版-midway-斷線複驗2026-11-16)
 3. 其他已部署專案與選用的全域 skill 副本仍待同步。先核對現有占用，再依 `AGENTS-reasons.md` 的副本規則與 `tools/sync_project.py` 處理。桌面 App 的 F50 五步互動沿用既有暫緩決定。
 
 ## 地雷與注意事項

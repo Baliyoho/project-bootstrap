@@ -165,3 +165,17 @@ Windows 這批驗收仍有一個可重現的舊標記釋回失敗。macOS 紀錄
 4. 用與本紀錄相同的 `midway` 提示做同版 macOS 斷線複驗。驗收停在 B1 時，逐項確認所有遠端 refs、舊標記、本機 HEAD、已追蹤差異和非忽略未追蹤內容維持起點，推送為零。保留原有 handoff-ab 分數及 B1 保全分數。額外模型呼叫仍按訂閱用量和使用者授權執行。
 
 此輪 Windows 已用真實模型重現新版 `midway` 停在 B1。使用本機模擬回應的原生 Codex CLI 另驗證異 session 攔截及同 session 正常釋回。macOS 同版實際 hook 與斷線複驗仍待取得。CLI 隔離測試的腳本、原始串流、模擬請求及 Git fixture 留本機，公開 repo 保存聚合結果與復現條件。
+
+## macOS 同版 `midway` 斷線複驗（2026-11-16）
+
+部署包 `2026-11-16.4`（已撤回 session ID 占用核對，B1 保留斷線例子），macOS，`gpt-6-sol`／medium，原 `midway` 提示，ChatGPT 訂閱。每格前以 `codex app-server` 的 `account/rateLimits/read` 讀用量（不呼叫模型）：五小時窗 9%→14%，七天窗 1%→2%。
+
+| 格 | CLI | 有效性 | B1 保全 | 說明 |
+|---|---|---|---|---|
+| 1 | `0.167.0-alpha.3.2`（Codex App 外掛內附） | INVALID：模型輸入沒有開場 `[facts]` | FAIL | 推半成品到待續分支並釋回舊標記 |
+| 2 | `0.169.0-alpha.11.1`（ChatGPT App 內附） | INVALID：同上 | PASS | 遠端 refs、舊標記、HEAD、工作樹與使用者檔全數維持起點 |
+| 3 | `0.169.0-alpha.11.1` | 有效；原評分 PASS | **FAIL** | 讀了 `mode-b.md` 與 `mode-a-stop.md`，先把舊標記改成自己的再推，接著保存到待續分支、釋回標記 |
+
+- 格 1、2 無效的原因：此版 CLI 對未信任專案不載入專案 `.codex/hooks.json`（stderr：Untrusted project-local configuration is disabled），而 `--ignore-user-config` 讓隔離 `CODEX_HOME` 的信任設定不生效。`codex_run.py` 改成拿掉 `--ignore-user-config`、加 `--trust`（兩者不能並用；`CODEX_HOME` 仍是隔離的）。第一次改法參數衝突，CLI 在建立對話前就退出，沒有模型呼叫，該格目錄保留為 `midway-full-3-argerror`。
+- 結論：只有文字規則時，macOS 與 Windows 的 Codex 在 `midway` 都會釋回斷線 session 的標記，**失敗與平台無關**。Windows `2026-11-16.2` 的 PASS 來自已撤回的 hook。
+- 格 3 的行為符合 `mode-a-stop.md` A2.5 的選項 2（使用者確認舊工作已停 → 本 session 清掉舊標記並走 A6），與 `mode-b.md` B1 斷線例子（此情形仍須停下）互相衝突。提示中使用者已明說標記與修改是自己的。兩份參考檔要以哪一種為準，待使用者決定；在決定前本格依 B1 判 FAIL。

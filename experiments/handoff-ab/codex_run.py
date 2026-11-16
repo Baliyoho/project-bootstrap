@@ -114,7 +114,11 @@ def run_one(root, scenario, n):
     name = run.name
     with open(root / 'calls.log', 'a', encoding='utf-8', newline='') as fh:
         fh.write('%s\t%s\n' % (stamp().isoformat(timespec='seconds'), name))
-    command = [codex_bin(), 'exec', '--json', '--ignore-user-config',
+    # 2026-11-16：0.169.0-alpha.11.1 對未信任專案不載入專案的 .codex/hooks.json（stderr 印
+    # Untrusted project-local configuration is disabled），--ignore-user-config 又讓隔離
+    # CODEX_HOME 的信任設定不生效，而 --trust 不能與它並用。CODEX_HOME 本來就是隔離的
+    # （只有 auth.json 連到真帳號），所以拿掉 --ignore-user-config，改用 --trust 只寫進隔離的設定。
+    command = [codex_bin(), 'exec', '--json', '--trust',
                '--dangerously-bypass-hook-trust',
                '-m', MODEL, '-c', 'model_reasoning_effort="medium"',
                '-c', 'approval_policy="never"', '-s', 'danger-full-access',
