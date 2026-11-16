@@ -12,7 +12,7 @@
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無。
 - **工作中**：`Mac` ／ `Claude Code` ／ `㊣　11.16.11｜待指派｜工作中｜交棒0次`，2026-11-16 11:57 (+08) 開工 [session-id=21ce82be-d8be-4ea6-8e4d-be0342978050]
-- **骨架版本**：`2026-11-16.4`
+- **骨架版本**：`2026-11-16.5`
 
 ## 已完成
 
@@ -24,7 +24,7 @@
 ## 未完成／下一步
 
 1. 已建 handoff skill 第七個檔 `env.md`（`2026-11-16.4`）：Codex／Claude Code、macOS／Windows 的差異碰到才讀，不改共用狀態判讀（Q35）。下次同步各專案與全域副本時要連同新檔一起覆蓋；Claude Code／Windows 尚無實測，該節目前空白。
-2. macOS 同版 `midway` 已複驗（`2026-11-16.4`，有效 1 格）：Codex 照 A2.5 選項 2 釋回斷線 session 的標記，與 B1 斷線例子衝突；失敗與平台無關。待使用者決定兩份參考檔以哪個為準。[結果](experiments/handoff-ab/CODEX-RESULTS.md#macos-同版-midway-斷線複驗2026-11-16)
+2. macOS 同版 `midway` 已複驗：Codex 照 A2.5 選項 2 接手並交棒。使用者 2026-11-16 選 A2.5（Q36），`2026-11-16.5` 已把 B1 斷線例子改成一致；`midway` 回到原評分，格 3 照原評分為 PASS。[結果](experiments/handoff-ab/CODEX-RESULTS.md#macos-同版-midway-斷線複驗2026-11-16)
 3. 其他已部署專案與選用的全域 skill 副本仍待同步。先核對現有占用，再依 `AGENTS-reasons.md` 的副本規則與 `tools/sync_project.py` 處理。桌面 App 的 F50 五步互動沿用既有暫緩決定。
 
 ## 地雷與注意事項

@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-16.4**（handoff skill 新增第七個檔 `env.md`：工具（Codex／Claude Code）與平台（macOS／Windows）的差異，碰到才讀，只寫環境怪癖與操作提醒、不改共用狀態的判讀（決策書 v3 Q35）。入口「跑得久的指令」與 `mode-b.md` 的 Codex hook 驗收逐字搬進去；3.17 的 Windows 沙箱提醒原本只在部署包、不會部署到專案，現在進了 `env.md`。七個 skill 檔與共用制度標記同版。）
+> 版本：**2026-11-16.5**（`mode-b.md` B1 的斷線例子改成跟 `mode-a-stop.md` A2.5 選項 2 一致：使用者明確確認舊標記與工作屬於自己時，本 session 先把標記改成自己並推上，再走 A6 與交棒；只說「請交棒」或同機器同工具不算確認。起因是 macOS 同版 `midway` 複驗時 Codex 照 A2.5 接手，與 B1 例子衝突（決策書 v3 Q36，使用者 2026-11-16 決定）。七個 skill 檔與共用制度標記同版。）
+> 前一版 **2026-11-16.4**（handoff skill 新增第七個檔 `env.md`：工具（Codex／Claude Code）與平台（macOS／Windows）的差異，碰到才讀，只寫環境怪癖與操作提醒、不改共用狀態的判讀（決策書 v3 Q35）。入口「跑得久的指令」與 `mode-b.md` 的 Codex hook 驗收逐字搬進去；3.17 的 Windows 沙箱提醒原本只在部署包、不會部署到專案，現在進了 `env.md`。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.3**（撤回 2026-11-16.2 的 session ID 占用核對：它讓 AI push hook 在缺 ID、缺 Python、feature 分支與 `HANDOFF_HOOK=off` 時都擋下，把開工標記從訊號變成鎖（D1），擴大 F10 的阻擋範圍卻沒有使用者定案與 D14 對照。3.10、3.11 回到原本「寧可漏擋」的行為；保留 Windows 的 `python3`／`python` 回退與 B1 斷線例子。使用者 2026-11-16 決定：一套共用規則，工具與平台的差異只寫成碰到才讀的說明，不改變共用狀態的判讀。六個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.2**（開場提供工具的 session ID，開工標記留存。AI push hook 在可辨識的目前分支推送中比對原開工者，阻擋未經核對的釋回或替換。已由 2026-11-16.3 撤回。）
 > 前一版 **2026-11-16**（交棒核對補上斷線後新開 session 的例子。Windows `midway` 曾照舊評分通過，卻在新 session 直接清掉舊開工標記。六個 skill 檔與共用制度標記同版。）

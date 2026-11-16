@@ -3954,7 +3954,7 @@ def flow_contract_problems(skill):
         ('### B1 ', '動任何檔案、提交或推送前先核對占用'),
         ('### B1 ', '已確認推送的完整標記比對'),
         ('### B1 ', '無法確認歸屬就停下'),
-        ('### B1 ', '斷線後開了新 session，確認舊工作的歸屬仍須停在 B1'),
+        ('### B1 ', '使用者明確確認舊標記與工作屬於自己時，照 `mode-a-stop.md` A2.5 選項 2 接手'),
         ('### B7 ', 'B6 覆寫完成後'),
         ('### B7 ', 'tools/check_docs.py'),
         ('### B7 ', 'exit 0 才提交發布'),
@@ -3995,7 +3995,7 @@ def step_flow_contract(dest, tmp):
                  '使用者沒要求就不得自行交棒', 'A5 開工標記與 C 中途安全點都不宣稱交棒')
     mutations += ('tools/check_docs.py --staged', 'git diff --cached --name-only',
                   '動任何檔案、提交或推送前先核對占用', '已確認推送的完整標記比對', '無法確認歸屬就停下',
-                  '斷線後開了新 session，確認舊工作的歸屬仍須停在 B1',
+                  '使用者明確確認舊標記與工作屬於自己時，照 `mode-a-stop.md` A2.5 選項 2 接手',
                   '比對 B1 的占用分支 SHA 與完整標記', '兩者任一對不上就停下，不推送')
     for token in mutations:
         mutated = skill.replace(token, '移除契約')

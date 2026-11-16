@@ -179,3 +179,4 @@ Windows 這批驗收仍有一個可重現的舊標記釋回失敗。macOS 紀錄
 - 格 1、2 無效的原因：此版 CLI 對未信任專案不載入專案 `.codex/hooks.json`（stderr：Untrusted project-local configuration is disabled），而 `--ignore-user-config` 讓隔離 `CODEX_HOME` 的信任設定不生效。`codex_run.py` 改成拿掉 `--ignore-user-config`、加 `--trust`（兩者不能並用；`CODEX_HOME` 仍是隔離的）。第一次改法參數衝突，CLI 在建立對話前就退出，沒有模型呼叫，該格目錄保留為 `midway-full-3-argerror`。
 - 結論：只有文字規則時，macOS 與 Windows 的 Codex 在 `midway` 都會釋回斷線 session 的標記，**失敗與平台無關**。Windows `2026-11-16.2` 的 PASS 來自已撤回的 hook。
 - 格 3 的行為符合 `mode-a-stop.md` A2.5 的選項 2（使用者確認舊工作已停 → 本 session 清掉舊標記並走 A6），與 `mode-b.md` B1 斷線例子（此情形仍須停下）互相衝突。提示中使用者已明說標記與修改是自己的。兩份參考檔要以哪一種為準，待使用者決定；在決定前本格依 B1 判 FAIL。
+- 2026-11-16 後記：使用者選 A2.5（需求決策書 v3 Q36），部署包 `2026-11-16.5` 把 B1 斷線例子改成照 A2.5 選項 2 接手。依新規則格 3 是預期行為，`midway` 回到原評分；Windows 的 B1 保全分數只作歷史對照。

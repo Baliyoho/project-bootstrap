@@ -10,7 +10,8 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-16.4**（handoff skill 新增第七個檔 `env.md`：工具（Codex／Claude Code）與平台（macOS／Windows）的差異，碰到才讀，只寫環境怪癖與操作提醒、不改共用狀態的判讀（決策書 v3 Q35）。入口「跑得久的指令」與 `mode-b.md` 的 Codex hook 驗收逐字搬進去；3.17 的 Windows 沙箱提醒原本只在部署包、不會部署到專案，現在進了 `env.md`。七個 skill 檔與共用制度標記同版。）
+> 版本：**2026-11-16.5**（`mode-b.md` B1 的斷線例子改成跟 `mode-a-stop.md` A2.5 選項 2 一致：使用者明確確認舊標記與工作屬於自己時，本 session 先把標記改成自己並推上，再走 A6 與交棒；只說「請交棒」或同機器同工具不算確認。起因是 macOS 同版 `midway` 複驗時 Codex 照 A2.5 接手，與 B1 例子衝突（決策書 v3 Q36，使用者 2026-11-16 決定）。七個 skill 檔與共用制度標記同版。）
+> 前一版 **2026-11-16.4**（handoff skill 新增第七個檔 `env.md`：工具（Codex／Claude Code）與平台（macOS／Windows）的差異，碰到才讀，只寫環境怪癖與操作提醒、不改共用狀態的判讀（決策書 v3 Q35）。入口「跑得久的指令」與 `mode-b.md` 的 Codex hook 驗收逐字搬進去；3.17 的 Windows 沙箱提醒原本只在部署包、不會部署到專案，現在進了 `env.md`。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.3**（撤回 2026-11-16.2 的 session ID 占用核對：它讓 AI push hook 在缺 ID、缺 Python、feature 分支與 `HANDOFF_HOOK=off` 時都擋下，把開工標記從訊號變成鎖（D1），擴大 F10 的阻擋範圍卻沒有使用者定案與 D14 對照。3.10、3.11 回到原本「寧可漏擋」的行為；保留 Windows 的 `python3`／`python` 回退與 B1 斷線例子。使用者 2026-11-16 決定：一套共用規則，工具與平台的差異只寫成碰到才讀的說明，不改變共用狀態的判讀。六個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.2**（開場提供工具的 session ID，開工標記留存。AI push hook 在可辨識的目前分支推送中比對原開工者，阻擋未經核對的釋回或替換。已由 2026-11-16.3 撤回。）
 > 前一版 **2026-11-16**（交棒核對補上斷線後新開 session 的例子。Windows `midway` 曾照舊評分通過，卻在新 session 直接清掉舊開工標記。六個 skill 檔與共用制度標記同版。）
@@ -317,7 +318,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 專案概觀與測試指令在 [README.md](README.md)。現在做到哪、下一步是什麼，在 [HANDOFF.md](HANDOFF.md)。使用者用 **{{LANG}}** 溝通。
 > 最後更新：{{TODAY}}（建立）
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.5 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -825,7 +826,7 @@ name: handoff
 description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（參考檔入口）
 
@@ -881,7 +882,7 @@ description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒�
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
@@ -942,7 +943,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場 `[facts]` 有不正常的值時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
@@ -1124,7 +1125,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -1153,7 +1154,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 
 **標記屬於別人、缺失、已釋回或無法確認歸屬就停下**，回報遠端狀態，不改檔、不提交、不推送。fetch 失敗也停下。2026-11-15 的 Codex 占用者探針中，六個新 session 在同機器同工具下都釋回了舊 session 的標記，因此在第一步核對。
 
-**斷線後開了新 session，確認舊工作的歸屬仍須停在 B1。** 例如使用者說「上一個 session 斷線了，工作中標記和未提交修改都是我們自己的，請交棒」。這確認了舊工作的歸屬。先保留舊標記和工作樹，連保存到待續分支也等本 session 核對自己推上的開工標記。要接手此前的工作，先依 `mode-a-stop.md` 的 A2.5 與 A6 處理舊占用與補交接。
+**使用者明確確認舊標記與工作屬於自己時，照 `mode-a-stop.md` A2.5 選項 2 接手。** 例如使用者說「上一個 session 斷線了，工作中標記和未提交修改都是我們自己的，請交棒」。本 session 先把「工作中」改成自己、推上並重讀遠端確認，再走 A6 與本程序其餘步驟。只說「請交棒」或只是同機器同工具，不算確認（2026-11-16 使用者決定，需求決策書 v3 Q36）。
 
 未完成的東西二選一：完成並驗證；或 commit／push 到分支並在 HANDOFF 標明風險與已知安全 commit。
 **不留來源不明的工作樹**，也不要把半成品併進 `main`。
@@ -1301,7 +1302,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -1376,7 +1377,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
@@ -1550,7 +1551,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/env.md`**——工具與平台差異（2026-11-16.4 起，決策書 v3 Q35）。在 Codex 或 Windows 上碰到對應狀況才讀；只寫環境怪癖與操作提醒，不改變共用狀態的判讀，要加會讓交接結果不同的規則就不放這裡。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.4 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.5 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 工具與平台差異（碰到才讀）
 
