@@ -251,7 +251,11 @@ REPO_CONFIG = {
         'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md'],
         'required_in': ['AGENTS.md', 'PROJECT-BOOTSTRAP.md'],
     }],
-    'registry': {'doc': 'project-bootstrap-requirements-decision.md', 'heading': r'(^| > )6\. 待決事項$'},
+    # 2026-11-16（v3 Q37 的連帶）：登記處改指 v3 第 8 節。v3 Q32 (b) 讓兩本並存時
+    # 寫著「工具認得的仍是 v2 第 6 節」，但新編號從 Q32 起就只發在 v3，HANDOFF 的
+    # 懸置要引用的也只會是 v3 的編號；指著 v2 等於這條規則永遠無法滿足。
+    'registry': {'doc': 'project-bootstrap-requirements-decision-v3.md',
+                 'heading': r'(^| > )8\. 待決事項$'},
     'pending_sections': [{'doc': 'HANDOFF.md', 'heading': r'懸置事項'}],
     # Dated log lines and the decisions record state what was true then.
     'history': [{'doc': 'ARCHITECT.md', 'line': r'^> (最後更新：)?\d{4}-\d{2}-\d{2}'},
@@ -260,7 +264,10 @@ REPO_CONFIG = {
     'scan_fences': ['PROJECT-BOOTSTRAP.md'],
 }
 REPO_DOCS = ('README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md', 'HANDOFF.md',
-             'project-bootstrap-requirements-decision.md', 'project-bootstrap-implementation-plan.md')
+             'project-bootstrap-requirements-decision.md',
+             # 現行需求權威，也是待決登記處（2026-11-16）。
+             'project-bootstrap-requirements-decision-v3.md',
+             'project-bootstrap-implementation-plan.md')
 
 
 def read_docs(root, names):

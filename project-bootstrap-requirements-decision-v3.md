@@ -212,7 +212,7 @@ v2 的程式：`broker`、`launcher`、`supervisor`、`isolation`、`vm_probe` �
 - **Q32**（2026-11-13 登記）：v3 怎麼取代 v2？現行驗證器、`test_trail_repo`、v2 現況索引與 `AGENTS.md` 都指向 v2 檔的檔名與結構。選項：(a) 本檔改名蓋掉 v2 檔，v2 全文搬進歷史原件，同一個 commit 改驗證器與索引；(b) 兩檔並存一段時間，`AGENTS.md` 改指 v3。影響全部 ID。狀態：已決（2026-11-13，使用者在聊天中選 (b)「兩檔先並存」）。
   - 採用理由：當時沒有記錄理由（使用者只回答選項）
   - 暫緩 (a) 蓋掉 v2 檔：要在同一個 commit 改驗證器、兩支測試、一致性檢查與現況索引；何時做另登新編號（出處：本條選項說明）
-  - 結果：`AGENTS.md`、`AGENTS-reasons.md`、`ARCHITECT.md` 改指 v3，v2 檔頭加註；讀 v2 檔的工具沒有改。並存期間的代價是兩個待決登記處：工具認得的仍是 v2 第 6 節，Q32 起在本節。
+  - 結果：`AGENTS.md`、`AGENTS-reasons.md`、`ARCHITECT.md` 改指 v3，v2 檔頭加註；讀 v2 檔的工具沒有改。並存期間的代價是兩個待決登記處：工具認得的仍是 v2 第 6 節，Q32 起在本節。2026-11-16（Q37 連帶）：一致性檢查的登記處已改指本節第 8 節，因為新編號只發在這裡，指著 v2 會讓「HANDOFF 懸置只放指向登記處編號的指標」這條永遠無法滿足；其餘讀 v2 的工具沒有改。
 - **Q33**（2026-11-13 登記）：凍結的 v2 執行屏障模組與它們的測試要留在 `src/`，還是搬到封存目錄？留著的話每次驗證都要跑它們的測試。影響 D9、F24。狀態：已決（2026-11-14，使用者在聊天中說「Q33 封存」，範圍選「封存乾淨部分，broker 留著」）。
   - 採用理由：當時沒有記錄理由（使用者只回答選項）
   - 暫緩：連 `broker` 一起封存。凍結中的簽章發布鏈（`approvals` → `release` → `package`，接到現役的 `build_package.py`、`migrate_project.py`、`install_package.py`）還 import 它；要封存得先把 `Broker.unique_keys` 搬走、連 `approvals` 一起處理（出處：本條選項說明）
@@ -227,6 +227,11 @@ v2 的程式：`broker`、`launcher`、`supervisor`、`isolation`、`vm_probe` �
 - **Q36**（2026-11-16 登記）：使用者明確確認斷線 session 的標記與工作屬於自己並要求交棒時，該照 `mode-a-stop.md` A2.5 選項 2 接手，還是照 `mode-b.md` B1 斷線例子停下？macOS 同版 `midway` 複驗（`2026-11-16.4`）中 Codex 照 A2.5 接手，兩份參考檔衝突；只靠文字時 macOS 與 Windows 的 Codex 都不會停。影響 F10、F13、D1。狀態：已決（2026-11-16，使用者在聊天中選「A2.5: allow takeover」）。
   - 採用理由：當時沒有記錄理由（使用者只回答選項）
   - 結果：2026-11-16.5 把 B1 斷線例子改成照 A2.5 選項 2 接手；只說「請交棒」或同機器同工具仍不算確認，占用者探針的正解（停下）不變
+- **Q37**（2026-11-16 登記）：Windows 上 `verify_bootstrap.py` 固定 exit 2（唯一失敗項是 v2 P0 原型回歸；2026-11-16 實測 45 個失敗裡 32 個是 POSIX 檔案模式與 symlink、3 個是程式裡的 POSIX 假設、5 個簽章測試因為驗證器路徑寫死 `/usr/bin/ssh-keygen` 而 skip），要怎麼處理？影響 F24 與跨平台驗收判準。選項：(a) 讓驗證判準平台感知，把 POSIX 檔案模式那組標成本平台不適用，真 bug 照修；(b) 記一份 Windows 預期失敗清單，只比對新增的失敗。AI 建議 (a)。狀態：已決（2026-11-16，使用者在聊天中選 (a) 平台感知）
+  - 採用理由：預期失敗清單的基線不穩——只把 `HANDOFF.md` 的「工作中」改成本 session，失敗數就從 39 漂到 45，而且 `setUpClass` 一出錯整個類別不跑，連分母（`testsRun`）都會變（出處：本條實測）
+  - 未選 (b) 預期失敗清單：同採用理由；另外清單會把「本平台沒有這個概念」與「這裡真的壞了」混在同一份名單裡（出處：本條選項說明）
+  - 結果：`package.RECORDS_EXECUTE_BIT` 與 `selftest._runnable` 只在記得住執行位元的平台比對；測試端不用 skip（A4 不收 skip），改成斷言「本平台不適用」的結果，symlink 造不出來時斷言造不出來。順帶修掉四個真 bug：`contracts.path_escapes`（Windows 絕對路徑逃逸）、`distribute.pack`（封存的執行位元改讀 manifest）、`approvals.system_ssh_keygen` 與 `verifier_env`（驗證器路徑依平台、最小環境在 Windows 要帶 ProgramData）、`pointer.SOURCE_RE`（收磁碟絕對路徑）。Windows 實測 `verify_v2` 434 run、skipped 歸零。只動 `src/project_bootstrap/` 與 `tests/`，沒碰 `src/kit/`，所以骨架版本不動。
+- **Q38**（2026-11-16 登記）：要不要把「全套驗證在原生 Windows 約 160–240 秒，超過指令工具預設的 120 秒上限」寫進 `.claude/skills/handoff/env.md` 的 Windows 節？影響 F22 與 skill 的七個檔。選項：(a) 寫進 `env.md`，照鐵律 1 改 `src/kit/`、跳骨架版本、重生部署包並同步所有副本；(b) 不寫，留在本 repo 的交接快照裡。需使用者決定。狀態：待決
 
 ## 9. v3 自己的已知弱點
 

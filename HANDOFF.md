@@ -49,5 +49,4 @@ bootstrap v3 的跨平台驗收。**四種組合（Codex／Claude Code × macOS�
 
 ## 懸置事項（AI 勿自行處理）
 
-- **Windows 的 exit 2 要用哪種解法**：讓驗證器平台感知（把 POSIX 執行位元那組標成本平台不適用），或記一份 Windows 預期失敗清單只比對新增。這會動到驗證判準，屬需求決策書範圍。
-- **要不要把「全套驗證超過指令預設上限」寫進 `env.md` 的 Windows 節**：會動 `src/kit/`、跳 `VERSION`、重生部署包並同步所有副本。
+- **Q38**：要不要把「全套驗證超過指令預設上限」寫進 `env.md` 的 Windows 節。見[需求決策書 v3](project-bootstrap-requirements-decision-v3.md) 第 8 節。
