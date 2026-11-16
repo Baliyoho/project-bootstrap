@@ -35,7 +35,7 @@ class Fixture(unittest.TestCase):
                     'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@example.invalid',
                     'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@example.invalid',
                     'LC_ALL': 'C'}
-        self.supported = platform.system() == 'Darwin' and release.VERIFIER.is_file()
+        self.supported = platform.system() in ('Darwin', 'Linux') and release.VERIFIER.is_file()
         if self.supported:
             self.key = self.root / 'ci'
             subprocess.run([str(release.VERIFIER), '-q', '-t', 'ed25519', '-N', '', '-f',

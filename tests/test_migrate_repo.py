@@ -31,7 +31,7 @@ import sync_project as sp  # noqa: E402
 import verify_bootstrap  # noqa: E402
 
 HAS_GIT = shutil.which('git') is not None
-SIGNS = (platform.system() == 'Darwin' and release_module.VERIFIER.is_file() and HAS_GIT)
+SIGNS = (platform.system() in ('Darwin', 'Linux') and release_module.VERIFIER.is_file() and HAS_GIT)
 HOOK = '.claude/hooks/git-freshness.sh'
 SKILL = '.claude/skills/handoff/SKILL.md'
 LAUNCHER = '.claude/hooks/codex-hook.cmd'
@@ -227,7 +227,7 @@ class MigrateRepoTests(unittest.TestCase):
                                      signature=signature, channel='beta', source=str(source),
                                      cache=str(self.work / 'cache'))
 
-    @unittest.skipUnless(SIGNS, 'needs ssh-keygen on macOS like the release tests')
+    @unittest.skipUnless(SIGNS, 'needs OpenSSH signing on macOS or Linux')
     def test_write_migrates_one_project_and_the_write_check_passes(self):
         source, keys, result = self.signed_release()
         def own(project):
@@ -258,7 +258,7 @@ class MigrateRepoTests(unittest.TestCase):
         self.assertEqual(changed, {('M', HOOK), ('M', '.claude/settings.json'), ('??', LAUNCHER),
                                    ('??', '.bootstrap/')})
 
-    @unittest.skipUnless(SIGNS, 'needs ssh-keygen on macOS like the release tests')
+    @unittest.skipUnless(SIGNS, 'needs OpenSSH signing on macOS or Linux')
     def test_write_refusals_leave_the_project_unchanged(self):
         source, keys, result = self.signed_release()
         def customised(project):

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# source: PROJECT-BOOTSTRAP.md v2026-11-15 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
+# source: PROJECT-BOOTSTRAP.md v2026-11-16.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案。
 # SessionStart hook：fetch 一次，只報事實，不下指示（需求決策書 v3 第 5 節，D12）。
 # 用 SessionStart JSON 把最多 5 行 [facts] 放進 context；Codex 會把裸的 [facts] 誤認為壞 JSON。只讀：不 pull、不 push、不寫任何檔。
 # 怎麼判讀交給模型與 AGENTS.md 的共用制度；舊版的判讀表、全綠行與工具身分猜測在 2026-11-13 移除，
@@ -8,21 +8,35 @@
 cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
 me=${HOSTNAME:-$(hostname 2>/dev/null || uname -n 2>/dev/null)}
+hook_input=''
+[ -t 0 ] || IFS= read -r -d '' -t 1 hook_input || true
 
 facts=''
 emit() { facts="${facts}${facts:+
 }$1"; }
 finish() {
+  local py json output
   [ -n "$facts" ] || return
-  if command -v python3 >/dev/null 2>&1; then
-    py=python3
-  elif command -v python >/dev/null 2>&1; then
-    py=python
-  else
-    printf '%s\n' 'Git facts unavailable: Python is missing'
-    return
-  fi
-  printf '%s' "$facts" | "$py" -c 'import json, sys; print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": sys.stdin.read()}}, ensure_ascii=False))'
+  json='import json, re, sys
+payload, facts = sys.stdin.read().split(chr(0), 1)
+try:
+    session = json.loads(payload).get("session_id")
+except (ValueError, AttributeError):
+    session = None
+if isinstance(session, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", session):
+    lines = facts.split("\n", 1)
+    lines[0] += "；session-id=" + session
+    facts = "\n".join(lines)
+print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": facts}}, ensure_ascii=False))'
+  # Windows 的 python3 可能只是一個 PATH 找得到、實際執行會失敗的別名。
+  for py in python3 python; do
+    if output=$(printf '%s\0%s' "$hook_input" "$facts" | "$py" -X utf8 -c "$json" 2>/dev/null) && [ -n "$output" ]; then
+      printf '%s\n' "$output"
+      return
+    fi
+  done
+  printf '%s\n' 'Git facts unavailable: neither python3 nor python could encode SessionStart JSON' >&2
+  exit 1
 }
 trap finish EXIT
 

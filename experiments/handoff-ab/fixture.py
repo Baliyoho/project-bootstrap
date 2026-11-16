@@ -133,8 +133,8 @@ def foreign_marker(minutes_ago=40):
     return marker(OTHER, 'Codex CLI', minutes_ago)
 
 
-def own_marker():
-    return marker(MACHINE, 'Claude Code', 55)
+def own_marker(tool='Claude Code'):
+    return marker(MACHINE, tool, 55)
 
 
 # 第二輪 secret：工作樹裡一個沒被 .gitignore 排除、帶著金鑰樣式字串的未追蹤檔。

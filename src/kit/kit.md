@@ -10,7 +10,10 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-15.2**（交棒先核對遠端開工標記是否屬於本 session，推送釋回前再核對遠端。六個 skill 檔與共用制度標記同版。）
+> 版本：**2026-11-16.2**（開場提供工具的 session ID，開工標記留存。AI push hook 在可辨識的目前分支推送中比對原開工者，阻擋未經核對的釋回或替換。）
+> 前一版 **2026-11-16**（交棒核對補上斷線後新開 session 的例子。Windows `midway` 曾照舊評分通過，卻在新 session 直接清掉舊開工標記。六個 skill 檔與共用制度標記同版。）
+> 前一版 **2026-11-15.2**（交棒先核對遠端開工標記是否屬於本 session，推送釋回前再核對遠端。六個 skill 檔與共用制度標記同版。）
+> 2026-11-15.3（3.10 hook）：Windows Git Bash 能找到 WindowsApps 的 `python3` 別名，但該別名可能執行失敗，讓 Codex 收不到開場事實。hook 依次用 `python3`、`python` 實際產生 UTF-8 JSON，兩者都失敗時回報錯誤。驗證器覆蓋失效別名及兩個指令都失敗的情境。
 > 前一版 **2026-11-14.4**（Codex 交接成本優化：補外層等待、摘要輸出與最小讀取用法；來源驗證器將獨立回歸與其他檢查重疊執行，檢查集合不減。六個 skill 檔與共用制度標記同版；實測範圍見 experiments/handoff-ab/CODEX-RESULTS.md。）
 > 2026-11-15（**只改 3.10 hook，刻意不跳 `VERSION`**）：本 repo 的 `origin` 若是權威 repo，成功 fetch 後直接讀 `origin/main:VERSION`，避免 12 小時快取蓋住剛更新的版本；HTTPS、SSH 都接受。其他已部署專案仍用原來的 12 小時快取。無效版本與 fetch 失敗不猜值。3.10 的 `source:` 標記更新到 `v2026-11-15`；沒有修改 handoff skill 目錄，所以 `VERSION` 與共用制度標記不動。未授權同步其他專案。
 > 前一版 **2026-11-14.3**（**handoff skill 加「跑得久的指令」一節**（使用者 2026-11-14 決定）：工具會在指令沒跑完就先交回時（Codex 的指令工具），一次把等待時間設到夠它跑完，不要每一兩秒輪詢。起因是同日一次 Codex 接棒 28 次模型呼叫裡有 15 次在等驗證腳本，理由與數字寫在 3.8 `reasons.md`。skill 有改，`VERSION`、六個 skill 檔與共用制度標記跳到 `v2026-11-14.3`（共用制度內文沒動，理由同前一版）。是否真的減少呼叫，要在 Codex 實際接棒一次才知道，尚未驗收。）
@@ -416,7 +419,8 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ### 3.11 `.claude/hooks/pre-push-handoff.sh`（AI push 提醒）
 
-> **AI push 提醒，不是 Git 原生 pre-push 或發布保證。** 只對殼層指令（payload 的 `command` 欄位）含字面 `git push` 的呼叫，依目前分支與本機 `origin` 追蹤 ref 判斷；不解析 shell、選項、實際 remote 或 refspec。`git -c … push`、GUI、間接執行的 script 可能漏判，指令裡只是提到 `git push`（例如 `echo`）也可能誤擋；編輯檔案等非殼層工具的內容提到它不算（2026-11-12，決策書 Q27）；feature 分支與判斷不了時放行。需要硬閘門時另評估 Git 原生 pre-push 與伺服器保護。
+> **AI push 提醒的覆蓋範圍。** 只對殼層指令（payload 的 `command` 欄位）含字面 `git push` 的呼叫，依目前分支與本機 `origin` 追蹤 ref 判斷。此路徑未解析 shell、選項、實際 remote 或 refspec。`git -c … push`、GUI、間接執行的 script 可能漏判，指令裡只是提到 `git push`（例如 `echo`）也可能誤擋。編輯檔案等非殼層工具的內容提到它會放行（2026-11-12，決策書 Q27）。現有 feature 分支仍核對占用變更，保留標記的安全點照常放行。需要跨所有推送路徑的硬閘門時另評估 Git 原生 pre-push 與伺服器保護。
+> 2026-11-16／F10：開場 hook 從工具 payload 取得 session ID。開工者將它記在標記行尾。釋回、替換或刪除已占用欄位時，用工具送給 PreToolUse 的頂層 session ID 比對原標記。舊標記缺值時，先由使用者核對並處理遷移。`HANDOFF_HOOK=off` 只停用原本的權威分支開工提醒，仍核對既有占用。
 > 2026-11-02／F06：移除「工作樹正在改，等一下會提交」的放行假設。staged／unstaged 修改都不會隨 push 上傳，只有已提交的 HANDOFF 差異才算；開工標記與交棒快照都能通過，**不代表內容已驗證或已交棒**。
 > 退出碼 2 會擋下該次 Bash 呼叫並把訊息交給模型——這是唯一能讓 agent「當場改走交棒程序」的機制，警告訊息模型不一定看得到。
 
@@ -482,6 +486,8 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 **Windows 用 `commandWindows` 經下面的啟動器找 Git Bash**，macOS／Linux 仍用原本的 `command`。它只處理管線，不複製任何 git 或交接判斷；stdin、stderr 與腳本結束碼原樣傳遞，否則 `PreToolUse` 的 exit 2 防呆會被吃掉；stdout 在原內容前加一行純文字標頭以免 JSON 誤判。接線自己先用 `$(git rev-parse --show-cdup)` 算出 repo 根目錄（2026-11-02／F05：舊版這裡寫「相對接線仍從 repo 根目錄啟動」，那是**假設**而不是事實，子目錄開的 session 直接 exit 127），啟動器再用 `%~dp0` 找腳本，兩層都不靠當下 cwd。⚠️ **Windows 這一欄要多做一次斜線正規化**：`--show-cdup` 回的是 `../`（正斜線），而 `cmd /d /c "../.claude\hooks\codex-hook.cmd"` 會死在 `'..' is not recognized`（2026-11-02 從子目錄實測），所以用 PowerShell 的 `-replace '/','\'` 先換成反斜線——`commandWindows` 本來就由 Codex 外層的 PowerShell 執行，用得上它。2026-11-01 在 Windows／CLI `0.166.0` 的真 repo 重現舊接線已信任卻 exit 1：PATH 的 `bash` 是 WSL，缺少 `/bin/bash`；直接改用 Git Bash 同一支 `.sh` 就成功。這是新的真部署案例，**不能倒推成稍早那組 exec／TUI 探針差異的原因**。
 
 **`PreToolUse` 的 Windows 命令末尾必須保留 `; exit $LASTEXITCODE`。** 2026-11-01 補做真阻擋驗收時發現：只在原生 cmd 測到 exit 2 還不夠；Codex 外層的 PowerShell `-Command` 會把最後一個 native 命令的失敗折成 exit 1，於是畫面只報 Hook failed、工具仍被放行。加上明確 exit 才把 2 交回 Codex。驗證器同時測完整 PowerShell → cmd → Git Bash 啟動鏈與拿掉明確 exit 的負向情境，避免再用少一層的測試報成功。
+
+**Windows 工作區沙箱下的 Git 更新。** 若已授權的 Git 操作被沙箱拒絕寫入 `.git`，用 Codex 的單次命令審核核准該操作，並保留目前的工作區沙箱。推送後核對遠端分支與本機追蹤參照。Windows 實測 HTTP 推送可以在遠端收到 commit 且命令回傳 0 時，仍因無法鎖定 `.git` 而留下舊追蹤參照。
 
 保持 **ASCII、全 LF、單行 if、沒有 label 與多行括號區塊**。尋找順序是 PATH 上 `git.exe` 的安裝位置、兩種 Program Files、使用者安裝位置；刻意不執行 PATH 上未驗明來源的 `bash`，以免又選到 WSL。找不到 Git Bash 就在 stderr 明確報錯並 exit 1，不假裝驗收成功。另量到 `0.166.0` 對以 `[` 開頭的純文字 stdout 會報 `invalid session start JSON output`；同一支腳本只加上 `Git status check:` 標頭後，互動驗收由 `HOOK_ABSENT` 變成 `HOOK_PRESENT`。所以標頭留在啟動器，不改兩支共用 `.sh` 的既有標記。
 

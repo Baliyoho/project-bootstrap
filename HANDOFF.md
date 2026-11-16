@@ -1,41 +1,43 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-15 21:34（+08）
-- **交棒者**：Codex 桌面 App／Mac（macOS 複驗完成，下一棒驗 Windows）
+- **交接時間**：2026-11-16 11:50（+08）
+- **交棒者**：Codex 桌面 App／Windows（Windows 驗收與共用占用核對）
 
 ## 任務目標
 
-使用者下一輪在 Windows 接棒，驗證原生 Codex CLI 與部署骨架的交接流程。以需求 v3 的 F15 核對同情境關鍵結果。這輪焦點是 Codex，Claude Code 測試已結束。桌面 App 的 F50 五步互動按先前決定先擱置。
+完成 bootstrap v3 的跨平台驗收。Windows 原生 Codex CLI 已完成第一批真實情境及新版占用核對。下一棒使用同版在 macOS 複驗後，依 F15 對照結果。[通用改動及跨平台驗證清單](experiments/handoff-ab/CODEX-RESULTS.md#通用改動與跨平台驗證清單2026-11-16)
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無。
-- **工作中**：`DESKTOP-M8MRS05` ／ `Codex` ／ `㊣　11.15.21｜驗Windows交接｜工作中｜交棒0次`，2026-11-15 22:06 (+08) 開工
-- **骨架版本**：`2026-11-15.2`
-- 占用者修正在 `5e48218`，複驗結果在 `9da20b4`，都已推至 `main`。
+- **工作中**：無（已交棒）
+- **骨架版本**：`2026-11-16.2`
 
 ## 已完成
 
-- macOS CLI 原計畫 37 回合。31 格通過，原版占用者探針 6 格曾誤釋回其他 session 的標記。正常接棒與交棒、異常情境、最長 610 秒等待及同聊天接棒再交棒的結果已落地。 [macOS 測試結果](experiments/handoff-ab/PHASE2-RESULTS.md#codex-cli-純任務與後續探針2026-11-15)
-- 新版在交棒開始與釋回推送前核對 origin。本機兩份全域 skill 已同步。macOS 重跑占用者 6 格，A、B 各三格均正確停下，無修改或推送。 [占用者複驗](experiments/handoff-ab/PHASE2-RESULTS.md#codex-占用者核對複驗2026-11-15)
+- 共用開場 hook 以可執行的 Python 產生 UTF-8 JSON，並從工具 payload 取得 session ID。開工標記留存 ID。AI push hook 釋回、替換或刪除已占用標記時，核對原標記與工具 ID。缺 ID 的舊標記先由使用者核對遷移。既有開工提醒保留。
+- Windows 原生 Codex CLI `0.166.0` 已驗開場、PreToolUse、異 session 攔截及同 session 正常釋回。工作區沙箱下的 Git 推送也已驗證單次核准可使測試遠端與本機追蹤參照同步。
+- 十個 Windows 真實情境與兩個占用探針的結果已記錄。較早版本 `midway` 兩次誤釋回舊占用。新版 `2026-11-16.2` 依同一提示重跑 PASS，遠端 refs、標記、本機 HEAD 和工作樹全數保留，推送為零。舊評分保留供對照。[原生 Windows 結果](experiments/handoff-ab/CODEX-RESULTS.md#windows-離線驗證2026-11-16)
+- 測試器已支援原生 Windows fixture、評分和 Codex developer 訊息中的開場 JSON。既有五個 OpenSSH 簽章 fixture 可在 Linux 實跑。
 
 ## 未完成／下一步
 
-1. 在 Windows 從 origin 接棒。若舊工作區有未推提交或來源不明的改動，先依 AGENTS 的異常流程停下核對。確認原生 Codex CLI、PowerShell、Git for Windows／Git Bash、Python 及訂閱登入。
-2. 先在原生 Windows 執行 `tools/verify_bootstrap.py`，記錄 Windows 專屬的啟動與結束碼檢查，並用拋棄式測試倉庫確認 Codex 實際收到 SessionStart 的 `[facts]`、PreToolUse 有執行。
-3. 依 F15 用隔離倉庫跑同一組情境，每個情境先一次。對照 clean、behind、busy、midway、branch、ahead、casual、race、secret、drift 的關鍵結果，另驗新版占用者探針能保留另一個 session 的標記。比較時記清楚兩端部署版本。 [F15 需求決策](project-bootstrap-requirements-decision-v3.md) [情境表](experiments/handoff-ab/SCENARIOS.md)
+1. 在 macOS 取用 `2026-11-16.2`，按[跨平台驗證清單](experiments/handoff-ab/CODEX-RESULTS.md#通用改動與跨平台驗證清單2026-11-16)先跑完整驗證，再用兩個隔離的 CLI session 檢查異 session 拒絕、同 session 放行、舊標記與待續分支。實際審核 hook 信任後再判讀。
+2. macOS 以相同版本、相同 `midway` 提示和 B1 保全判準與 Windows 對照。先前 macOS 規則複驗是 `2026-11-15.2`。[macOS 歷史結果](experiments/handoff-ab/PHASE2-RESULTS.md#codex-占用者核對複驗2026-11-15) 額外模型呼叫按訂閱與使用者授權執行。
+3. 其他已部署專案與選用的全域 skill 副本仍待同步。先核對現有占用，再依 `AGENTS-reasons.md` 的副本規則與 `tools/sync_project.py` 處理。桌面 App 的 F50 五步互動沿用既有暫緩決定。
 
 ## 地雷與注意事項
 
-- `experiments/handoff-ab/common.py` 直接匯入 POSIX 專用的 `pwd`，原生 Windows 不能直接跑既有 runner。重用情境、提示及評分，先讓原生環境能跑離線 fixture，再呼叫模型。Windows 上的 WSL 結果不可代替原生 PowerShell、cmd 與 Git Bash 啟動鏈。
-- 確認 hook 信任與實際執行後才判讀結果。模型測試每格前重查訂閱用量。上一輪測後五小時窗 20%、七天窗 80%，開跑要重新讀取。
-- 原始串流、rollout 與隔離倉庫留在 repo 外。公開 repo 提交聚合結果。
+- 本版 hook 比對目前分支的已提交內容與本機追蹤參照。覆蓋範圍是可辨識的 AI 殼層推送。交棒前仍要 fetch 核對。舊標記缺 ID 時由使用者處理遷移。
+- Windows 的 HTTP push 可以送達遠端且 exit 0，本機追蹤參照卻仍因無法鎖定 `.git` 而停在舊 SHA。核對遠端和本機兩者，必要時用單次命令審核。
+- 隔離倉庫、原始串流、模擬請求及登入配置留在本機。公開 repo 僅留聚合結果和復現條件。
 
 ## 服務查證與期望快照
 
-- `9da20b4` 提交前 `python3 -X utf8 tools/verify_bootstrap.py --staged --quiet` 在 Mac 通過 66 項，exit 0。交棒快照使用同一入口驗證。
-- 未執行原生 Windows 驗收。現有 macOS 66 項包含共用檢查，不能證明 Windows 專屬的執行路徑已通過驗收。
+- 來源 verifier 使用 `python -X utf8 tools/verify_bootstrap.py --staged --quiet`。Linux 容器以非 root 使用者測試，來源只讀，無外網。候選版 66 項全過，exit 0。
+- 原生 Windows 已過開場與 push hook 情境。全套 Windows 驗證的既有 v2 P0 基線仍回傳 exit 2，含 POSIX mode、symlink、唯讀 Git 清理及殼層假設。完整交棒驗證在 Linux 執行。
+- 本 repo 以來源 verifier 代替 `verify_state.py` 與 `check_docs.py`。版本與腳本副本已對齊。Codex 接線 JSON 無變更，Windows 隔離測試有實跑最新版腳本，macOS 實際信任與載入驗收列在下一步。
 
 ## 懸置事項（AI 勿自行處理）
 

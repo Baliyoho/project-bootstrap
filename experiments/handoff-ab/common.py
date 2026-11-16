@@ -4,7 +4,6 @@
 import datetime
 import os
 import pathlib
-import pwd
 import subprocess
 import tempfile
 
@@ -64,6 +63,10 @@ def config_dir(root):
 
 
 def real_home():
+    if os.name == 'nt':
+        return str(pathlib.Path.home())
+    import pwd
+
     return pwd.getpwuid(os.getuid()).pw_dir
 
 
@@ -95,7 +98,7 @@ def prepare_root(root):
 def run_env(root):
     """受測 session 的完整環境：白名單，不繼承宿主 session 的任何變數。"""
     host = os.environ
-    return {
+    env = {
         'PATH': host.get('PATH', os.defpath),
         'HOME': real_home() if home_mode() == 'real' else str(root / 'home'),
         'USER': host.get('USER', ''), 'LOGNAME': host.get('LOGNAME', host.get('USER', '')),
@@ -109,6 +112,17 @@ def run_env(root):
         # 完整版開場 hook 會連 GitHub 比骨架版本；關掉，免得兩組多一個網路變因。
         'BOOTSTRAP_VERSION_CHECK': 'off',
     }
+    if os.name == 'nt':
+        # CreateProcess、cmd 與 Git for Windows 需要系統路徑。個人設定仍走隔離家目錄。
+        for key in ('SystemRoot', 'SystemDrive', 'WINDIR', 'COMSPEC', 'PATHEXT', 'TEMP', 'TMP',
+                    'ProgramFiles', 'ProgramFiles(x86)', 'ProgramW6432'):
+            if key in host:
+                env[key] = host[key]
+        env['TMPDIR'] = tempfile.gettempdir()
+        env['USERPROFILE'] = env['HOME']
+        # Git Bash on Windows may lack an IANA zone database. This fixture uses UTC+08.
+        env['TZ'] = 'CST-8'
+    return env
 
 
 def fixture_env(root, who='fixture'):

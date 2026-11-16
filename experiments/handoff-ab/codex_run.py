@@ -52,7 +52,7 @@ def preflight(root):
     if not auth.is_symlink() or auth.resolve() != pathlib.Path.home() / '.codex' / 'auth.json':
         problems.append('隔離 CODEX_HOME 的 auth.json 必須連到目前帳號的登入檔')
     status = subprocess.run([codex_bin(), 'login', 'status'], env=subject_env(root),
-                            capture_output=True, text=True, timeout=20)
+                            capture_output=True, encoding='utf-8', errors='replace', timeout=20)
     login_text = (status.stdout + status.stderr).strip()
     if status.returncode or 'Logged in using ChatGPT' not in login_text:
         problems.append('Codex 沒有用 ChatGPT 訂閱登入')
@@ -73,9 +73,17 @@ def calls(root):
 
 def prompt_isolated(items, run):
     blob = json.dumps(items, ensure_ascii=False)
+    project_skill = run / 'work' / '.agents' / 'skills'
+    home_skill = pathlib.Path.home() / '.codex' / 'skills' / 'handoff'
+    if os.name == 'nt':
+        # Codex 用正斜線列出 skill roots，但其他訊息也可能保留 Windows 反斜線。
+        paths = blob.replace('\\\\', '/').casefold()
+        project_path, home_path = (path.as_posix().casefold() for path in (project_skill, home_skill))
+    else:
+        paths = blob
+        project_path, home_path = str(project_skill), str(home_skill)
     return ('# AGENTS.md instructions for' in blob and
-            str(run / 'work' / '.agents' / 'skills') in blob and
-            str(pathlib.Path.home() / '.codex' / 'skills' / 'handoff') not in blob)
+            project_path in paths and home_path not in paths)
 
 
 def run_one(root, scenario, n):
@@ -90,10 +98,10 @@ def run_one(root, scenario, n):
         if (run / 'codex-events.jsonl').exists() or not (run / 'meta.json').exists():
             raise SystemExit('這一格已有執行紀錄或缺少 fixture，不覆寫：%s' % run)
     else:
-        run = build.build(root, scenario, ARM, n)
+        run = build.build(root, scenario, ARM, n, marker_tool='Codex CLI')
     prompt_input = subprocess.run([codex_bin(), 'debug', 'prompt-input', PROMPTS[scenario]],
                                   cwd=run / 'work', env=subject_env(root),
-                                  capture_output=True, text=True, timeout=30)
+                                  capture_output=True, encoding='utf-8', errors='replace', timeout=30)
     if prompt_input.returncode:
         raise SystemExit('Codex prompt-input 檢查失敗：%s' % prompt_input.stderr[:300])
     try:
@@ -132,6 +140,33 @@ def run_one(root, scenario, n):
     return 4 if row['verdict'] == 'INVALID' else 0
 
 
+def has_session_start_facts(records):
+    for record in records:
+        payload = record.get('payload', {})
+        if record.get('type') != 'response_item' or payload.get('role') not in ('user', 'developer'):
+            continue
+        for part in payload.get('content', []):
+            content = part.get('text', '').strip()
+            first, _, rest = content.partition('\n')
+            if first.strip() == 'Git status check:':
+                content = rest.strip()
+            if content.startswith('{'):
+                try:
+                    hook = json.loads(content)['hookSpecificOutput']
+                    if hook['hookEventName'] != 'SessionStart':
+                        continue
+                    content = hook['additionalContext']
+                except (ValueError, TypeError, KeyError):
+                    continue
+            if not isinstance(content, str):
+                continue
+            lines = content.splitlines()
+            if (2 <= len(lines) <= 5 and lines[0].startswith('[facts] 時間 ')
+                    and all(line.startswith('[facts] ') for line in lines)):
+                return True
+    return False
+
+
 def codex_validity(run):
     events = []
     for line in (run / 'codex-events.jsonl').read_text(encoding='utf-8').splitlines():
@@ -158,11 +193,7 @@ def codex_validity(run):
                   if item.get('type') == 'turn_context'}
         if models != {MODEL}:
             problems.append('模型不是 %s：%s' % (MODEL, sorted(str(m) for m in models)))
-        facts = any(item.get('type') == 'response_item' and
-                    item.get('payload', {}).get('role') == 'user' and
-                    '[facts]' in json.dumps(item.get('payload', {}).get('content'), ensure_ascii=False)
-                    for item in records)
-        if not facts:
+        if not has_session_start_facts(records):
             problems.append('模型輸入沒有 SessionStart [facts]')
     prompt = run / 'prompt-input.json'
     if not prompt.exists() or not prompt_isolated(json.loads(prompt.read_text(encoding='utf-8')), run):

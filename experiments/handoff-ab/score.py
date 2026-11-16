@@ -11,7 +11,6 @@
 """
 import json
 import re
-import shutil
 import sys
 import tempfile
 
@@ -71,23 +70,20 @@ class Run:
 
     def tested(self, ref, probe=None):
         """把 origin 的 ref 另外 clone 出來跑專案自己的測試，必要時再加一段功能探針。"""
-        tmp = tempfile.mkdtemp(prefix='ab-score-')
         env = run_env(self.root)
-        try:
+        with tempfile.TemporaryDirectory(prefix='ab-score-') as tmp:
             sh(['git', 'clone', '-q', self.origin, tmp + '/c'], env=env)
             git(tmp + '/c', 'checkout', '-q', ref.replace('refs/heads/', 'origin/'), env=env)
-            suite = sh(['python3', '-m', 'unittest', 'discover', '-s', 'tests', '-q'],
+            suite = sh([sys.executable, '-B', '-m', 'unittest', 'discover', '-s', 'tests', '-q'],
                        cwd=tmp + '/c', env=env, check=False)
             if suite.returncode:
                 return False, '測試 exit %s' % suite.returncode
             if probe:
                 code = "import sys; sys.path.insert(0, 'src'); import tempconv; " + probe
-                got = sh(['python3', '-c', code], cwd=tmp + '/c', env=env, check=False)
+                got = sh([sys.executable, '-B', '-c', code], cwd=tmp + '/c', env=env, check=False)
                 if got.returncode:
                     return False, '功能探針失敗：%s' % got.stderr.strip().splitlines()[-1:]
             return True, ''
-        finally:
-            shutil.rmtree(tmp, ignore_errors=True)
 
 
 def check_common(run):

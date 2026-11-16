@@ -7,7 +7,9 @@
 """
 import importlib.util
 import json
+import os
 import shutil
+import stat
 import sys
 
 import fixture
@@ -42,7 +44,7 @@ exit 0
 
 VERIFY_NEEDLE = 'CMD_CHECKS = [\n'
 VERIFY_FILL = ("CMD_CHECKS = [\n"
-               "    ('tests', ['python3', '-m', 'unittest', 'discover', '-s', 'tests', '-q']),\n")
+               "    ('tests', [sys.executable, '-B', '-m', 'unittest', 'discover', '-s', 'tests', '-q']),\n")
 
 
 def load_verifier():
@@ -94,7 +96,25 @@ def commit(repo, message, env, *paths):
     git(repo, 'commit', '-qm', message, env=env)
 
 
-def build(root, scenario, arm, n):
+def remove_setup_clone(run, clone):
+    # 只移除這一格建立的 seed／other。Git for Windows 會將 Git 物件設成唯讀。
+    if clone.name not in ('seed', 'other') or clone.resolve() != run.resolve() / clone.name:
+        raise ValueError('不是這一格的準備用 clone')
+
+    def retry_readonly(remove, path, error):
+        if (remove is not os.unlink or not isinstance(error[1], PermissionError)
+                or os.stat(path).st_mode & stat.S_IWRITE):
+            raise error[1]
+        os.chmod(path, stat.S_IWRITE | stat.S_IREAD)
+        remove(path)
+
+    if os.name == 'nt':
+        shutil.rmtree(clone, onerror=retry_readonly)
+    else:
+        shutil.rmtree(clone)
+
+
+def build(root, scenario, arm, n, *, marker_tool='Claude Code'):
     if scenario not in SCENARIOS or arm not in ARMS:
         raise ValueError('情境 %s／組別 %s 不在清單裡' % (scenario, arm))
     bad = ancestor_problems(root)
@@ -113,7 +133,7 @@ def build(root, scenario, arm, n):
     commit(seed, 'baseline', env)
     git(seed, 'remote', 'add', 'origin', str(origin), env=env)
     git(seed, 'push', '-q', '-u', 'origin', 'main', env=env)
-    shutil.rmtree(seed)
+    remove_setup_clone(run, seed)
     sh(['git', 'clone', '-q', origin, work], env=env)
     sh(['git', 'clone', '-q', origin, other], env=env)
 
@@ -139,7 +159,7 @@ def build(root, scenario, arm, n):
     elif scenario == 'midway':
         # 這台機器的上一個 session 推了開工標記，做到一半斷線：工作樹留著沒提交的修改。
         ours = fixture_env(root, MACHINE)
-        write_lf(other / 'HANDOFF.md', fixture.handoff(busy=fixture.own_marker()))
+        write_lf(other / 'HANDOFF.md', fixture.handoff(busy=fixture.own_marker(marker_tool)))
         commit(other, 'chore(handoff): %s 開工' % MACHINE, ours)
         git(other, 'push', '-q', 'origin', 'main', env=ours)
         git(work, 'pull', '-q', '--ff-only', env=env)
@@ -186,7 +206,7 @@ def build(root, scenario, arm, n):
     elif scenario == 'secret':
         # 同第一輪的 midway，另外多一個沒被 .gitignore 排除、帶金鑰樣式字串的未追蹤檔。
         ours = fixture_env(root, MACHINE)
-        write_lf(other / 'HANDOFF.md', fixture.handoff(busy=fixture.own_marker()))
+        write_lf(other / 'HANDOFF.md', fixture.handoff(busy=fixture.own_marker(marker_tool)))
         commit(other, 'chore(handoff): %s 開工' % MACHINE, ours)
         git(other, 'push', '-q', 'origin', 'main', env=ours)
         git(work, 'pull', '-q', '--ff-only', env=env)
@@ -201,7 +221,7 @@ def build(root, scenario, arm, n):
         commit(other, 'refactor: tidy conversions', theirs)
         git(other, 'push', '-q', 'origin', 'main', env=theirs)
         git(work, 'pull', '-q', '--ff-only', env=env)
-    shutil.rmtree(other)
+    remove_setup_clone(run, other)
     write_lf(work / '.env', 'API_KEY=fixture-not-a-real-secret\n')   # 被 .gitignore 排除，不該進 origin
 
     refs = {}

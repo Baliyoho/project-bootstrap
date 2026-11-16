@@ -28,9 +28,10 @@ with tempfile.TemporaryDirectory(prefix='codex-ab-check-') as folder:
     events = [{'type': 'thread.started', 'thread_id': thread},
               {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'done'}},
               {'type': 'turn.completed'}]
+    facts = '[facts] 時間 2026-11-16 10:00 +0800\n[facts] 已 fetch：origin 與本機一致'
     records = [{'type': 'turn_context', 'payload': {'model': codex_run.MODEL}},
                {'type': 'response_item', 'payload': {'role': 'user',
-                'content': [{'type': 'input_text', 'text': '[facts] origin clean'}]}}]
+                'content': [{'type': 'input_text', 'text': facts}]}}]
     event_file = run / 'codex-events.jsonl'
     rollout = root / 'codex-home' / 'sessions' / ('rollout-' + thread + '.jsonl')
     prompt = run / 'prompt-input.json'
@@ -41,6 +42,21 @@ with tempfile.TemporaryDirectory(prefix='codex-ab-check-') as folder:
     prompt.write_text(json.dumps(input_items), encoding='utf-8')
     expect('正常 Codex 事件可用', codex_run.codex_validity(run) == [],
            str(codex_run.codex_validity(run)))
+
+    envelope = {'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': facts}}
+    windows = {'type': 'response_item', 'payload': {'role': 'developer', 'content': [
+        {'type': 'input_text', 'text': 'Git status check:\r\n' + json.dumps(envelope, ensure_ascii=False)}
+    ]}}
+    put(rollout, [records[0], windows])
+    expect('Windows developer 訊息中的 SessionStart JSON 可用', codex_run.codex_validity(run) == [],
+           str(codex_run.codex_validity(run)))
+    prompt_reference = {'type': 'response_item', 'payload': {'role': 'user', 'content': [
+        {'type': 'input_text', 'text': '請先核對開場的 [facts]。'}
+    ]}}
+    put(rollout, [records[0], prompt_reference])
+    expect('提到 [facts] 的提示本身不算開場資料',
+           '模型輸入沒有 SessionStart [facts]' in codex_run.codex_validity(run), '')
+    put(rollout, records)
 
     put(event_file, [events[0], events[1]])
     expect('缺完成事件被擋', 'Codex 沒有正常完成' in codex_run.codex_validity(run), '')

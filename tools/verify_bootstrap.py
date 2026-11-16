@@ -779,6 +779,7 @@ def step_hook(dest, tmp):
     git(['push', '-q', 'origin', 'main'], work)
     write_lf(handoff, read_lf(handoff).replace('`fixture` ／ `Codex CLI`', '無（已交棒）'))
     git(['commit', '-qam', 'chore: release'], work)
+    cases.append(('舊標記沒有 session-id，AI 不能清除', 2, fire(push)))
     git(['push', '-q', 'origin', 'main'], work)
     (work / 'README.md').open('a', encoding='utf-8', newline='').write('\n交棒後又改\n')
     git(['commit', '-qam', 'docs: after release'], work)
@@ -804,6 +805,44 @@ def step_hook(dest, tmp):
 
     git(['checkout', '-q', 'main'], work)
     cases.append(('HANDOFF_HOOK=off', 0, fire(push, env=dict(GIT_ENV, HANDOFF_HOOK='off'))))
+
+    claimed = read_lf(handoff).replace('`fixture` ／ `Codex CLI`',
+                                     '`fixture` ／ `Codex CLI` [session-id=owner-01]')
+    write_lf(handoff, claimed)
+    git(['commit', '-qam', 'claim with session ID'], work)
+    git(['push', '-q', 'origin', 'main'], work)
+
+    def session_push(session=None, **tool_fields):
+        payload = {'tool_input': {'command': 'git push origin main', **tool_fields}}
+        if session is not None:
+            payload['session_id'] = session
+        return fire(json.dumps(payload))
+
+    write_lf(handoff, claimed.replace('`fixture` ／ `Codex CLI` [session-id=owner-01]', '無（已交棒）'))
+    git(['commit', '-qam', 'release with session ID'], work)
+    cases.append(('同 session 釋回', 0, session_push('owner-01')))
+    cases.append(('別的 session 清除標記', 2, session_push('owner-02')))
+    cases.append(('停用原提醒仍核對占用', 2, fire(push, env=dict(GIT_ENV, HANDOFF_HOOK='off'))))
+    cases.append(('缺 session_id 或只有巢狀替身', 2, session_push(session_id='owner-01')))
+    cases.append(('工具輸入內的假 session_id 不會覆過真值', 2, session_push('owner-02', session_id='owner-01')))
+    write_lf(handoff, claimed.replace('owner-01', 'owner-02'))
+    git(['commit', '-qam', 'replace existing owner'], work)
+    cases.append(('別的 session 換成自己', 2, session_push('owner-02')))
+    git(['rm', '-q', 'HANDOFF.md'], work)
+    git(['commit', '-qm', 'remove the handoff file'], work)
+    cases.append(('刪除 HANDOFF 也不能釋回舊標記', 2, session_push('owner-02')))
+    write_lf(handoff, claimed)
+    git(['add', 'HANDOFF.md'], work)
+    git(['commit', '-qm', 'restore original marker'], work)
+    cases.append(('保留現有標記的安全點', 0, session_push('owner-02')))
+    git(['checkout', '-qb', 'feature/owned'], work)
+    git(['push', '-qu', 'origin', 'feature/owned'], work)
+    write_lf(handoff, claimed.replace('owner-01', 'owner-02'))
+    git(['commit', '-qam', 'replace owner on continuation branch'], work)
+    cases.append(('待續分支上的既有標記同樣受保護', 2, fire(json.dumps({
+        'session_id': 'owner-02', 'tool_input': {'command': 'git push origin feature/owned'},
+    }))))
+    git(['checkout', '-q', 'main'], work)
 
     bad = [f'{n}：期望 {want}、實得 {got}' for n, want, got in cases if want != got]
     if bad:
@@ -3653,6 +3692,32 @@ def step_snapshot_guard(dest):
     return True
 
 
+def facts_python_probes(bash, hook, work):
+    # PATH 有 python3 卻不能執行，且失敗的 stdout 不得混進下一次的 JSON。
+    wrapper = '''
+python3() { printf '%s\\n' 'unusable python3'; return 49; }
+python() {
+    [ "$BOOTSTRAP_VERIFY_DISABLE_PYTHON" != 1 ] || return 49
+    "$BOOTSTRAP_VERIFY_PYTHON" "$@"
+}
+. "$1"
+'''
+    cmd = [bash, '-c', wrapper, 'facts-python-probe', hook]
+    env = dict(GIT_ENV, BOOTSTRAP_VERSION_CHECK='off', BOOTSTRAP_VERIFY_PYTHON=sys.executable)
+    start_payload = '{"session_id":"owner-probe","tool_input":{"session_id":"nested-ignored"}}'
+    fallback = run(cmd, cwd=work, stdin=start_payload, env=dict(env, BOOTSTRAP_VERIFY_DISABLE_PYTHON='0'))
+    unavailable = run(cmd, cwd=work, stdin=start_payload, env=dict(env, BOOTSTRAP_VERIFY_DISABLE_PYTHON='1'))
+    bad = []
+    if fallback.returncode != 0 or facts_output_problems(fallback.stdout) or fallback.stderr:
+        bad.append('python3 執行失敗時，未由 python 輸出純 SessionStart JSON')
+    elif '；session-id=owner-probe' not in fallback.stdout or 'nested-ignored' in fallback.stdout:
+        bad.append('開場事實未保留頂層 session-id')
+    if (unavailable.returncode != 1 or unavailable.stdout
+            or 'Git facts unavailable:' not in unavailable.stderr):
+        bad.append('兩個 Python 指令都失敗時，未以 stderr 與 exit 1 回報')
+    return bad
+
+
 def step_misc(dest, work=None):
     ok = True
     for label, rel in (('settings.json', '.claude/settings.json'),
@@ -3706,18 +3771,22 @@ def step_misc(dest, work=None):
         # 拿它來測等於什麼都沒測。所以只在 hook fixture（有 origin、有 commit）上驗。
         record('SKIP', 'git-freshness.sh', 'hook fixture 沒建起來，缺少有 origin 與 commit 的 repo 可測')
     else:
-        r = run([bash, '.claude/hooks/git-freshness.sh'], cwd=work)
+        hook = '.claude/hooks/git-freshness.sh'
+        r = run([bash, hook], cwd=work)
         bad = facts_output_problems(r.stdout)
         # 儀器自檢：JSON 仍有效時，多一行指示、多到六行，都要被看出來。
-        planted = []
-        for extra in ('\n[git-check] 先走 handoff skill', '\n[facts] x' * 3):
-            mutant = json.loads(r.stdout)
-            mutant['hookSpecificOutput']['additionalContext'] += extra
-            planted.append(facts_output_problems(json.dumps(mutant, ensure_ascii=False)))
-        if not all(planted):
-            bad.append('負向測試未重現：多一行指示或超過五行應該被擋')
+        if not bad:
+            planted = []
+            for extra in ('\n[git-check] 先走 handoff skill', '\n[facts] x' * 3):
+                mutant = json.loads(r.stdout)
+                mutant['hookSpecificOutput']['additionalContext'] += extra
+                planted.append(facts_output_problems(json.dumps(mutant, ensure_ascii=False)))
+            if not all(planted):
+                bad.append('負向測試未重現：多一行指示或超過五行應該被擋')
+        bad.extend(facts_python_probes(bash, hook, work))
         if r.returncode == 0 and not bad:
-            record('OK', 'git-freshness.sh', 'exit 0，SessionStart JSON 內只含 [facts] 行、不超過五行、含時間戳與「工作中」；2 個負向測試')
+            record('OK', 'git-freshness.sh',
+                   'SessionStart JSON 只含 [facts]、最多五行；超出規格會被擋，python3 失敗會回退，兩者皆失敗明確回報')
         else:
             record('FAIL', 'git-freshness.sh',
                    f'exit {r.returncode}：{"；".join(bad)}：{(r.stdout + r.stderr).strip()[:160]}')
@@ -3925,6 +3994,7 @@ def flow_contract_problems(skill):
         ('### B1 ', '動任何檔案、提交或推送前先核對占用'),
         ('### B1 ', '已確認推送的完整標記比對'),
         ('### B1 ', '無法確認歸屬就停下'),
+        ('### B1 ', '斷線後開了新 session，確認舊工作的歸屬仍須停在 B1'),
         ('### B7 ', 'B6 覆寫完成後'),
         ('### B7 ', 'tools/check_docs.py'),
         ('### B7 ', 'exit 0 才提交發布'),
@@ -3965,13 +4035,14 @@ def step_flow_contract(dest, tmp):
                  '使用者沒要求就不得自行交棒', 'A5 開工標記與 C 中途安全點都不宣稱交棒')
     mutations += ('tools/check_docs.py --staged', 'git diff --cached --name-only',
                   '動任何檔案、提交或推送前先核對占用', '已確認推送的完整標記比對', '無法確認歸屬就停下',
+                  '斷線後開了新 session，確認舊工作的歸屬仍須停在 B1',
                   '比對 B1 的占用分支 SHA 與完整標記', '兩者任一對不上就停下，不推送')
     for token in mutations:
         mutated = skill.replace(token, '移除契約')
         if mutated == skill or not flow_contract_problems(mutated):
             bad.append('負向測試未擋：' + token)
     record('FAIL' if bad else 'OK', '協作狀態契約', '；'.join(bad) if bad else
-           '六狀態與 A1／A2／A4／A5／B1／B7／B8／C 契約齊備；26 個負向測試通過，含 R07 stage 順序（不代表模型遵循）')
+           '六狀態與 A1／A2／A4／A5／B1／B7／B8／C 契約齊備；27 個負向測試通過，含 R07 stage 順序（不代表模型遵循）')
 
     bash = find_bash()
     if not bash:

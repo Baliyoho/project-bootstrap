@@ -40,6 +40,10 @@ HANDOFF_AB_ROUND=2 HANDOFF_AB_ROOT=/tmp/pb-codex-ab-r2 python3 -X utf8 codex_run
 
 每格的 Codex JSONL、stderr、`score.json` 與 origin/work 留在工作區。`score.json` 的結果檢查沿用 `score.py`；CLI 是否正常結束另由 `codex_run.py` 檢查。每個 FAIL／INVALID 都要人工看原始紀錄；PASS 也按原規格抽查。第一格先當煙霧測試，確認 SessionStart hook、模型名稱、repo 寫入與本機 bare origin 推送都真的運作，再跑其餘格。
 
+### Codex＋原生 Windows（v3 第 3 期）
+
+離線搭建及評分已在 PowerShell、原生 Python 與 Git for Windows 下執行。將 `HANDOFF_AB_ROOT` 設為拋棄式目錄，且祖先目錄不能包含 `.claude` 或其他會影響受測者的指示檔。Windows 的預設暫存目錄可能位於已有 `.claude` 的家目錄下。啟動診斷、沙箱及訂閱模型結果見 [Windows 驗證紀錄](CODEX-RESULTS.md#windows-離線驗證2026-11-16)。
+
 ### Claude Code（原始對照）
 
 都在這個目錄下執行。前兩步不呼叫模型。
