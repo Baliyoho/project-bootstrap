@@ -25,7 +25,7 @@
 
 1. 已建 handoff skill 第七個檔 `env.md`（`2026-11-16.4`）：Codex／Claude Code、macOS／Windows 的差異碰到才讀，不改共用狀態判讀（Q35）。下次同步各專案與全域副本時要連同新檔一起覆蓋；Claude Code／Windows 尚無實測，該節目前空白。
 2. macOS 同版 `midway` 已複驗：Codex 照 A2.5 選項 2 接手並交棒。使用者 2026-11-16 選 A2.5（Q36），`2026-11-16.5` 已把 B1 斷線例子改成一致；`midway` 回到原評分，格 3 照原評分為 PASS。[結果](experiments/handoff-ab/CODEX-RESULTS.md#macos-同版-midway-斷線複驗2026-11-16)
-3. 其他已部署專案與選用的全域 skill 副本仍待同步。先核對現有占用，再依 `AGENTS-reasons.md` 的副本規則與 `tools/sync_project.py` 處理。桌面 App 的 F50 五步互動沿用既有暫緩決定。
+3. 2026-11-16 已同步到 `2026-11-16.6`：Mac 上六個專案（NAA_TR 在待續分支 `feature/W15-research-shell`，其 `main` 未動）與本機兩份全域 skill。待辦：`learn coding with ai agent` 當時被另一個 Claude Code session 占用，未同步；Windows 機器的專案與全域副本未同步；五個專案 `AGENTS.md` 標記外的舊交接段落（`sync_project.py` 列為 MIGRATE）待人工比對。grist-workflow 同步後 `verify_state.py` 仍是本機缺 `.env` 的 exit 2 基線。桌面 App 的 F50 五步互動沿用既有暫緩決定。
 
 ## 地雷與注意事項
 
