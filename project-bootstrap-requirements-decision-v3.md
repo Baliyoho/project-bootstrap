@@ -231,7 +231,10 @@ v2 的程式：`broker`、`launcher`、`supervisor`、`isolation`、`vm_probe` �
   - 採用理由：預期失敗清單的基線不穩——只把 `HANDOFF.md` 的「工作中」改成本 session，失敗數就從 39 漂到 45，而且 `setUpClass` 一出錯整個類別不跑，連分母（`testsRun`）都會變（出處：本條實測）
   - 未選 (b) 預期失敗清單：同採用理由；另外清單會把「本平台沒有這個概念」與「這裡真的壞了」混在同一份名單裡（出處：本條選項說明）
   - 結果：`package.RECORDS_EXECUTE_BIT` 與 `selftest._runnable` 只在記得住執行位元的平台比對；測試端不用 skip（A4 不收 skip），改成斷言「本平台不適用」的結果，symlink 造不出來時斷言造不出來。順帶修掉四個真 bug：`contracts.path_escapes`（Windows 絕對路徑逃逸）、`distribute.pack`（封存的執行位元改讀 manifest）、`approvals.system_ssh_keygen` 與 `verifier_env`（驗證器路徑依平台、最小環境在 Windows 要帶 ProgramData）、`pointer.SOURCE_RE`（收磁碟絕對路徑）。Windows 實測 `verify_v2` 434 run、skipped 歸零。只動 `src/project_bootstrap/` 與 `tests/`，沒碰 `src/kit/`，所以骨架版本不動。
-- **Q38**（2026-11-16 登記）：要不要把「全套驗證在原生 Windows 約 160–240 秒，超過指令工具預設的 120 秒上限」寫進 `.claude/skills/handoff/env.md` 的 Windows 節？影響 F22 與 skill 的七個檔。選項：(a) 寫進 `env.md`，照鐵律 1 改 `src/kit/`、跳骨架版本、重生部署包並同步所有副本；(b) 不寫，留在本 repo 的交接快照裡。需使用者決定。狀態：待決
+- **Q38**（2026-11-16 登記）：要不要把「全套驗證在原生 Windows 約 160–240 秒，超過指令工具預設的 120 秒上限」寫進 `.claude/skills/handoff/env.md` 的 Windows 節？影響 F22 與 skill 的七個檔。選項：(a) 寫進 `env.md`，照鐵律 1 改 `src/kit/`、跳骨架版本、重生部署包並同步所有副本；(b) 不寫，留在本 repo 的交接快照裡。需使用者決定。狀態：已決（2026-11-16，使用者在聊天中選 (a) 寫進 `env.md`）
+  - 採用理由：這是會讓下一棒誤判的環境差異——逾時被當成驗證沒過，或為了避開上限只跑一部分；四種組合裡只有 Windows 會遇到，正是 `env.md` 的範圍（出處：本條與 v3 Q35 對 `env.md` 範圍的界定）
+  - 未選 (b) 留在本 repo：別的專案在 Windows 上同樣會撞到，留在本 repo 的交接快照只有這裡看得到（出處：本條選項說明）
+  - 結果：`env.md` 的 Windows 節加一條「驗證與測試跑得比 macOS 久」，寫明三到四分鐘、2026-11-16 連跑三次的 224／234／244 秒、要提高 timeout 或丟背景、逾時不等於沒過；骨架版本跳到 `2026-11-16.7`，七個 skill 檔與共用制度標記同版，部署包重生，本 repo 的 `AGENTS.md` 共用制度副本重貼。
 
 ## 9. v3 自己的已知弱點
 

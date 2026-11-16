@@ -12,7 +12,7 @@ bootstrap v3 的跨平台驗收。**四種組合（Codex／Claude Code × macOS�
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無（`fix/windows-platform-aware` 已快轉併入 `main`，分支保留不刪）。
 - **工作中**：`DESKTOP-M8MRS05` ／ `Claude Code` ／ `㊣　11.16.20｜待指派｜工作中｜交棒0次`，2026-11-16 20:17 (+08) 開工
-- **骨架版本**：`2026-11-16.6`
+- **骨架版本**：`2026-11-16.7`
 - 本棒沒改 skill／hook 內容，刻意不跳版；部署包與所有副本未動。
 
 ## 已完成
@@ -49,4 +49,4 @@ bootstrap v3 的跨平台驗收。**四種組合（Codex／Claude Code × macOS�
 
 ## 懸置事項（AI 勿自行處理）
 
-- **Q38**：要不要把「全套驗證超過指令預設上限」寫進 `env.md` 的 Windows 節。見[需求決策書 v3](project-bootstrap-requirements-decision-v3.md) 第 8 節。
+- 無。

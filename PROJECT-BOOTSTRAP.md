@@ -10,7 +10,7 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
-> 版本：**2026-11-16.6**（`env.md` 開頭加「開場沒有 [facts] 時依序查」：出現症狀才查，不每次查版本。新增 Codex 未信任專案不載入專案 hook 的症狀（`0.169.0-alpha.11.1`，macOS 兩格重現），併入原 Windows 的 `python3` 別名，並要求回報寫明工具版本。七個 skill 檔與共用制度標記同版。）
+> 版本：**2026-11-16.7**（`env.md` 的 Windows 節加「驗證與測試跑得比 macOS 久」：完整驗證可能三到四分鐘，超過指令工具常見的 120 秒預設等待（2026-11-16 Windows 11 連跑三次：224、234、244 秒），要提高 timeout 或丟背景，逾時不等於沒過。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.5**（`mode-b.md` B1 的斷線例子改成跟 `mode-a-stop.md` A2.5 選項 2 一致：使用者明確確認舊標記與工作屬於自己時，本 session 先把標記改成自己並推上，再走 A6 與交棒；只說「請交棒」或同機器同工具不算確認。起因是 macOS 同版 `midway` 複驗時 Codex 照 A2.5 接手，與 B1 例子衝突（決策書 v3 Q36，使用者 2026-11-16 決定）。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.4**（handoff skill 新增第七個檔 `env.md`：工具（Codex／Claude Code）與平台（macOS／Windows）的差異，碰到才讀，只寫環境怪癖與操作提醒、不改共用狀態的判讀（決策書 v3 Q35）。入口「跑得久的指令」與 `mode-b.md` 的 Codex hook 驗收逐字搬進去；3.17 的 Windows 沙箱提醒原本只在部署包、不會部署到專案，現在進了 `env.md`。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.3**（撤回 2026-11-16.2 的 session ID 占用核對：它讓 AI push hook 在缺 ID、缺 Python、feature 分支與 `HANDOFF_HOOK=off` 時都擋下，把開工標記從訊號變成鎖（D1），擴大 F10 的阻擋範圍卻沒有使用者定案與 D14 對照。3.10、3.11 回到原本「寧可漏擋」的行為；保留 Windows 的 `python3`／`python` 回退與 B1 斷線例子。使用者 2026-11-16 決定：一套共用規則，工具與平台的差異只寫成碰到才讀的說明，不改變共用狀態的判讀。六個 skill 檔與共用制度標記同版。）
@@ -319,7 +319,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 專案概觀與測試指令在 [README.md](README.md)。現在做到哪、下一步是什麼，在 [HANDOFF.md](HANDOFF.md)。使用者用 **{{LANG}}** 溝通。
 > 最後更新：{{TODAY}}（建立）
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.6 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -827,7 +827,7 @@ name: handoff
 description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.6 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（參考檔入口）
 
@@ -883,7 +883,7 @@ description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒�
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.6 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
@@ -944,7 +944,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場 `[facts]` 有不正常的值時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.6 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
@@ -1126,7 +1126,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.6 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -1303,7 +1303,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.6 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -1378,7 +1378,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.6 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
@@ -1553,7 +1553,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/env.md`**——工具與平台差異（2026-11-16.4 起，決策書 v3 Q35）。在 Codex 或 Windows 上碰到對應狀況才讀；只寫環境怪癖與操作提醒，不改變共用狀態的判讀，要加會讓交接結果不同的規則就不放這裡。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.6 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 工具與平台差異（碰到才讀）
 
@@ -1597,6 +1597,7 @@ python -X utf8 tools/check_docs.py
 ## Windows
 
 - **開場沒有 `[facts]`**：照上方「開場沒有 [facts] 時依序查」，Windows 特有的是第 3 步的 `python3` 別名。
+- **驗證與測試跑得比 macOS 久**：原生 Windows 上一次完整驗證可能要三到四分鐘，超過指令工具常見的預設等待（120 秒）。2026-11-16 在一台 Windows 11 上連跑三次，分別是 224、234、244 秒，約九成花在子程序密集的測試（真的建 Git repo、起子程序比對），同一套在 macOS 上快得多。做法：提高該次指令的 timeout，或丟到背景再取結果。逾時不是驗證失敗，別把它寫成沒過；也不要為了避開上限只跑一部分就宣稱通過。（數字是在 Claude Code 的指令工具下量的；Codex 的等待設定見上方「跑得久的指令」。）
 - **工作區沙箱下的 Git 更新**：若已授權的 Git 操作被沙箱拒絕寫入 `.git`，用 Codex 的單次命令審核核准該操作，並保留目前的工作區沙箱。推送後核對遠端分支與本機追蹤參照。Windows 實測 HTTP 推送可以在遠端收到 commit 且命令回傳 0 時，仍因無法鎖定 `.git` 而留下舊追蹤參照（Codex CLI `0.166.0`，2026-11-16）。
 
 ## macOS
