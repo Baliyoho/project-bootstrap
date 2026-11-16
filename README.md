@@ -2,7 +2,7 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-11-14（Antigravity 移出檔案樹與跨工具表；檔案樹改成 v3 的描述）；前次 2026-11-11。這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型。
+> 最後更新：2026-11-16（skill 七個檔；優先序改成 v3——必守條件在 `AGENTS.md`，skill 降為碰到才讀的參考；補 Windows 的現況）；前次 2026-11-14（Antigravity 移出檔案樹與跨工具表）。這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型。
 > 這個 repo 自己的結構（有哪些檔、部署包各節產出什麼、副本存在於哪些地方）見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 怎麼用
@@ -35,7 +35,7 @@
 │   ├─ hooks/git-freshness.sh       SessionStart：fetch 後只印 [facts]（時間與 session 名用的 MM.DD.HH、落後領先、origin 的「工作中」）
 │   ├─ hooks/pre-push-handoff.sh    PreToolUse：AI push 提醒（有限覆蓋）
 │   ├─ hooks/codex-hook.cmd         Codex 的 Windows 啟動器（Git Bash、純文字標頭、結束碼）
-│   └─ skills/handoff/              碰到才讀的參考：入口 SKILL.md＋mode-a／mode-a-stop／mode-b／mode-0／reasons 五個檔
+│   └─ skills/handoff/              碰到才讀的參考：入口 SKILL.md＋mode-a／mode-a-stop／mode-b／mode-0／reasons／env 共七個檔
 ├─ .codex/hooks.json                Codex：掛上面同樣那兩個腳本（同格式、同語意）
 ├─ .agents/skills/handoff/SKILL.md  Codex 讀 repo 的 .agents/skills/：指向權威版的指標
 ├─ docs/ai-notes/
@@ -46,17 +46,18 @@
     └─ verify_state.py              一鍵現況查證（骨架，部署後填檢查項）
 ```
 
-## 核心：交接不靠人記，靠三層把漏做的機會壓低
+## 核心：交接不靠人記，靠四層把漏做的機會壓低
 
 | 層 | 檔案 | 什麼時候動 |
 |---|---|---|
-| **觸發** | `hooks/git-freshness.sh` | 每次 session 開始自動 fetch，報告落後／分岔，提醒「接棒先走 handoff skill」，並把開工改名用的時間戳算好（agent 自己推小時會寫出不存在的時刻，而那是靜默的） |
-| **程序** | `skills/handoff/SKILL.md` | agent 判斷要接棒／交棒／同步時自動載入；也可打 `/handoff`（建制走模式 0，見下節） |
+| **觸發** | `hooks/git-freshness.sh` | 每次 session 開始自動 fetch，只印 `[facts]`：時間戳（session 名用的 MM.DD.HH）、落後／領先、origin 的「工作中」。它只給事實，不下判斷（agent 自己推小時會寫出不存在的時刻，而那是靜默的） |
+| **必守條件** | `AGENTS.md` 的共用制度一節 | 每次都適用，而且不必先讀別的檔：同步、「工作中」標記、交棒的定義、session 名稱（2026-11-13 起，需求決策書 v3 第 5 節） |
+| **程序參考** | `skills/handoff/`（七個檔） | **碰到才讀，不是開工的前提**：逐步程序、Git 異常判讀、HANDOFF 模板、每條規則的理由；也可打 `/handoff`（建制走模式 0，見下節） |
 | **AI push 提醒** | `hooks/pre-push-handoff.sh` | 只依字面命令、目前分支與 origin 檢查已提交 HANDOFF 差異；選項／refspec／其他 remote／GUI／script 不保證，純文字可能誤擋；見部署包 3.11 |
 
-**分工**：`handover-protocol.md`＝規則與理由（為什麼、什麼算對）；`SKILL.md`＝怎麼做（指令、判讀表、模板）。
-**核心優先序：SKILL.md**。共用制度以同步的 SKILL.md 為準；協定是不同步的專案實例，保存理由與專案 override，升級時須人工遷移。
-override 只可加嚴或填補專案設定，使用者明確指示仍優先。權威程序只留一份，避免兩份副本各自演化（2026-11-03／複審 R06：人的入口曾保留相反優先序）。
+**分工**：`AGENTS.md` 的共用制度＝必守條件（衝突時以它為準）；`SKILL.md` 與同目錄的模式檔＝怎麼做（指令、判讀表、模板）；`handover-protocol.md`＝規則的理由與專案 override。
+在程序細節上，**核心優先序：SKILL.md**（含同目錄的模式檔）優先於 `handover-protocol.md` 這個不同步的專案實例，升級時須人工遷移。
+override 只可加嚴或填補專案設定，使用者明確指示仍優先。權威程序只留一份，避免兩份副本各自演化（2026-11-03／複審 R06：人的入口曾保留相反優先序；2026-11-13／v3 第 5 節把「必守」這一層從 skill 移到 `AGENTS.md`，因為把參考檔當成前提，只讀一句話的 session 也得先讀完整份程序）。
 
 ## 完全空白的新專案：模式 0（建制）
 
@@ -94,7 +95,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 **Antigravity 2026-11-13 起放棄**（需求決策書 v3 D8）：部署包不再產出它的接線與轉接層，已部署專案裡的舊檔不同步也不刪，清不清由使用者決定。之前的實測紀錄在 git 歷史與 [ARCHITECT.md](ARCHITECT.md)。
 
-三個平面都接得上 hooks，但**都帶條件**：Codex 要專案被信任、而且每個專案各審一次。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的）；`python` 不存在的機器改用 `python3`。
+三個平面都接得上 hooks，但**都帶條件**：Codex 要專案被信任、而且每個專案各審一次。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的，不是 WSL 那支）；hook 依序試 `python3`、`python`，Windows 的 WindowsApps `python3` 往往是個 PATH 找得到、執行卻失敗的別名（2026-11-16 實測 rc=49），要靠回退到 `python` 才拿得到 `[facts]`。
 
 ## 它在解決什麼
 
@@ -113,15 +114,18 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 ## 要改這份骨架時：開 session 貼這段
 
-在本 repo 開新的 AI session 時整段複製貼上。**先走全域 handoff skill 的 A 模式**，再按任務閱讀需要的範本；本 repo 的差異見 `AGENTS.md`。
+在本 repo 開新的 AI session 時整段複製貼上。**必守條件在 `AGENTS.md` 的共用制度一節**，接棒照它做；逐步程序與異常判讀碰到了再看全域 handoff skill，再按任務閱讀需要的範本；本 repo 跟部署出去的專案有哪些不同也在 `AGENTS.md`。
 部署包 `PROJECT-BOOTSTRAP.md` 由 `src/kit/` 生成（2026-11-11 起）：改來源後先跑 `python3 -X utf8 tools/build_kit.py` 重生，再用 `python -X utf8 tools/verify_bootstrap.py` 驗證（重生骨架＋跑完所有檢查，**exit 0 才算完成**）。
+
+⚠️ **在原生 Windows 上這支目前固定回 exit 2**，唯一的失敗項是不部署的「v2 P0 原型回歸」：2026-11-16 量到 39 個測試失敗，3 個是建 symlink 要「開發人員模式」，36 個是 Windows 沒有 POSIX 執行位元導致的 mode 斷言與其下游。部署包本身的檢查全部通過。所以在 Windows 上能守的是「**有沒有新的失敗**」，不是「有沒有失敗」——同日修掉兩個真的平台假設（寫死 `/bin/sh`、刪不掉 Git 的唯讀檔）之後，失敗數從 66 降到 39。
 
 ```text
 這個 repo 是「AI 協作專案管理骨架」的權威版，唯一產出物是 PROJECT-BOOTSTRAP.md：一份自帶所有檔案範本的
 部署包，複製到新專案資料夾就能生出整套制度（三個入口＋結構文件、交接協定、handoff skill、兩個 git hook、
 兩支驗證腳本）。
 
-先讀 AGENTS.md，照全域 handoff skill 跑完 A 模式，讀 HANDOFF.md 並驗證現況。
+先讀 AGENTS.md（必守條件在它的共用制度一節），讀 HANDOFF.md 並驗證現況；逐步程序或 Git 異常
+判讀碰到了再開全域 handoff skill，它是參考不是前提。
 任務碰到結構才讀 ARCHITECT.md；需要制度背景再讀 PROJECT-BOOTSTRAP.md 的第 0–2 節。
 第 3 節是各檔範本；來源在 src/kit/files/<部署路徑>.tmpl，改到哪一份才讀那一份——不要整份讀完。
 
@@ -146,6 +150,8 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 要 exit 0。它會重生骨架比對檔案清單、模擬部署填佔位符、跑 check_docs.py、負向測試佔位符
 檢查擋不擋得住、測 AI push 提醒情境與負向測試、查全檔 LF。印出 skip 的項目代表沒被驗證，要照實回報。
+在原生 Windows 上它目前固定回 exit 2（唯一失敗項是不部署的 v2 P0 原型回歸，見 README）：
+那個平台要比對的是「有沒有新的失敗」，不是「有沒有失敗」，不要把它當成你弄壞的。
 
 需要 ZIP 時跑 `python -X utf8 tools/verify_bootstrap.py --zip`（可在 `--zip` 後指定路徑）。
 只有全過才產出正式包；FAIL 回 2、SKIP 回 1，兩者預設都不產出或覆寫 ZIP。

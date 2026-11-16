@@ -3314,8 +3314,8 @@ def claim_problems(docs):
         for line in docs[name].split('\n'):
             if '到哪都成立' in claim_text(line):
                 problems.append('%s 還在寫「可攜層到哪都成立」：%s' % (name, line.strip()[:50]))
-    if '三層自動發生' in docs['readme']:
-        problems.append('README 還在寫「三層自動發生」——三層壓低漏做的機會，不保證發生')
+    if '層自動發生' in docs['readme']:
+        problems.append('README 還在寫「層自動發生」——那幾層壓低漏做的機會，不保證發生')
     return problems
 
 
@@ -3367,9 +3367,9 @@ def step_claims(dest):
         ('可攜層又寫成到哪都成立', 'kit',
          lambda t: t.replace('- **可攜層——不需要任何設定就讀得到**',
                              '- **可攜層——到哪都成立**')),
-        ('README 又寫三層自動發生', 'readme',
-         lambda t: t.replace('## 核心：交接不靠人記，靠三層把漏做的機會壓低',
-                             '## 核心：交接不靠人記，靠三層自動發生')),
+        # 2026-11-16：標題的層數會變（三層→四層），所以錨點只取不含層數的那半句。
+        ('README 又寫層自動發生', 'readme',
+         lambda t: t.replace('把漏做的機會壓低', '自動發生')),
     )
     missed = []
     for name, key, mutate in cases:
