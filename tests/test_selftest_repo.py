@@ -34,7 +34,7 @@ class RepoSelftestTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(cls.tmp)
+        package.force_rmtree(cls.tmp)
 
     def test_package_carries_the_source_matrix(self):
         self.assertEqual(capabilities.from_manifest(self.manifest), capabilities.read_matrix())

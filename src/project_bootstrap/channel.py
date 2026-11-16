@@ -114,7 +114,7 @@ def release(folder, report, channel, epoch, next_keys, sign):
         document = record_bytes(channel, epoch, digest, report_digest(report), next_keys)
         signature = sign(document)
     except BaseException:
-        shutil.rmtree(formal, ignore_errors=True)
+        package.force_rmtree(formal, ignore_errors=True)
         raise
     return str(target), document, signature, tag_name(channel, epoch, digest)
 
@@ -185,7 +185,7 @@ def install(cache, folder, document, signature, trusted_keys):
             shutil.copytree(folder, staging / 'package', symlinks=True)
             package.install(staging / 'package', target)
         finally:
-            shutil.rmtree(staging, ignore_errors=True)
+            package.force_rmtree(staging, ignore_errors=True)
     elif package.check(target):
         raise Denied('cache-damaged')
     record = {'document': document.decode('ascii'),

@@ -31,6 +31,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 
 from project_bootstrap import capabilities
@@ -52,6 +53,24 @@ TOOL_VARS = ('CLAUDECODE', 'CODEX_VERSION', 'CODEX_SESSION_ID', 'GEMINI_CLI')
 
 class AdapterError(Exception):
     pass
+
+
+def _shell():
+    """The POSIX shell used to run a wiring's ``command``.
+
+    ``/bin/sh`` is a path, and that path only exists on POSIX. On Windows the
+    same shell ships with Git for Windows and is on PATH as ``sh``／``bash``;
+    the wiring's ``command`` is the same POSIX line either way. 2026-11-16, on
+    Windows: the hardcoded path raised ``FileNotFoundError [WinError 2]`` in
+    every push-reminder and session-start comparison (12 of them), so the
+    surfaces could not be compared at all on this platform.
+    """
+    if os.name != 'nt':
+        return '/bin/sh'
+    found = shutil.which('sh') or shutil.which('bash')
+    if not found:
+        raise AdapterError('Windows 上找不到 sh 或 bash：需要 Git for Windows 的 Git Bash 在 PATH 上')
+    return found
 
 
 def _commands(surface, project):
@@ -95,7 +114,7 @@ def session_start(surface, project, env, subdir=''):
     runs = []
     for command in _commands(surface, project):
         try:
-            done = subprocess.run(['/bin/sh', '-c', command], cwd=cwd, env=env,
+            done = subprocess.run([_shell(), '-c', command], cwd=cwd, env=env,
                                   input=payload, capture_output=True, text=True, timeout=60)
         except subprocess.TimeoutExpired:
             raise AdapterError('%s: 逾時' % surface)
@@ -190,7 +209,7 @@ def pre_tool_use(surface, project, env, payload, subdir=''):
     cwd = Path(project) / subdir
     body = json.dumps(dict(payload, hook_event_name='PreToolUse', cwd=str(cwd)), ensure_ascii=False)
     try:
-        done = subprocess.run(['/bin/sh', '-c', command], cwd=cwd, env=env, input=body,
+        done = subprocess.run([_shell(), '-c', command], cwd=cwd, env=env, input=body,
                               capture_output=True, text=True, timeout=60)
     except subprocess.TimeoutExpired:
         raise AdapterError('%s: 逾時' % surface)

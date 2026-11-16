@@ -121,7 +121,7 @@ def build(prose, files, owners, kit_text, matrix=None):
             manifest['capabilities'] = matrix
         _write(folder, MANIFEST, _dump(manifest))
     except BaseException:
-        shutil.rmtree(folder, ignore_errors=True)
+        force_rmtree(folder, ignore_errors=True)
         raise
     return folder, manifest
 
@@ -178,6 +178,25 @@ def check(folder):
     return problems
 
 
+def force_rmtree(path, ignore_errors=False):
+    """``shutil.rmtree`` that also removes read-only files.
+
+    Git marks everything under ``.git/objects`` read-only, and Windows refuses
+    to delete a read-only file: 2026-11-16 on Windows this raised
+    ``PermissionError [WinError 5]`` in 15 teardowns of the surface tests and
+    twice in ``install``, which failed runs that had otherwise passed. POSIX
+    allows the delete (the directory's write bit is what counts), so this only
+    changes what happens on Windows.
+    """
+    def retry(func, target, exc):
+        try:
+            os.chmod(target, stat.S_IWRITE)
+            func(target)
+        except OSError:
+            if not ignore_errors:
+                raise
+    shutil.rmtree(path, onexc=retry)
+
 def install(folder, out):
     """Move a checked package to ``out``. ``out`` must be absent or an earlier package."""
     problems = check(folder)
@@ -191,7 +210,7 @@ def install(folder, out):
             raise Denied('out-not-a-package')
         if not _only_package_files(target):
             raise Denied('out-has-other-files')
-        shutil.rmtree(target)
+        force_rmtree(target)
     target.parent.mkdir(parents=True, exist_ok=True)
     os.replace(folder, target)
     return target

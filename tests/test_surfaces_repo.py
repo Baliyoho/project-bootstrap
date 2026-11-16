@@ -56,7 +56,7 @@ class Fixture(unittest.TestCase):
         self.git('push', '-q', '-u', 'origin', 'main')
 
     def tearDown(self):
-        shutil.rmtree(self.tmp)
+        package.force_rmtree(self.tmp)
 
     def git(self, *args, cwd=None):
         return subprocess.run(['git', *args], cwd=cwd or self.work, env=self.env, check=True,
