@@ -1,43 +1,49 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-16 11:50（+08）
-- **交棒者**：Codex 桌面 App／Windows（Windows 驗收與共用占用核對）
+- **交接時間**：2026-11-16 13:30（+08）
+- **交棒者**：Claude Code 桌面 App／Mac（審查 Codex 的 Windows 改動、撤回衝突、加 `env.md`、macOS `midway` 複驗、同步各專案）
 
 ## 任務目標
 
-完成 bootstrap v3 的跨平台驗收。Windows 原生 Codex CLI 已完成第一批真實情境及新版占用核對。下一棒使用同版在 macOS 複驗後，依 F15 對照結果。[通用改動及跨平台驗證清單](experiments/handoff-ab/CODEX-RESULTS.md#通用改動與跨平台驗證清單2026-11-16)
+完成 bootstrap v3 的跨平台驗收。Codex 在 macOS 與 Windows 都驗過；下一棒在 **Windows 上用 Claude Code** 驗第一次，這是四種組合裡唯一還沒實測的。制度方向依需求決策書 v3 Q35：一套共用規則，工具與平台的差異只寫在碰到才讀的 `.claude/skills/handoff/env.md`，不改變共用狀態的判讀。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無。
-- **工作中**：`Mac` ／ `Claude Code` ／ `㊣　11.16.11｜待指派｜工作中｜交棒0次`，2026-11-16 11:57 (+08) 開工 [session-id=21ce82be-d8be-4ea6-8e4d-be0342978050]
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-16.6`
 
 ## 已完成
 
-- 共用開場 hook 以可執行的 Python 產生 UTF-8 JSON（Windows 依序試 `python3`、`python`）。`2026-11-16.2` 的 session ID 占用核對已在 `2026-11-16.3` 撤回：違反 D1、D14 與 3.11「判斷不了時放行」。
-- Windows 原生 Codex CLI `0.166.0` 已驗開場、PreToolUse、異 session 攔截及同 session 正常釋回。工作區沙箱下的 Git 推送也已驗證單次核准可使測試遠端與本機追蹤參照同步。
-- 十個 Windows 真實情境與兩個占用探針的結果已記錄。較早版本 `midway` 兩次誤釋回舊占用。新版 `2026-11-16.2` 依同一提示重跑 PASS，遠端 refs、標記、本機 HEAD 和工作樹全數保留，推送為零。舊評分保留供對照。[原生 Windows 結果](experiments/handoff-ab/CODEX-RESULTS.md#windows-離線驗證2026-11-16)
-- 測試器已支援原生 Windows fixture、評分和 Codex developer 訊息中的開場 JSON。既有五個 OpenSSH 簽章 fixture 可在 Linux 實跑。
+- `2026-11-16.3`：撤回 Codex 加的 session ID 占用核對（缺資訊就擋，把標記變成鎖，違反 D1、D14 與 3.11「判斷不了時放行」，也沒有使用者定案；Q35）。保留 Windows 的 `python3`／`python` 回退。
+- `2026-11-16.4`：handoff skill 改成七個檔，新增 `env.md`（Codex／Claude Code／Windows／macOS 各一節）。Codex 長指令與 hook 驗收逐字搬入；Windows 沙箱鎖 `.git` 的提醒原本只在部署包，現在會部署到專案。
+- `2026-11-16.5`：`mode-b.md` B1 的斷線例子改成跟 `mode-a-stop.md` A2.5 選項 2 一致：使用者明確確認舊標記與工作屬於自己時可接手；只說「請交棒」或同機器同工具不算（Q36，使用者選 A2.5）。
+- `2026-11-16.6`：`env.md` 開頭加「開場沒有 [facts] 時依序查」，出現症狀才查。測試器 `codex_run.py` 每格記錄 CLI 路徑與版本，並用 `--trust` 讓專案 hook 載入。
+- macOS `midway` 同版複驗：有效 1 格，Codex 照 A2.5 接手並交棒，照原評分 PASS；失敗與平台無關。[結果](experiments/handoff-ab/CODEX-RESULTS.md#macos-同版-midway-斷線複驗2026-11-16)
+- Mac 上六個專案與本機 `~/.claude`、`~/.codex` 兩份全域 skill 已同步到 `2026-11-16.6`，各專案標記已釋回。
 
 ## 未完成／下一步
 
-1. 已建 handoff skill 第七個檔 `env.md`（`2026-11-16.4`）：Codex／Claude Code、macOS／Windows 的差異碰到才讀，不改共用狀態判讀（Q35）。下次同步各專案與全域副本時要連同新檔一起覆蓋；Claude Code／Windows 尚無實測，該節目前空白。
-2. macOS 同版 `midway` 已複驗：Codex 照 A2.5 選項 2 接手並交棒。使用者 2026-11-16 選 A2.5（Q36），`2026-11-16.5` 已把 B1 斷線例子改成一致；`midway` 回到原評分，格 3 照原評分為 PASS。[結果](experiments/handoff-ab/CODEX-RESULTS.md#macos-同版-midway-斷線複驗2026-11-16)
-3. 2026-11-16 已同步到 `2026-11-16.6`：Mac 上六個專案（NAA_TR 在待續分支 `feature/W15-research-shell`，其 `main` 未動）與本機兩份全域 skill。待辦：`learn coding with ai agent` 當時被另一個 Claude Code session 占用，未同步；Windows 機器的專案與全域副本未同步；五個專案 `AGENTS.md` 標記外的舊交接段落（`sync_project.py` 列為 MIGRATE）待人工比對。grist-workflow 同步後 `verify_state.py` 仍是本機缺 `.env` 的 exit 2 基線。桌面 App 的 F50 五步互動沿用既有暫緩決定。
+1. **Claude Code／Windows 首次實測**（下一棒）。先 `git pull` 到 `2026-11-16.6`，確認開場 `[facts]` 有進 context；沒有就照 `env.md`「開場沒有 [facts] 時依序查」（重點：Claude Code 用的 `bash` 是不是 Git for Windows 那支、`python3` 是否為失效別名）。再驗 push 前 hook 的 exit 2 真的擋下（推 `main`、沒改 `HANDOFF.md`、origin 標記是無（已交棒））。有差異就照 `env.md` 開頭的條件寫進「Claude Code」或「Windows」一節，寫明版本與日期；會改變交接結果的規則不放 `env.md`，先問使用者（Q35）。
+2. Windows 機器上的全域 `~/.claude/skills/handoff/`、`~/.codex/skills/handoff/` 與該機的專案同步到 `2026-11-16.6`（`tools/sync_project.py`，七個檔，覆蓋前先看現況）。
+3. `learn coding with ai agent` 未同步：同步時另一個 Claude Code session 持有標記（2026-11-16 10:20 開工）。標記釋回後再同步。
+4. 五個專案 `AGENTS.md` 標記外的舊交接段落待人工比對（`sync_project.py` 列 MIGRATE：NAA_TR、NAS_MAINT、academic-summary-skill、grist-workflow、鍵鼠同部署_mac）。NAA_TR 只同步了待續分支 `feature/W15-research-shell`，其 `main` 未動。
+5. 桌面 App 的 F50 五步互動沿用既有暫緩決定。
 
 ## 地雷與注意事項
 
-- AI push hook 回到只擋「推權威分支、沒改 `HANDOFF.md`、origin 標記是無（已交棒）」一種情形。斷線 session 的舊標記只靠 B1 文字保護，Windows Codex 曾兩次誤釋回。
-- Windows 的 HTTP push 可以送達遠端且 exit 0，本機追蹤參照卻仍因無法鎖定 `.git` 而停在舊 SHA。核對遠端和本機兩者，必要時用單次命令審核。
-- 隔離倉庫、原始串流、模擬請求及登入配置留在本機。公開 repo 僅留聚合結果和復現條件。
+- 跑 Codex 實驗前先看 CLI 版本：2026-11-16 的 Mac 上 Codex App 外掛內附 `0.167.0-alpha.3.2`、ChatGPT App 內附 `0.169.0-alpha.11.1`，`PATH` 上沒有 `codex`；未信任專案不載入專案 hook。讀 Codex 用量可用 `codex app-server` 的 `account/rateLimits/read`，不呼叫模型。
+- AI push hook 只擋「推權威分支、沒改 `HANDOFF.md`、origin 標記是無（已交棒）」一種情形。斷線 session 的舊標記靠 B1／A2.5 文字，使用者明確確認歸屬才可接手。
+- Windows 的 HTTP push 可能送達遠端且 exit 0，本機追蹤參照卻停在舊 SHA（`env.md` Windows 節）。推送後核對兩者。
+- grist-workflow 在這台 Mac 的 `verify_state.py` 是 exit 2（缺 `.env`，errors=0 skipped=2），不是同步造成。
+- 隔離倉庫、原始串流與登入配置留在本機；公開 repo 只留聚合結果與復現條件。
 
 ## 服務查證與期望快照
 
-- 來源 verifier 使用 `python -X utf8 tools/verify_bootstrap.py --staged --quiet`。Linux 容器以非 root 使用者測試，來源只讀，無外網。候選版 66 項全過，exit 0。
-- 原生 Windows 已過開場與 push hook 情境。全套 Windows 驗證的既有 v2 P0 基線仍回傳 exit 2，含 POSIX mode、symlink、唯讀 Git 清理及殼層假設。完整交棒驗證在 Linux 執行。
-- 本 repo 以來源 verifier 代替 `verify_state.py` 與 `check_docs.py`。版本與腳本副本已對齊。Codex 接線 JSON 無變更，Windows 隔離測試有實跑最新版腳本，macOS 實際信任與載入驗收列在下一步。
+- 2026-11-16 13:30 Mac：`python3 -X utf8 tools/verify_bootstrap.py --staged --quiet` 66 項全過，exit 0；`experiments/handoff-ab/codex_selfcheck.py` 通過。
+- 原生 Windows 全套驗證的既有 v2 P0 基線仍回傳 exit 2（POSIX mode、symlink、唯讀 Git 清理、殼層假設），在 Windows 上跑驗證器要分清這個基線與新問題。
+- 本 repo 以來源 verifier 代替 `verify_state.py` 與 `check_docs.py`；兩支 `repo-*.sh` 與共用制度副本已和範本逐字對齊。
 
 ## 懸置事項（AI 勿自行處理）
 
