@@ -28,6 +28,15 @@ def codex_bin():
     return found
 
 
+def codex_identity():
+    """實際執行的 CLI 路徑與版本。2026-11-16：同一台 Mac 有兩個內附版本（0.167 與 0.169），
+    hook 行為不同，事後才發現；每格都記下來，不同版本的結果才不會混著比。"""
+    path = os.path.realpath(codex_bin())
+    out = subprocess.run([path, '--version'], capture_output=True, encoding='utf-8',
+                         errors='replace', timeout=20)
+    return {'path': path, 'version': (out.stdout or out.stderr).strip() or 'unknown'}
+
+
 def codex_home(root):
     return root / 'codex-home'
 
@@ -58,6 +67,8 @@ def preflight(root):
         problems.append('Codex 沒有用 ChatGPT 訂閱登入')
     print('工作區：%s' % root)
     print('模型：%s；隔離 CODEX_HOME：%s' % (MODEL, home))
+    cli = codex_identity()
+    print('CLI：%s（%s）' % (cli['version'], cli['path']))
     print('登入：%s' % login_text)
     print('已用呼叫次數：%d／%d' % (calls(root), BUDGET // 2))
     for item in problems:
@@ -112,8 +123,9 @@ def run_one(root, scenario, n):
         raise SystemExit('Codex 沒載入專案 AGENTS／skill，或隔離失效')
     (run / 'prompt-input.json').write_text(prompt_input.stdout, encoding='utf-8')
     name = run.name
+    cli = codex_identity()
     with open(root / 'calls.log', 'a', encoding='utf-8', newline='') as fh:
-        fh.write('%s\t%s\n' % (stamp().isoformat(timespec='seconds'), name))
+        fh.write('%s\t%s\t%s\n' % (stamp().isoformat(timespec='seconds'), name, cli['version']))
     # 2026-11-16：0.169.0-alpha.11.1 對未信任專案不載入專案的 .codex/hooks.json（stderr 印
     # Untrusted project-local configuration is disabled），--ignore-user-config 又讓隔離
     # CODEX_HOME 的信任設定不生效，而 --trust 不能與它並用。CODEX_HOME 本來就是隔離的
@@ -133,13 +145,14 @@ def run_one(root, scenario, n):
             code = 'timeout'
     row = score.score(run, need_stream=False)
     row['exit'] = code
+    row['codex_cli'] = cli
     row['codex_validity'] = codex_validity(run)
     if row['codex_validity']:
         row['verdict'] = 'INVALID'
         row['invalid'] = row['codex_validity']
     with open(run / 'score.json', 'w', encoding='utf-8', newline='') as fh:
         json.dump(row, fh, ensure_ascii=False, indent=1)
-    print('%s %s %s exit=%s %s' % (name, row['verdict'], row['outcome'], code,
+    print('%s %s %s exit=%s [%s] %s' % (name, row['verdict'], row['outcome'], code, cli['version'],
                                   '；'.join(row['invalid'] or row['failed'])))
     return 4 if row['verdict'] == 'INVALID' else 0
 

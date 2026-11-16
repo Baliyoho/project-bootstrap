@@ -38,7 +38,7 @@ HANDOFF_AB_ROOT=/tmp/pb-codex-ab-r1 python3 -X utf8 codex_run.py one clean 1 --a
 HANDOFF_AB_ROUND=2 HANDOFF_AB_ROOT=/tmp/pb-codex-ab-r2 python3 -X utf8 codex_run.py preflight
 ```
 
-每格的 Codex JSONL、stderr、`score.json` 與 origin/work 留在工作區。`score.json` 的結果檢查沿用 `score.py`；CLI 是否正常結束另由 `codex_run.py` 檢查。每個 FAIL／INVALID 都要人工看原始紀錄；PASS 也按原規格抽查。第一格先當煙霧測試，確認 SessionStart hook、模型名稱、repo 寫入與本機 bare origin 推送都真的運作，再跑其餘格。
+每格的 Codex JSONL、stderr、`score.json` 與 origin/work 留在工作區。`preflight` 印出實際執行的 CLI 路徑與版本，每格的 `score.json` 的 `codex_cli` 欄與 `calls.log` 第三欄也記錄版本（2026-11-16：同一台 Mac 有兩個內附版本，hook 行為不同）。執行前把要用的 CLI 放在 `PATH` 最前面，並確認專案會被信任（`codex_run.py` 用 `--trust`，只寫進隔離的 `CODEX_HOME`）。`score.json` 的結果檢查沿用 `score.py`；CLI 是否正常結束另由 `codex_run.py` 檢查。每個 FAIL／INVALID 都要人工看原始紀錄；PASS 也按原規格抽查。第一格先當煙霧測試，確認 SessionStart hook、模型名稱、repo 寫入與本機 bare origin 推送都真的運作，再跑其餘格。
 
 ### Codex＋原生 Windows（v3 第 3 期）
 
