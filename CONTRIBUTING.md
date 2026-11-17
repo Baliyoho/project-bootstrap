@@ -8,6 +8,7 @@
 規則在 AGENTS.md 的鐵律 1、4 與「跟部署出去的專案不同的地方」；這裡只補操作細節。[為什麼](AGENTS-reasons.md#rule-1)
 
 - 動到結構（增刪檔案、部署包增刪一節範本、驗證項增減）就更新 [ARCHITECT.md](ARCHITECT.md)，跟該變動同一個 commit。
+- 部署包跳版時，`src/kit/kit.md` 開頭只留新的「版本」行；舊的那一行改寫成「前一版」，移到 [CHANGELOG.md](CHANGELOG.md) 最上面。不跳版的修改也在 CHANGELOG 最上面記一條。
 - 全套驗證在 macOS 約 35 秒，在原生 Windows 約 3–4 分鐘，超過指令工具預設的 120 秒上限，逾時不等於失敗。Windows 上 `python3` 是 WindowsApps 別名，要用 `python`。[為什麼](AGENTS-reasons.md#rule-4)
 - 需要 ZIP 時跑 `python -X utf8 tools/verify_bootstrap.py --zip`（可在 `--zip` 後指定路徑）。只有全過才產出正式包；FAIL 回 2、SKIP 回 1，兩者預設都不產出或覆寫 ZIP。若確實需要未完整驗證的調試包，明確加 `--allow-unverified-zip`：僅容許 SKIP，仍回 1，包內附 `UNVERIFIED.json`（跳過項目與原因），「讀我」也會標示未驗證；FAIL 仍禁止。這避免「缺 bash 的檢查被跳過，卻產出看似驗證全過的 ZIP」（2026-11-02／F07）。
 

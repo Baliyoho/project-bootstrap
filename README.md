@@ -127,7 +127,7 @@ SHA256:FjVJTEPBuOaloJZV0GvtZiG3bXYJo68v+cTaVqs0JU0
 
 - 開工必守的規則在 [AGENTS.md](AGENTS.md)，AI 工具開工時會自動讀到。
 - 改部署包的流程、同步到已部署專案的用法、碰到才需要的規則在 [CONTRIBUTING.md](CONTRIBUTING.md)。
-- 目前做到哪在 [HANDOFF.md](HANDOFF.md)；需求的權威是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)。
+- 目前做到哪在 [HANDOFF.md](HANDOFF.md)；需求的權威是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)；部署包的逐版變更在 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 來源
 

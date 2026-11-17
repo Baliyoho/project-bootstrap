@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 最後更新：2026-11-17：新增 [CHANGELOG.md](CHANGELOG.md)，部署包開頭的逐版變更紀錄（約 80 行）逐字搬過去，部署包只留目前的版本行與一行指標；部署出去的專案用不到那段歷史。
+
 > 最後更新：2026-11-17（需求決策書 v3 Q41）：交接協定 `docs/ai-notes/handover-protocol.md` 移出部署包，3.6 保留編號、改成移除說明，部署包少一個檔；它獨有的分支模型、漏交棒理由與「verify_state 一律跑」搬進 3.8 的 skill。「核心與實例優先序」「接力協調邊界」「已修正的主張沒復活」「跨工具過期敘述」四項改成只讀 skill。
 
 > 最後更新：2026-11-17（需求決策書 v3 Q40）：新增 [CONTRIBUTING.md](CONTRIBUTING.md)，收 AGENTS.md 裡碰到才需要的規則（副本規則、本 repo 交接快照、指標檔、行末、hook 訊息寫法）、README.md 裡的開發流程與副本同步用法，以及本檔原本的「開發注意事項」（那不是結構）；AGENTS.md 只留開工必守的規則，README.md 改成標準 README。部署包範本 3.1、3.4、3.5 同步改成職能分工：連線資料從 AGENTS 搬進 README，README 不再放交接 prompt。「規則理由連結」改成同時查 AGENTS.md 與 CONTRIBUTING.md，「結構摘要一致性」與「已修正的主張沒復活」改守新的 README 寫法。
@@ -209,6 +211,7 @@
 | [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案。`check_docs.py` 的專案設定區塊、兩份 hook 接線裡專案自己加的設定都會原樣保留。2026-11-14 起 `AGENTS.md` 歸 `lines`：只換開始／結束標記之間的共用制度（沒有就插在第一個「## 」前），標記外不動，標記外的舊交接段落列成 MIGRATE 要人工比對。只改檔案，不 commit。檔案清單（`WHOLE`／`WIRING`／`PARTIAL`／`INSTANCE`）2026-11-11 起由 `src/kit/owners.json` 算出 | 骨架多一個要同步的檔時：在 `owners.json` 登記；如果是 `region`／`key`／`lines`／`wiring` 這四種，要先替它寫處理程式並更新 `HANDLED`，否則同步器拒絕啟動 |
 | [tools/migrate_project.py](tools/migrate_project.py) | P2 第 5 片（決策書 Q25）：把舊專案一次搬到包＋指標。預演只讀（不 fetch、不刷新 index），逐專案列要換、要補、要合併與要人工比對的檔；寫入只能單一專案、要 `--owner` 與一次正式發布，只換本 repo 發過的舊版，客製就整個專案不寫（CRLF 當 LF 比，Q26）。重用 `sync_project.py` 的合併與占用檢查。不 commit、不部署 | 遷移規則改變時；真實專案寫入要逐專案授權 |
 | [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
+| [CHANGELOG.md](CHANGELOG.md) | 部署包的逐版變更紀錄與每一版的理由，新的在上面；2026-11-17 從 `src/kit/kit.md` 開頭逐字搬來，部署包只留目前的版本行。不部署 | 每次跳版：舊的版本行改寫成「前一版」移到最上面 |
 | `.claude/hooks/repo-pre-push.sh` | 本 repo 的 push 前 hook（2026-11-14，v3 F10，使用者決定補裝）：3.11 `pre-push-handoff.sh` 的**手貼逐字副本**，兩份接線的 PreToolUse 都指向它（Claude Code 的 matcher 跟 3.9 一樣是 `Bash\|PowerShell`，Codex 經 `codex-hook.cmd`）。「本 repo push 前 hook」逐位元組比對；不在 `sync_project.py` 的拓撲裡，改了 3.11 要手動重貼。取代 2026-11-10 試行的動作提醒 `repo-action-rules.sh`（同日使用者決定拿掉） | 改 3.11 時重貼 |
 | `.claude/settings.json`＋`.codex/hooks.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的 SessionStart 檢查。兩份接線掛的都是**同一支** `repo-git-check.sh`（2026-11-01 補 Codex 這一面），所以它們**不是部署包 3.9／3.17 的副本**。2026-11-14 起那支 hook 是 3.10 `git-freshness.sh` 的**手貼逐字副本**（v3 D12：只報事實，最多五行 `[facts]`），「本 repo 開場 hook」逐位元組比對；在那之前是本 repo 自己的判讀版（🔴／🟡、全綠行）。三個檔都不在 `sync_project.py` 的拓撲裡（它直接拒絕本 repo），改了 3.10 要手動重貼，理由在 AGENTS-reasons 的副本規則 7 | 改 3.10 時重貼 |
 | `.gitignore`、`.gitattributes` | `dist/`、`.venv/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
