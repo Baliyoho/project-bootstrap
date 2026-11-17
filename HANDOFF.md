@@ -11,7 +11,7 @@ bootstrap v3 的跨平台驗收已完成四種組合（Codex／Claude Code × ma
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無（`fix/windows-platform-aware` 已以 `--no-ff` 併入 `main`，分支保留不刪）。
-- **工作中**：無（已交棒）
+- **工作中**：Mac mini ／ Claude Code（桌面 App）／ ㊣　11.17.13｜待指派｜工作中｜交棒0次；開工 2026-11-17 13:39（+08）
 - **骨架版本**：`2026-11-16.7`
 - 本棒改了 `.claude/skills/handoff/env.md` 的內容，因此跳版到 `2026-11-16.7`；七個 skill 檔的 `source:` 標記同版本，部署包已重生，所有副本已覆蓋。
 
