@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 最後更新：2026-11-17（需求決策書 v3 Q40）：新增 [CONTRIBUTING.md](CONTRIBUTING.md)，收 AGENTS.md 裡碰到才需要的規則（副本規則、本 repo 交接快照、指標檔、行末、hook 訊息寫法）與 README.md 裡的開發流程、副本同步用法；AGENTS.md 只留開工必守的規則，README.md 改成標準 README。部署包範本 3.1、3.4、3.5 同步改成職能分工：連線資料從 AGENTS 搬進 README，README 不再放交接 prompt。「規則理由連結」改成同時查 AGENTS.md 與 CONTRIBUTING.md，「結構摘要一致性」與「已修正的主張沒復活」改守新的 README 寫法。
+
 > 最後更新：2026-11-17（需求決策書 v3 Q39）：v2 決策書退休，用 `git mv` 封存到 `docs/history/requirements-decision-v2.md`（逐位元組不改），v3 成為唯一需求書；`verify_v2.py`、`test_registry_repo.py`（新，從 `test_registry.py` 拆出）、`test_trail_repo.py` 與一致性檢查改讀 v3；`verify_bootstrap.py` 新增「封存原件」，文件檢查與行末檢查不讀 `docs/history/`。
 
 > 最後更新：2026-11-14（Codex 交接成本優化）：`verify_bootstrap.py` 先啟動獨立的 `verify_v2.py` 子程序，與其餘暫存 fixture 檢查重疊，收尾仍必須驗其結束碼及報告；新增 `--quiet` 只縮成功輸出。`tests/test_verifier_execution.py` 驗大量輸出、失敗／SKIP 保留與異常清理。不部署新工具、不新增模型呼叫；skill 補 Codex 外層等待用法，版本 `2026-11-14.4`。
@@ -153,6 +155,7 @@
 | 動 v2 原型 | [v2 原型說明](experiments/v2/README.md) |
 | 效率改造 | [效率計畫](project-bootstrap-efficiency-plan.md)；尚未生效，不授權省略現行程序 |
 | 追溯需求修訂理由 | [需求歷史原件](project-bootstrap-requirements-history.md)；其中的「權威版」「現在」「待決」不再指示現行操作 |
+| 改部署包、同步副本、改 hook 訊息、寫本 repo 交接快照 | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | 結構問題（有哪些檔、副本在哪） | 本檔；動到結構就跟它同一個 commit 改 |
 
 ## 開發注意事項
@@ -165,7 +168,7 @@
 - VM 腳本、`guest_runs.py`、`crash_release.py` 2026-11-14 起封存在 `archive/v2-barrier/`，不再維護（v3 Q33）。
 - `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書 v3 第 8 節的 `Q` 編號（或 `- 無。`）。v3 第 3 節 D 表每列要有「決定」與「理由」；第 8 節已決項目底下子項格式是「採用理由／未選 (x) 名稱：／暫緩 名稱：」，選項名不能省，省了就報 `alternative-incomplete`（2026-11-17 封存 v2 時在 v3 踩到）。這兩個解析器與需求清單的解析器都按節名找節、不看節號（2026-11-17 起），改節名會讓它們讀不到東西，測試會失敗。
 - 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗。
-- AGENTS.md 只有規則；新增或改規則時在 [AGENTS-reasons.md](AGENTS-reasons.md) 補段落與錨點。
+- AGENTS.md 與 CONTRIBUTING.md 只有規則；新增或改規則時在 [AGENTS-reasons.md](AGENTS-reasons.md) 補段落與錨點。開工必守的放 AGENTS.md，碰到才需要的放 CONTRIBUTING.md。
 - 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。新守門用 `denied(code, ...)` 寫法。
 - 僅合成暫存 fixture；原檔、票據、金鑰與合成 Git object 不進本 repo。
 - 推含 `.github/workflows/` 改動的 commit，`gh` 權杖要有 `workflow` 權限，否則 GitHub 拒收（2026-11-11 E2 踩到）；補權限要使用者自己跑 `gh auth refresh -h github.com -s workflow`。
@@ -182,9 +185,10 @@
 | [tools/install_package.py](tools/install_package.py) | P2 第 3b 片：使用者用的安裝入口。第一次用 `src/kit/release-keys.txt` 的根公鑰、之後沿上一版的 `next_keys` 驗簽，裝進快取並寫專案指標；`--seed` 鋪空專案、`--check` 跑一次寫入檢查。不下載。只用標準函式庫，不部署 | 安裝流程改變時 |
 | [.github/workflows/release.yml](.github/workflows/release.yml) | 本 repo 唯一的 workflow（2026-11-11，Q21）：push `release-request/<channel>` tag 觸發，跑在 macOS、金鑰在要核准的 `release` environment，成功後建 `channel/<channel>/<epoch>-<digest>` tag 與 GitHub Release。不用第三方 action | 發布流程改變時 |
 | [tools/build_package.py](tools/build_package.py) | P2 第一片：由 `src/kit/` 生成正式包資料夾 `dist/package/`（Git 不追蹤）；`--check` 建兩次比 digest、不寫檔。一律 debug，正式版只能經發布步驟（第 3 片）。只用標準函式庫，不部署 | 包格式改變時 |
-| [README.md](README.md) | 人的入口：怎麼用、部署後長什麼樣、跨工具相容性、改這份骨架的開場 prompt | 用法或相容性改變 |
-| [AGENTS.md](AGENTS.md) | AI 的入口：這個 repo 是什麼、鐵律、副本位置、行末規則 | 多一條鐵律、副本位置改變 |
-| [AGENTS-reasons.md](AGENTS-reasons.md) | **AGENTS 每條規則的完整原文、理由與事故**；2026-11-10 從 AGENTS.md 逐字搬來，入口用「為什麼」連結指過來。不是每輪必讀，不部署、不同步 | 規則改了就在對應段落補帶日期的理由，不刪舊事故 |
+| [README.md](README.md) | 標準 README：解決什麼、怎麼用、部署後長什麼樣、跨工具相容性、發布公鑰、參與開發的指標、授權 | 用法或相容性改變 |
+| [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本、跟部署出去的專案不同的地方、這個 repo 是什麼、鐵律 | 多一條開工必守的規則 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 碰到才讀的流程與規則：改部署包的操作細節、同步到已部署專案、副本規則、本 repo 交接快照、指標檔、行末、hook 訊息寫法；2026-11-17 從 AGENTS.md 與 README.md 搬來（v3 Q40） | 流程或碰到才需要的規則改變 |
+| [AGENTS-reasons.md](AGENTS-reasons.md) | **AGENTS 與 CONTRIBUTING 每條規則的完整原文、理由與事故**；2026-11-10 從 AGENTS.md 逐字搬來，入口用「為什麼」連結指過來。不是每輪必讀，不部署、不同步 | 規則改了就在對應段落補帶日期的理由，不刪舊事故 |
 | [CLAUDE.md](CLAUDE.md)、[GEMINI.md](GEMINI.md) | Claude 用 `@AGENTS.md` import；Gemini 用文字指標 | 幾乎不動 |
 | [HANDOFF.md](HANDOFF.md) | **當下交接快照與跨機器工作標記**。範本 3.3 的*實例*，不是副本，不在副本拓撲裡、不要用 `sync_project.py` 同步。≤80 行、覆寫不累積，維護義務與事故見 [AGENTS.md](AGENTS.md)「本 repo 的交接快照」 | A5 寫標記；B6 核對整份現況、待辦、限制與驗證，清掉已完成待辦 |
 | [project-bootstrap-audit.md](project-bootstrap-audit.md) | 2026-11-02 使用者要求隨交棒保存的查核快照；供下一手評估改善，不是制度權威、不部署也不同步。原始探針只留在原聊天產物 | 查核結論需勘誤時；實作進度寫 HANDOFF，不在報告累積 |
@@ -247,10 +251,10 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 
 | 節 | 產出 | 角色 |
 |---|---|---|
-| 3.1 | `AGENTS.md` | AI 入口：開始／結束標記之間是共用制度（≤40 行，2026-11-13 起，v3 D11），標記外是專案鐵律與連線資料 |
+| 3.1 | `AGENTS.md` | AI 開工時自動讀：開始／結束標記之間是共用制度（≤40 行，2026-11-13 起，v3 D11），標記外是專案鐵律（連線資料 2026-11-17 搬到 README，v3 Q40） |
 | 3.2 | `CLAUDE.md`＋`GEMINI.md` | **一節產兩檔**：Claude 用 import，Gemini 用文字指標 |
 | 3.3 | `HANDOFF.md` | 當下狀態（≤80 行、覆寫不累積） |
-| 3.4 | `README.md` | 人的入口、收工交棒／開工接棒 prompt |
+| 3.4 | `README.md` | 標準 README：是什麼、為什麼做、快速開始（含連線資料）、開發與驗證、結構指標、協作方式、授權；不放交接 prompt（v3 Q40） |
 | 3.5 | `ARCHITECT.md` | 結構的唯一權威（2026-09-07 加入） |
 | 3.6 | `docs/ai-notes/handover-protocol.md` | 交接的規則與理由 |
 | 3.7 | `docs/ai-notes/roadmap.md` | 持久待辦與決策記錄 |
@@ -306,7 +310,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 改名寫進回報模板 | A5／B9 各有必填 `session：` 與無改名工具時的回報選項，附負向測試 | 改名漏做卻在 repo 內沒有任何跡象 |
 | 續聊狀態與計數 | `AGENTS.md` 共用制度有「`↗`／`※` 時收到新訊息先改回 `㊣`」（2026-11-13 起取代 skill 與指標 description 的觸發詞，skill 不再必讀）；skill 參考檔保留時間與計數、只讀不寫 Git、改檔重跑 A、成功交棒才累加；附 17 個負向測試 | 已交棒後續聊沒恢復工作中，或計數被重算 |
 | 本 repo 交接狀態 | 必要欄位與章節、≤80 行、骨架版本符合 VERSION、禁止這次已知過期待辦與只改兩欄的入口規則；附負向測試 | 標記清了卻保留已完成待辦，下一棒被迫從聊天重建現況；不保證任意待辦的語意正確，仍需 B6 人工核對 |
-| 規則理由連結 | AGENTS.md 每節至少一個、鐵律／副本規則／hook 訊息每條各一個指向 AGENTS-reasons.md 的連結，連結的段落存在且非空；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
+| 規則理由連結 | AGENTS.md 與 CONTRIBUTING.md 每節至少一個、鐵律／副本規則／hook 訊息每條各一個指向 AGENTS-reasons.md 的連結，連結的段落存在且非空；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
 | 來源例外可見性（F46 部分） | 每輪印出已宣告減項（2026-11-14 起剩 handoff skill、check_docs.py 兩項；pre-push 補裝了）；確認來源缺、產物有，並對漏宣告／來源增項／產物缺項跑負向變異 | 三項減項再次從驗證輸出中靜默消失；這只驗可見性，未完成來源／產物全部同組情境 |
 | 來源／產物交接快照同組情境（F46 部分） | 同一組 11 種合成快照在來源檢查與部署後 `check_docs.py` 各跑一次：有效、整份缺失、占用欄缺失／重複、章節缺失、超行數、機器／工具欄正反例均須一致；來源檢查遇整份缺失須明確報錯 | 來源少了整份 `HANDOFF.md` 時只拋例外，或產物與來源對相同缺陷給出矛盾結論；實際接手流程仍待驗 |
 | 來源／產物文件同組情境（F46 部分） | 同一份合成文件在來源文件檢查與部署後 `check_docs.py` 各跑一次：20 種正反例涵蓋根目錄及巢狀文件的缺檔、死連結、程式碼、角括號加 title、片段、日期及佔位符；沿用來源實際檢查函式 | 同樣的文件缺陷在來源與產物給出不同結論；其他文件項仍待驗 |
@@ -316,7 +320,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
 | 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（2026-11-02／F02、F03） |
 | 同步升級 mode | 替換前複製既存 mode；複製失敗保留原檔；新依賴仍可建立；移除複製的負向變異必須失敗。POSIX 另驗 0755／0640、開場 hook 直接執行、Git 無 mode diff | 新 inode 預設權限會讓更新後的 POSIX hook 無法執行；Windows 通過不代表 POSIX 實測 |
-| 結構摘要一致性 | 本 repo 與生成 ARCHITECT 區分 Claude import／Gemini 文字指標，README prompt 用收工／開工；三個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
+| 結構摘要一致性 | 本 repo 與生成 ARCHITECT 區分 Claude import／Gemini 文字指標，範本 3.4 那一列寫標準 README、不再寫交接 prompt；三個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
 | 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
 | 跨工具表保鮮期 | 「跨工具與跨平台」那節的「查證日期」不得超過 90 天（`BOOTSTRAP_FRESHNESS=off` 可跳過） | 對外部工具能力的斷言在無聲中過期。這一項只保證有人看過日期，**不保證有人真的重查**——買到的是「必須有意識地決定」。會做成 fail 而不是警告，是因為上一次的對策就是一句警告，而警告沒擋住第二次（Antigravity 的 hooks、Codex 桌面 App 的 hooks，兩次同一種錯） |
 | README 跨工具表一致性 | README 那張跨工具表與部署包那一張：同名列的判定符號一致、README 沒有孤兒版本號、有指回部署包的指標（附四種分岔的負向測試） | README 是**人的入口**，而保鮮期只守部署包那一份——事實在部署包被重查改對，README 留在舊事實上，沒有任何徵兆。2026-11-01 加這一項的當下就抓到一處已經發生的分岔（「自動載入程序檔」×「Codex CLI」）。不給 README 自己一個「查證日期」是因為那是同一個事實的第二個時鐘 |

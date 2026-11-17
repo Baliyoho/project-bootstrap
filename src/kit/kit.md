@@ -11,6 +11,7 @@
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md／handover-protocol.md／`handoff` skill）。
 > 版本：**2026-11-16.7**（`env.md` 的 Windows 節加「驗證與測試跑得比 macOS 久」：完整驗證可能三到四分鐘，超過指令工具常見的 120 秒預設等待（2026-11-16 Windows 11 連跑三次：224、234、244 秒），要提高 timeout 或丟背景，逾時不等於沒過。七個 skill 檔與共用制度標記同版。）
+> 2026-11-17（**只改 README、AGENTS、ARCHITECT 等範本，刻意不跳 `VERSION`**：handoff skill 一個字沒動）：README 改成標準 README，不再按「給人看／給 AI 看」分工（決策書 v3 Q40）。README 寫專案是什麼、為什麼做、快速開始（含原本 AGENTS 的連線資料）、開發與驗證、結構指標、協作方式、授權；「三個入口」表、兩段交接 prompt、檔案樹、腳本表與紅線刪掉，因為它們跟 AGENTS、ARCHITECT、skill 重複，而 README 是 `seed`，部署後不會跟著更新。AGENTS 只留開工必讀：共用制度與鐵律，「Git 不是資料備份」併進鐵律 1，「只寫 key 名不寫值」併進鐵律 3。已部署專案的 README 是 `seed`、AGENTS 只同步共用制度，不會自動搬，要逐一手動遷移。
 > 前一版 **2026-11-16.5**（`mode-b.md` B1 的斷線例子改成跟 `mode-a-stop.md` A2.5 選項 2 一致：使用者明確確認舊標記與工作屬於自己時，本 session 先把標記改成自己並推上，再走 A6 與交棒；只說「請交棒」或同機器同工具不算確認。起因是 macOS 同版 `midway` 複驗時 Codex 照 A2.5 接手，與 B1 例子衝突（決策書 v3 Q36，使用者 2026-11-16 決定）。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.4**（handoff skill 新增第七個檔 `env.md`：工具（Codex／Claude Code）與平台（macOS／Windows）的差異，碰到才讀，只寫環境怪癖與操作提醒、不改共用狀態的判讀（決策書 v3 Q35）。入口「跑得久的指令」與 `mode-b.md` 的 Codex hook 驗收逐字搬進去；3.17 的 Windows 沙箱提醒原本只在部署包、不會部署到專案，現在進了 `env.md`。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-16.3**（撤回 2026-11-16.2 的 session ID 占用核對：它讓 AI push hook 在缺 ID、缺 Python、feature 分支與 `HANDOFF_HOOK=off` 時都擋下，把開工標記從訊號變成鎖（D1），擴大 F10 的阻擋範圍卻沒有使用者定案與 D14 對照。3.10、3.11 回到原本「寧可漏擋」的行為；保留 Windows 的 `python3`／`python` 回退與 B1 斷線例子。使用者 2026-11-16 決定：一套共用規則，工具與平台的差異只寫成碰到才讀的說明，不改變共用狀態的判讀。六個 skill 檔與共用制度標記同版。）
@@ -253,7 +254,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 | `{{TODAY}}` | 部署當天日期（絕對日期，YYYY-MM-DD） | 2026-07-26 |
 | `{{SECRETS}}` | 絕不進 Git 的憑證檔 | `.env`、`*.pem` |
 | `{{RUNTIME_DIRS}}` | 絕不進 Git 的運行／資料目錄 | `data/`、`backups/`、`uploads/` |
-| `{{STACK_DIRS}}` | 專案主要程式目錄（寫進 README 檔案結構） | `src/`、`migrations/` |
+| `{{STACK_DIRS}}` | 專案主要程式目錄（寫進 ARCHITECT 的結構） | `src/`、`migrations/` |
 | `{{VERIFY_TARGETS}}` | 「一鍵驗證」該查什麼（沒有就先留空） | 健康檢查 API、docker 容器狀態 |
 
 追問一句就好：**「這個專案有沒有已知的『絕對不能做』的操作？」**（例：不能直接改資料庫檔、不能在正式環境跑 migration）。有的話寫進 AGENTS.md 鐵律第 4 條之後；沒有就先放空著，日後踩到再補。
@@ -264,8 +265,8 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ```text
 {{GH_REPO}}/
-├─ README.md                        ← 人的入口（第一次接觸專案看這份）
-├─ AGENTS.md                        ← AI 的入口：共用制度一節（≤40 行）＋專案鐵律與連線資料
+├─ README.md                        ← 專案介紹：是什麼、為什麼做、怎麼連、怎麼跑
+├─ AGENTS.md                        ← AI 開工時自動讀：共用制度一節（≤40 行）＋專案鐵律
 ├─ CLAUDE.md                        ← 指標，指向 AGENTS.md
 ├─ GEMINI.md                        ← 指標，指向 AGENTS.md
 ├─ HANDOFF.md                       ← 當下工作狀態（≤80 行，不累積歷史）
@@ -637,7 +638,7 @@ git status -sb
 
 ## 6. 之後怎麼維持（一頁操作卡）
 
-**每次開工／收工**：直接 `/handoff`（Claude Code），或用 README「換一個 AI 接手工作」的兩段 prompt 指路給其他模型。**順序永遠是先交棒、後接棒**（舊 session 先把狀態寫進 `HANDOFF.md` 並 push，新 session 才讀得到）。那兩段刻意沒有自己的字母編號（2026-11-02／F15）。
+**每次開工／收工**：跟 AI 說「接棒」或「交棒」（Claude Code 也可以打 `/handoff`）；工具沒自動找到 skill 時，指它讀 `.claude/skills/handoff/SKILL.md` 的 A 或 B 模式。**順序永遠是先交棒、後接棒**（舊 session 先把狀態寫進 `HANDOFF.md` 並 push，新 session 才讀得到）。
 
 **改到 skill 或 hook 時**：權威版在本部署包 → 改這裡 → 覆蓋各專案 `.claude/skills/handoff/` 整個目錄（七個檔一起，與選用的全域副本）→ 檔頭 `source:` 標記跳版。
 
@@ -654,9 +655,9 @@ git status -sb
 | 「東西搬家了」「多了一個元件」「權威版換位置了」 | `ARCHITECT.md`，**跟該變動同一個 commit** |
 | 「還有哪些事沒做」「這件事被否決了」 | `docs/ai-notes/roadmap.md` |
 | 「現在做到哪、下一步」 | `HANDOFF.md`（覆寫，不累積） |
-| 給人看的入口、網址、怎麼跑起來 | `README.md` |
+| 專案的目的、網址、連線資料、怎麼跑起來 | `README.md` |
 
-**開新的 ai-notes 檔案時**：回頭把 `AGENTS.md` 的「知識庫地圖」補上一列，否則沒人會找到它。
+**開新的 ai-notes 檔案時**：回頭在 `ARCHITECT.md` 補上一列，否則沒人會找到它。
 
 **已知的腐化模式與對策**：
 

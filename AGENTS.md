@@ -1,7 +1,7 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-17（v2 決策書退休、凍結封存，v3 成為唯一需求書，v3 Q39）；前次 2026-11-16（共用制度副本重貼到 v2026-11-16.7）；前次同日（v2026-11-16.6：共用制度副本重貼）；前次同日（v2026-11-16.4：handoff skill 改七個檔，多 `env.md`）；前次同日（v2026-11-16.3：撤回 session ID 占用核對）；前次 2026-11-14（補裝 push 前 hook、拿掉動作提醒 hook；前面同日：本 repo 交接制度對齊 v3：開場 hook 換成部署包 3.10 的逐字副本，開工段改成只寫事實）；前次同日（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
-> 本檔只放規則；每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
+> 最後更新：2026-11-17（碰到才需要的規則搬到 [CONTRIBUTING.md](CONTRIBUTING.md)，本檔只留開工必守的規則，需求決策書 v3 Q40）；前次同日（v2 決策書退休、凍結封存，v3 成為唯一需求書，v3 Q39）；更早的修改見 Git 歷史
+> 本檔只放開工必守的規則；改副本、接線、hook 訊息、行末或本 repo 交接快照的規則在 [CONTRIBUTING.md](CONTRIBUTING.md)，碰到才讀。每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 <!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
@@ -43,7 +43,7 @@
 - 驗證入口是 `python3 -X utf8 tools/verify_bootstrap.py`（不是 `verify_state.py`），exit 0 才算改完；提交前先逐檔 stage，再加 `--staged` 跑。可加 `--quiet` 只印摘要與失敗，檢查集合與結束碼不變。
 - 沒有 `check_docs.py`。開場 hook `.claude/hooks/repo-git-check.sh` 與 push 前 hook `.claude/hooks/repo-pre-push.sh` 是部署包 3.10、3.11 的逐字副本；要重查開場事實就重跑前者。
 - 沒有專案層的 handoff skill。要看參考程序就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）；這台機器沒有就讀 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 的「3.8」節，不要搬檔或憑記憶重刻。
-- 其他文件碰到那件事才讀，對照表在 [ARCHITECT.md](ARCHITECT.md) 的「碰到才讀的文件」。
+- 改部署包的操作細節、同步到已部署專案的用法與碰到才需要的規則在 [CONTRIBUTING.md](CONTRIBUTING.md)；其他文件碰到那件事才讀，對照表在 [ARCHITECT.md](ARCHITECT.md) 的「碰到才讀的文件」。
 
 這些寫在這裡而不只放 hook，是因為有些工具不跑 hook。[為什麼](AGENTS-reasons.md#start)
 
@@ -59,34 +59,3 @@ AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-B
 4. **改完跑 `verify_bootstrap.py`，exit 0 才算改完**；印 `skip` 的項目會回傳 1，照實回報。[為什麼](AGENTS-reasons.md#rule-4)
 5. **不塞專案專屬內容**（網址、docId、憑證檔名、業務規則），部署包只放通用制度與佔位符。[為什麼](AGENTS-reasons.md#rule-5)
 6. **這是公開 repo（MIT）**：不寫客戶／單位名稱、內部代號、本機絕對路徑，提交前擋。[為什麼](AGENTS-reasons.md#rule-6)
-
-## 副本規則
-
-拓撲在 [ARCHITECT.md](ARCHITECT.md)。動副本或接線之前，先讀對應理由段落的完整原文。
-
-- 改完部署包，所有副本一起覆蓋，含選用的兩個全域 `skills/handoff/`。[為什麼](AGENTS-reasons.md#copy-1)
-- Codex 與 Claude Code 掛同樣兩個 `.sh`，不在 `.codex/` 複製第二份；Windows 的 `codex-hook.cmd` 只做管線。[為什麼](AGENTS-reasons.md#copy-2)
-- Antigravity 2026-11-13 起移出部署包（需求決策書 v3 D8）：舊 3.18–3.20 不再產出，已部署專案裡那三個檔不同步也不刪，清不清由使用者決定；要重新支援先讀理由裡的四個約束。[為什麼](AGENTS-reasons.md#copy-3)
-- 接線路徑一律相對、不假設 cwd：前面掛 `$(git rev-parse --show-cdup)`；Antigravity 刻意不跟。[為什麼](AGENTS-reasons.md#copy-4)
-- `.agents/` 只放指標與接線，skill 指標的 `description` 寫滿觸發詞。[為什麼](AGENTS-reasons.md#copy-5)
-- Codex 啟動器也要同步（`sync_project.py --codex-only`）；接線改過要重新審核並驗收實際執行。[為什麼](AGENTS-reasons.md#copy-6)
-- 本 repo 自己的 `HANDOFF.md`、兩支 `repo-*.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在拓撲裡，`sync_project.py` 不碰；其中 `repo-git-check.sh`、`repo-pre-push.sh` 是 3.10、3.11 的手貼副本，改了範本要手動重貼，驗證器比對逐字相同。[為什麼](AGENTS-reasons.md#copy-7)
-
-## 本 repo 的交接快照
-
-B6 核對並覆寫整份 `HANDOFF.md`（≤80 行）：移除已完成待辦；未知分清現行故障與歷史無法歸因；版本與驗證照實際結果；沒做完寫明風險與續作步驟；收工清掉工作中標記。驗證器只守必要欄位，不判斷待辦是否真的完成。要額外模型呼叫的探針先取得授權、只用訂閱額度；新增守門要附負向測試。[為什麼](AGENTS-reasons.md#snapshot)
-
-## 這個 repo 自己的指標檔
-
-`CLAUDE.md` 只有一行 `@AGENTS.md`，不要改回「去讀 AGENTS.md」的句子；`GEMINI.md` 維持指標寫法。[為什麼](AGENTS-reasons.md#pointer)
-
-## 行末
-
-`.gitattributes` 強制 `eol=lf`；用 Python 改寫記得 `newline=''`。[為什麼](AGENTS-reasons.md#eol)
-
-## 改兩支 hook 的訊息時
-
-- 雙引號裡不寫反引號，欄位名用「」。[為什麼](AGENTS-reasons.md#hook-1)
-- `$變數` 緊接中文或全形標點時寫成 `${變數}`。[為什麼](AGENTS-reasons.md#hook-2)
-- 用腳本改時不把 patch 從 heredoc 餵進 `python -`。[為什麼](AGENTS-reasons.md#hook-3)
-- 用腳本改 `.md` 不手寫 `\u` 轉義；patch 加「命中數 ≠ 1 就 abort」。[為什麼](AGENTS-reasons.md#hook-4)

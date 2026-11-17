@@ -163,5 +163,4 @@
 
 ## 標準 prompt
 
-**兩段交接 prompt（收工交棒／開工接棒）的正本在 [README.md](../../README.md)「換一個 AI 接手工作」**——那兩段是**人**要複製貼上的東西，家應該在人看的 README，不該在 AI 讀的協定裡各存一份。**它們刻意不用自己的字母編號**：字母只有 skill 那一套（A 接棒／B 交棒／C 同步），舊版 README 的 A／B 跟它正好相反（2026-11-02／F15）。
-本檔負責定義規則，README 負責提供可直接使用的指令。
+**不需要背 prompt**：跟 AI 說「接棒」或「交棒」就好。`AGENTS.md` 的共用制度一節會被自動讀到，裡面定義了兩件事要做到什麼；工具沒有自動找到 handoff skill 時，指它去讀 [.claude/skills/handoff/SKILL.md](../../.claude/skills/handoff/SKILL.md) 的 A 模式（接棒）或 B 模式（交棒）。字母只有 skill 那一套（A 接棒／B 交棒／C 同步）；舊版 README 的交接 prompt 用相反的字母，2026-11-02（F15）取消字母，2026-11-17 起 README 不再放 prompt。

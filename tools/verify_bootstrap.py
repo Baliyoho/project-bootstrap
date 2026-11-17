@@ -1268,7 +1268,8 @@ def step_repo_handoff():
     text = handoff.read_text(encoding='utf-8') if handoff.is_file() else None
     version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
     problems = repo_handoff_problems(text, version)
-    for name in ('AGENTS.md', 'ARCHITECT.md', 'README.md', '.claude/hooks/repo-git-check.sh'):
+    for name in ('AGENTS.md', 'CONTRIBUTING.md', 'ARCHITECT.md', 'README.md',
+                 '.claude/hooks/repo-git-check.sh'):
         problems.extend(name + '：' + p for p in
                         repo_handoff_rule_problems((ROOT / name).read_text(encoding='utf-8')))
     # 固定的有效基線讓負向測試不依賴實際快照的待辦內容或工作中／已交棒狀態。
@@ -1320,6 +1321,7 @@ REASON_FILE = 'AGENTS-reasons.md'
 REASON_LINK = re.compile(r'\]\(' + re.escape(REASON_FILE) + r'#([A-Za-z0-9-]+)\)')
 REASON_ITEM_SECTIONS = ('鐵律', '副本規則', '改兩支 hook 的訊息時')
 REASON_MIN_BODY = 40
+CONTRIB_FILE = 'CONTRIBUTING.md'
 
 
 def blank_shared_copy(text):
@@ -1407,6 +1409,13 @@ def step_reason_links():
     path = ROOT / REASON_FILE
     reasons = read_lf(path) if path.is_file() else ''
     problems = reason_link_problems(agents, reasons)
+    # 2026-11-17（v3 Q40）：碰到才需要的規則搬到 CONTRIBUTING.md，同一套理由連結檢查跟過去。
+    contrib_path = ROOT / CONTRIB_FILE
+    contributing = read_lf(contrib_path) if contrib_path.is_file() else ''
+    if not contributing:
+        problems.append(CONTRIB_FILE + ' 不存在')
+    else:
+        problems.extend(CONTRIB_FILE + '：' + p for p in reason_link_problems(contributing, reasons))
     template = read_lf(ROOT / 'src/kit/files/AGENTS.md.tmpl')
     problems.extend(shared_copy_problems(agents, template))
     copy_cases = (
@@ -1433,9 +1442,19 @@ def step_reason_links():
                 count=1, flags=re.S)),
         ('錨點重複', agents, reasons + '\n' + anchor + '\n\n## 重複\n' + '字' * REASON_MIN_BODY),
         ('整節沒有理由連結', agents + '\n## 新的一節\n\n只有規則，沒有理由。\n', reasons),
-        ('新增規則沒有理由', agents.replace('\n## 副本規則\n', '\n7. **新規則。**\n\n## 副本規則\n', 1),
-         reasons),
+        ('新增規則沒有理由', agents.rstrip('\n') + '\n7. **新規則。**\n', reasons),
     )
+    contrib_cases = () if not contributing else (
+        ('CONTRIBUTING 副本規則拿掉理由連結',
+         contributing.replace('[為什麼](%s#copy-1)' % REASON_FILE, '', 1)),
+        ('CONTRIBUTING 新增 hook 訊息規則沒有理由', contributing.rstrip('\n') + '\n- 新規則。\n'),
+        ('CONTRIBUTING 整節沒有理由連結', contributing + '\n## 新的一節\n\n只有規則，沒有理由。\n'),
+    )
+    for name, mutated in contrib_cases:
+        if mutated == contributing:
+            problems.append('負向測試沒有改到內容：' + name)
+        elif not reason_link_problems(mutated, reasons):
+            problems.append('負向測試未擋住：' + name)
     if not first:
         problems.append('鐵律一節找不到任何理由連結，負向測試無從建立')
     for name, mutated_agents, mutated_reasons in cases:
@@ -1447,9 +1466,9 @@ def step_reason_links():
         record('FAIL', title, '；'.join(problems))
         return False
     record('OK', title,
-           'AGENTS.md 每節與鐵律／副本規則／hook 訊息每條都連到 %s 的非空段落；%d 個負向測試通過'
+           'AGENTS.md、CONTRIBUTING.md 每節與鐵律／副本規則／hook 訊息每條都連到 %s 的非空段落；%d 個負向測試通過'
            '；共用制度副本與部署包逐字相同（3 個負向測試）'
-           '（只查連結與段落存在，不判斷理由寫得對不對）' % (REASON_FILE, len(cases)))
+           '（只查連結與段落存在，不判斷理由寫得對不對）' % (REASON_FILE, len(cases) + len(contrib_cases)))
     return True
 
 
@@ -3377,24 +3396,20 @@ def claim_problems(docs):
                         problems.append('%s 有一句說「%s 沒有 skill」，但能力表那一格是 ✅：%s'
                                         % (name, tool, hit.group(0)[:40]))
 
-    # ② 交接 prompt 不得有自己的字母編號（舊版 A＝交棒、B＝接棒，跟 skill 正好相反），
-    #    而且每一段都要寫出它要跑的模式。
+    # ② 交接 prompt 不得有自己的字母編號（舊版 A＝交棒、B＝接棒，跟 skill 正好相反）。
+    #    2026-11-17（v3 Q40）起 README 範本不再放交接 prompt：程序的家是 AGENTS 共用制度與
+    #    handoff skill，README 是 seed、部署後不更新，放在那裡的程序一定會過期。
     if '**A 接棒**' not in docs['kit'] or '**B 交棒**' not in docs['kit']:
         problems.append('部署包的 skill 模式表沒有「**A 接棒**／**B 交棒**」，字母對應無從比對')
     sec = docs['dep_readme']
-    i = sec.find('## 換一個 AI 接手工作')
-    sec = sec[i:sec.find('\n## ', i + 3)] if i >= 0 else ''
-    if not sec:
-        problems.append('README 範本找不到「## 換一個 AI 接手工作」那一節')
-    else:
-        if re.search(r'^### *[AB] *[.．、]', sec, re.M):
-            problems.append('交接 prompt 又長出自己的 A／B 編號——字母只留 skill 那一套')
-        for word, mode in (('交棒', 'B 模式'), ('接棒', 'A 模式')):
-            heads = [l for l in sec.split('\n') if l.startswith('### ') and word in l]
-            if not heads:
-                problems.append('README 範本沒有「%s」那一段 prompt' % word)
-            elif not any(mode in h for h in heads):
-                problems.append('「%s」那段 prompt 的標題沒寫出它跑 skill 的 %s' % (word, mode))
+    if '## 換一個 AI 接手工作' in sec or re.search(r'^#+ .*(?:收工時|開工時)', sec, re.M):
+        problems.append('README 範本又放了交接 prompt——程序的家是 AGENTS 共用制度與 handoff skill')
+    if re.search(r'^#+ *[AB] *[.．、]', sec, re.M):
+        problems.append('README 範本又長出自己的 A／B 編號——字母只留 skill 那一套')
+    i = sec.find('## 協作方式')
+    collab = sec[i:sec.find('\n## ', i + 3)] if i >= 0 else ''
+    if '「接棒」' not in collab or '「交棒」' not in collab:
+        problems.append('README 範本的「## 協作方式」沒寫出跟 AI 說「接棒」「交棒」')
 
     # ③ verify_state 不得被「有憑證」這個不相干的前提擋掉。
     for name in sorted(docs):
@@ -3461,12 +3476,13 @@ def step_claims(dest):
     # 負向測試：五項各自要擋得住一次真的退化。
     cases = (
         ('能力表 ✅ 卻說沒有 skill', 'dep_readme',
-         lambda t: t.replace('## 換一個 AI 接手工作',
-                             '## 換一個 AI 接手工作\n\nCodex 沒有 skill 機制。')),
-        ('prompt 又長出 A／B 編號', 'dep_readme',
-         lambda t: t.replace('### 收工時：', '### A. 收工時：')),
-        ('prompt 標題不寫模式', 'dep_readme',
-         lambda t: t.replace('（skill 的 **B 模式**）', '')),
+         lambda t: t.replace('## 協作方式', '## 協作方式\n\nCodex 沒有 skill 機制。')),
+        ('README 又長出 A／B 編號', 'dep_readme',
+         lambda t: t.replace('## 協作方式', '### A. 交棒\n\n## 協作方式')),
+        ('README 又放回交接 prompt', 'dep_readme',
+         lambda t: t.replace('## 協作方式', '## 換一個 AI 接手工作\n\n## 協作方式')),
+        ('README 不講接棒交棒', 'dep_readme',
+         lambda t: t.replace('「接棒」', '「開工」')),
         ('verify_state 又變成有憑證才跑', 'dep_protocol',
          lambda t: t.replace('**一律跑** `tools/verify_state.py`',
                              '有憑證才跑 `tools/verify_state.py`')),
@@ -4653,8 +4669,10 @@ def step_architecture_summary(dest):
                 bad.append(name + ' 未區分 Claude import 與 Gemini 文字指標')
             if name == 'repo':
                 prompts = [line for line in rows if line.startswith('| 3.4 |')]
-                if not prompts or any('收工交棒／開工接棒' not in line for line in prompts):
-                    bad.append('README prompt 摘要與現行命名分岔')
+                # 2026-11-17（v3 Q40）：範本 3.4 改成標準 README，不再放交接 prompt。
+                if not prompts or any('標準 README' not in line or 'prompt' in line.replace('不放交接 prompt', '')
+                                      for line in prompts):
+                    bad.append('README 範本摘要與現行分工分岔')
         return bad
     docs = {'repo': read_lf(ROOT / 'ARCHITECT.md'), 'generated': read_lf(dest / 'ARCHITECT.md')}
     bad = problems(docs)
@@ -4664,18 +4682,18 @@ def step_architecture_summary(dest):
         if not problems(mutant):
             bad.append('負向測試未抓到指標摘要退化：' + name)
     mutant = dict(docs)
-    mutant['repo'] = docs['repo'].replace('收工交棒／開工接棒', 'A／B')
-    if not problems(mutant):
-        bad.append('負向測試未抓到 prompt 字母退化')
+    mutant['repo'] = docs['repo'].replace('| 3.4 | `README.md` | 標準 README', '| 3.4 | `README.md` | 人的入口、收工交棒／開工接棒 prompt')
+    if mutant['repo'] == docs['repo'] or not problems(mutant):
+        bad.append('負向測試未抓到 README 摘要退回舊分工')
     # 反向保險：表格裡的版本號（v3.4）不是範本 3.4，不得被當成 prompt 那一列。
     mutant = dict(docs)
     mutant['repo'] = docs['repo'].replace('| 3.4 | `README.md`', '| 3.4x | `README.md`')
     if '| 3.4x |' not in mutant['repo']:
         bad.append('反向保險失效：ARCHITECT 沒有「| 3.4 | `README.md`」那一列')
-    elif [p for p in problems(mutant) if 'prompt' in p] != ['README prompt 摘要與現行命名分岔']:
+    elif [p for p in problems(mutant) if 'README' in p] != ['README 範本摘要與現行分工分岔']:
         bad.append('反向保險失效：缺了範本 3.4 那一列時沒有被判出來')
     record('FAIL' if bad else 'OK', '結構摘要一致性', '；'.join(bad) if bad else
-           '本 repo 與生成 ARCHITECT 區分 import／文字指標、prompt 用收工／開工（認的是範本編號欄，不是全行出現 3.4）；三個負向測試＋一個反向保險')
+           '本 repo 與生成 ARCHITECT 區分 import／文字指標、範本 3.4 那一列寫標準 README 而不寫交接 prompt（認的是範本編號欄，不是全行出現 3.4）；三個負向測試＋一個反向保險')
 
 
 def v2_report_problem(report):

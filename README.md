@@ -2,8 +2,23 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-11-16（skill 七個檔；優先序改成 v3——必守條件在 `AGENTS.md`，skill 降為碰到才讀的參考；補 Windows 的現況）；前次 2026-11-14（Antigravity 移出檔案樹與跨工具表）。這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型。
-> 這個 repo 自己的結構（有哪些檔、部署包各節產出什麼、副本存在於哪些地方）見 [ARCHITECT.md](ARCHITECT.md)。
+> 最後更新：2026-11-17（改成標準 README：開發流程與副本同步用法搬到 CONTRIBUTING.md；部署後的 README 也改成標準 README，連線資料從 AGENTS 搬進來，需求決策書 v3 Q40）；前次 2026-11-16（skill 七個檔；優先序改成 v3）。
+> 這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型；結構見 [ARCHITECT.md](ARCHITECT.md)。
+
+## 它在解決什麼
+
+每條規則背後都有一次實際事故——移植時**不要把理由砍掉**，理由沒了，下一棒就會覺得規則多餘而繞過它。
+
+| 失效模式 | 對策 |
+|---|---|
+| AI 對著過期的本機快照工作數小時，最後 commit 造成分岔 | SessionStart hook 自動 fetch 並注入警告 |
+| 交接文件愈寫愈長，接手者要讀 20 分鐘才知道現在做到哪 | 三層分工：持久知識／當下狀態（≤80 行）／Git 歷史 |
+| 同一個事實散在三個檔案，各自演進到互相矛盾 | 每個事實只有一個家，其他地方只放指標 |
+| 文件說 A、實際是 B，AI 照文件做就炸 | 以實況為準＋`verify_state.py`＋`check_docs.py` |
+| 純文件修正被「等功能驗收」擋住，接手者拿到過期文檔集 | 兩類分支：功能分支需驗收；文件／基建分支驗證過即可併 |
+| 連線失敗被誤判成「本機沒有憑證」，寫下錯誤結論 | SKIPPED 判準：先排除設定沒帶到；禁止自行挖憑證 |
+| 祕密／運行資料被推上 GitHub | 鐵律＋`.gitignore`＋提交前固定檢查 staged 清單 |
+| 交接品質看 agent 心情：漏驗證、忘了寫 HANDOFF 就 push | `handoff` skill＋pre-push hook |
 
 ## 怎麼用
 
@@ -25,8 +40,8 @@
 
 ```text
 專案/
-├─ README.md                        人的入口（系統是什麼、怎麼連）
-├─ AGENTS.md                        AI 的入口（標記之間是部署包管理的共用制度；其餘是鐵律、連線資料、知識庫地圖）＝唯一權威
+├─ README.md                        專案介紹：是什麼、為什麼做、怎麼連、怎麼跑
+├─ AGENTS.md                        AI 開工時自動讀（標記之間是部署包管理的共用制度；其餘是專案鐵律）＝唯一權威
 ├─ CLAUDE.md / GEMINI.md            指標，指向 AGENTS.md
 ├─ HANDOFF.md                       當下工作狀態（≤80 行、覆寫不累積）
 ├─ ARCHITECT.md                     專案結構的唯一權威（只有結構變動才改）
@@ -97,88 +112,6 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 三個平面都接得上 hooks，但**都帶條件**：Codex 要專案被信任、而且每個專案各審一次。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的，不是 WSL 那支）；hook 依序試 `python3`、`python`，Windows 的 WindowsApps `python3` 往往是個 PATH 找得到、執行卻失敗的別名（2026-11-16 實測 rc=49），要靠回退到 `python` 才拿得到 `[facts]`。
 
-## 它在解決什麼
-
-每條規則背後都有一次實際事故——移植時**不要把理由砍掉**，理由沒了，下一棒就會覺得規則多餘而繞過它。
-
-| 失效模式 | 對策 |
-|---|---|
-| AI 對著過期的本機快照工作數小時，最後 commit 造成分岔 | SessionStart hook 自動 fetch 並注入警告 |
-| 交接文件愈寫愈長，接手者要讀 20 分鐘才知道現在做到哪 | 三層分工：持久知識／當下狀態（≤80 行）／Git 歷史 |
-| 同一個事實散在三個檔案，各自演進到互相矛盾 | 每個事實只有一個家，其他地方只放指標 |
-| 文件說 A、實際是 B，AI 照文件做就炸 | 以實況為準＋`verify_state.py`＋`check_docs.py` |
-| 純文件修正被「等功能驗收」擋住，接手者拿到過期文檔集 | 兩類分支：功能分支需驗收；文件／基建分支驗證過即可併 |
-| 連線失敗被誤判成「本機沒有憑證」，寫下錯誤結論 | SKIPPED 判準：先排除設定沒帶到；禁止自行挖憑證 |
-| 祕密／運行資料被推上 GitHub | 鐵律＋`.gitignore`＋提交前固定檢查 staged 清單 |
-| 交接品質看 agent 心情：漏驗證、忘了寫 HANDOFF 就 push | `handoff` skill＋pre-push hook |
-
-## 要改這份骨架時：開 session 貼這段
-
-在本 repo 開新的 AI session 時整段複製貼上。**必守條件在 `AGENTS.md` 的共用制度一節**，接棒照它做；逐步程序與異常判讀碰到了再看全域 handoff skill，再按任務閱讀需要的範本；本 repo 跟部署出去的專案有哪些不同也在 `AGENTS.md`。
-部署包 `PROJECT-BOOTSTRAP.md` 由 `src/kit/` 生成（2026-11-11 起）：改來源後先跑 `python3 -X utf8 tools/build_kit.py` 重生，再用 `python -X utf8 tools/verify_bootstrap.py` 驗證（重生骨架＋跑完所有檢查，**exit 0 才算完成**）。
-
-⚠️ **在原生 Windows 上這支目前固定回 exit 2**，唯一的失敗項是不部署的「v2 P0 原型回歸」：2026-11-16 量到 39 個測試失敗，3 個是建 symlink 要「開發人員模式」，36 個是 Windows 沒有 POSIX 執行位元導致的 mode 斷言與其下游。部署包本身的檢查全部通過。所以在 Windows 上能守的是「**有沒有新的失敗**」，不是「有沒有失敗」——同日修掉兩個真的平台假設（寫死 `/bin/sh`、刪不掉 Git 的唯讀檔）之後，失敗數從 66 降到 39。
-
-```text
-這個 repo 是「AI 協作專案管理骨架」的權威版，唯一產出物是 PROJECT-BOOTSTRAP.md：一份自帶所有檔案範本的
-部署包，複製到新專案資料夾就能生出整套制度（三個入口＋結構文件、交接協定、handoff skill、兩個 git hook、
-兩支驗證腳本）。
-
-先讀 AGENTS.md（必守條件在它的共用制度一節），讀 HANDOFF.md 並驗證現況；逐步程序或 Git 異常
-判讀碰到了再開全域 handoff skill，它是參考不是前提。
-任務碰到結構才讀 ARCHITECT.md；需要制度背景再讀 PROJECT-BOOTSTRAP.md 的第 0–2 節。
-第 3 節是各檔範本；來源在 src/kit/files/<部署路徑>.tmpl，改到哪一份才讀那一份——不要整份讀完。
-
-工作時遵守：
-1. 制度的權威來源是 src/kit/（kit.md 是散文、files/ 是 .tmpl 範本），PROJECT-BOOTSTRAP.md 由
-   tools/build_kit.py 生成，不要手改；不要去改各專案裡的副本；改完重生部署包並把副本一起覆蓋
-   （拓撲見 ARCHITECT.md「副本拓撲」，規則見 AGENTS.md「副本規則」）。
-2. 只放通用制度與 {{佔位符}}，不要塞專案專屬內容（網址、docId、憑證檔名、業務規則）。
-3. 每條規則都要保留「為什麼」與絕對日期。砍掉理由，下一棒就會覺得規則多餘而繞過它。
-4. 動到 skill／hook 內容時，同步更新檔頭的 source 版本標記，否則沒人分得出哪份副本落後。
-   格式 v<日期>，同一天改第二次起加序號（v2026-10-24.2）——只有日期的話，當天改第二次就看不出新舊。
-5. 全檔 LF。用 Python 改寫要 newline='' 或事後正規化，否則 Windows 會把整份寫成 CRLF。
-6. 動到結構（增刪檔案、部署包增刪一節範本、驗證項增減）就更新 ARCHITECT.md，跟該變動同一個 commit。
-7. 本 repo 有 HANDOFF.md 當下交接快照與自己的 SessionStart hook；沒有專案層 handoff skill、
-   pre-push-handoff.sh 或 check_docs.py。不要「順手」把整套骨架套到自己身上。
-   A5 寫工作中標記，B6 核對並覆寫整份交接快照，移除已完成待辦，≤80 行、不累積歷史。
-   tools/ 的 build_kit.py、verify_bootstrap.py 與 sync_project.py 分別生成、測試與發佈部署包。
-
-改完必須驗證，沒驗證不算完成：
-
-    python -X utf8 tools/verify_bootstrap.py
-
-要 exit 0。它會重生骨架比對檔案清單、模擬部署填佔位符、跑 check_docs.py、負向測試佔位符
-檢查擋不擋得住、測 AI push 提醒情境與負向測試、查全檔 LF。印出 skip 的項目代表沒被驗證，要照實回報。
-在原生 Windows 上它目前固定回 exit 2（唯一失敗項是不部署的 v2 P0 原型回歸，見 README）：
-那個平台要比對的是「有沒有新的失敗」，不是「有沒有失敗」，不要把它當成你弄壞的。
-
-需要 ZIP 時跑 `python -X utf8 tools/verify_bootstrap.py --zip`（可在 `--zip` 後指定路徑）。
-只有全過才產出正式包；FAIL 回 2、SKIP 回 1，兩者預設都不產出或覆寫 ZIP。
-若確實需要未完整驗證的調試包，明確加 `--allow-unverified-zip`：僅容許 SKIP，仍回 1，
-包內附 `UNVERIFIED.json`（跳過項目與原因），「讀我」也會標示未驗證；FAIL 仍禁止。
-這避免「缺 bash 的檢查被跳過，卻產出看似驗證全過的 ZIP」（2026-11-02／F07）。
-
-先用 3–5 行回報現況與你打算做什麼，再動手。破壞性操作、commit 或 push 之前先問我。
-```
-
-Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_project.py <專案路徑> --codex-only` 預演；實際寫入依下節先接棒並加 `--owner`，不改專案的 SKILL 或其他設定。接線變更後要重新審核並驗收實際執行，條件與理由見部署包 3.17。
-
-## handoff skill 的副本同步規則
-
-`sync_project.py --all` 預設只掃 Desktop 下一層；可用 `--root <目錄>` 改掃描根目錄、`--exclude <目錄名>` 排除已完結專案。工具列出每個候選的納入／排除原因，透過 Git 的 git-dir／common-dir 排除 linked worktree，全域 skill 副本仍須另行同步。
-
-固定範圍建議使用私人 inventory：`--inventory <清單.json>`，內容如 `[{"path":"../project-a","status":"active"},{"path":"../project-b","status":"archived"}]`；相對路徑以清單所在目錄為準，清單不要提交到公開骨架。預演與寫入都檢查 dirty、工作中標記、整份覆蓋檔與 `check_docs.py` 共用程式區的客製漂移。已檢視的 dirty 僅能在單一專案加 `--allow-dirty`；未知共用內容須人工比對後逐檔加 `--accept-drift <路徑>`，占用不能略過。不 stash、不 commit；這些檢查也不是並行鎖（2026-11-02／F13）。
-
-**跨專案寫入先逐一 A1–A5 接棒**（2026-11-03／R03）：在目標專案推送本 session 的開工標記，再以 `--owner '<工作中欄位完整值>'` 聲明目前 writer。同步器會 fetch origin、確認 HEAD 與 `origin/<目前分支>` 完全一致，並核對本機與遠端的標記都精確等於 owner；套用前再查一次。離線、無 upstream、領先／落後／分岔、他人標記或本機標記漂移均拒絕，`--allow-dirty` 不豁免。owner 是呼叫者明確核對的協調證據，不是身分認證或原子鎖，仍須確認同工作樹只有一個 writer。
-
-`--all`／inventory 僅供批次預演；`--write` 必須指定單一專案與 owner，空閒標記不能寫入。同步後留在該專案完成 B7 最終檔案檢查、B8 發布與清標記；若要中途安全點則走 C，保留占用。這修正了舊工具「正常 A5 writer 被拒絕、陳舊空閒 checkout 卻能寫」的矛盾。
-
-handoff skill 目錄（七個檔）會同時存在於：**本 repo 的 `src/kit/files/.claude/skills/handoff/`**（權威來源，生成進部署包）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
-
-- 要改就**改本 repo 的 `src/kit/files/.claude/skills/handoff/*.tmpl`**，跑 `tools/build_kit.py` 重生部署包，再覆蓋下去；不要在單一專案裡就地改，也不要手改 `PROJECT-BOOTSTRAP.md`。
-- 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，用它辨識落後的副本（同一天改第二次起加序號，如 `v2026-10-24.2`）。
-
 ## 正式包的發布公鑰（v2 試行，2026-11-11）
 
 v2 分支在試行「由 CI 簽章發布正式包、專案只留指標」（實現規劃 P2）。發布用的公鑰在 [src/kit/release-keys.txt](src/kit/release-keys.txt)，指紋：
@@ -189,8 +122,20 @@ SHA256:FjVJTEPBuOaloJZV0GvtZiG3bXYJo68v+cTaVqs0JU0
 
 第一次安裝時 `tools/install_package.py` 用這把公鑰驗簽；之後每一版只接受上一版列出的金鑰。私鑰只存在本 repo `release` environment 的 secret，每次發布都要 repo 擁有者核准。現行的部署方式（複製 `PROJECT-BOOTSTRAP.md`）不受影響。
 
+## 參與開發
+
+這個 repo 由 AI session 輪流做，開工時跟 AI 說「接棒」，收工時說「交棒」。
+
+- 開工必守的規則在 [AGENTS.md](AGENTS.md)，AI 工具開工時會自動讀到。
+- 改部署包的流程、同步到已部署專案的用法、碰到才需要的規則在 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- 目前做到哪在 [HANDOFF.md](HANDOFF.md)；需求的權威是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)。
+
 ## 來源
 
 從兩個實際運行的專案萃取：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，另一個是文本識別系統。兩個都是多模型（Claude／Gemini／Codex）、多機器（Windows↔macOS）協作。
 
 骨架裡的每條規則都對應一次實際踩過的坑——所以規則旁邊一律附「為什麼」，砍掉理由，下一棒就會繞過規則。
+
+## 授權
+
+[MIT](LICENSE)
