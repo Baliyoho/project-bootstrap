@@ -48,7 +48,7 @@ STAMPS = ((re.compile(r'全綠 \d{4}-\d{2}-\d{2} \d{2}:\d{2}'), '全綠 <time>')
           (re.compile(r'時間 \d{4}-\d{2}-\d{2} \d{2}:\d{2} [+-]\d{4}'), '時間 <time>'),
           (re.compile(r'session 名用 \d{2}\.\d{2}\.\d{2}'), 'session 名用 <time>'))
 # A surface's own identity is what the hook may tell apart; the adapters must not.
-TOOL_VARS = ('CLAUDECODE', 'CODEX_VERSION', 'CODEX_SESSION_ID', 'GEMINI_CLI')
+TOOL_VARS = ('CLAUDECODE', 'CODEX_VERSION', 'CODEX_SESSION_ID')
 
 
 class AdapterError(Exception):
@@ -232,7 +232,8 @@ def compare_push(project, surfaces, env, payload, matrix=None, versions=None, su
 
 
 # The procedure itself is the third shared thing. Every surface must reach the same
-# instruction text (AGENTS.md, through CLAUDE.md's import or GEMINI.md's pointer)
+# instruction text (AGENTS.md, directly or through CLAUDE.md's import; GEMINI.md is not
+# supported since 2026-11-17)
 # and, through its own skill loader, the same handoff skill: the same description the
 # loader matches against, and the same entry and mode files. A pointer skill
 # (.agents/skills/) is followed to the file it names; its description is the

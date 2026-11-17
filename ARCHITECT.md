@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-17（根目錄的需求與計畫類文件只留[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)與[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)，其餘封存到 `docs/history/`；本檔開頭原本約 140 行的逐次變更紀錄搬到 [docs/history/architect-log.md](docs/history/architect-log.md)，本檔只寫現況）
+> 最後更新：2026-11-17（本專案明確不支援 Gemini：部署包 `2026-11-17.3` 不再產出 `GEMINI.md`，本 repo 的那一份也刪了）；前次同日（根目錄的需求與計畫類文件只留[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)與[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)，其餘封存到 `docs/history/`；本檔開頭原本約 140 行的逐次變更紀錄搬到 [docs/history/architect-log.md](docs/history/architect-log.md)，本檔只寫現況）
 > 本檔回答「現在長怎樣」。進度看 [HANDOFF.md](HANDOFF.md)，部署包的逐版變更看 [CHANGELOG.md](CHANGELOG.md)，更早的結構變更經過看上面那份紀錄或 Git 歷史。
 
 ## 一句話
@@ -27,7 +27,7 @@
 | 路徑 | 是什麼 | 什麼時候動 |
 |---|---|---|
 | [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **部署包**（發給各專案的產物）：訪談表＋各檔範本＋上 GitHub＋自檢清單＋維持操作卡。2026-11-11 起由 `src/kit/` 生成，仍提交（專案複製它、`sync_project.py` 讀它與它的 Git 歷史） | 不手改；改 `src/kit/` 後跑 `tools/build_kit.py`（鐵律第 1 條） |
-| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 27 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`release-keys.txt` 是發布公鑰（P2 第 3b 片；2026-11-11 E1 填入 CI 公鑰，指紋也寫在 README）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；第 5 片起 `sync_project.py` 的檔案清單直接由它算出）；`capabilities.json` 是能力矩陣（2026-11-11 P2 第 4 片，決策書 Q24），「跨工具與跨平台」那兩張表由它生成，`kit.md` 那裡只有一行 `<!-- kit-table: 表名 -->` | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬；改跨工具表要改 `capabilities.json`，不改 `kit.md` |
+| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 23 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`release-keys.txt` 是發布公鑰（P2 第 3b 片；2026-11-11 E1 填入 CI 公鑰，指紋也寫在 README）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；第 5 片起 `sync_project.py` 的檔案清單直接由它算出）；`capabilities.json` 是能力矩陣（2026-11-11 P2 第 4 片，決策書 Q24），「跨工具與跨平台」那兩張表由它生成，`kit.md` 那裡只有一行 `<!-- kit-table: 表名 -->` | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬；改跨工具表要改 `capabilities.json`，不改 `kit.md` |
 | [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `PROJECT-BOOTSTRAP.md`；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
 | [tools/release_package.py](tools/release_package.py) | P2 第 3b 片：CI 用的發布入口。要求 checkout 乾淨、建 debug 包、跑 `verify_bootstrap.py`、全部本輪實查通過才簽章，輸出包壓縮檔、簽過的紀錄與要建的 channel tag；自己不建 tag、不上傳。只用標準函式庫，不部署 | 發布流程改變時 |
 | [tools/install_package.py](tools/install_package.py) | P2 第 3b 片：使用者用的安裝入口。第一次用 `src/kit/release-keys.txt` 的根公鑰、之後沿上一版的 `next_keys` 驗簽，裝進快取並寫專案指標；`--seed` 鋪空專案、`--check` 跑一次寫入檢查。不下載。只用標準函式庫，不部署 | 安裝流程改變時 |
@@ -37,7 +37,7 @@
 | [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本、跟部署出去的專案不同的地方、這個 repo 是什麼、鐵律 | 多一條開工必守的規則 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 碰到才讀的流程與規則：改部署包的操作細節、同步到已部署專案、副本規則、本 repo 交接快照、指標檔、行末、hook 訊息寫法；2026-11-17 從 AGENTS.md 與 README.md 搬來（v3 Q40） | 流程或碰到才需要的規則改變 |
 | [AGENTS-reasons.md](AGENTS-reasons.md) | **AGENTS 與 CONTRIBUTING 每條規則的完整原文、理由與事故**；2026-11-10 從 AGENTS.md 逐字搬來，入口用「為什麼」連結指過來。不是每輪必讀，不部署、不同步 | 規則改了就在對應段落補帶日期的理由，不刪舊事故 |
-| [CLAUDE.md](CLAUDE.md)、[GEMINI.md](GEMINI.md) | Claude 用 `@AGENTS.md` import；Gemini 用文字指標 | 幾乎不動 |
+| [CLAUDE.md](CLAUDE.md) | Claude Code 用 `@AGENTS.md` import | 幾乎不動 |
 | [HANDOFF.md](HANDOFF.md) | **當下交接快照與跨機器工作標記**。範本 3.3 的*實例*，不是副本，不在副本拓撲裡、不要用 `sync_project.py` 同步。≤80 行、覆寫不累積，維護義務與事故見 [AGENTS.md](AGENTS.md)「本 repo 的交接快照」 | A5 寫標記；B6 核對整份現況、待辦、限制與驗證，清掉已完成待辦 |
 | [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md) | **現行需求權威（決策版本 3，2026-11-13）**：適用範圍、依據、D1–D15、51 條需求的處置與強度、目標部署形狀、驗收、Q32 起的決策登記處。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
 | [project-bootstrap-implementation-plan-v3.md](project-bootstrap-implementation-plan-v3.md) | **現行實施權威**（2026-11-17）：從現況走到 v3 需求的路線、三期的證據與還差什麼、暫緩與另案、非目標。只引用需求 ID，不寫進度（進度在 HANDOFF）。不部署、不同步；`tests/test_trail_repo.py` 讀它的「路線選擇」「分期」「非目標」三節 | 路線、分期或暫緩項目改變時 |
@@ -84,7 +84,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 節 | 產出 | 角色 |
 |---|---|---|
 | 3.1 | `AGENTS.md` | AI 開工時自動讀：開始／結束標記之間是共用制度（≤40 行，2026-11-13 起，v3 D11），標記外是專案鐵律（連線資料 2026-11-17 搬到 README，v3 Q40） |
-| 3.2 | `CLAUDE.md`＋`GEMINI.md` | **一節產兩檔**：Claude 用 import，Gemini 用文字指標 |
+| 3.2 | `CLAUDE.md` | 一行 `@AGENTS.md` import；2026-11-17 起這一節只產這一個檔（本專案不支援 Gemini） |
 | 3.3 | `HANDOFF.md` | 當下狀態（≤80 行、覆寫不累積） |
 | 3.4 | `README.md` | 標準 README：是什麼、為什麼做、快速開始（含連線資料）、開發與驗證、結構指標、協作方式、授權；不放交接 prompt（v3 Q40） |
 | 3.5 | `ARCHITECT.md` | 結構的唯一權威（2026-09-07 加入） |
@@ -113,7 +113,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 2. **一節裡的 fence 依序對應標題上的檔名**；fence 比檔名少就全部沿用第一個（多數節是一檔一區塊）。fence 前的散文是給人看的說明，不會進檔案。
 3. **標題行沒有路徑就不產檔**（3.21 是慣例說明）。
 
-第 2 條在 2026-10-30 從「只取第一個 fence，`GEMINI.md` 的標題再由腳本替換」改成現在這樣：3.2 的 `CLAUDE.md` 從此只有一行 `@AGENTS.md` import、`GEMINI.md` 維持指標寫法，兩份內容不同了。把其中一份合成在腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
+第 2 條在 2026-10-30 從「只取第一個 fence，第二個檔的標題再由腳本替換」改成現在這樣：當時 3.2 一節產兩個內容不同的檔（2026-11-17 起只剩 `CLAUDE.md`）。把其中一份合成在腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
 
 所以：**新增一份範本＝在 `kit.md` 新增一節（區塊裡放 `<!-- kit-file: 路徑 -->`）＋新增 `src/kit/files/<路徑>.tmpl`＋把檔名加進 `EXPECTED`，再重生部署包**。只做前者，驗證會 FAIL 說「多出」；只做後者會 FAIL 說「缺少」。
 
@@ -152,7 +152,7 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
 | 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（2026-11-02／F02、F03） |
 | 同步升級 mode | 替換前複製既存 mode；複製失敗保留原檔；新依賴仍可建立；移除複製的負向變異必須失敗。POSIX 另驗 0755／0640、開場 hook 直接執行、Git 無 mode diff | 新 inode 預設權限會讓更新後的 POSIX hook 無法執行；Windows 通過不代表 POSIX 實測 |
-| 結構摘要一致性 | 本 repo 與生成 ARCHITECT 區分 Claude import／Gemini 文字指標，範本 3.4 那一列寫標準 README、不再寫交接 prompt；三個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
+| 結構摘要一致性 | 本 repo 與生成 ARCHITECT 寫明 `CLAUDE.md` 用 import、表格不再列 Gemini 的指標檔，範本 3.4 那一列寫標準 README、不再寫交接 prompt；五個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
 | 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
 | 跨工具表保鮮期 | 「跨工具與跨平台」那節的「查證日期」不得超過 90 天（`BOOTSTRAP_FRESHNESS=off` 可跳過） | 對外部工具能力的斷言在無聲中過期。這一項只保證有人看過日期，**不保證有人真的重查**——買到的是「必須有意識地決定」。會做成 fail 而不是警告，是因為上一次的對策就是一句警告，而警告沒擋住第二次（Antigravity 的 hooks、Codex 桌面 App 的 hooks，兩次同一種錯） |
 | README 跨工具表一致性 | README 那張跨工具表與部署包那一張：同名列的判定符號一致、README 沒有孤兒版本號、有指回部署包的指標（附四種分岔的負向測試） | README 是**人的入口**，而保鮮期只守部署包那一份——事實在部署包被重查改對，README 留在舊事實上，沒有任何徵兆。2026-11-01 加這一項的當下就抓到一處已經發生的分岔（「自動載入程序檔」×「Codex CLI」）。不給 README 自己一個「查證日期」是因為那是同一個事實的第二個時鐘 |

@@ -3707,11 +3707,6 @@
     },
     {
      "file": "src/project_bootstrap/selftest.py",
-     "old": "        if text is None or 'AGENTS.md' not in text:\n            return _fail('GEMINI.md",
-     "new": "        if False:\n            return _fail('GEMINI.md"
-    },
-    {
-     "file": "src/project_bootstrap/selftest.py",
      "old": "        if path.is_file() and (_read(path) or '').strip():",
      "new": "        if path.is_file():"
     },

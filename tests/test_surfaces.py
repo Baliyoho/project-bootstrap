@@ -147,7 +147,7 @@ class CompareTests(unittest.TestCase):
 
     def test_neutral_env_drops_tool_identity_only(self):
         env = surfaces.neutral_env({'CLAUDECODE': '1', 'CODEX_SESSION_ID': 'x', 'CODEX_VERSION': '1',
-                                    'GEMINI_CLI': '1', 'PATH': '/bin'})
+                                    'PATH': '/bin'})
         self.assertEqual(env, {'PATH': '/bin'})
 
 
@@ -247,7 +247,6 @@ class ProcedureTests(unittest.TestCase):
         self.project, self.home = self.tmp / 'p', self.tmp / 'home'
         self.put('AGENTS.md', '# AGENTS\n')
         self.put('CLAUDE.md', '@AGENTS.md\n')
-        self.put('GEMINI.md', '請讀 [AGENTS.md](AGENTS.md)\n')
         self.put('.claude/skills/handoff/SKILL.md', skill(AUTH))
         self.put('.claude/skills/handoff/mode-a.md', 'A\n')
         self.put('.agents/skills/handoff/SKILL.md', skill(LEAD + AUTH, POINTER_BODY))
@@ -320,9 +319,6 @@ class ProcedureTests(unittest.TestCase):
         with self.assertRaisesRegex(AdapterError, '@AGENTS.md'):
             self.compare(['claude-code'])
         self.put('CLAUDE.md', '@AGENTS.md\n')
-        self.put('GEMINI.md', '# 自己的規則\n')
-        with self.assertRaisesRegex(AdapterError, 'GEMINI.md'):
-            self.compare(['antigravity-cli'])
         self.put('AGENTS.md', '# changed\n')
         self.assertEqual(self.compare(['claude-code', 'codex-cli'])['runs']['codex-cli']['instructions'], '# changed\n')
 

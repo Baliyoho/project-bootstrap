@@ -10,7 +10,7 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md、ARCHITECT.md 與 `handoff` skill）。
-> 版本：**2026-11-17.2**（交接協定 `docs/ai-notes/handover-protocol.md` 移出部署包（決策書 v3 Q41），3.6 保留編號、改成移除說明。只有它才有的內容搬進 skill：分支模型進 `mode-b.md` 的 B1，「漏交棒的補救」的理由進 `reasons.md`，「verify_state 一律跑」進 `mode-a-stop.md` 的 A4，`mode-a-stop.md` A6 的指標改指 `reasons.md`；入口的核心優先序改成專案 override 寫在 `AGENTS.md` 鐵律。已部署專案裡的舊協定不改寫也不刪，同步時列 MIGRATE。七個 skill 檔與共用制度標記同版。）
+> 版本：**2026-11-17.3**（本專案明確不支援 Gemini：不再產出 `GEMINI.md`，3.2 只剩 `CLAUDE.md`；部署樹、HANDOFF 範本的部署清單、ARCHITECT 範本的指標列、跨工具環境變數表與跨模型的說法都拿掉 Gemini。handoff skill 兩處跟著改：`mode-a-stop.md` 的工具名慣用寫法只列 `Claude Code`／`Codex CLI`，`reasons.md` 的「任何模型」與「沒有改名能力的工具」不再提 Gemini。已部署專案裡的 `GEMINI.md` 是專案自己的檔，同步時不改寫也不刪，只列 MIGRATE，刪不刪由使用者決定。）
 > 更早的版本與每一版的理由在 project-bootstrap repo 的 `CHANGELOG.md`（2026-11-17 起從本檔開頭搬出，逐字不改；部署後用不到）。
 > 萃取自兩個實際運行的專案：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，一個是文本識別系統。兩個都是多模型、多機器協作。
 
@@ -106,7 +106,6 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 |---|---|---|
 | Claude Code 2.1.309 | `CLAUDECODE=1`、`AI_AGENT=claude-code_2-1-309_agent` | session 內直接讀 env |
 | Codex CLI 0.164.0 | `CODEX_VERSION`、`CODEX_SESSION_ID`、`CODEX_THREAD_ID`、`CODEX_TOOL_CALL_ID`（另有 `CODEX_CI=1`、`CODEX_SANDBOX_NETWORK_DISABLED=1`）；**沒有 `AI_AGENT`** | 實跑 `codex exec`，先把 `CLAUDE*`／`AI_AGENT` 全部 unset 並確認殘留 0 |
-| Gemini CLI | `GEMINI_CLI=1` | **僅靜態**：bundle 內自述「`shell_command` 執行指令時會設」，沒實跑 |
 | Antigravity IDE 1.107.0 | 未測 | 它**有** CLI：`antigravity-ide`（在 PATH，執行檔不叫 `antigravity`），`chat --mode agent` 可從命令列起一個 agent，但沒有 headless 列印模式，要在 IDE 裡跑指令才讀得到。**別跟 Antigravity CLI 搞混**——那是另一個 surface |
 | Antigravity CLI 1.4.7（`agy`） | ✅ `agy -p "<prompt>"` | 真正的 headless：`--print`／`-p` 單輪、`--output-format json`／`stream-json`、`--print-timeout`。**hook 實測就是靠它做的**——IDE 那一面測不準的根因就是沒有這個模式 |
 
@@ -124,7 +123,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 **落地在哪（2026-10-31，跳版 `2026-10-31`）**：
 
-- 標記格式 `` `機器` ／ `工具` ／ `session 名`（可選） ``，由 skill **A5** 寫；工具名用慣用寫法（`Claude Code`／`Codex CLI`／`Gemini CLI`），因為 hook 比的是這個字串。
+- 標記格式 `` `機器` ／ `工具` ／ `session 名`（可選） ``，由 skill **A5** 寫；工具名用慣用寫法（`Claude Code`／`Codex CLI`），因為 hook 比的是這個字串。
 - 判讀表在 **A2.5**：同機器同工具→往下走（但要核對 session 名／開工時間）、同機器別的工具→停、同機器沒有工具欄→**當成別的工具處理**。分不出來的時候不往放行的方向猜。
 - `git-freshness.sh`（3.10）的同機器分支依工具欄拆成 🟡／🔴。變數偵測只在「偵測到的工具跟標記不符」時加嚴，而且**兩家以上的簽章同時在場就不猜**——那正是被繼承的樣子。偵測一致或認不出來都只印 🟡，並把「你自己是不是 X」這一句明文丟給模型答：模型知道答案，hook 不知道。
 - `check_docs.py` 第 6 項擋「標記在工作中卻沒填工具欄」，判別子是 session 名裡的全形豎線（`｜`）——`機器` ／ `工具` 的第二欄不會有它，`機器` ／ `session 名` 的第二欄一定有。
@@ -145,7 +144,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ## 0. 這套骨架在解決什麼問題
 
-跨 session、跨模型（Claude／Gemini／Codex）、跨機器（PC↔Mac）協作時，反覆出現的失效模式與對策：
+跨 session、跨模型（Claude／Codex）、跨機器（PC↔Mac）協作時，反覆出現的失效模式與對策：
 
 | 失效模式（都真的發生過） | 對策（本骨架的組成） |
 |---|---|
@@ -191,7 +190,6 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ├─ README.md                        ← 專案介紹：是什麼、為什麼做、怎麼連、怎麼跑
 ├─ AGENTS.md                        ← AI 開工時自動讀：共用制度一節（≤40 行）＋專案鐵律
 ├─ CLAUDE.md                        ← 指標，指向 AGENTS.md
-├─ GEMINI.md                        ← 指標，指向 AGENTS.md
 ├─ HANDOFF.md                       ← 當下工作狀態（≤80 行，不累積歷史）
 ├─ ARCHITECT.md                     ← 專案結構的唯一權威（只有結構變動才改）
 ├─ .gitignore
@@ -231,7 +229,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 <!-- kit-file: AGENTS.md -->
 ````
 
-### 3.2 `CLAUDE.md` 與 `GEMINI.md`（2026-10-30 起兩檔內容不同，下面兩個區塊依序對應）
+### 3.2 `CLAUDE.md`
 
 > **`CLAUDE.md` 只放一行 import，不要寫「去讀 AGENTS.md」那種句子。** Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但**有 `CLAUDE.md` 就不讀**；而用文字叫它去讀，官方的說法是 Claude 只有在它決定開那個檔的時候才看得到。`@AGENTS.md` 是 import，內容保證進 context，而且在不支援原生讀取的 session（舊版 Bedrock、關閉 telemetry、使用者關掉內建 plugin）也成立——所以不是「刪掉 `CLAUDE.md` 就好」，留著 import 版比刪掉更穩。理由全文見開頭「跨工具與跨平台」。
 
@@ -239,11 +237,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 <!-- kit-file: CLAUDE.md -->
 ````
 
-> `GEMINI.md` **不改成 import**，維持指標寫法：它只是給還不會讀 `AGENTS.md` 的工具（例如舊版 Gemini CLI）的保險，而它支不支援 `@` import 沒有文件可查——猜錯的話會是靜默失效。若也用其他工具，比照再加一份指標檔即可，**內容永遠只是指標**。
-
-````markdown
-<!-- kit-file: GEMINI.md -->
-````
+> **2026-11-17 起不再產出 `GEMINI.md`**：本專案明確不支援 Gemini（需求決策書 v3 第 1 節只認 Claude Code 與 Codex）。已部署專案裡那一份是專案自己的檔，同步不改寫也不刪，刪不刪由使用者決定。
 
 ### 3.3 `HANDOFF.md`（初始狀態，之後每次交棒覆寫）
 

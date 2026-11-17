@@ -12,7 +12,7 @@
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無。
 - **工作中**：`Mac mini` ／ `Claude Code` ／ `㊣　11.17.18｜資料夾整理｜工作中｜交棒0次`，2026-11-17 18:25 (+08) 開工
-- **骨架版本**：`2026-11-17.2`
+- **骨架版本**：`2026-11-17.3`
 - 本棒跳了兩次版（`2026-11-17`、`2026-11-17.2`），七個 skill 檔與共用制度標記同版；本 repo AGENTS.md 的共用制度副本已重貼。這台 Mac 的兩份全域 skill（`~/.claude`、`~/.codex`）已覆蓋並逐檔比對一致；覆蓋前它們停在 `2026-11-16.6`，漏了 .7。
 - 本機能力：Mac mini；`git push` 可用；本機 `.venv` 可跑驗證器不跑的 3 支外部套件測試（`PYTHONPATH=src .venv/bin/python -m pytest`）。
 
@@ -33,11 +33,11 @@
 
 ## 未完成／下一步
 
-1. **已部署專案同步到 `2026-11-17.2`**：每個專案都要先推開工標記，再用 `--owner` 跑 `sync_project.py`。
+1. **已部署專案同步到 `2026-11-17.3`**：每個專案都要先推開工標記，再用 `--owner` 跑 `sync_project.py`。
    - README 是 seed，不會自動變成標準 README，要逐一手動遷移；連線資料表也要從 AGENTS 搬到 README。
    - 舊的 `handover-protocol.md` 同步時會列 MIGRATE。裡面若有專案 override，先搬進 AGENTS 鐵律，刪不刪由使用者決定。
 2. **`learn coding with ai agent` 的骨架同步**：它 origin 上的「工作中」仍是另一個 session（2026-11-16 21:38 開工，主題「三方對比報告」）。要那個 session 交棒，或使用者確認標記已無人使用，才能同步。
-3. **需求與計畫文件整理已做完（2026-11-17，本 session）**：根目錄只留需求決策書 v3 與 `project-bootstrap-implementation-plan-v3.md`，其餘 19 份與 handoff-ab 的改進計畫、ARCHITECT 開頭的變更紀錄都封存到 `docs/history/`（有索引）。使用者判定 v3 第 1 期結案；現況索引 `status.json` 改成 v3 強度。待使用者決定：部署包要不要拿掉 `GEMINI.md`（v3 第 5 節沒列它）。
+3. **需求與計畫文件整理已做完（2026-11-17，本 session）**：根目錄只留需求決策書 v3 與 `project-bootstrap-implementation-plan-v3.md`，其餘 19 份與 handoff-ab 的改進計畫、ARCHITECT 開頭的變更紀錄都封存到 `docs/history/`（有索引）。使用者判定 v3 第 1 期結案；現況索引 `status.json` 改成 v3 強度。使用者指示明確不支援 Gemini：部署包 `2026-11-17.3` 拿掉 `GEMINI.md`，本 repo 的也刪了；已部署專案的舊檔同步時只列 MIGRATE。
 4. **根目錄的 `readme-agents-by-function.md`**：2026-11-17 依使用者指示移到 macOS 垃圾桶（沒有永久刪除）。
 5. 序號卡、解決網路速度問題，依使用者 2026-11-17 指示刻意停在舊版；Windows 開發人員模式與桌面 App 的 F50 互動驗證沿用既有的暫緩。
 

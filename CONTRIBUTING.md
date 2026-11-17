@@ -1,6 +1,6 @@
 # 參與開發
 
-> 最後更新：2026-11-17（開發注意事項去掉跟 AGENTS 鐵律 1 重複的句子，v2 原型三條併成一條；加「需求與計畫文件的分工」，舊的需求與計畫文件封存到 `docs/history/`）；前次同日（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法、ARCHITECT.md 的開發注意事項搬來這裡，需求決策書 v3 Q40）
+> 最後更新：2026-11-17（指標檔一節拿掉 `GEMINI.md`：本專案不支援 Gemini）；前次同日（開發注意事項去掉跟 AGENTS 鐵律 1 重複的句子，v2 原型三條併成一條；加「需求與計畫文件的分工」，舊的需求與計畫文件封存到 `docs/history/`）；前次同日（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法、ARCHITECT.md 的開發注意事項搬來這裡，需求決策書 v3 Q40）
 > 這個 repo 由 AI session 輪流做。開工必守的規則在 [AGENTS.md](AGENTS.md)，AI 工具開工時會自動讀到；本檔是碰到才讀的流程與規則：改部署包、動副本或接線、寫本 repo 的交接快照、改兩支 hook 的訊息時才讀。每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 改部署包的流程
@@ -71,7 +71,7 @@ B6 核對並覆寫整份 `HANDOFF.md`（≤80 行）：移除已完成待辦；�
 
 ## 這個 repo 自己的指標檔
 
-`CLAUDE.md` 只有一行 `@AGENTS.md`，不要改回「去讀 AGENTS.md」的句子；`GEMINI.md` 維持指標寫法。[為什麼](AGENTS-reasons.md#pointer)
+`CLAUDE.md` 只有一行 `@AGENTS.md`，不要改回「去讀 AGENTS.md」的句子。本專案明確不支援 Gemini，不放 `GEMINI.md`。[為什麼](AGENTS-reasons.md#pointer)
 
 ## 行末
 

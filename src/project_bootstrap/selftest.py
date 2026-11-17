@@ -132,10 +132,6 @@ def _instructions(surface, project):
         text = _read(project / 'CLAUDE.md')
         if text is None or '@AGENTS.md' not in [line.strip() for line in text.split('\n')]:
             return _fail('CLAUDE.md 沒有單獨一行 @AGENTS.md；Claude Code 有 CLAUDE.md 就不讀 AGENTS.md')
-    if surface.startswith('antigravity-') and (project / 'GEMINI.md').exists():
-        text = _read(project / 'GEMINI.md')
-        if text is None or 'AGENTS.md' not in text:
-            return _fail('GEMINI.md 沒有指向 AGENTS.md；兩者的優先序官方沒排')
     return _ok('AGENTS.md 在，指示檔指向它')
 
 

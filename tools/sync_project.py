@@ -537,6 +537,10 @@ def sync(project, gen, codex_only=False):
         if protocol is not None:
             plan.msgs.append('  MIGRATE docs/ai-notes/handover-protocol.md：已不在部署包（v3 Q41），不改寫也不刪；'
                              '專案 override 搬進 AGENTS.md 鐵律後由使用者決定刪不刪，程序細節以新 skill 核心為準')
+        # 2026-11-17：本專案明確不支援 Gemini，部署包不再產出 GEMINI.md；已部署的那一份是
+        # 專案自己的檔（原本就是 seed），不改寫也不刪，只提示。
+        if (project / 'GEMINI.md').exists():
+            plan.msgs.append('  MIGRATE GEMINI.md：已不在部署包（本專案不支援 Gemini），不改寫也不刪；刪不刪由使用者決定')
         sync_shared_section(project, gen, plan)
 
     for rel in WHOLE:

@@ -10,7 +10,7 @@
 >
 > 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
 > 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md、ARCHITECT.md 與 `handoff` skill）。
-> 版本：**2026-11-17.2**（交接協定 `docs/ai-notes/handover-protocol.md` 移出部署包（決策書 v3 Q41），3.6 保留編號、改成移除說明。只有它才有的內容搬進 skill：分支模型進 `mode-b.md` 的 B1，「漏交棒的補救」的理由進 `reasons.md`，「verify_state 一律跑」進 `mode-a-stop.md` 的 A4，`mode-a-stop.md` A6 的指標改指 `reasons.md`；入口的核心優先序改成專案 override 寫在 `AGENTS.md` 鐵律。已部署專案裡的舊協定不改寫也不刪，同步時列 MIGRATE。七個 skill 檔與共用制度標記同版。）
+> 版本：**2026-11-17.3**（本專案明確不支援 Gemini：不再產出 `GEMINI.md`，3.2 只剩 `CLAUDE.md`；部署樹、HANDOFF 範本的部署清單、ARCHITECT 範本的指標列、跨工具環境變數表與跨模型的說法都拿掉 Gemini。handoff skill 兩處跟著改：`mode-a-stop.md` 的工具名慣用寫法只列 `Claude Code`／`Codex CLI`，`reasons.md` 的「任何模型」與「沒有改名能力的工具」不再提 Gemini。已部署專案裡的 `GEMINI.md` 是專案自己的檔，同步時不改寫也不刪，只列 MIGRATE，刪不刪由使用者決定。）
 > 更早的版本與每一版的理由在 project-bootstrap repo 的 `CHANGELOG.md`（2026-11-17 起從本檔開頭搬出，逐字不改；部署後用不到）。
 > 萃取自兩個實際運行的專案：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，一個是文本識別系統。兩個都是多模型、多機器協作。
 
@@ -115,7 +115,6 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 |---|---|---|
 | Claude Code 2.1.309 | `CLAUDECODE=1`、`AI_AGENT=claude-code_2-1-309_agent` | session 內直接讀 env |
 | Codex CLI 0.164.0 | `CODEX_VERSION`、`CODEX_SESSION_ID`、`CODEX_THREAD_ID`、`CODEX_TOOL_CALL_ID`（另有 `CODEX_CI=1`、`CODEX_SANDBOX_NETWORK_DISABLED=1`）；**沒有 `AI_AGENT`** | 實跑 `codex exec`，先把 `CLAUDE*`／`AI_AGENT` 全部 unset 並確認殘留 0 |
-| Gemini CLI | `GEMINI_CLI=1` | **僅靜態**：bundle 內自述「`shell_command` 執行指令時會設」，沒實跑 |
 | Antigravity IDE 1.107.0 | 未測 | 它**有** CLI：`antigravity-ide`（在 PATH，執行檔不叫 `antigravity`），`chat --mode agent` 可從命令列起一個 agent，但沒有 headless 列印模式，要在 IDE 裡跑指令才讀得到。**別跟 Antigravity CLI 搞混**——那是另一個 surface |
 | Antigravity CLI 1.4.7（`agy`） | ✅ `agy -p "<prompt>"` | 真正的 headless：`--print`／`-p` 單輪、`--output-format json`／`stream-json`、`--print-timeout`。**hook 實測就是靠它做的**——IDE 那一面測不準的根因就是沒有這個模式 |
 
@@ -133,7 +132,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 **落地在哪（2026-10-31，跳版 `2026-10-31`）**：
 
-- 標記格式 `` `機器` ／ `工具` ／ `session 名`（可選） ``，由 skill **A5** 寫；工具名用慣用寫法（`Claude Code`／`Codex CLI`／`Gemini CLI`），因為 hook 比的是這個字串。
+- 標記格式 `` `機器` ／ `工具` ／ `session 名`（可選） ``，由 skill **A5** 寫；工具名用慣用寫法（`Claude Code`／`Codex CLI`），因為 hook 比的是這個字串。
 - 判讀表在 **A2.5**：同機器同工具→往下走（但要核對 session 名／開工時間）、同機器別的工具→停、同機器沒有工具欄→**當成別的工具處理**。分不出來的時候不往放行的方向猜。
 - `git-freshness.sh`（3.10）的同機器分支依工具欄拆成 🟡／🔴。變數偵測只在「偵測到的工具跟標記不符」時加嚴，而且**兩家以上的簽章同時在場就不猜**——那正是被繼承的樣子。偵測一致或認不出來都只印 🟡，並把「你自己是不是 X」這一句明文丟給模型答：模型知道答案，hook 不知道。
 - `check_docs.py` 第 6 項擋「標記在工作中卻沒填工具欄」，判別子是 session 名裡的全形豎線（`｜`）——`機器` ／ `工具` 的第二欄不會有它，`機器` ／ `session 名` 的第二欄一定有。
@@ -154,7 +153,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ## 0. 這套骨架在解決什麼問題
 
-跨 session、跨模型（Claude／Gemini／Codex）、跨機器（PC↔Mac）協作時，反覆出現的失效模式與對策：
+跨 session、跨模型（Claude／Codex）、跨機器（PC↔Mac）協作時，反覆出現的失效模式與對策：
 
 | 失效模式（都真的發生過） | 對策（本骨架的組成） |
 |---|---|
@@ -200,7 +199,6 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ├─ README.md                        ← 專案介紹：是什麼、為什麼做、怎麼連、怎麼跑
 ├─ AGENTS.md                        ← AI 開工時自動讀：共用制度一節（≤40 行）＋專案鐵律
 ├─ CLAUDE.md                        ← 指標，指向 AGENTS.md
-├─ GEMINI.md                        ← 指標，指向 AGENTS.md
 ├─ HANDOFF.md                       ← 當下工作狀態（≤80 行，不累積歷史）
 ├─ ARCHITECT.md                     ← 專案結構的唯一權威（只有結構變動才改）
 ├─ .gitignore
@@ -242,7 +240,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 現在做到哪、下一步是什麼，在 [HANDOFF.md](HANDOFF.md)。使用者用 **{{LANG}}** 溝通。
 > 最後更新：{{TODAY}}（建立）
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-17.2 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -287,7 +285,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 <!-- 4. 專案專屬鐵律寫在這裡：每一條附「為什麼」與發生日期，否則下一棒會繞過它。 -->
 ````
 
-### 3.2 `CLAUDE.md` 與 `GEMINI.md`（2026-10-30 起兩檔內容不同，下面兩個區塊依序對應）
+### 3.2 `CLAUDE.md`
 
 > **`CLAUDE.md` 只放一行 import，不要寫「去讀 AGENTS.md」那種句子。** Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但**有 `CLAUDE.md` 就不讀**；而用文字叫它去讀，官方的說法是 Claude 只有在它決定開那個檔的時候才看得到。`@AGENTS.md` 是 import，內容保證進 context，而且在不支援原生讀取的 session（舊版 Bedrock、關閉 telemetry、使用者關掉內建 plugin）也成立——所以不是「刪掉 `CLAUDE.md` 就好」，留著 import 版比刪掉更穩。理由全文見開頭「跨工具與跨平台」。
 
@@ -301,13 +299,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
      不要寫回這裡——那個目錄不計入上面那個判定，會跟 AGENTS.md 並存。 -->
 ````
 
-> `GEMINI.md` **不改成 import**，維持指標寫法：它只是給還不會讀 `AGENTS.md` 的工具（例如舊版 Gemini CLI）的保險，而它支不支援 `@` import 沒有文件可查——猜錯的話會是靜默失效。若也用其他工具，比照再加一份指標檔即可，**內容永遠只是指標**。
-
-````markdown
-# GEMINI.md
-
-本專案的 AI 協作指引統一放在 **[AGENTS.md](AGENTS.md)**——開工前先讀它（共用制度與專案鐵律）。本檔刻意保持極簡，請勿在此累積知識；新知識依 AGENTS.md 的規範寫進 `docs/ai-notes/` 或對應 SKILL.md。
-````
+> **2026-11-17 起不再產出 `GEMINI.md`**：本專案明確不支援 Gemini（需求決策書 v3 第 1 節只認 Claude Code 與 Codex）。已部署專案裡那一份是專案自己的檔，同步不改寫也不刪，刪不刪由使用者決定。
 
 ### 3.3 `HANDOFF.md`（初始狀態，之後每次交棒覆寫）
 
@@ -330,7 +322,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ## 已完成
 
-- 管理骨架部署：README／AGENTS／ARCHITECT／CLAUDE／GEMINI／HANDOFF／roadmap／`handoff` skill／兩個 `.claude` hook／`tools/check_docs.py`／`tools/verify_state.py`。
+- 管理骨架部署：README／AGENTS／ARCHITECT／CLAUDE／HANDOFF／roadmap／`handoff` skill／兩個 `.claude` hook／`tools/check_docs.py`／`tools/verify_state.py`。
 - `check_docs.py` 通過；首次 commit 已 push 到 `main`。
 
 ## 未完成／下一步
@@ -442,7 +434,7 @@ README 不另列檔案結構，只連到本檔；結構的細節與理由只寫�
 |---|---|---|---|
 | [README.md](README.md) | 專案介紹：是什麼、為什麼做、怎麼連、怎麼跑 | 本專案 | 目的、連線或執行方式改變 |
 | [AGENTS.md](AGENTS.md) | AI 開工時自動讀的條件：共用制度與專案鐵律 | 本專案（共用制度一節由部署包管理） | 多一條鐵律 |
-| [CLAUDE.md](CLAUDE.md)、[GEMINI.md](GEMINI.md) | Claude 用 `@AGENTS.md` import；Gemini 用文字指標 | 指向 AGENTS.md | 幾乎不動 |
+| [CLAUDE.md](CLAUDE.md) | Claude Code 用 `@AGENTS.md` import | 指向 AGENTS.md | 幾乎不動 |
 | [HANDOFF.md](HANDOFF.md) | 當下狀態（≤80 行、覆寫不累積） | 本專案 | **每次交棒** |
 | 本檔 | 結構 | 本專案 | 只有結構變動 |
 | [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md) | 持久待辦與決策記錄 | 本專案 | 有新待辦或決策 |
@@ -529,7 +521,7 @@ name: handoff
 description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（參考檔入口）
 
@@ -585,7 +577,7 @@ description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒�
 **`.claude/skills/handoff/mode-a.md`**——接棒的正常路徑。**新寫的摘要**；跟下一份衝突時以下一份為準。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：接棒（正常路徑）
 
@@ -646,7 +638,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-a-stop.md`**——接棒的完整判讀表與異常處理（狀態轉移、A1–A6 原文）。開場 `[facts]` 有不正常的值時才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 A：完整判讀與異常處理
 
@@ -794,7 +786,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 
    - **工具欄不能省**（2026-10-31 加）。少了它，同一台機器換個工具就會落進「大概是你自己另一個視窗」的 🟡，
      而同機器通常就是同一個工作樹——兩個 agent 即時互相覆寫，比跨機器那個洞更貴。`check_docs.py` 第 6 項會擋。
-   - **工具名用慣用寫法**（`Claude Code`／`Codex CLI`／`Gemini CLI`）：hook 比的是這個字串，
+   - **工具名用慣用寫法**（`Claude Code`／`Codex CLI`）：hook 比的是這個字串，
      寫同義詞只會讓它多報一次 🔴——那是加嚴的方向，不會放行，但也是噪音。
    - 記 session 名稱比只記機器名有用——有側欄的工具可以直接拿它把那個 session 點開。
 
@@ -828,7 +820,7 @@ session：㊣　<MM.DD.HH｜主題>｜工作中｜交棒<N>次（已改）／不
 **`.claude/skills/handoff/mode-b.md`**——交棒 B1–B9、中途同步 C、交棒計數（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 B：交棒；模式 C：中途同步
 
@@ -1016,7 +1008,7 @@ fetch 失敗 → **停下**，遠端新鮮度未知。遠端意外前進 → **�
 **`.claude/skills/handoff/mode-0.md`**——建制 0-1–0-8（原文）。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -1091,7 +1083,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/reasons.md`**——理由、事故與 session 命名細則（原文）。要改、質疑或想繞過規則之前才讀。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 理由、事故與細則原文
 
@@ -1104,7 +1096,7 @@ python -X utf8 tools/check_docs.py
 > **本檔＝程序**：做什麼、下哪些指令、什麼時候必須停下來問人。
 > override 只可加嚴或填補核心留給專案的設定，不能默默放寬同步、占用、驗證與發布門檻；使用者明確指示仍優先。不得在單一專案就地修改共用 skill，應回部署包修正再同步（2026-11-02／F10：避免舊協定推翻新程序）。
 > **例外是模式 0（建制）**：那一段的權威是 `PROJECT-BOOTSTRAP.md` 部署包（協定檔本身也是它生出來的），衝突時以部署包為準。
-> 純 Markdown，任何模型（Claude／Gemini／Codex）都應直接讀取，不限某一家工具。
+> 純 Markdown，任何模型（Claude／Codex）都應直接讀取，不限某一家工具。
 
 ## 適用判斷：為什麼沒人提就不建
 
@@ -1124,7 +1116,7 @@ python -X utf8 tools/check_docs.py
 
 ## session 命名（每輪必做；工具做不到就在回報裡寫「不適用」）
 
-側欄上十幾個 session 全叫「接棒」，要一個個點進去才知道哪個是哪個。**所以每換一次狀態就改一次 session 名稱**——有這個能力才做（例如 Claude Code 桌面版的 `set_session_title`），**沒有就跳過，不要為此停下來問使用者**：Codex CLI 與 Gemini CLI 目前沒有對應能力，為一個做不到的步驟回報失敗只是噪音。
+側欄上十幾個 session 全叫「接棒」，要一個個點進去才知道哪個是哪個。**所以每換一次狀態就改一次 session 名稱**——有這個能力才做（例如 Claude Code 桌面版的 `set_session_title`），**沒有就跳過，不要為此停下來問使用者**：Codex CLI 目前沒有對應能力，為一個做不到的步驟回報失敗只是噪音。
 
 🔴 **但「跳過」要說出來，不能安靜跳過**（2026-11-01 加硬）。**A5 與 B9 的回報模板各有一行 `session：`，必填**：改了就寫改成什麼，工具沒有這個能力就寫 `不適用：<原因>`。那一行是這條規則唯一能有的守門人——改名發生在 session 的外殼上，repo 裡不留任何痕跡，`check_docs.py`、`git-freshness.sh`、pre-push 防呆**三層全都看不到它**，所以漏掉是完全無聲的，而無聲的漏跟「沒有這條規則」在畫面上一模一樣。2026-11-01 量到：六個收尾 session（全 Sonnet）裡**只有四個**改了名，六個的 git 結果全部正確——漏的只有命名。**為什麼漏沒有量過**，所以這次不針對某個原因下藥，改的是「有沒有做」看不看得出來。
 
@@ -1276,7 +1268,7 @@ python -X utf8 tools/check_docs.py
 **`.claude/skills/handoff/env.md`**——工具與平台差異（2026-11-16.4 起，決策書 v3 Q35）。在 Codex 或 Windows 上碰到對應狀況才讀；只寫環境怪癖與操作提醒，不改變共用狀態的判讀，要加會讓交接結果不同的規則就不放這裡。
 
 ````markdown
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 工具與平台差異（碰到才讀）
 

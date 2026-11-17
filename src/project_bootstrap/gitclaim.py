@@ -44,7 +44,7 @@ def owner_field(text):
 
 
 _FIELD = re.compile(r'`([^`]*)`')
-KNOWN_TOOLS = ('Claude Code', 'Codex CLI', 'Gemini CLI', 'Antigravity')
+KNOWN_TOOLS = ('Claude Code', 'Codex CLI', 'Antigravity')  # 2026-11-17：不支援 Gemini，拿掉 Gemini CLI
 
 
 def owner_parts(value):

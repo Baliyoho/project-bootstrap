@@ -1,11 +1,11 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-17（第 1 期由使用者判定結案；現況索引改成 v3 寫法）；前次同日（建立：依[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)從現況重新規劃，取代 v2 時代的實現規劃；舊規劃與效率計畫封存在 [docs/history/](docs/history/README.md)）
+> 最後更新：2026-11-17（部署包拿掉 `GEMINI.md`）；前次同日（第 1 期由使用者判定結案；現況索引改成 v3 寫法）；前次同日（建立：依[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)從現況重新規劃，取代 v2 時代的實現規劃；舊規劃與效率計畫封存在 [docs/history/](docs/history/README.md)）
 > 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](experiments/v2/status.json)。
 
 ## 1. 起點
 
-- 部署包的入口、hook 與參考檔已照 v3 第 5 節換過（v3 Q34、Q40、Q41），但還帶著第 5 節沒列的 `GEMINI.md`（給舊版 Gemini CLI 的指標），`ARCHITECT.md`、`docs/ai-notes/roadmap.md` 與兩支檢查腳本則可歸在第 5 節的「參考檔」「檢查腳本」兩列。版本與檔案清單看 [VERSION](VERSION) 與 ARCHITECT。
+- 部署包的入口、hook 與參考檔已照 v3 第 5 節換過（v3 Q34、Q40、Q41），`GEMINI.md` 從 `2026-11-17.3` 起不再產出（本專案明確不支援 Gemini）；第 5 節沒列的 `ARCHITECT.md`、`docs/ai-notes/roadmap.md` 與兩支檢查腳本則可歸在第 5 節的「參考檔」「檢查腳本」兩列。版本與檔案清單看 [VERSION](VERSION) 與 ARCHITECT。
 - v2 的程式已在 main（v3 Q30 快轉合併）。執行屏障類模組依 D9 凍結並封存在 [archive/v2-barrier/](archive/v2-barrier/README.md)（v3 Q33）；簽章發布通道依 v3 第 5 節凍結，已發出的不撤回。
 - 驗收依據是 handoff-ab（v3 第 2 節 E1、第 6 節），結果在 [experiments/handoff-ab/](experiments/handoff-ab/README.md)。
 

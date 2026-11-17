@@ -155,7 +155,7 @@ KIT = ROOT / 'PROJECT-BOOTSTRAP.md'
 
 # 第 3 節應該產出的檔案。少一份就是有人刪了範本卻沒發現；多一份就把它加進來。
 EXPECTED = {
-    'AGENTS.md', 'ARCHITECT.md', 'CLAUDE.md', 'GEMINI.md', 'HANDOFF.md', 'README.md',
+    'AGENTS.md', 'ARCHITECT.md', 'CLAUDE.md', 'HANDOFF.md', 'README.md',
     'docs/ai-notes/roadmap.md',
     '.claude/skills/handoff/SKILL.md', '.claude/skills/handoff/mode-a.md',
     '.claude/skills/handoff/mode-a-stop.md', '.claude/skills/handoff/mode-b.md',
@@ -214,7 +214,7 @@ GIT_ENV = dict(
 # 之類的變數帶進來，不清就變成「只有在某個工具上跑才會過」的測試——而「變數會被繼承、
 # 會說謊」正是這段邏輯要擋的那件事，測試自己踩進去就什麼都證明不了。
 TOOL_VARS = ('CLAUDECODE', 'AI_AGENT', 'CODEX_VERSION', 'CODEX_SESSION_ID',
-             'CODEX_THREAD_ID', 'CODEX_CI', 'GEMINI_CLI')
+             'CODEX_THREAD_ID', 'CODEX_CI')
 
 
 def tool_env(**extra):
@@ -327,8 +327,8 @@ def extract(dest, text=None):
             continue                       # 例：3.20 是慣例說明，不是檔案
         # 一節裡的圍籬區塊依序對應標題上的檔名；區塊比檔名少就全部沿用第一個
         # （多數節是一個檔、一個區塊）。2026-10-30 從「只取第一個區塊、事後改標題」
-        # 改成這樣：3.2 的 CLAUDE.md 與 GEMINI.md 從此內容不同，而把其中一份合成在
-        # 這支腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
+        # 改成這樣：當時 3.2 一節產兩個內容不同的檔（2026-11-17 起只剩 CLAUDE.md），而把
+        # 其中一份合成在這支腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
         blocks, j = [], i
         while j < end:
             m = FENCE_RE.match(lines[j])
@@ -1089,7 +1089,7 @@ def rename_line_problems(skill):
         if not hit:
             problems.append('%s 的回報模板沒有「%s」那一行' % (heading.strip(), RENAME_LINE))
         elif '不適用' not in hit[0]:
-            # 少了這個選項，沒有改名能力的工具（Codex CLI／Gemini CLI）就只剩「整行省掉」
+            # 少了這個選項，沒有改名能力的工具（例如 Codex CLI）就只剩「整行省掉」
             # 一條路可走，必填會退化成「有能力的工具才填」——正好放掉要守的那一半。
             problems.append('%s 的「%s」那一行沒有留「不適用」這個選項'
                             % (heading.strip(), RENAME_LINE))
@@ -3397,7 +3397,7 @@ def claim_problems(docs):
     problems = []
 
     # ① 散文不得否認能力表裡已經 ✅ 的工具（2026-11-02 之前 README 範本還寫著
-    #    「其他工具（Gemini／Codex）沒有 skill 機制」，而那一格 2026-10-30 就實測成 ✅）。
+    #    「其他工具沒有 skill 機制」，而 Codex 那一格 2026-10-30 就實測成 ✅）。
     cols, rows = tool_matrix(tool_section(docs['kit']))
     if not rows.get('自動載入程序檔'):
         problems.append('部署包能力表找不到「自動載入程序檔」那一列，這一項無從判斷')
@@ -4683,9 +4683,13 @@ def step_architecture_summary(dest):
         bad = []
         for name, text in docs.items():
             rows = [line for line in text.splitlines() if line.startswith('|')]
-            pointers = [line for line in rows if 'CLAUDE.md' in line and 'GEMINI.md' in line]
-            if not pointers or any('import' not in line or '文字指標' not in line for line in pointers):
-                bad.append(name + ' 未區分 Claude import 與 Gemini 文字指標')
+            # 2026-11-17：本專案明確不支援 Gemini，不再產出 GEMINI.md；指標只剩 CLAUDE.md 的 import。
+            pointers = [line for line in rows
+                        if line.startswith('| [CLAUDE.md](CLAUDE.md)') or line.startswith('| 3.2 |')]
+            if not pointers or any('import' not in line for line in pointers):
+                bad.append(name + ' 沒寫 CLAUDE.md 用 import')
+            if any('GEMINI' in line for line in rows):
+                bad.append(name + ' 的表格還列著 GEMINI.md')
             if name == 'repo':
                 prompts = [line for line in rows if line.startswith('| 3.4 |')]
                 # 2026-11-17（v3 Q40）：範本 3.4 改成標準 README，不再放交接 prompt。
@@ -4700,6 +4704,10 @@ def step_architecture_summary(dest):
         mutant[name] = docs[name].replace('import', '只有標題不同')
         if not problems(mutant):
             bad.append('負向測試未抓到指標摘要退化：' + name)
+        mutant = dict(docs)
+        mutant[name] = docs[name] + '\n| [GEMINI.md](GEMINI.md) | 指標 | x | x |\n'
+        if not problems(mutant):
+            bad.append('負向測試未抓到 GEMINI.md 回到表格：' + name)
     mutant = dict(docs)
     mutant['repo'] = docs['repo'].replace('| 3.4 | `README.md` | 標準 README', '| 3.4 | `README.md` | 人的入口、收工交棒／開工接棒 prompt')
     if mutant['repo'] == docs['repo'] or not problems(mutant):
@@ -4712,7 +4720,7 @@ def step_architecture_summary(dest):
     elif [p for p in problems(mutant) if 'README' in p] != ['README 範本摘要與現行分工分岔']:
         bad.append('反向保險失效：缺了範本 3.4 那一列時沒有被判出來')
     record('FAIL' if bad else 'OK', '結構摘要一致性', '；'.join(bad) if bad else
-           '本 repo 與生成 ARCHITECT 區分 import／文字指標、範本 3.4 那一列寫標準 README 而不寫交接 prompt（認的是範本編號欄，不是全行出現 3.4）；三個負向測試＋一個反向保險')
+           '本 repo 與生成 ARCHITECT 寫明 CLAUDE.md 用 import、表格不再列 GEMINI.md、範本 3.4 那一列寫標準 README 而不寫交接 prompt（認的是範本編號欄，不是全行出現 3.4）；五個負向測試＋一個反向保險')
 
 
 def v2_report_problem(report):
@@ -5438,7 +5446,7 @@ def step_kit_source():
             ('kit.md 指到不存在的範本', kit_source_problems(build_kit, prose.replace(
                 directive, '<!-- kit-file: missing.md -->', 1), files, kit)),
             ('同一個範本用兩次', kit_source_problems(build_kit, prose.replace(
-                '<!-- kit-file: GEMINI.md -->', directive, 1), files, kit)),
+                '<!-- kit-file: CLAUDE.md -->', directive, 1), files, kit)),
             ('範本少了結尾換行', kit_source_problems(build_kit, prose, dict(files, **{name: files[name][:-1]}), kit)),
             ('範本含收尾圍籬', kit_source_problems(build_kit, prose, dict(
                 files, **{'.gitattributes': files['.gitattributes'] + '````\n'}), kit)),  # 3.13 用四個反引號圍

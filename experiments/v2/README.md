@@ -1,6 +1,6 @@
 # v2 P0：可重跑的契約與架構門檻
 
-> 最後更新：2026-11-17（實現規劃封存到 `docs/history/`，連結改指封存位置並指向實施計畫 v3）；前次 2026-11-12（P2 第 5 片，加 Q26 行末）
+> 最後更新：2026-11-17（自測與比較拿掉 Gemini）；前次同日（實現規劃封存到 `docs/history/`，連結改指封存位置並指向實施計畫 v3）；前次 2026-11-12（P2 第 5 片，加 Q26 行末）
 > 2026-11-11 P1 第二片：本目錄的程式已搬到 [src/project_bootstrap](../../src/project_bootstrap/__init__.py)、測試搬到 [tests](../../tests/__init__.py)；這裡只留本說明與 [現況索引](status.json)。下文提到的檔名是同一份程式，指令已改成新位置；各節日期的歷史敘述不改。
 > 範圍：v2 分支的合成實驗，沒有部署、模型呼叫、付費服務或正式制度切換。
 
@@ -445,7 +445,7 @@ pytest 在虛擬環境裡跑時，`sys.executable` 是 `.venv/bin/python` 這個
 **`selftest.py`**：
 
 - 版本偵測：CLI surface 跑自己的 `--version`（`claude`／`codex`／`agy`；Claude Code 找不到 PATH 上的就用執行中那個的執行檔），App surface 讀 `/Applications/<App>/Contents/Info.plist`。Antigravity IDE（1.x）與 2.0（2.x）都叫 `Antigravity.app`，只能以主版號分，輸出會寫明來源。逾時、非零結束、沒有數字版本、讀不到都回 `None`；`report` 拿到 `None` 就不用任何實測格。不呼叫模型、不連網。
-- 安裝自測（只看檔案）：`reads-agents-md` 要 `AGENTS.md` 在，Claude Code 有 `CLAUDE.md` 時要有單獨一行 `@AGENTS.md`，Antigravity 有 `GEMINI.md` 時要提到 `AGENTS.md`；`loads-skill` 找專案或該工具家目錄的 handoff skill（Antigravity 只認專案的 `.agents/skills/`）；`hooks` 要接線檔的 SessionStart 接到 `git-freshness.sh` 且檔案在，Antigravity 另要經可執行的 `ag-wrap.sh`。
+- 安裝自測（只看檔案）：`reads-agents-md` 要 `AGENTS.md` 在，Claude Code 有 `CLAUDE.md` 時要有單獨一行 `@AGENTS.md`（`GEMINI.md` 那條 2026-11-17 拿掉：本專案不支援 Gemini）；`loads-skill` 找專案或該工具家目錄的 handoff skill（Antigravity 只認專案的 `.agents/skills/`）；`hooks` 要接線檔的 SessionStart 接到 `git-freshness.sh` 且檔案在，Antigravity 另要經可執行的 `ag-wrap.sh`。
 - `capabilities.report` 多一個 `checks` 參數：自測沒過讓能力在這個專案變成 `missing`，蓋過矩陣與執行期 probe；通過**不升級**（檔案在不代表工具真的會呼叫），strict 能力仍只認執行期 probe。
 - 兩個平台（同日稍後補）：同一個專案會在 Windows 與 Mac 之間交接，所以 hooks 的自測可以指定平台，預設是本機。Windows 那條要 Codex 的 SessionStart 有經 `codex-hook.cmd` 跑 `git-freshness.sh` 的 `commandWindows`、啟動器在；Antigravity 要有 `.\ag-hook.cmd git-freshness.sh` 這條 handler，`.agents/ag-hook.cmd` 與 `ag-wrap.sh` 都在（Windows 經 Git Bash 跑，不看執行位元）；Claude Code 兩邊是同一條命令。Windows 那條壞了只算 Windows 的缺口，不會讓 Mac 上的 hooks 被判成沒有。只看檔案，`.cmd` 本身在 Windows 能不能跑仍沒驗。
 - 命令列：`PYTHONPATH=src python3 -X utf8 -m project_bootstrap.selftest <surface> --project DIR [--cache DIR] [--version V] [--os posix|windows]`；有 `--cache` 就讀專案指標指向的已安裝包，沒有就讀來源並在輸出標明。
@@ -462,7 +462,7 @@ F14 是「換工具不改變程序」，驗收寫「相同案例在每個受支�
 
 - **契約**：`.claude/hooks/git-freshness.sh` 在專案根目錄印出的文字就是開場檢查的全部結果；規則只在這支腳本裡。
 - **adapter**（`surfaces.py`）：照每個 surface 的接線檔（`.claude/settings.json`、`.codex/hooks.json`、`.agents/hooks.json`）取出 SessionStart 接到 `git-freshness.sh` 的命令，從該 surface 的工作目錄用 shell 跑。Claude Code／Codex 從專案根目錄或任一子目錄跑、stdout 原樣；Antigravity 從 `.agents/` 跑，解開 `ag-wrap.sh` 的 `injectSteps[0].ephemeralMessage`。Antigravity 接線有兩條（Unix 與 Windows），照部署包 3.20：兩條都跑，恰好一條有輸出才算數，兩條都有輸出就是重複注入、都沒有就是沒注入，都報錯。專案自己另掛的 SessionStart hook 不算這個檢查。
-- **比較**（`compare`）：同一個專案狀態，每個 surface 跑一次，時間戳正規化後文字必須逐字相同、結束碼都是 0。能力矩陣說這個 surface、這個版本沒有 hooks 的不跑，結果裡列在 `unsupported` 並附矩陣的理由。工具身分的環境變數（`CLAUDECODE`、`CODEX_*`、`GEMINI_CLI`）是 hook 可以拿來區分的東西，比較時每個 surface 給同一份環境，adapter 不能改變它看到的身分。
+- **比較**（`compare`）：同一個專案狀態，每個 surface 跑一次，時間戳正規化後文字必須逐字相同、結束碼都是 0。能力矩陣說這個 surface、這個版本沒有 hooks 的不跑，結果裡列在 `unsupported` 並附矩陣的理由。工具身分的環境變數（`CLAUDECODE`、`CODEX_*`；`GEMINI_CLI` 2026-11-17 拿掉）是 hook 可以拿來區分的東西，比較時每個 surface 給同一份環境，adapter 不能改變它看到的身分。
 
 `test_surfaces.py` 9 個合成測試；`mutants.json` 新群組 18 個刪改全部 killed（首跑存活一個：專案自己的 SessionStart hook 會被當成這個檢查，已補案例）。`test_surfaces_repo.py` 8 個測試用 `src/kit` 建的真包鋪成 git 專案、配本機 bare origin，跑全綠、落後、未提交、別台機器占用、同機另一工具（三個 surface 同一身分）、沒有 upstream、fetch 失敗，六個 surface 文字都相同；Antigravity IDE 給實測版本 `1.107.0` 時列為不支援、不跑。repo 測試要 import `tools/`，不能放進 mutation（`mutants.py` 只複製 `src` 與 `tests`），所以手動反證兩次：`ag-wrap.sh` 改成在 `.claude/hooks/` 跑 hook，測試仍通過，因為 hook 自己會 `cd` 到 repo 根目錄，屬等價變異；改成把換行換成空白，測試失敗。兩次都已還原。
 
@@ -472,7 +472,7 @@ F14 是「換工具不改變程序」，驗收寫「相同案例在每個受支�
 
 沒做的：工具本身是否觸發 hook、把文字放進模型上下文；Windows 的 `commandWindows`／`.cmd` 路徑；其他程序步驟的等價案例；`ag-wrap.sh` 會把 stderr 併進訊息、Claude Code／Codex 不注入 stderr，這七種狀態下 hook 沒有 stderr 所以相同，hook 若開始寫 stderr 就會不等價，目前沒有案例守。
 
-**程序入口與 stderr（2026-11-12 再補）**：第三個共用檢查是程序入口。`compare_procedure` 對每個 surface 解出它讀到的指示檔（`CLAUDE.md` 的 `@AGENTS.md`、`GEMINI.md` 的指標都要通到 `AGENTS.md`）與 skill 載入器找到的 handoff skill（專案優先、再家目錄；`.agents/` 指標照連結追到權威版，description 去掉固定開頭），三樣東西（`AGENTS.md` 文字、description、整個 skill 目錄的檔）逐字相同才算等價；矩陣說沒有 `reads-agents-md` 或 `loads-skill` 的不跑。開場檢查另要求 Claude Code／Codex 的 stderr 是空的，因為 `ag-wrap.sh` 用 `2>&1` 把 stderr 併進 Antigravity 的訊息。這個案例在真包上找到一個不等價：3.16 指標的 description 少了權威版後來加的模式 0 那句與三個觸發詞，Codex 與 Antigravity 聽到「幫我建 HANDOFF」不會載入程序；已在部署包補齊（`source:` `v2026-11-12.2`，`VERSION` 不動，各專案未同步）。手動反證：放回舊指標，真包測試失敗。
+**程序入口與 stderr（2026-11-12 再補）**：第三個共用檢查是程序入口。`compare_procedure` 對每個 surface 解出它讀到的指示檔（`CLAUDE.md` 的 `@AGENTS.md` 要通到 `AGENTS.md`；`GEMINI.md` 2026-11-17 起不支援）與 skill 載入器找到的 handoff skill（專案優先、再家目錄；`.agents/` 指標照連結追到權威版，description 去掉固定開頭），三樣東西（`AGENTS.md` 文字、description、整個 skill 目錄的檔）逐字相同才算等價；矩陣說沒有 `reads-agents-md` 或 `loads-skill` 的不跑。開場檢查另要求 Claude Code／Codex 的 stderr 是空的，因為 `ag-wrap.sh` 用 `2>&1` 把 stderr 併進 Antigravity 的訊息。這個案例在真包上找到一個不等價：3.16 指標的 description 少了權威版後來加的模式 0 那句與三個觸發詞，Codex 與 Antigravity 聽到「幫我建 HANDOFF」不會載入程序；已在部署包補齊（`source:` `v2026-11-12.2`，`VERSION` 不動，各專案未同步）。手動反證：放回舊指標，真包測試失敗。
 
 **Claude Code 啟動自測第二次（2026-11-12，使用者授權一次模型呼叫）**：拋棄式專案用真包鋪，`AGENTS.md` 末尾加一行隨機暗號，main 上留一個沒動 HANDOFF 的未推 commit；`claude -p`（2.1.321，拿掉宿主 session 變數、禁用 Read／Grep／Glob、只放行 `Bash(git push)`）請模型不用工具寫出暗號，再跑一次 `git push`。結果：模型答出暗號的隨機部分（漏了前綴，不是逐字），證明 `AGENTS.md` 經 `CLAUDE.md` 的 import 進到 context；push 被 hook 以 exit 2 擋下，模型逐字收到 `[handoff-check]` 三行，bare origin 沒有前進。矩陣 `claude-code/push-reminder` 從 design 改成 `tested: [2.1.321]`；`claude-code/reads-agents-md` 測的是 import 路徑不是原生讀取，維持 docs 並加註。2 個 turn。沒測：skill 有沒有自動載入、SessionEnd、Codex 與 Antigravity。
 

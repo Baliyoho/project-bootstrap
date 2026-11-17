@@ -104,7 +104,6 @@ def write(root, relative, text, mode=0o644):
 def wired_project(root):
     write(root, 'AGENTS.md', '# rules\n')
     write(root, 'CLAUDE.md', '@AGENTS.md\n')
-    write(root, 'GEMINI.md', '讀 AGENTS.md\n')
     for skill in ('.claude/skills/handoff/SKILL.md', '.agents/skills/handoff/SKILL.md'):
         write(root, skill, 'skill\n')
     write(root, '.claude/settings.json', json.dumps(SETTINGS))
@@ -146,10 +145,6 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(self.failed('codex-cli'), [])
         (self.root / 'CLAUDE.md').unlink()
         self.assertEqual(self.failed('claude-code'), [])
-        write(self.root, 'GEMINI.md', '# gemini\n')
-        self.assertEqual(self.failed('antigravity-cli'), ['reads-agents-md'])
-        self.assertEqual(self.failed('claude-code'), [])
-        (self.root / 'GEMINI.md').unlink()
         (self.root / 'AGENTS.md').unlink()
         self.assertIn('reads-agents-md', self.failed('codex-cli'))
 

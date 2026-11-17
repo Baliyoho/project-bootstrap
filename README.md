@@ -2,7 +2,7 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-11-17（發布公鑰一節改寫：舊實現規劃封存，簽章發布通道依 v3 第 5 節凍結）；前次同日（改成標準 README：開發流程與副本同步用法搬到 CONTRIBUTING.md；部署後的 README 也改成標準 README，連線資料從 AGENTS 搬進來，需求決策書 v3 Q40）；前次 2026-11-16（skill 七個檔；優先序改成 v3）。
+> 最後更新：2026-11-17（拿掉 `GEMINI.md`：本專案明確不支援 Gemini）；前次同日（發布公鑰一節改寫：舊實現規劃封存，簽章發布通道依 v3 第 5 節凍結）；前次同日（改成標準 README：開發流程與副本同步用法搬到 CONTRIBUTING.md；部署後的 README 也改成標準 README，連線資料從 AGENTS 搬進來，需求決策書 v3 Q40）；前次 2026-11-16（skill 七個檔；優先序改成 v3）。
 > 這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型；結構見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 它在解決什麼
@@ -42,7 +42,7 @@
 專案/
 ├─ README.md                        專案介紹：是什麼、為什麼做、怎麼連、怎麼跑
 ├─ AGENTS.md                        AI 開工時自動讀（標記之間是部署包管理的共用制度；其餘是專案鐵律）＝唯一權威
-├─ CLAUDE.md / GEMINI.md            指標，指向 AGENTS.md
+├─ CLAUDE.md                        指標，用 @AGENTS.md import
 ├─ HANDOFF.md                       當下工作狀態（≤80 行、覆寫不累積）
 ├─ ARCHITECT.md                     專案結構的唯一權威（只有結構變動才改）
 ├─ .claude/                         Claude Code
@@ -131,7 +131,7 @@ SHA256:FjVJTEPBuOaloJZV0GvtZiG3bXYJo68v+cTaVqs0JU0
 
 ## 來源
 
-從兩個實際運行的專案萃取：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，另一個是文本識別系統。兩個都是多模型（Claude／Gemini／Codex）、多機器（Windows↔macOS）協作。
+從兩個實際運行的專案萃取：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，另一個是文本識別系統。兩個都是多模型、多機器（Windows↔macOS）協作。本專案只支援 Claude Code 與 Codex，明確不支援 Gemini。
 
 骨架裡的每條規則都對應一次實際踩過的坑——所以規則旁邊一律附「為什麼」，砍掉理由，下一棒就會繞過規則。
 
