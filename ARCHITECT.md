@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-17（需求決策書 v3 Q40）：新增 [CONTRIBUTING.md](CONTRIBUTING.md)，收 AGENTS.md 裡碰到才需要的規則（副本規則、本 repo 交接快照、指標檔、行末、hook 訊息寫法）與 README.md 裡的開發流程、副本同步用法；AGENTS.md 只留開工必守的規則，README.md 改成標準 README。部署包範本 3.1、3.4、3.5 同步改成職能分工：連線資料從 AGENTS 搬進 README，README 不再放交接 prompt。「規則理由連結」改成同時查 AGENTS.md 與 CONTRIBUTING.md，「結構摘要一致性」與「已修正的主張沒復活」改守新的 README 寫法。
+> 最後更新：2026-11-17（需求決策書 v3 Q40）：新增 [CONTRIBUTING.md](CONTRIBUTING.md)，收 AGENTS.md 裡碰到才需要的規則（副本規則、本 repo 交接快照、指標檔、行末、hook 訊息寫法）、README.md 裡的開發流程與副本同步用法，以及本檔原本的「開發注意事項」（那不是結構）；AGENTS.md 只留開工必守的規則，README.md 改成標準 README。部署包範本 3.1、3.4、3.5 同步改成職能分工：連線資料從 AGENTS 搬進 README，README 不再放交接 prompt。「規則理由連結」改成同時查 AGENTS.md 與 CONTRIBUTING.md，「結構摘要一致性」與「已修正的主張沒復活」改守新的 README 寫法。
 
 > 最後更新：2026-11-17（需求決策書 v3 Q39）：v2 決策書退休，用 `git mv` 封存到 `docs/history/requirements-decision-v2.md`（逐位元組不改），v3 成為唯一需求書；`verify_v2.py`、`test_registry_repo.py`（新，從 `test_registry.py` 拆出）、`test_trail_repo.py` 與一致性檢查改讀 v3；`verify_bootstrap.py` 新增「封存原件」，文件檢查與行末檢查不讀 `docs/history/`。
 
@@ -157,22 +157,6 @@
 | 追溯需求修訂理由 | [需求歷史原件](project-bootstrap-requirements-history.md)；其中的「權威版」「現在」「待決」不再指示現行操作 |
 | 改部署包、同步副本、改 hook 訊息、寫本 repo 交接快照 | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | 結構問題（有哪些檔、副本在哪） | 本檔；動到結構就跟它同一個 commit 改 |
-
-## 開發注意事項
-
-改這個 repo 時容易踩的地方（2026-11-11 F22 第二輪從 HANDOFF.md「地雷與注意事項」搬來；HANDOFF 只留指標）。碰到對應的檔才需要讀。
-
-- 錨點拒絕的解除是人工步驟：確認那份帳本沒有 guest 還可能在跑，再手動刪錨點檔；沒有做成工具，agent 不要自己刪。
-- 制度只改 `src/kit/`，改完跑 `python3 -X utf8 tools/build_kit.py` 重生 `PROJECT-BOOTSTRAP.md`，同一個 commit；手改部署包會被「部署包由來源生成」擋。handoff skill 的六個檔改 `src/kit/files/.claude/skills/handoff/*.tmpl`，六個 `source:` 標記與 `VERSION` 要同版本；同一天再改要加序號。改到逐字搬來的行，「skill 拆分」會擋：要嘛還原，要嘛在 `tools/skill_split_baseline.json` 的 `rewritten` 寫明去處。改了模式檔的段落標題，「skill 規則對照表」會擋，要一起改 `reasons.md` 對照表。改完要重新覆蓋這台的兩個全域目錄。
-- 各原型都是**偵測**或合成阻擋，沒有接進任何工具。不要寫成保障。崩潰解除的終端確認只抬高 agent 代答門檻；開機識別登記值與錨點都在同 UID 可寫的地方。
-- VM 腳本、`guest_runs.py`、`crash_release.py` 2026-11-14 起封存在 `archive/v2-barrier/`，不再維護（v3 Q33）。
-- `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書 v3 第 8 節的 `Q` 編號（或 `- 無。`）。v3 第 3 節 D 表每列要有「決定」與「理由」；第 8 節已決項目底下子項格式是「採用理由／未選 (x) 名稱：／暫緩 名稱：」，選項名不能省，省了就報 `alternative-incomplete`（2026-11-17 封存 v2 時在 v3 踩到）。這兩個解析器與需求清單的解析器都按節名找節、不看節號（2026-11-17 起），改節名會讓它們讀不到東西，測試會失敗。
-- 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗。
-- AGENTS.md 與 CONTRIBUTING.md 只有規則；新增或改規則時在 [AGENTS-reasons.md](AGENTS-reasons.md) 補段落與錨點。開工必守的放 AGENTS.md，碰到才需要的放 CONTRIBUTING.md。
-- 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。新守門用 `denied(code, ...)` 寫法。
-- 僅合成暫存 fixture；原檔、票據、金鑰與合成 Git object 不進本 repo。
-- 推含 `.github/workflows/` 改動的 commit，`gh` 權杖要有 `workflow` 權限，否則 GitHub 拒收（2026-11-11 E2 踩到）；補權限要使用者自己跑 `gh auth refresh -h github.com -s workflow`。
-- 發正式包：在要發的 commit 上 push `release-request/<channel>` tag，使用者在 GitHub 核准 `release` environment；不要代按核准。workflow 從 tag 名取 channel，所以每次發布都用同一個觸發 tag：第二次起要先刪掉遠端舊的 `release-request/<channel>` 再重推（2026-11-12 發 `beta` epoch 2 時第一次碰到，刪之前問過使用者）；它只是觸發器，刪掉不影響 `channel/…` 發布紀錄。channel tag 沒有伺服器端保護（決策書 Q23），不要為了測試在 `beta`／`stable` 建、移或刪 tag。
 
 ## 根目錄
 
@@ -419,7 +403,7 @@ check_docs.py
 - **沒有 handoff skill、沒有 `check_docs.py`**（2026-11-14 前還有 `pre-push-handoff.sh`，見下面那條）。 它是制度的**來源**，不是一個交接中的工作專案；把骨架的這幾份套到它自己身上，就會出現「權威版與它的副本互相同步」的迴圈。跨 session 現況看 `HANDOFF.md`，歷史與版本證據看 `git log` 與各檔的 `source:` 標記；接棒程序讀全域副本 `~/.claude/skills/handoff/`。**`HANDOFF.md` 是 2026-10-30 補回來的例外**，見下一條；`pre-push-handoff.sh` 同一天重新評估過，結論仍是不裝，但理由已經換成另一個，見下面那條。
 - **跨機器「工作中」標記：2026-10-30 先是接受這個缺口，同一天決定多機維護就補上了。** 當初不裝的理由是它需要 `HANDOFF.md` 當載體，而那一份得每輪交棒維護——只為防呆而裝，就是多一份沒人讀、然後開始腐化的文件；那時 single writer 靠人顧。改成多機維護之後這個理由不成立了：`git log` 與 `git fetch` **看不到別台機器未提交的變更**，而開場那個 ✅ 只證明「本機沒落後 origin」，誤接棒就會整批繞過那些變更。所以補上 `HANDOFF.md`（範本 3.3 的*實例*，不是副本，沒有同步義務），並在 `repo-git-check.sh` 加判讀段——**沿用 3.10 的同一個載體與同一個欄位，沒有發明第二種標記**，那會變成「這裡會擋、別處不會擋」的不對稱。當時為減少維護成本而限制更新欄位，卻仍保留完整狀態段落，導致已完成待辦凍結；2026-11-01 已取消此限制，維護義務與事故見 [AGENTS.md](AGENTS.md)「本 repo 的交接快照」。**天花板要講明白**：標記只告訴你「東西在那台機器上」，東西本身仍得回那台 push，這不是實作缺漏。
 - **`pre-push-handoff.sh`：2026-10-30 決定不裝，2026-11-01 恢復交接快照後重新評估仍不裝；2026-11-14 使用者決定補裝**（`repo-pre-push.sh`）。補裝的理由：v3 把 F10 定成「偵測＋阻擋（限 push 前 hook）」，擋的正是「沒寫開工標記就推權威分支」這一種，不再宣稱它驗得出交接內容正確；下面 2026-11-01 那段「攔不住 stale 事故」的觀察仍然成立，只是不再是不裝的理由。以下是當時的評估原文： 原理由是標記之外沒有狀態要寫，推進度時只會逼人編變更或關掉防呆；如今這個前提已取消，不能沿用舊理由。重新評估的限制是：骨架那支 hook 只檢查這批 commit 是否碰過 `HANDOFF.md`，而 A5 的開工標記本來就會碰它；本次三輪 stale 事故正是「檔案都有改、待辦沒改」。因此原樣裝上也攔不住已知故障，還會讓人誤信狀態已被驗證。現階段由 B6 核對整份快照，`verify_bootstrap.py` 檢查版本與已知回歸；不以時間戳或碰過檔案冒充內容正確。若將來有能檢查實質交接的機制再評估。
-- **但有一支自己的 SessionStart hook**（`.claude/hooks/repo-git-check.sh`，2026-10-30 加）：做 git 新鮮度比對、「工作中」判讀（2026-10-30 加）與開工改名提示（2026-11-01 加）。**2026-11-01 起 Codex 這一面也接上了**（`.codex/hooks.json`，掛同一支腳本、不複製第二份）——在此之前只有 Claude Code 會跑它，而這個 repo 本來就在多工具維護；代價是它跟那六個專案一樣進了「Codex 要各審一次」的清單（信任綁 `hooks.json` 的絕對路徑），2026-11-01 已完成現行 hook 的注入與阻擋驗收，本次桌面 session 亦收到開場輸出；檔頭明寫**不是 3.10 的副本、不要同步**（2026-11-14 起改成 3.10 的手貼逐字副本，見根目錄表與 AGENTS-reasons 的副本規則 7）。在此之前這個 repo 開場完全沒有提醒，A1 的 fetch 全靠使用者記得打「接棒」把全域 skill 載進來。為什麼不直接抄 3.10——`sync_project.py` 的 `discover()` 靠 handoff skill 發現專案，這個 repo 沒有 skill，`--all` 永遠掃不到它，抄過來就會變成「所有專案都同步了、只有來源自己落後」而且毫無跡象的那一份副本。
+- **但有一支自己的 SessionStart hook**（`.claude/hooks/repo-git-check.sh`，2026-10-30 加）：做 git 新鮮度比對、「工作中」判讀（2026-10-30 加）與開工改名提示（2026-11-01 加）；2026-11-14 起改成部署包 3.10 的逐字副本，只印事實、不再判讀或提示（v3 D12）。**2026-11-01 起 Codex 這一面也接上了**（`.codex/hooks.json`，掛同一支腳本、不複製第二份）——在此之前只有 Claude Code 會跑它，而這個 repo 本來就在多工具維護；代價是它跟那六個專案一樣進了「Codex 要各審一次」的清單（信任綁 `hooks.json` 的絕對路徑），2026-11-01 已完成現行 hook 的注入與阻擋驗收，本次桌面 session 亦收到開場輸出；檔頭明寫**不是 3.10 的副本、不要同步**（2026-11-14 起改成 3.10 的手貼逐字副本，見根目錄表與 AGENTS-reasons 的副本規則 7）。在此之前這個 repo 開場完全沒有提醒，A1 的 fetch 全靠使用者記得打「接棒」把全域 skill 載進來。為什麼不直接抄 3.10——`sync_project.py` 的 `discover()` 靠 handoff skill 發現專案，這個 repo 沒有 skill，`--all` 永遠掃不到它，抄過來就會變成「所有專案都同步了、只有來源自己落後」而且毫無跡象的那一份副本。
 - **沒有把驗證交給 CI。**（2026-09-13 隨本檔首版 `7a5d1ec` 寫入「沒有 CI」；日期取自 git 首次出現，當時沒有記錄另外的評估）驗證是一個指令（`python -X utf8 tools/verify_bootstrap.py`），跑它是鐵律第 4 條的義務。2026-11-11 起有一支 workflow（`.github/workflows/release.yml`，決策書 Q21），但它只在有人 push `release-request/<channel>` tag、而且使用者在 `release` environment 核准後才跑，用途是發布正式包；push 與 PR 不會觸發驗證，鐵律第 4 條照舊。
 - `tools/` 保存來源維護入口：`verify_bootstrap.py` 測試部署包及 v2 原型、`sync_project.py` 同步它；2026-11-06 新增 `verify_v2.py` 執行隔離原型。三支都不部署。`experiments/v2/` 的程式是未部署的候選實作，沒有從部署包移轉任何現行規則權威。
 
@@ -427,7 +411,7 @@ check_docs.py
 
 | 約束 | 由誰強制 | 理由與做法 |
 |---|---|---|
-| 全檔 LF | `.gitattributes` 的 `eol=lf`＋`verify_bootstrap.py` 的行末檢查 | [AGENTS.md 行末那節](AGENTS.md) |
+| 全檔 LF | `.gitattributes` 的 `eol=lf`＋`verify_bootstrap.py` 的行末檢查 | [CONTRIBUTING.md 行末那節](CONTRIBUTING.md) |
 | 不寫單位名／內部代號／本機絕對路徑 | 人（提交前擋）＋骨架端的跨平台防呆檢查 | [AGENTS.md 鐵律第 6 條](AGENTS.md) |
 | 只放通用制度與 `{{佔位符}}` | `verify_bootstrap.py` 的佔位符清單比對 | [AGENTS.md 鐵律第 5 條](AGENTS.md) |
 | 副本改內容就跳 `source:` 版本 | 人 | [AGENTS.md 鐵律第 2 條](AGENTS.md) |

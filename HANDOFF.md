@@ -12,7 +12,7 @@
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無。
 - **工作中**：Mac mini ／ Claude Code（桌面 App）／ ㊣　11.17.17｜README職能分工｜工作中｜交棒0次；開工 2026-11-17 17:34（+08）
-- **骨架版本**：`2026-11-16.7`
+- **骨架版本**：`2026-11-17`
 - 本棒沒動 `src/kit/`、部署包與 `VERSION`，各專案不需同步。
 - 本機能力：Mac mini；`git push` 可用；本機 `.venv` 可跑驗證器不跑的 3 支外部套件測試（`PYTHONPATH=src .venv/bin/python -m pytest`）。
 

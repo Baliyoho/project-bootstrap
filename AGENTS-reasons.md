@@ -253,6 +253,12 @@
 2026-11-15（交接成本第一階段）：本 repo 的 `repo-git-check.sh` 於 2026-11-14 開場仍從 12 小時快取讀到 `2026-11-14`，但同次 fetch 已取得的 `origin/main:VERSION` 是 `2026-11-14.4`。3.10 只在 origin URL 確認為權威 repo、fetch 成功時讀該 ref 的版本並更新快取；部署出去的其他專案沒有這個 ref，仍採 12 小時快取。這不是拿本機 `VERSION` 代替上游；無效版本與 fetch 失敗時不猜測。改範本後手貼本 repo 的逐字副本，驗證器維持比對。由於 skill 未改，`VERSION` 不跳，其他專案的落後提示不會通知這次 hook 改動；同步仍須逐專案授權。
 
 
+<a id="dev-notes"></a>
+
+## 開發注意事項
+
+這一節是改這個 repo 時實際踩過的坑，每條都在發生當天寫下。2026-11-11（F22 第二輪）從 HANDOFF.md 的「地雷與注意事項」搬到 ARCHITECT.md：HANDOFF 每次交棒覆寫，放在那裡的持久注意事項會被下一棒刪掉或越寫越長。2026-11-17（v3 Q40）再從 ARCHITECT.md 搬到 CONTRIBUTING.md：ARCHITECT 是結構的權威，開發時的注意事項不是結構，放在那裡讓「結構只有變動才改」這條規則每次都得破例。
+
 <a id="snapshot"></a>
 
 ## 本 repo 的交接快照

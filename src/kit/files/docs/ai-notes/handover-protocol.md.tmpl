@@ -38,7 +38,7 @@
 ## 一、接棒（順序不可反）
 
 > **自動防呆有兩層**（都只是保險，下面每一步仍必做——離線、非 Claude 端或設定沒載入時 hook 不會跑）：
-> ① SessionStart hook（`.claude/hooks/git-freshness.sh`）：session 開始自動 fetch，注入落後／分岔／未推送警告，讀 `origin` 的「工作中」標記揭露別台機器正在動同一條分支，並提醒走 handoff skill。
+> ① SessionStart hook（`.claude/hooks/git-freshness.sh`）：session 開始自動 fetch，只印事實：時間、落後與領先、未提交檔數、`origin` 上的「工作中」。不下判斷，怎麼判讀照 `AGENTS.md` 的共用制度（2026-11-13 起，v3 D12）。
 > ② PreToolUse hook（`.claude/hooks/pre-push-handoff.sh`）：AI push 提醒只依字面命令、目前分支與 origin 判斷已提交 HANDOFF 差異（`HANDOFF_HOOK=off` 可停用）。不解析選項／remote／refspec，GUI／script 可能漏判、純文字可能誤擋；不是發布保證，見部署包 3.11。
 
 1. **先同步 Git**：**未同步前不要相信本機 HANDOFF。** fetch 成功且工作樹乾淨、有 upstream、對齊或只落後可 fast-forward 才可自行往下走；ahead-only 與 fetch 失敗停下（指令與完整判讀表見 skill A1）。

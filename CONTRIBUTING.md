@@ -1,6 +1,6 @@
 # 參與開發
 
-> 最後更新：2026-11-17（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法搬來這裡，需求決策書 v3 Q40）
+> 最後更新：2026-11-17（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法、ARCHITECT.md 的開發注意事項搬來這裡，需求決策書 v3 Q40）
 > 這個 repo 由 AI session 輪流做。開工必守的規則在 [AGENTS.md](AGENTS.md)，AI 工具開工時會自動讀到；本檔是碰到才讀的流程與規則：改部署包、動副本或接線、寫本 repo 的交接快照、改兩支 hook 的訊息時才讀。每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 改部署包的流程
@@ -23,10 +23,23 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 `--all`／inventory 僅供批次預演；`--write` 必須指定單一專案與 owner，空閒標記不能寫入。同步後留在該專案完成 B7 最終檔案檢查、B8 發布與清標記；若要中途安全點則走 C，保留占用。這修正了舊工具「正常 A5 writer 被拒絕、陳舊空閒 checkout 卻能寫」的矛盾。
 
-handoff skill 目錄（七個檔）會同時存在於：**本 repo 的 `src/kit/files/.claude/skills/handoff/`**（權威來源，生成進部署包）、每個專案的 `.claude/skills/handoff/`、以及選用的全域 `~/.claude/skills/handoff/`。
+副本存在哪些地方見 [ARCHITECT.md](ARCHITECT.md) 的副本拓撲；改 skill 的規則見 AGENTS.md 鐵律 1、2。
 
-- 要改就**改本 repo 的 `src/kit/files/.claude/skills/handoff/*.tmpl`**，跑 `tools/build_kit.py` 重生部署包，再覆蓋下去；不要在單一專案裡就地改，也不要手改 `PROJECT-BOOTSTRAP.md`。
-- 每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，用它辨識落後的副本（同一天改第二次起加序號，如 `v2026-10-24.2`）。
+## 開發注意事項
+
+改這個 repo 時容易踩的地方，碰到對應的檔才需要讀。[為什麼](AGENTS-reasons.md#dev-notes)
+
+- 錨點拒絕的解除是人工步驟：確認那份帳本沒有 guest 還可能在跑，再手動刪錨點檔；沒有做成工具，agent 不要自己刪。
+- 制度只改 `src/kit/`，改完跑 `python3 -X utf8 tools/build_kit.py` 重生 `PROJECT-BOOTSTRAP.md`，同一個 commit；手改部署包會被「部署包由來源生成」擋。handoff skill 的七個檔改 `src/kit/files/.claude/skills/handoff/*.tmpl`，七個 `source:` 標記、AGENTS 共用制度標記與 `VERSION` 要同版本，本 repo AGENTS.md 的共用制度副本要重貼；同一天再改要加序號。改到逐字搬來的行，「skill 拆分」會擋：要嘛還原，要嘛在 `tools/skill_split_baseline.json` 的 `rewritten` 寫明去處。改了模式檔的段落標題，「skill 規則對照表」會擋，要一起改 `reasons.md` 對照表。改完要重新覆蓋這台的兩個全域目錄。
+- 各原型都是**偵測**或合成阻擋，沒有接進任何工具。不要寫成保障。崩潰解除的終端確認只抬高 agent 代答門檻；開機識別登記值與錨點都在同 UID 可寫的地方。
+- VM 腳本、`guest_runs.py`、`crash_release.py` 2026-11-14 起封存在 `archive/v2-barrier/`，不再維護（v3 Q33）。
+- `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書 v3 第 8 節的 `Q` 編號（或 `- 無。`）。v3 第 3 節 D 表每列要有「決定」與「理由」；第 8 節已決項目底下子項格式是「採用理由／未選 (x) 名稱：／暫緩 名稱：」，選項名不能省，省了就報 `alternative-incomplete`（2026-11-17 封存 v2 時在 v3 踩到）。這兩個解析器與需求清單的解析器都按節名找節、不看節號（2026-11-17 起），改節名會讓它們讀不到東西，測試會失敗。
+- 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗。
+- AGENTS.md 與本檔只有規則；新增或改規則時在 [AGENTS-reasons.md](AGENTS-reasons.md) 補段落與錨點。開工必守的放 AGENTS.md，碰到才需要的放 CONTRIBUTING.md。
+- 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。新守門用 `denied(code, ...)` 寫法。
+- 僅合成暫存 fixture；原檔、票據、金鑰與合成 Git object 不進本 repo。
+- 推含 `.github/workflows/` 改動的 commit，`gh` 權杖要有 `workflow` 權限，否則 GitHub 拒收（2026-11-11 E2 踩到）；補權限要使用者自己跑 `gh auth refresh -h github.com -s workflow`。
+- 發正式包：在要發的 commit 上 push `release-request/<channel>` tag，使用者在 GitHub 核准 `release` environment；不要代按核准。workflow 從 tag 名取 channel，所以每次發布都用同一個觸發 tag：第二次起要先刪掉遠端舊的 `release-request/<channel>` 再重推（2026-11-12 發 `beta` epoch 2 時第一次碰到，刪之前問過使用者）；它只是觸發器，刪掉不影響 `channel/…` 發布紀錄。channel tag 沒有伺服器端保護（決策書 Q23），不要為了測試在 `beta`／`stable` 建、移或刪 tag。
 
 ## 副本規則
 
