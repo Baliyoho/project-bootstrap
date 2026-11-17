@@ -1,5 +1,8 @@
 """F6／F7／F8 on this repo's real decision book and implementation plan.
 
+The decision book is v3. Since 2026-11-17 (v3 Q39) v2 is a frozen archive that
+no program reads; its section 7 and Q1–Q31 are no longer checked here.
+
 Kept apart from test_trail_sources so mutation runs, which copy only
 experiments/, never depend on the repo's documents.
 """
@@ -8,12 +11,13 @@ from pathlib import Path
 import unittest
 
 from project_bootstrap.trail import check_decisions, check_roadmap, check_rules, rejected_routes, why
-from project_bootstrap.trail_sources import (absences_from_architect, decisions_from_book,
+from project_bootstrap.trail_sources import (absences_from_architect, constraints_from_book,
                                           nongoals_from_plan, questions_from_book,
                                           roadmap_from_plan, routes_from_plan,
                                           rules_from_agents)
 
 ROOT = Path(__file__).resolve().parents[1]
+BOOK = 'project-bootstrap-requirements-decision-v3.md'
 
 
 def read(name):
@@ -21,9 +25,9 @@ def read(name):
 
 
 class RepoTrailTests(unittest.TestCase):
-    def test_every_section_7_decision_has_reason_date_and_baseline(self):
-        decisions = decisions_from_book(read('project-bootstrap-requirements-decision.md'))
-        self.assertGreaterEqual(len(decisions), 7)
+    def test_every_constraint_has_reason_date_and_baseline(self):
+        decisions = constraints_from_book(read(BOOK))
+        self.assertEqual([d['id'] for d in decisions], ['book-D%d' % n for n in range(1, 16)])
         self.assertEqual(check_decisions(decisions)[0], [])
 
     def test_rejected_routes_are_findable_with_their_cost(self):
@@ -62,10 +66,14 @@ class RepoTrailTests(unittest.TestCase):
 
     def test_decided_questions_record_every_option_with_a_reason(self):
         # 2026-11-10 Q7 (b): reasons found in the documents, else "當時沒有記錄理由".
-        decisions = questions_from_book(read('project-bootstrap-requirements-decision.md'))
-        self.assertGreaterEqual(len(decisions), 10)
+        # 2026-11-17 Q39: v3 section 8 (Q32 on). An option the question lists but the
+        # record leaves out still comes back with an empty reason and is reported by
+        # check_decisions. Q34–Q36 listed no options, so "every decision has an
+        # alternative" (the v2-era assertion) no longer holds and is not asserted.
+        decisions = questions_from_book(read(BOOK))
+        self.assertGreaterEqual(len(decisions), 8)
+        self.assertEqual({d['baseline'] for d in decisions}, {'決策書第 8 節'})
         self.assertEqual(check_decisions(decisions)[0], [])
-        self.assertTrue(all(d['alternatives'] for d in decisions))
 
     def test_efficiency_nongoals_are_rejected_routes_with_reasons(self):
         decisions = nongoals_from_plan(read('project-bootstrap-efficiency-plan.md'), '2026-11-03')

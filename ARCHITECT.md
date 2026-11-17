@@ -1,5 +1,7 @@
 # ARCHITECT — 這個 repo 的結構
 
+> 最後更新：2026-11-17（需求決策書 v3 Q39）：v2 決策書退休，用 `git mv` 封存到 `docs/history/requirements-decision-v2.md`（逐位元組不改），v3 成為唯一需求書；`verify_v2.py`、`test_registry_repo.py`（新，從 `test_registry.py` 拆出）、`test_trail_repo.py` 與一致性檢查改讀 v3；`verify_bootstrap.py` 新增「封存原件」，文件檢查與行末檢查不讀 `docs/history/`。
+
 > 最後更新：2026-11-14（Codex 交接成本優化）：`verify_bootstrap.py` 先啟動獨立的 `verify_v2.py` 子程序，與其餘暫存 fixture 檢查重疊，收尾仍必須驗其結束碼及報告；新增 `--quiet` 只縮成功輸出。`tests/test_verifier_execution.py` 驗大量輸出、失敗／SKIP 保留與異常清理。不部署新工具、不新增模型呼叫；skill 補 Codex 外層等待用法，版本 `2026-11-14.4`。
 
 > 最後更新：2026-11-14（使用者決定：本 repo 補裝 push 前 hook——`.claude/hooks/repo-pre-push.sh` 是 3.11 的逐字副本，兩份接線都接 PreToolUse，pre-push 從已宣告例外移除；動作提醒 `repo-action-rules.sh` 與它的 PostToolUse 接線拿掉；驗證項「動作當下送規則」換成「本 repo push 前 hook」。前面同日：本 repo 交接制度對齊 v3：`.claude/hooks/repo-git-check.sh` 換成 3.10 `git-freshness.sh` 的逐字副本，只印 `[facts]`；驗證項「本 repo 工作中判讀」與「全綠行」退場，換成「本 repo 開場 hook」逐位元組比對；`.gitignore` 加 `.claude/.bootstrap-version`；`AGENTS.md` 開工段改名「跟部署出去的專案不同的地方」、只寫事實。前面同日：v3 Q33：執行屏障模組與測試封存到 [archive/v2-barrier/](archive/v2-barrier/README.md)，`verify_v2.py` 不再跑探針；前面同日：session 名稱時間戳改 `MM.DD.HH`，`VERSION` `2026-11-14`；`sync_project.py` 會同步 `AGENTS.md` 的共用制度，驗證項加「同步共用制度」）。前次 2026-11-13（v3 第 1 期：部署包改成 v3 形狀）：骨架 27 → 24 檔，`VERSION` `2026-11-13`。3.1 `AGENTS.md` 範本有開始／結束標記夾住的共用制度（≤40 行）；3.10 開場 hook 只報事實（最多五行 `[facts]`）；3.8 handoff skill 降為碰到才讀的參考；舊 3.18–3.20（Antigravity 轉接層、shim、`.agents/hooks.json`）移除，`sync_project.py` 不再處理 `.agents/hooks.json`，`owners.json` 少三列。驗證項的取捨記在「`tools/verify_bootstrap.py` 守的東西」表下方。
@@ -143,7 +145,7 @@
 
 | 要做的事 | 先讀 |
 |---|---|
-| 討論需求、驗收、待決事項或替代工具 | [需求決策書 v3](project-bootstrap-requirements-decision-v3.md)：2026-11-13 起的現行需求權威（D1–D15、51 個穩定需求 ID，編號沿用 v2）；新的待決登記在它的第 8 節。[v2 決策書](project-bootstrap-requirements-decision.md)並存：工具仍讀它，v2 時期已決的題目與逐條理由在它的第 6 節。決策定稿不等於實作完成 |
+| 討論需求、驗收、待決事項或替代工具 | [需求決策書 v3](project-bootstrap-requirements-decision-v3.md)：2026-11-13 起的現行需求權威（D1–D15、51 個穩定需求 ID，編號沿用 v2）；新的待決登記在它的第 8 節。2026-11-17 起它是唯一需求書；v2 決策書凍結封存在 `docs/history/`，**平常不讀，要回溯歷史先經使用者同意**。決策定稿不等於實作完成 |
 | 查某個需求 ID 做到哪 | [v2 現況索引](experiments/v2/status.json)；HANDOFF 只留停點與行動 |
 | 動同步工具、驗證器、hook 或 R01–R09 相關的地方 | [第二輪複審快照](project-bootstrap-reaudit-2026-11-03.md)。2026-11-10 使用者同意從每輪必讀改成條件式；R01–R09 邊界的獨立複審還沒做，不要當成全部結案 |
 | 動原查核報告那 16 條 | [查核進度](project-bootstrap-audit-progress.md) |
@@ -161,7 +163,7 @@
 - 制度只改 `src/kit/`，改完跑 `python3 -X utf8 tools/build_kit.py` 重生 `PROJECT-BOOTSTRAP.md`，同一個 commit；手改部署包會被「部署包由來源生成」擋。handoff skill 的六個檔改 `src/kit/files/.claude/skills/handoff/*.tmpl`，六個 `source:` 標記與 `VERSION` 要同版本；同一天再改要加序號。改到逐字搬來的行，「skill 拆分」會擋：要嘛還原，要嘛在 `tools/skill_split_baseline.json` 的 `rewritten` 寫明去處。改了模式檔的段落標題，「skill 規則對照表」會擋，要一起改 `reasons.md` 對照表。改完要重新覆蓋這台的兩個全域目錄。
 - 各原型都是**偵測**或合成阻擋，沒有接進任何工具。不要寫成保障。崩潰解除的終端確認只抬高 agent 代答門檻；開機識別登記值與錨點都在同 UID 可寫的地方。
 - VM 腳本、`guest_runs.py`、`crash_release.py` 2026-11-14 起封存在 `archive/v2-barrier/`，不再維護（v3 Q33）。
-- `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書第 6 節的 `Q` 編號（或 `- 無。`）。決策書第 7 節每條要有 `理由：`；第 6 節有裁定的項目底下子項格式是「採用理由／未選／暫緩」。
+- `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書 v3 第 8 節的 `Q` 編號（或 `- 無。`）。v3 第 3 節 D 表每列要有「決定」與「理由」；第 8 節已決項目底下子項格式是「採用理由／未選 (x) 名稱：／暫緩 名稱：」，選項名不能省，省了就報 `alternative-incomplete`（2026-11-17 封存 v2 時在 v3 踩到）。這兩個解析器與需求清單的解析器都按節名找節、不看節號（2026-11-17 起），改節名會讓它們讀不到東西，測試會失敗。
 - 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗。
 - AGENTS.md 只有規則；新增或改規則時在 [AGENTS-reasons.md](AGENTS-reasons.md) 補段落與錨點。
 - 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。新守門用 `denied(code, ...)` 寫法。
@@ -191,7 +193,7 @@
 | [project-bootstrap-efficiency-plan.md](project-bootstrap-efficiency-plan.md) | **效率改進設計提案**：接棒分流、驗證分層、必讀內容精簡、原始碼與部署產物分離；尚未實施，不部署、不同步，不取代現行程序 | 設計決策改變時；實作進度看 HANDOFF |
 | [project-bootstrap-skill-split-design.md](project-bootstrap-skill-split-design.md) | **handoff skill 依模式拆分設計稿**（F22 第二階段 (1)(3)）：2026-11-10 實測、甲乙方案比較、檔案配置、開場 hook 全綠行、要改的守門與推出順序。等使用者審閱（決策書 Q9），未實施，不部署、不同步 | 設計改變時；實作進度看 HANDOFF |
 | [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md) | **現行需求權威（決策版本 3，2026-11-13）**：適用範圍、依據、D1–D15、51 條需求的處置與強度、目標部署形狀、驗收、Q32 起的決策登記處。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
-| [project-bootstrap-requirements-decision.md](project-bootstrap-requirements-decision.md) | 決策版本 2，2026-11-13 起由 v3 取代為現行權威，**並存不刪**：驗證器、`test_trail_repo`、`test_registry`、一致性檢查與 v2 現況索引仍讀這個檔名；Q1–Q31 與逐條否決理由只在這裡。衝突以 v3 為準 | 只補工具需要的登記與帶日期的註記 |
+| `docs/history/` | **封存區**（2026-11-17，v3 Q39）：`requirements-decision-v2.md` 是決策版本 2 的凍結原件（Q1–Q31 與逐條否決理由只在這裡），由 `git mv` 搬來、逐位元組不改，檔內相對連結因此失效，是已宣告例外。程式與測試不得引用它（`verify_bootstrap.py`「封存原件」守）；文件檢查與行末檢查不讀這裡。**AI 平常不讀，要回溯歷史先經使用者同意**；程式要讀也一樣，同意後登記到 `ARCHIVE_READERS` | 不動。要改內容或讓程式讀它，先經使用者同意 |
 | [experiments/handoff-ab/](experiments/handoff-ab/README.md) | 完整版與極簡版骨架的對照實測（2026-11-13 兩輪、36 次）：極簡版骨架、情境搭建、執行、評分與結果。v3 的依據 E1。實驗用，不部署、不同步；原始資料在 gitignored 的 `dist/` | 加跑或改情境時 |
 | [project-bootstrap-implementation-plan.md](project-bootstrap-implementation-plan.md) | 依決策書評估既有程式與開源工具；推薦技術棧、50 項映射、可行性門檻、遷移與驗收。不承載滾動達成狀態，不部署、不同步 | 選型或實現方案改變時 |
 | [project-bootstrap-requirements-history.md](project-bootstrap-requirements-history.md) | 原 v3.10 全文與修訂理由，歷史封存；不再指示現行操作 | 僅補帶日期的歷史勘誤 |
@@ -296,7 +298,8 @@ v2 原型不在部署包內；詳見 [原型說明](experiments/v2/README.md)。
 | 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 那一份後照原文印出（2026-11-13 起不再分 🔴／🟡／✅，v3 D12）：別台機器、主題含「無」原文完整、已交棒、欄位重複說有幾列、欄位不存在明講讀不到、工具環境變數不改變輸出；拿掉印出那一行的負向測試 | 下一棒看不到誰握著分支（F4 偵測） |
 | `VERSION` 檔 | 與部署包版本行一致 | 落後偵測會說謊，落後的專案以為自己最新 |
 | 版本落後偵測 | 共用制度版本取自 `AGENTS.md` 開始標記；餵**比本機新**的版本要講落後、餵**比本機舊**的要說「比上游新」、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後（F18 提示） |
-| 本 repo 自己的文件 | 本 repo 的 `.md` 無死連結、`AGENTS.md`／`ARCHITECT.md` 有日期標頭，受管非 Markdown 檔無已知部署佔位符 | 改檔名或搬段落留下死連結，或把未填的部署欄位帶進公開來源。部署包裡指向「部署後才存在的檔」的連結不算，判準是 `EXPECTED`，所以它指向本 repo 檔案的連結照樣會被抓 |
+| 本 repo 自己的文件 | 本 repo 的 `.md` 無死連結、`AGENTS.md`／`ARCHITECT.md` 有日期標頭，受管非 Markdown 檔無已知部署佔位符；`src/kit/` 另有規則，`docs/history/` 封存區不讀（v3 Q39） | 改檔名或搬段落留下死連結，或把未填的部署欄位帶進公開來源。部署包裡指向「部署後才存在的檔」的連結不算，判準是 `EXPECTED`，所以它指向本 repo 檔案的連結照樣會被抓 |
+| 封存原件 | `docs/history/` 的 v2 決策書 Git blob 不變（只看 index 記的 blob，不開檔）；程式、測試與設定檔不出現它的路徑（`ARCHIVE_READERS` 登記的除外，登記前要使用者同意）；文件檢查不讀封存區但不外溢。引用、改內容、搬走、略過外溢四種反例都要擋，已登記讀取者放行（2026-11-17，v3 Q39） | 有程式又開始讀 v2，或封存原件被改、被搬走 |
 | 本 repo push 前 hook | `repo-pre-push.sh` 跟部署包 3.11 逐位元組相同；兩份接線的 PreToolUse 都指向它；接線守門 7 個負向測試（沒接、指向別支、matcher 退回 `Bash`、接回 PostToolUse、SessionStart 指錯、腳本不存在）（2026-11-14 取代「動作當下送規則」） | 改了 3.11 卻沒重貼，或接線被改掉，本 repo 推 `main` 時沒寫開工標記也不會被擋 |
 | 本 repo 兩份接線 | `.claude/settings.json` 與 `.codex/hooks.json` 都是合法 JSON、`SessionStart` 都指向 `repo-git-check.sh`、`PreToolUse` 都指向 `repo-pre-push.sh`（2026-11-14 起；之前只有 Claude Code 那份可多接動作提醒），其他事件一律拒絕，而且沒被改成指向 `git-freshness.sh`／`pre-push-handoff.sh` | 開場檢查靜默不執行——看起來有防護、實際上沒有。這兩個檔是 JSON、塞不進 `source:` 標記，落後偵測看不到它們，這一項是唯一的守門人 |
 | sync 拒絕本 repo | `sync_project.py <本 repo 路徑>` 要印出拒絕，**而且預演輸出裡零 `UPDATE`** | 一次手打路徑就把兩份接線改成指向這裡不存在的腳本。只檢查「有印拒絕」的話，一個印了話卻照樣改檔的版本會通過，比沒有這項更糟 |
@@ -405,7 +408,7 @@ check_docs.py
 >
 > **宣告的內容**：這個 repo 刻意不裝 **handoff skill**、**`check_docs.py`** 兩項，理由見下方。2026-11-14 使用者撤銷 pre-push 那一項、改成補裝（`repo-pre-push.sh`，3.11 的逐字副本）：v3 F10 是 v3 唯一要「阻擋」的需求，來源少這一層就比產物少一層保護。**這不是疏漏，也不是尚未排程。** 替代保障：接棒程序讀全域副本 `~/.claude/skills/handoff/`（沒有全域副本時讀部署包 3.8 節，2026-11-10 起 AGENTS 開工段落明寫）、`.md` 的死連結與日期標頭由 `verify_bootstrap.py` 顧、交接快照由 B6 逐項核對。
 >
-> ⚠️ **宣告不等於 F46 已達成。** F46 的強度是**偵測**——它還要求「對來源跑與產物同一組情境，缺的項目要**印出來**而不是略過」。2026-11-08 起 `verify_bootstrap.py` 逐項印出已宣告例外，並檢查來源與產物的檔案形狀；交接快照 11 種、文件 20 種、文件設定 9 種同組情境均成對跑，另以 `--staged` 核對提交候選，並在本機 bare origin 演練 Git 接力。跨工具／OS 接手與模型遵循仍未驗，所以 **F46 仍未整項通過**。待辦與現況看 [HANDOFF.md](HANDOFF.md)，需求條文看[需求決策書](project-bootstrap-requirements-decision.md) F46 驗收。
+> ⚠️ **宣告不等於 F46 已達成。** F46 的強度是**偵測**——它還要求「對來源跑與產物同一組情境，缺的項目要**印出來**而不是略過」。2026-11-08 起 `verify_bootstrap.py` 逐項印出已宣告例外，並檢查來源與產物的檔案形狀；交接快照 11 種、文件 20 種、文件設定 9 種同組情境均成對跑，另以 `--staged` 核對提交候選，並在本機 bare origin 演練 Git 接力。跨工具／OS 接手與模型遵循仍未驗，所以 **F46 仍未整項通過**。待辦與現況看 [HANDOFF.md](HANDOFF.md)，需求條文看[需求決策書 v3](project-bootstrap-requirements-decision-v3.md) F46（v2 時期的 F46 驗收門檻只在封存的 v2 原件，平常不讀，v3 Q39）。
 >
 > 要撤銷這條宣告（改成補裝），是改使用者的決定，不是改措辭。
 

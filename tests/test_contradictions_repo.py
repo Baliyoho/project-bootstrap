@@ -33,6 +33,19 @@ class RepoDocumentTests(unittest.TestCase):
                 self.assertIn((rule, doc, 'reverse-rule'),
                               {(f['rule'], f.get('doc'), f['code']) for f in found})
 
+    def test_v3_is_where_the_requirement_count_must_be_stated(self):
+        # 2026-11-17 v3 Q39: v2 is archived and unread, so v3 carries the count.
+        book = 'project-bootstrap-requirements-decision-v3.md'
+        docs = read_docs(ROOT, REPO_DOCS)
+        self.assertIn('51 條需求', docs[book])
+        docs[book] = docs[book].replace('51 條需求', '這些需求')
+        unknown = check(docs, REPO_CONFIG)['unknown']
+        self.assertIn((book, 'rule-absent:requirement-count'), unknown)
+        docs = read_docs(ROOT, REPO_DOCS)
+        docs[book] += '\n\n## 注入\n\n本檔共 50 條需求。\n'
+        found = check(docs, REPO_CONFIG)['findings']
+        self.assertIn(('requirement-count', book, 'reverse-rule'),
+                      {(f['rule'], f.get('doc'), f['code']) for f in found})
 
 if __name__ == '__main__':
     unittest.main()

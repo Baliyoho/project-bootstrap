@@ -1,6 +1,6 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-16（共用制度副本重貼到 v2026-11-16.7）；前次同日（v2026-11-16.6：共用制度副本重貼）；前次同日（v2026-11-16.4：handoff skill 改七個檔，多 `env.md`）；前次同日（v2026-11-16.3：撤回 session ID 占用核對）；前次 2026-11-14（補裝 push 前 hook、拿掉動作提醒 hook；前面同日：本 repo 交接制度對齊 v3：開場 hook 換成部署包 3.10 的逐字副本，開工段改成只寫事實）；前次同日（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
+> 最後更新：2026-11-17（v2 決策書退休、凍結封存，v3 成為唯一需求書，v3 Q39）；前次 2026-11-16（共用制度副本重貼到 v2026-11-16.7）；前次同日（v2026-11-16.6：共用制度副本重貼）；前次同日（v2026-11-16.4：handoff skill 改七個檔，多 `env.md`）；前次同日（v2026-11-16.3：撤回 session ID 占用核對）；前次 2026-11-14（補裝 push 前 hook、拿掉動作提醒 hook；前面同日：本 repo 交接制度對齊 v3：開場 hook 換成部署包 3.10 的逐字副本，開工段改成只寫事實）；前次同日（貼入部署包的共用制度副本，全域 handoff skill 換成 v3）
 > 本檔只放規則；每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 <!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-16.7 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
@@ -49,7 +49,7 @@
 
 ## 這個 repo 是什麼
 
-AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)（用法見 [README.md](README.md)）；不是知識庫，不存各專案的知識或狀態。現行需求權威是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）；[v2](project-bootstrap-requirements-decision.md) 並存供工具讀取與 Q1–Q31 追溯，衝突以 v3 為準。不部署的例外（測試、v2 原型、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`check_docs.py` 列在 ARCHITECT：那是已宣告的例外，不是空白，改成補裝由使用者決定。原型通過不授權切換程序。[為什麼](AGENTS-reasons.md#what)
+AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)（用法見 [README.md](README.md)）；不是知識庫，不存各專案的知識或狀態。唯一需求書是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）。v2 決策書凍結封存在 `docs/history/`，逐位元組不改、程式不讀；**平常不讀，要回溯歷史先經使用者同意**（v3 Q39）。不部署的例外（測試、v2 原型、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`check_docs.py` 列在 ARCHITECT：那是已宣告的例外，不是空白，改成補裝由使用者決定。原型通過不授權切換程序。[為什麼](AGENTS-reasons.md#what)
 
 ## 鐵律
 

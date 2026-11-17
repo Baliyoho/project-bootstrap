@@ -29,7 +29,9 @@ class RepoLinkTests(unittest.TestCase):
             sys.path.remove(str(ROOT / 'tools'))
         listed = subprocess.run(['git', 'ls-files', '-z', '--', '*.md'], cwd=ROOT,
                                 capture_output=True, check=True).stdout.decode('utf-8').split('\0')
-        documents = [p for p in listed if p and not p.startswith('src/kit/')]
+        # 2026-11-17 (v3 Q39): docs/history/ is a frozen archive that no program reads.
+        documents = [p for p in verify_bootstrap.repo_scanned_files([p for p in listed if p])
+                     if p.endswith('.md')]
         self.assertIn('PROJECT-BOOTSTRAP.md', documents)
 
         # AGENTS.md carries a verbatim copy of the kit's shared section (2026-11-14); it links

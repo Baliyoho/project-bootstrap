@@ -4,7 +4,7 @@
 > 2026-11-11 P1 第二片：本目錄的程式已搬到 [src/project_bootstrap](../../src/project_bootstrap/__init__.py)、測試搬到 [tests](../../tests/__init__.py)；這裡只留本說明與 [現況索引](status.json)。下文提到的檔名是同一份程式，指令已改成新位置；各節日期的歷史敘述不改。
 > 範圍：v2 分支的合成實驗，沒有部署、模型呼叫、付費服務或正式制度切換。
 
-需求以 [決策書](../../project-bootstrap-requirements-decision.md) 為準；[實現規劃](../../project-bootstrap-implementation-plan.md) 定義 P0–P5。現行部署包仍是 22 檔的唯一權威。本目錄不是第二份 handoff 制度，也不複製其他專案的檔案。
+需求以 [決策書 v3](../../project-bootstrap-requirements-decision-v3.md) 為準（2026-11-17 起唯一需求書；v2 決策書封存不讀，v3 Q39）；[實現規劃](../../project-bootstrap-implementation-plan.md) 定義 P0–P5。現行部署包仍是 22 檔的唯一權威。本目錄不是第二份 handoff 制度，也不複製其他專案的檔案。
 
 ## 執行與結果語意
 

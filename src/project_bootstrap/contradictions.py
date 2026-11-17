@@ -208,10 +208,11 @@ REPO_CONFIG = {
             '51': [r'(?<!\d)51 ?(個穩定需求 ?ID|條需求|個需求|項需求)'],
             'other': [r'(?<!\d)(?!51)\d{2} ?(個穩定需求 ?ID|條需求|個需求|項需求)'],
         },
+        # 2026-11-17（v3 Q39）：v2 封存、不再被程式讀取，需求數的權威改看 v3。
         'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'HANDOFF.md',
-                 'project-bootstrap-requirements-decision.md',
+                 'project-bootstrap-requirements-decision-v3.md',
                  'project-bootstrap-implementation-plan.md'],
-        'required_in': ['AGENTS.md', 'project-bootstrap-requirements-decision.md'],
+        'required_in': ['AGENTS.md', 'project-bootstrap-requirements-decision-v3.md'],
     }, {
         # 2026-11-02／F12: the busy marker coordinates; it is not a mutual-exclusion lock.
         'id': 'busy-marker-not-lock',
@@ -258,14 +259,11 @@ REPO_CONFIG = {
                  'heading': r'(^| > )8\. 待決事項$'},
     'pending_sections': [{'doc': 'HANDOFF.md', 'heading': r'懸置事項'}],
     # Dated log lines and the decisions record state what was true then.
-    'history': [{'doc': 'ARCHITECT.md', 'line': r'^> (最後更新：)?\d{4}-\d{2}-\d{2}'},
-                {'doc': 'project-bootstrap-requirements-decision.md',
-                 'heading': r'(^| > )7\. 本次整理'}],
+    'history': [{'doc': 'ARCHITECT.md', 'line': r'^> (最後更新：)?\d{4}-\d{2}-\d{2}'}],
     'scan_fences': ['PROJECT-BOOTSTRAP.md'],
 }
 REPO_DOCS = ('README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md', 'HANDOFF.md',
-             'project-bootstrap-requirements-decision.md',
-             # 現行需求權威，也是待決登記處（2026-11-16）。
+             # 唯一需求書，也是待決登記處（2026-11-16；2026-11-17 v3 Q39 起 v2 封存不讀）。
              'project-bootstrap-requirements-decision-v3.md',
              'project-bootstrap-implementation-plan.md')
 

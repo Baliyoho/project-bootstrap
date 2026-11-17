@@ -48,7 +48,7 @@ def main():
     args = parser.parse_args()
     artifacts = runtime_artifacts()
     data = json.loads((ROOT / 'experiments/v2/status.json').read_text(encoding='utf-8'))
-    errors = validate(data, (ROOT / 'project-bootstrap-requirements-decision.md').read_text(encoding='utf-8'), ROOT)
+    errors = validate(data, (ROOT / 'project-bootstrap-requirements-decision-v3.md').read_text(encoding='utf-8'), ROOT)
     stream = io.StringIO()
     # P1 slice 4: test files that need a locked third-party package start with
     # NEEDS_UV_MARKER (verify_bootstrap.py enforces it). A4 runs on plain Python, so

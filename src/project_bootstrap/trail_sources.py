@@ -3,9 +3,11 @@
 The documents stay the single home of each fact; these adapters only lift
 records out of them so ``trail`` can check them:
 
-- ``decisions_from_book``: each numbered item of the decision book's section
-  7 is an accepted decision, ``理由：`` separates what was decided from why,
-  the dated heading gives the date and the ``決策版本`` line the baseline;
+- ``constraints_from_book``: each row of the decision book's constraint table
+  (the ``方案約束`` section, found by name) is an accepted decision: the ID
+  column, the ``決定`` cell as title and the ``理由`` cell as rationale; the
+  ``決策版本：N。YYYY-MM-DD`` line gives the date and the baseline (2026-11-17,
+  v3 Q39: replaced the reader of v2's section 7, which v3 does not have);
 - ``routes_from_plan``: the implementation plan's route table (section 3.4)
   is one decision whose recommended row is the choice and whose other rows
   are the alternatives, each with its cost as the reason;
@@ -20,8 +22,9 @@ records out of them so ``trail`` can check them:
 - ``rules_from_agents``: each "why" link in AGENTS.md is a rule citing the
   AGENTS-reasons.md section it points to; each section is an accepted
   decision dated by the earliest date written in it.
-- ``questions_from_book``: each decided item of the decision book's section 6,
-  with its indented 採用理由／未選／暫緩 sub-bullets as rationale and alternatives;
+- ``questions_from_book``: each decided item of the decision book's pending
+  section (``待決事項``, found by name: section 6 in v2, 8 in v3), with its
+  indented 採用理由／未選／暫緩 sub-bullets as rationale and alternatives;
 - ``nongoals_from_plan``: each non-goal of the efficiency plan's section 3.2 is
   a rejected route, the text after ``理由：`` its reason.
 
@@ -56,17 +59,18 @@ def _rows(block):
     return rows[1:]
 
 
-def decisions_from_book(text):
-    body, heading = _section(text, r'7\. ')
-    date = re.search(r'(\d{4}-\d{2}-\d{2})', heading or '')
-    version = re.search(r'決策版本：(\d+)', text)
+def constraints_from_book(text):
+    body, _ = _section(text, r'\d+\. 方案約束')
+    version = re.search(r'決策版本：(\d+)。(\d{4}-\d{2}-\d{2})?', text)
     baseline = f'決策書決策版本 {version.group(1)}' if version else ''
+    date = version.group(2) if version and version.group(2) else ''
     decisions = []
-    for number, item in re.findall(r'^(\d+)\. (.+)$', body, re.MULTILINE):
-        title, _, rationale = item.partition('理由：')
-        decisions.append({'id': f'book-7.{number}', 'title': title.strip(), 'status': 'accepted',
-                          'date': date.group(1) if date else '', 'baseline': baseline,
-                          'rationale': rationale.strip()})
+    for row in _rows(body):
+        if len(row) < 3 or not re.fullmatch(r'D\d+', row[0].strip('*')):
+            continue
+        decisions.append({'id': 'book-' + row[0].strip('*'), 'title': row[1],
+                          'status': 'accepted', 'date': date, 'baseline': baseline,
+                          'rationale': row[2]})
     return decisions
 
 
@@ -151,7 +155,7 @@ _CHOSEN = re.compile(r'[採選](?: AI 建議)? \(([a-z])\)')
 
 
 def questions_from_book(text):
-    """Decided items of the decision book's section 6 (2026-11-10, Q7 (b)).
+    """Decided items of the decision book's pending section (2026-11-10, Q7 (b)).
 
     Each ``- **Qn**`` item whose ``狀態：`` starts with ``已決`` is an accepted
     decision dated by the first date in its status. Its indented sub-bullets
@@ -161,7 +165,9 @@ def questions_from_book(text):
     alternative with an empty reason, which ``check_decisions`` reports, so a
     route cannot drop out of the record by being left unmentioned.
     """
-    body, _ = _section(text, r'6\. ')
+    body, heading = _section(text, r'\d+\. 待決事項')
+    number = re.search(r'(\d+)\. 待決事項', heading or '')
+    baseline = f'決策書第 {number.group(1)} 節' if number else ''
     items = []
     for line in body.splitlines():
         head = _QUESTION.match(line)
@@ -194,7 +200,7 @@ def questions_from_book(text):
         decisions.append({'id': 'book-' + qid,
                           'title': title.group(1) if title else options.strip(),
                           'status': 'accepted', 'date': day.group(0) if day else '',
-                          'baseline': '決策書第 6 節', 'rationale': rationale.strip(),
+                          'baseline': baseline, 'rationale': rationale.strip(),
                           'alternatives': alternatives})
     return decisions
 

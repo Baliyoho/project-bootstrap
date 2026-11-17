@@ -4,27 +4,34 @@ import unittest
 
 from project_bootstrap.trail import (check_decisions, check_roadmap, check_rules,
                                   rejected_routes, why)
-from project_bootstrap.trail_sources import (absences_from_architect, decisions_from_book,
+from project_bootstrap.trail_sources import (absences_from_architect, constraints_from_book,
                                           nongoals_from_plan, questions_from_book,
                                           roadmap_from_plan, routes_from_plan,
                                           rules_from_agents)
 
 BOOK = '''# 決策書
 
-> 決策版本：2。
+> 決策版本：3。2026-11-13 使用者指示直接出 v3。
 
-## 6. 待決事項
+## 2. 依據
 
-1. 這不是決策。理由：不同節。
+| ID | 決定 | 理由 |
+|---|---|---|
+| D0 | 不是約束 | 別節的表 |
 
-## 7. 本次整理的決策與理由（2026-11-06）
+## 3. 方案約束
 
-1. 改名 history。理由：舊說法不應要求每次還原。
-2. 補 F50。理由：原清單漏列。
+| ID | 決定 | 理由 | 對 v2 |
+|---|---|---|---|
+| D1 | 只有一個 writer | 防止互相覆寫 | 不變 |
+| **D9** | **執行屏障委託工具** | E2、E8 | 新增 |
+| 不是 D | 註解列 | 無 | 無 |
 
-## 8. 之後
+D9 一起讀：表後的說明不是一列。
 
-1. 不屬於第七節。理由：在別節。
+## 4. 之後
+
+| D7 | 不屬於方案約束 | 在別節 | 無 |
 '''
 PLAN = '''# 規劃
 
@@ -56,24 +63,28 @@ PLAN = '''# 規劃
 
 
 class SourceTests(unittest.TestCase):
-    def test_book_items_become_decisions_with_rationale_date_and_baseline(self):
-        decisions = decisions_from_book(BOOK)
+    def test_constraint_rows_become_decisions_with_rationale_date_and_baseline(self):
+        decisions = constraints_from_book(BOOK)
         self.assertEqual([(d['id'], d['title'], d['rationale'], d['date'], d['baseline'])
                           for d in decisions],
-                         [('book-7.1', '改名 history。', '舊說法不應要求每次還原。', '2026-11-06',
-                           '決策書決策版本 2'),
-                          ('book-7.2', '補 F50。', '原清單漏列。', '2026-11-06', '決策書決策版本 2')])
+                         [('book-D1', '只有一個 writer', '防止互相覆寫', '2026-11-13',
+                           '決策書決策版本 3'),
+                          ('book-D9', '**執行屏障委託工具**', 'E2、E8', '2026-11-13',
+                           '決策書決策版本 3')])
         self.assertEqual(check_decisions(decisions)[0], [])
 
-    def test_item_without_rationale_label_is_reported_by_the_checks(self):
-        book = BOOK.replace('補 F50。理由：原清單漏列。', '補 F50，原清單漏列。')
-        findings, _ = check_decisions(decisions_from_book(book))
-        self.assertEqual(findings, [('book-7.2', 'decision-missing-rationale')])
+    def test_row_without_rationale_is_reported_by_the_checks(self):
+        book = BOOK.replace('| D1 | 只有一個 writer | 防止互相覆寫 |', '| D1 | 只有一個 writer |  |')
+        findings, _ = check_decisions(constraints_from_book(book))
+        self.assertEqual(findings, [('book-D1', 'decision-missing-rationale')])
 
     def test_missing_section_date_or_version_is_not_silently_complete(self):
-        self.assertEqual(decisions_from_book('# 空\n'), [])
-        undated = BOOK.replace('（2026-11-06）', '').replace('> 決策版本：2。\n', '')
-        findings, _ = check_decisions(decisions_from_book(undated))
+        self.assertEqual(constraints_from_book('# 空\n'), [])
+        undated = BOOK.replace('2026-11-13 使用者', '使用者')
+        findings, _ = check_decisions(constraints_from_book(undated))
+        self.assertEqual(sorted(set(code for _, code in findings)), ['decision-date-invalid'])
+        unversioned = BOOK.replace('> 決策版本：3。2026-11-13 使用者指示直接出 v3。\n', '')
+        findings, _ = check_decisions(constraints_from_book(unversioned))
         self.assertEqual(sorted(set(code for _, code in findings)),
                          ['decision-date-invalid', 'decision-missing-baseline'])
 
@@ -211,6 +222,14 @@ class QuestionTests(unittest.TestCase):
 
     def test_missing_section_yields_nothing(self):
         self.assertEqual(questions_from_book('# 沒有第六節\n'), [])
+
+    def test_section_is_found_by_name_and_baseline_follows_its_number(self):
+        # 2026-11-17 v3 Q39: v3 keeps the pending items in section 8.
+        book = self.BOOK.replace('## 6. 待決事項', '## 8. 待決事項')
+        decisions = questions_from_book(book)
+        self.assertEqual([d['id'] for d in decisions], ['book-Q1', 'book-Q3', 'book-Q4'])
+        self.assertEqual({d['baseline'] for d in decisions}, {'決策書第 8 節'})
+        self.assertEqual(questions_from_book(self.BOOK.replace('待決事項', '已決事項')), [])
 
 
 class NongoalTests(unittest.TestCase):

@@ -8,7 +8,18 @@ STATES = {'通過', '不通過', '未驗證', '不適用'}
 
 
 def requirement_ids(text):
-    section = text.split('## 3. 需求清單', 1)[1].split('## 4. 驗收規則', 1)[0]
+    """IDs of the requirement table, found by its heading name, not its number.
+
+    2026-11-17 (v3 Q39): v2 put the list in section 3 and v3 in section 4; the
+    section ends at the next level-2 heading. No such section yields no IDs,
+    which ``validate`` then reports as a mismatch instead of passing.
+    """
+    match = re.search(r'^## \d+\. 需求清單.*$', text, re.MULTILINE)
+    if not match:
+        return []
+    rest = text[match.end():]
+    end = re.search(r'^## ', rest, re.MULTILINE)
+    section = rest[:end.start()] if end else rest
     return re.findall(r'^\| (F\d+[ab]?) \|', section, re.MULTILINE)
 
 
@@ -18,7 +29,7 @@ def validate(data, decision, root):
     rows = data.get('requirements', [])
     observed = [row.get('id') for row in rows]
     if len(ids) != len(set(ids)) or set(observed) != set(ids) or len(observed) != len(ids):
-        errors.append('需求 ID 缺漏、重複或多出；以決策書第 3 節為準')
+        errors.append('需求 ID 缺漏、重複或多出；以決策書「需求清單」節為準')
     for row in rows:
         for key in ('scope', 'origin', 'unknown', 'next'):
             if not row.get(key):

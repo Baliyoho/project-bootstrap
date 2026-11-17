@@ -1,7 +1,7 @@
 # project-bootstrap 需求實現與技術棧規劃
 
 > 最後更新：2026-11-12
-> 狀態：**2026-11-06 使用者已授權在 `codex/project-bootstrap_v2` 按本方向實作；尚未部署、未取代現行程序**。依據 [需求決策書](project-bootstrap-requirements-decision.md) 決策版本 2；涵蓋全部 51 個需求 ID（含 v2 啟動補登的 F50）。
+> 狀態：**2026-11-06 使用者已授權在 `codex/project-bootstrap_v2` 按本方向實作；尚未部署、未取代現行程序**。依據需求決策書決策版本 2（2026-11-17 起封存為 `docs/history/requirements-decision-v2.md`，現行以 [v3](project-bootstrap-requirements-decision-v3.md) 為準，v3 Q39）；涵蓋全部 51 個需求 ID（含 v2 啟動補登的 F50）。
 > 本機查核基準：`01d60c6`（需求整理完成），骨架 `VERSION=2026-11-03`。本輪只修復誤觸的決策書檔名、研究與撰寫文件，沒有安裝候選工具或呼叫額外模型。
 > 外部資料：2026-11-06 讀取官方文件、官方 repo 與 LICENSE；屬文件查證，**不是整合實測**。選型理由是本規劃的判斷；不把供應者功能描述當成需求驗收。
 

@@ -1692,8 +1692,8 @@
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
-     "old": "        title, _, rationale = item.partition('理由：')\n        decisions.append({'id': f'book-7.{number}'",
-     "new": "        title, _, rationale = item.partition('。')\n        decisions.append({'id': f'book-7.{number}'"
+     "old": "        if len(row) < 3 or not re.fullmatch(r'D\\d+', row[0].strip('*')):\n            continue\n",
+     "new": "        if len(row) < 3:\n            continue\n"
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
@@ -1702,8 +1702,13 @@
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
-     "old": "                          'date': date.group(1) if date else '', 'baseline': baseline,",
-     "new": "                          'date': '2026-11-06', 'baseline': baseline,"
+     "old": "    date = version.group(2) if version and version.group(2) else ''\n",
+     "new": "    date = '2026-11-13'\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                          'rationale': row[2]})\n",
+     "new": "                          'rationale': row[1]})\n"
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
@@ -1737,8 +1742,13 @@
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
-     "old": "    body, _ = _section(text, r'6\\. ')\n",
-     "new": "    body = text\n"
+     "old": "    body, heading = _section(text, r'\\d+\\. 待決事項')\n",
+     "new": "    body, heading = _section(text, r'\\d+\\. ')\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    baseline = f'決策書第 {number.group(1)} 節' if number else ''\n",
+     "new": "    baseline = '決策書第 6 節'\n"
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
@@ -2257,8 +2267,8 @@
     },
     {
      "file": "src/project_bootstrap/registry.py",
-     "old": "        if row.get('result') not in STATES:\n            errors.append(f'{row.get(\"id\")} 結果無效')\n",
-     "new": ""
+     "old": "            if item.get('result') not in STATES or not item.get('scope'):\n",
+     "new": "            if not item.get('scope'):\n"
     },
     {
      "file": "src/project_bootstrap/registry.py",
@@ -2284,6 +2294,16 @@
      "file": "src/project_bootstrap/registry.py",
      "old": "                if not evidence.get('scope'):\n",
      "new": "                if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "    section = rest[:end.start()] if end else rest\n",
+     "new": "    section = rest\n"
+    },
+    {
+     "file": "src/project_bootstrap/registry.py",
+     "old": "    if not match:\n        return []\n    rest = text[match.end():]\n",
+     "new": "    if not match:\n        return ['F1', 'F11']\n    rest = text[match.end():]\n"
     }
    ]
   },
