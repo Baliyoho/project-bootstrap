@@ -22,9 +22,11 @@ records out of them so ``trail`` can check them:
 - ``rules_from_agents``: each "why" link in AGENTS.md is a rule citing the
   AGENTS-reasons.md section it points to; each section is an accepted
   decision dated by the earliest date written in it.
-- ``questions_from_book``: each decided item of the decision book's pending
-  section (``待決事項``, found by name: section 6 in v2, 8 in v3), with its
-  indented 採用理由／未選／暫緩 sub-bullets as rationale and alternatives;
+- ``questions_from_book``: each decided item of the decision record, found by
+  name: the ``決策紀錄`` section of the v3 history file (2026-11-17, v3 Q42:
+  decided items move there) or, in older books, the ``待決事項`` section (6 in
+  v2), with its indented 採用理由／未選／暫緩 sub-bullets as rationale and
+  alternatives;
 - ``nongoals_from_plan``: each bullet of the plan's ``非目標`` section (found by
   name) is a rejected route, the text after ``理由：`` its reason.
 
@@ -170,9 +172,9 @@ def questions_from_book(text):
     alternative with an empty reason, which ``check_decisions`` reports, so a
     route cannot drop out of the record by being left unmentioned.
     """
-    body, heading = _section(text, r'\d+\. 待決事項')
-    number = re.search(r'(\d+)\. 待決事項', heading or '')
-    baseline = f'決策書第 {number.group(1)} 節' if number else ''
+    body, heading = _section(text, r'\d+\. (?:待決事項|決策紀錄)')
+    number = re.search(r'(\d+)\. (待決事項|決策紀錄)', heading or '')
+    baseline = f'{number.group(2)}第 {number.group(1)} 節' if number else ''
     items = []
     for line in body.splitlines():
         head = _QUESTION.match(line)

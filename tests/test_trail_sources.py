@@ -209,7 +209,7 @@ class QuestionTests(unittest.TestCase):
         self.assertEqual([d['id'] for d in decisions], ['book-Q1', 'book-Q3', 'book-Q4'])
         self.assertEqual(decisions[0], {
             'id': 'book-Q1', 'title': '要選哪個？', 'status': 'accepted', 'date': '2026-11-11',
-            'baseline': '決策書第 6 節', 'rationale': '甲最便宜（出處：本條）',
+            'baseline': '待決事項第 6 節', 'rationale': '甲最便宜（出處：本條）',
             'alternatives': [{'option': '(b) 乙', 'outcome': 'rejected', 'reason': '太貴'},
                              {'option': '(c) 丙', 'outcome': 'deferred', 'reason': '等金鑰'}]})
         self.assertEqual(decisions[1]['rationale'], '狀態裡的理由')
@@ -224,12 +224,19 @@ class QuestionTests(unittest.TestCase):
         self.assertEqual(questions_from_book('# 沒有第六節\n'), [])
 
     def test_section_is_found_by_name_and_baseline_follows_its_number(self):
-        # 2026-11-17 v3 Q39: v3 keeps the pending items in section 8.
+        # 2026-11-17 v3 Q39: v3 kept the pending items in section 8.
         book = self.BOOK.replace('## 6. 待決事項', '## 8. 待決事項')
         decisions = questions_from_book(book)
         self.assertEqual([d['id'] for d in decisions], ['book-Q1', 'book-Q3', 'book-Q4'])
-        self.assertEqual({d['baseline'] for d in decisions}, {'決策書第 8 節'})
+        self.assertEqual({d['baseline'] for d in decisions}, {'待決事項第 8 節'})
         self.assertEqual(questions_from_book(self.BOOK.replace('待決事項', '已決事項')), [])
+
+    def test_decision_record_section_of_the_history_file_is_read(self):
+        # 2026-11-17 v3 Q42: decided items live in the history file's 決策紀錄.
+        record = self.BOOK.replace('## 6. 待決事項', '## 2. 決策紀錄')
+        decisions = questions_from_book(record)
+        self.assertEqual([d['id'] for d in decisions], ['book-Q1', 'book-Q3', 'book-Q4'])
+        self.assertEqual({d['baseline'] for d in decisions}, {'決策紀錄第 2 節'})
 
 
 class NongoalTests(unittest.TestCase):

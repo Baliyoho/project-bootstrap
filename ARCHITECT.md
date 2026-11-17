@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-17（本專案明確不支援 Gemini：部署包 `2026-11-17.3` 不再產出 `GEMINI.md`，本 repo 的那一份也刪了）；前次同日（根目錄的需求與計畫類文件只留[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)與[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)，其餘封存到 `docs/history/`；本檔開頭原本約 140 行的逐次變更紀錄搬到 [docs/history/architect-log.md](docs/history/architect-log.md)，本檔只寫現況）
+> 最後更新：2026-11-17（兩份權威文件只留現況，修改經過與已決事項移到根目錄成對的兩份歷史紀錄，需求決策書 v3 Q42）；前次同日（本專案明確不支援 Gemini：部署包 `2026-11-17.3` 不再產出 `GEMINI.md`，本 repo 的那一份也刪了）；前次同日（根目錄的需求與計畫類文件只留[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)與[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)，其餘封存到 `docs/history/`；本檔開頭原本約 140 行的逐次變更紀錄搬到 [docs/history/architect-log.md](docs/history/architect-log.md)，本檔只寫現況）
 > 本檔回答「現在長怎樣」。進度看 [HANDOFF.md](HANDOFF.md)，部署包的逐版變更看 [CHANGELOG.md](CHANGELOG.md)，更早的結構變更經過看上面那份紀錄或 Git 歷史。
 
 ## 一句話
@@ -14,7 +14,7 @@
 
 | 要做的事 | 先讀 |
 |---|---|
-| 討論需求、驗收、待決事項或替代工具 | [需求決策書 v3](project-bootstrap-requirements-decision-v3.md)：2026-11-13 起的現行需求權威（D1–D15、51 個穩定需求 ID，編號沿用 v2）；新的待決登記在它的第 8 節。2026-11-17 起它是唯一需求書；v2 決策書凍結封存在 `docs/history/`，**平常不讀，要回溯歷史先經使用者同意**。決策定稿不等於實作完成 |
+| 討論需求、驗收、待決事項或替代工具 | [需求決策書 v3](project-bootstrap-requirements-decision-v3.md)：2026-11-13 起的現行需求權威（D1–D15、51 個穩定需求 ID，編號沿用 v2）；新的待決登記在它的第 8 節，已決的 Q 與修改經過在[它的歷史紀錄](project-bootstrap-requirements-v3-history.md)。2026-11-17 起它是唯一需求書；v2 決策書凍結封存在 `docs/history/`，**平常不讀，要回溯歷史先經使用者同意**。決策定稿不等於實作完成 |
 | 查某個需求 ID 做到哪 | [現況索引](experiments/v2/status.json)（2026-11-17 起照 v3 的強度與處置）；HANDOFF 只留停點與行動 |
 | 規劃路線、分期或暫緩項目 | [實施計畫 v3](project-bootstrap-implementation-plan-v3.md)：從現況走到 v3 需求的路線與取捨，只引用需求 ID |
 | 回溯已封存的查核、計畫或需求討論 | [封存索引](docs/history/README.md)；**平常不讀，要回溯歷史先經使用者同意** |
@@ -39,8 +39,10 @@
 | [AGENTS-reasons.md](AGENTS-reasons.md) | **AGENTS 與 CONTRIBUTING 每條規則的完整原文、理由與事故**；2026-11-10 從 AGENTS.md 逐字搬來，入口用「為什麼」連結指過來。不是每輪必讀，不部署、不同步 | 規則改了就在對應段落補帶日期的理由，不刪舊事故 |
 | [CLAUDE.md](CLAUDE.md) | Claude Code 用 `@AGENTS.md` import | 幾乎不動 |
 | [HANDOFF.md](HANDOFF.md) | **當下交接快照與跨機器工作標記**。範本 3.3 的*實例*，不是副本，不在副本拓撲裡、不要用 `sync_project.py` 同步。≤80 行、覆寫不累積，維護義務與事故見 [AGENTS.md](AGENTS.md)「本 repo 的交接快照」 | A5 寫標記；B6 核對整份現況、待辦、限制與驗證，清掉已完成待辦 |
-| [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md) | **現行需求權威（決策版本 3，2026-11-13）**：適用範圍、依據、D1–D15、51 條需求的處置與強度、目標部署形狀、驗收、Q32 起的決策登記處。不承載實作狀態，不部署、不同步 | 需求決策改變時 |
-| [project-bootstrap-implementation-plan-v3.md](project-bootstrap-implementation-plan-v3.md) | **現行實施權威**（2026-11-17）：從現況走到 v3 需求的路線、三期的證據與還差什麼、暫緩與另案、非目標。只引用需求 ID，不寫進度（進度在 HANDOFF）。不部署、不同步；`tests/test_trail_repo.py` 讀它的「路線選擇」「分期」「非目標」三節 | 路線、分期或暫緩項目改變時 |
+| [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md) | **現行需求權威（決策版本 3，2026-11-13）**：適用範圍、依據、D1–D15、51 條需求的處置與強度、目標部署形狀、驗收、待決事項登記處。只寫現況，不承載實作狀態，不部署、不同步 | 需求決策改變時（同一個 commit 在歷史紀錄加一筆） |
+| [project-bootstrap-requirements-v3-history.md](project-bootstrap-requirements-v3-history.md) | **決策書的歷史紀錄**（2026-11-17，v3 Q42）：修改紀錄、已決的 Q32 起（決策紀錄）、從條文移出的原文。碰到才讀；`tests/test_trail_repo.py` 讀它的「決策紀錄」。到 v4 時跟決策書一起封存 | 決策書每次修改、每個 Q 決定時 |
+| [project-bootstrap-implementation-plan-v3.md](project-bootstrap-implementation-plan-v3.md) | **現行實施權威**（2026-11-17）：從現況走到 v3 需求的路線、三期的證據與還差什麼、暫緩與另案、非目標。只引用需求 ID，不寫進度（進度在 HANDOFF）。不部署、不同步；`tests/test_trail_repo.py` 讀它的「路線選擇」「分期」「非目標」三節 | 路線、分期或暫緩項目改變時（同一個 commit 在歷史紀錄加一筆） |
+| [project-bootstrap-implementation-v3-history.md](project-bootstrap-implementation-v3-history.md) | **實施計畫的歷史紀錄**（2026-11-17，v3 Q42）：修改紀錄、從內文移出的原文。碰到才讀，到 v4 時跟計畫一起封存 | 計畫每次修改時 |
 | [docs/history/](docs/history/README.md) | **封存區**（2026-11-17，v3 Q39）：`requirements-decision-v2.md` 是決策版本 2 的凍結原件（Q1–Q31 與逐條否決理由只在這裡），由 `git mv` 搬來、逐位元組不改，檔內相對連結因此失效，是已宣告例外。同日稍晚再封存 19 份結案或被取代的需求與計畫類文件，連到根目錄的連結已改成 `../../`；每份一行的說明在 `README.md` 索引。程式與測試不得引用封存區裡任何檔名（`verify_bootstrap.py`「封存原件」守）；文件檢查與行末檢查不讀這裡。**AI 平常不讀，要回溯歷史先經使用者同意**；程式要讀也一樣，同意後登記到 `ARCHIVE_READERS` | 不動。要改內容或讓程式讀它，先經使用者同意 |
 | [experiments/handoff-ab/](experiments/handoff-ab/README.md) | 完整版與極簡版骨架的對照實測（2026-11-13 兩輪、36 次）：極簡版骨架、情境搭建、執行、評分與結果。v3 的依據 E1。實驗用，不部署、不同步；原始資料在 gitignored 的 `dist/` | 加跑或改情境時 |
 | 本檔 | 結構 | 只有結構變動 |

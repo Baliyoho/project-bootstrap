@@ -1742,13 +1742,18 @@
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
-     "old": "    body, heading = _section(text, r'\\d+\\. 待決事項')\n",
+     "old": "    body, heading = _section(text, r'\\d+\\. (?:待決事項|決策紀錄)')\n",
      "new": "    body, heading = _section(text, r'\\d+\\. ')\n"
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
-     "old": "    baseline = f'決策書第 {number.group(1)} 節' if number else ''\n",
-     "new": "    baseline = '決策書第 6 節'\n"
+     "old": "    body, heading = _section(text, r'\\d+\\. (?:待決事項|決策紀錄)')\n",
+     "new": "    body, heading = _section(text, r'\\d+\\. (?:待決事項)')\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "    baseline = f'{number.group(2)}第 {number.group(1)} 節' if number else ''\n",
+     "new": "    baseline = '待決事項第 6 節'\n"
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
