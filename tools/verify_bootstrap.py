@@ -75,8 +75,9 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   取代原本的「本 repo 工作中判讀」與「全綠行」），附負向測試
   本 repo push 前 hook——repo-pre-push.sh 要跟部署包 3.11 逐位元組相同，兩份接線的 PreToolUse
                   都指向它（2026-11-14 v3 F10 補裝，取代「動作當下送規則」），接線守門附負向測試
-  封存原件     ——docs/history/ 的 v2 決策書 Git blob 不變、程式與測試不引用它的路徑（回溯歷史
-                  要先經使用者同意並登記）、文件檢查不讀封存區；四種反例都要擋（2026-11-17，v3 Q39）
+  封存原件     ——docs/history/ 的 v2 決策書 Git blob 不變、程式與測試不引用封存區任何檔名（回溯
+                  歷史要先經使用者同意並登記）、文件檢查不讀封存區；五種反例都要擋（2026-11-17，v3 Q39；
+                  同日封存需求與計畫類舊文件，擋的範圍從 v2 檔名擴大到整個封存區）
   本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
   來源例外可見性——逐項印出已宣告減項（2026-11-14 起剩 handoff skill 與 check_docs.py 兩項），核對來源缺而產物有；漏宣告、來源增項及
@@ -2103,6 +2104,10 @@ FROZEN_ARCHIVES = {
 }
 ARCHIVE_NAMES = ('project-bootstrap-requirements-decision' + '.md',
                  'requirements-decision' + '-v2.md')
+# 2026-11-17：同日稍晚封存了 19 份需求與計畫類舊文件。程式不得引用封存區裡任何檔，所以檔名
+# 清單由 Git 追蹤的封存區檔案即時產生，不在這裡列舉（列舉了本檔自己就會引用它們）。索引例外：
+# 它的檔名是通用的 README.md，而且是封存區對外的入口。
+HISTORY_INDEX = HISTORY_DIR + 'README.md'
 # 經使用者同意、為回溯歷史而讀封存原件的程式。加一筆之前先取得使用者同意，並登記在決策書。
 ARCHIVE_READERS = ()
 ARCHIVE_CODE_SUFFIXES = ('.py', '.sh', '.cmd', '.json', '.toml', '.tmpl', '.yml', '.lock')
@@ -2115,10 +2120,15 @@ def repo_scanned_files(tracked_files):
 
 
 def archive_problems(root, tracked_files, blob_of, frozen=None, readers=None):
-    """封存原件逐位元組不變（只看 Git 記的 blob，不開檔），程式與測試不引用它的路徑。"""
+    """封存原件逐位元組不變（只看 Git 記的 blob，不開檔），程式與測試不引用封存區的任何檔。"""
     frozen = FROZEN_ARCHIVES if frozen is None else frozen
     readers = ARCHIVE_READERS if readers is None else readers
     problems = []
+    names = list(ARCHIVE_NAMES)
+    for rel in sorted(tracked_files):
+        base = rel.rsplit('/', 1)[-1]
+        if rel.startswith(HISTORY_DIR) and rel != HISTORY_INDEX and base not in names:
+            names.append(base)
     for path, expected in sorted(frozen.items()):
         actual = blob_of(path)
         if actual is None:
@@ -2134,9 +2144,9 @@ def archive_problems(root, tracked_files, blob_of, frozen=None, readers=None):
             text = (root / rel).read_text(encoding='utf-8')
         except (OSError, UnicodeDecodeError):
             continue
-        for name in ARCHIVE_NAMES:
+        for name in names:
             if name in text:
-                problems.append('%s 引用封存的 v2 決策書（%s）：平常不讀，要回溯歷史先經使用者'
+                problems.append('%s 引用封存區的檔（%s）：平常不讀，要回溯歷史先經使用者'
                                 '同意，再登記到 ARCHIVE_READERS' % (rel, name))
     return problems
 
@@ -2284,6 +2294,16 @@ def step_archive(tmp):
         problems.append('文件提到封存路徑被當成程式引用')
     if archive_problems(root, ['tools/reader.py'], blobs.get, frozen, ('tools/reader.py',)):
         problems.append('已登記（經使用者同意）的讀取者仍被擋')
+    # 2026-11-17：不在 FROZEN_ARCHIVES 的封存檔一樣不能被程式引用；索引例外。
+    other = 'old-' + 'plan.md'
+    (root / 'tools/plan.py').write_text("PLAN = '%s'\n" % other, encoding='utf-8')
+    (root / 'tools/index.py').write_text("INDEX = 'README.md'\n", encoding='utf-8')
+    later = ['tools/plan.py', 'tools/index.py', HISTORY_DIR + other, HISTORY_INDEX]
+    caught = archive_problems(root, later, blobs.get, frozen, ())
+    if not any(c.startswith('tools/plan.py ') for c in caught):
+        problems.append('程式引用凍結原件以外的封存檔沒被擋')
+    if any(c.startswith('tools/index.py ') for c in caught):
+        problems.append('封存索引的通用檔名被當成封存檔')
     for label, lookup in (('內容改動', {HISTORY_DIR + new: 'b' * 40}.get),
                           ('搬走或刪掉', {}.get)):
         if not archive_problems(root, [], lookup, frozen, ()):
@@ -2300,8 +2320,9 @@ def step_archive(tmp):
     if problems:
         record('FAIL', '封存原件', '；'.join(problems))
         return False
-    record('OK', '封存原件', '%d 份凍結原件 blob 未變、程式與測試不引用、文件檢查不讀封存區；'
-           '引用／改動／搬走／略過外溢四種反例都擋下，已登記讀取者放行' % len(FROZEN_ARCHIVES))
+    record('OK', '封存原件', '%d 份凍結原件 blob 未變、程式與測試不引用封存區任何檔、文件檢查不讀封存區；'
+           '引用／其他封存檔／改動／搬走／略過外溢五種反例都擋下，已登記讀取者與索引放行'
+           % len(FROZEN_ARCHIVES))
     return True
 
 

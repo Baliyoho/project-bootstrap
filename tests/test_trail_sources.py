@@ -35,7 +35,7 @@ D9 一起讀：表後的說明不是一列。
 '''
 PLAN = '''# 規劃
 
-### 3.4 三條整體路線
+## 2. 路線選擇
 
 | 路線 | 優點 | 代價 | 結論 |
 |---|---|---|---|
@@ -46,13 +46,13 @@ PLAN = '''# 規劃
 
 ## 4. 其他
 
-## 7. 分期交付
+## 3. 分期
 
-| 階段 | 工作 | 退出 | 粗估 |
+| 期 | 範圍 | 退出條件 | 證據 |
 |---|---|---|---|
-| P0 可行性 | 證據索引 | 失敗就修架構 | 3 日 |
-| P1 模組化 | src／tests | 等價重建 | 5 日 |
-| 合計 | 全部 | 無 | 8 日 |
+| 第 1 期 | 證據索引 | 失敗就修架構 | 甲 |
+| 第 2 期 | src／tests | 等價重建 | 乙 |
+| 合計 第 3 期 | 全部 | 無 | 丙 |
 
 ### 過渡期間
 
@@ -102,9 +102,9 @@ class SourceTests(unittest.TestCase):
         self.assertEqual(routes_from_plan(PLAN.replace('沒有足夠理由', '推薦也行'), 'd'), [])
 
     def test_phase_table_gives_milestones_and_ignores_other_tables(self):
-        milestones = roadmap_from_plan(PLAN, {'P0': 'active'})
+        milestones = roadmap_from_plan(PLAN, {'phase-1': 'active'})
         self.assertEqual([(m['id'], m['goal'], m['status']) for m in milestones],
-                         [('P0', '證據索引', 'active'), ('P1', 'src／tests', 'planned')])
+                         [('phase-1', '證據索引', 'active'), ('phase-2', 'src／tests', 'planned')])
         self.assertEqual(check_roadmap(milestones, []), [])
         self.assertEqual(check_roadmap(roadmap_from_plan('# 空\n', {}), []),
                          [('roadmap', 'no-open-milestone')])
@@ -233,14 +233,14 @@ class QuestionTests(unittest.TestCase):
 
 
 class NongoalTests(unittest.TestCase):
-    PLAN = ('# 計畫\n\n### 3.2 非目標\n\n- 不做甲。理由：太貴（出處：7.2）。\n- 不做乙。\n\n'
-            '### 3.3 保護\n\n- 不屬於非目標。理由：別節。\n')
+    PLAN = ('# 計畫\n\n## 5. 非目標\n\n- 不做甲。理由：太貴（出處：7.2）。\n- 不做乙。\n\n'
+            '## 6. 保護\n\n- 不屬於非目標。理由：別節。\n')
 
     def test_each_nongoal_is_a_rejected_route_and_missing_reason_reported(self):
         decisions = nongoals_from_plan(self.PLAN, '2026-11-03')
         self.assertEqual(decisions[0], {'id': 'plan-nongoal-1', 'title': '不做甲。',
                                         'status': 'rejected', 'date': '2026-11-03',
-                                        'baseline': '效率計畫第 3.2 節',
+                                        'baseline': '實施計畫「非目標」',
                                         'rationale': '太貴（出處：7.2）。'})
         self.assertEqual(len(decisions), 2)
         findings, by_id = check_decisions(decisions)

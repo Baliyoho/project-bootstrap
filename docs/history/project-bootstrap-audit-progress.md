@@ -10,18 +10,18 @@
   模型」時產出，所以它寫給**沒有這段對話記憶的接手者**看。
 - **不是**查核報告的替代品。報告是對 `main @ 313e7a5` 的**凍結快照**（它自己寫明「不代表
   問題已修正」），所以狀態不寫進它裡面；要看原始缺陷、重現輸入與官方依據，讀它那一條。
-- **不是**新的制度權威。規則仍在 [AGENTS.md](AGENTS.md)，結構仍在 [ARCHITECT.md](ARCHITECT.md)，
-  當下狀態仍在 [HANDOFF.md](HANDOFF.md)。這裡只放「查核條目的進度」這一件事。
+- **不是**新的制度權威。規則仍在 [AGENTS.md](../../AGENTS.md)，結構仍在 [ARCHITECT.md](../../ARCHITECT.md)，
+  當下狀態仍在 [HANDOFF.md](../../HANDOFF.md)。這裡只放「查核條目的進度」這一件事。
 - **不部署、不同步**：`sync_project.py` 不碰它，跟 `project-bootstrap-audit.md` 一樣。
 
 ## 接棒者先做這三件事
 
 1. 走 **A 模式**（程序在全域 `~/.claude/skills/handoff/SKILL.md`；本 repo 的三處差異見
-   [AGENTS.md](AGENTS.md) 開頭）。**A4 的一鍵驗證是 `python -X utf8 tools/verify_bootstrap.py`**，
+   [AGENTS.md](../../AGENTS.md) 開頭）。**A4 的一鍵驗證是 `python -X utf8 tools/verify_bootstrap.py`**，
    不是 `verify_state.py`。
 2. 讀各條的完成範圍與「已知的未決事項」。
-3. 動手前讀 [AGENTS.md](AGENTS.md) 的六條鐵律與「副本規則」。**改制度就改
-   [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)**，不要去改各專案裡的副本。
+3. 動手前讀 [AGENTS.md](../../AGENTS.md) 的六條鐵律與「副本規則」。**改制度就改
+   [PROJECT-BOOTSTRAP.md](../../PROJECT-BOOTSTRAP.md)**，不要去改各專案裡的副本。
 
 ## 總覽
 
@@ -45,7 +45,7 @@
 | F16 發布測試未閉環 | P2 | **已修** 2026-11-02 | 「部署生命週期」（第 50 項） |
 
 前九條都在 2026-11-02 同一天分五輪修完，順序是 F01＋F09 → F02＋F03 → F05 → F14＋F15 → F04＋F08。
-每一輪的完整敘述（含為什麼這樣修、代價是什麼）在 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)
+每一輪的完整敘述（含為什麼這樣修、代價是什麼）在 [PROJECT-BOOTSTRAP.md](../../PROJECT-BOOTSTRAP.md)
 開頭的版本行與「前一版」那幾段；這裡只給摘要。
 
 ## 已完成條目與證據
@@ -193,10 +193,10 @@ F01／F09 退回舊實作有 4 項確實 FAIL；F05 退回舊接線確實 FAIL�
 
 ## 跨條目的共同規則（照著做，不要重新發明）
 
-- **權威版是 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)**。改制度改它，再用
+- **權威版是 [PROJECT-BOOTSTRAP.md](../../PROJECT-BOOTSTRAP.md)**。改制度改它，再用
   `python -X utf8 tools/sync_project.py <專案路徑> --write` 覆蓋到各專案。
   ⚠️ **不要無範圍地使用 `--all --write`**：用私人 inventory 或明確 `--exclude` 排除已完結專案（F13）。
-  哪些專案在範圍內，看 [HANDOFF.md](HANDOFF.md) 或問使用者。
+  哪些專案在範圍內，看 [HANDOFF.md](../../HANDOFF.md) 或問使用者。
 - **`VERSION` 只跟著 `.claude/skills/handoff/SKILL.md` 走**（鐵律 1）。只改了不同步的範本或
   敘述就跳版，各專案會**永遠**印「骨架落後」而且同步修不掉。反過來的代價也要寫明：
   `SKILL.md` 沒動而你改了同步對象（例如 `tools/check_docs.py`）時，落後偵測**不會**提醒，
@@ -209,7 +209,7 @@ F01／F09 退回舊實作有 4 項確實 FAIL；F05 退回舊接線確實 FAIL�
 - **保留每條規則的「為什麼」**（鐵律 3）。這份骨架的價值在條文背後的事故；砍掉理由，
   下一棒就會繞過規則。
 - **這是公開 repo**（鐵律 6）：不要寫客戶／單位名稱、內部專案代號、本機絕對路徑。
-  所以這份報告刻意**不列專案名稱**——那是會變的當下狀態，家在 [HANDOFF.md](HANDOFF.md)。
+  所以這份報告刻意**不列專案名稱**——那是會變的當下狀態，家在 [HANDOFF.md](../../HANDOFF.md)。
 - **兩個已知會咬人的工具陷阱**：①用腳本改檔時**不要把 patch 從 heredoc 餵進 `python -`**，
   轉義會被多解一層（2026-11-02 又踩一次：`\n` 變成真換行，把一個 regex 切成兩行）；
   ②寫測試時**先驗儀器再測受測物**——同一天兩次「測試自己壞掉而畫面上像受測物壞掉」
@@ -230,7 +230,7 @@ F01／F09 退回舊實作有 4 項確實 FAIL；F05 退回舊接線確實 FAIL�
 1. `python -X utf8 tools/verify_bootstrap.py` → **exit 0**、無 `skip`（有 skip 要照實回報）。
 2. 新增的守門檢查，拿修正前的內容實跑一次，確認它真的 FAIL。
 3. 動到同步對象就逐一同步各專案，並在每個專案實跑 `python -X utf8 tools/check_docs.py`。
-4. 更新這份檔案的「總覽」那一列與頂端的進度數字，以及 [ARCHITECT.md](ARCHITECT.md)
+4. 更新這份檔案的「總覽」那一列與頂端的進度數字，以及 [ARCHITECT.md](../../ARCHITECT.md)
    的「最後更新」（結構有變動才改它）。
-5. 照 B 模式收尾：知識落地 → 更新 [HANDOFF.md](HANDOFF.md)（≤80 行、覆寫）→ 明確 stage →
+5. 照 B 模式收尾：知識落地 → 更新 [HANDOFF.md](../../HANDOFF.md)（≤80 行、覆寫）→ 明確 stage →
    fetch 後 push → 清掉 origin 上的「工作中」標記。

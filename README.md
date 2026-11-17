@@ -2,7 +2,7 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-11-17（改成標準 README：開發流程與副本同步用法搬到 CONTRIBUTING.md；部署後的 README 也改成標準 README，連線資料從 AGENTS 搬進來，需求決策書 v3 Q40）；前次 2026-11-16（skill 七個檔；優先序改成 v3）。
+> 最後更新：2026-11-17（發布公鑰一節改寫：舊實現規劃封存，簽章發布通道依 v3 第 5 節凍結）；前次同日（改成標準 README：開發流程與副本同步用法搬到 CONTRIBUTING.md；部署後的 README 也改成標準 README，連線資料從 AGENTS 搬進來，需求決策書 v3 Q40）；前次 2026-11-16（skill 七個檔；優先序改成 v3）。
 > 這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型；結構見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 它在解決什麼
@@ -113,7 +113,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 ## 正式包的發布公鑰（v2 試行，2026-11-11）
 
-v2 分支在試行「由 CI 簽章發布正式包、專案只留指標」（實現規劃 P2）。發布用的公鑰在 [src/kit/release-keys.txt](src/kit/release-keys.txt)，指紋：
+v2 時代試行過「由 CI 簽章發布正式包、專案只留指標」（舊實現規劃的 P2，2026-11-17 封存到 [docs/history/](docs/history/README.md)）。需求決策書 v3 第 5 節把簽章發布通道凍結：不再開發，已發出的版本不撤回。發布用的公鑰在 [src/kit/release-keys.txt](src/kit/release-keys.txt)，指紋：
 
 ```text
 SHA256:FjVJTEPBuOaloJZV0GvtZiG3bXYJo68v+cTaVqs0JU0

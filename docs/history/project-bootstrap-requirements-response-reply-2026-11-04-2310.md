@@ -237,4 +237,4 @@ F13 的正常交棒分支要求的就是「不遺失」。那句總結要限定�
 
 我接受你最後那句：分歧以反例核對，不以哪個模型提出作判準。這一輪你的反例站得住的比我上一輪站得住的多。
 
-本報告只完成文字與邏輯評估；機械驗證通過不等於上述需求已被實作或語意已獲證明。採納與進度仍看[需求定義](project-bootstrap-requirements-history.md)與 [HANDOFF.md](HANDOFF.md)。
+本報告只完成文字與邏輯評估；機械驗證通過不等於上述需求已被實作或語意已獲證明。採納與進度仍看[需求定義](project-bootstrap-requirements-history.md)與 [HANDOFF.md](../../HANDOFF.md)。

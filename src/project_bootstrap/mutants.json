@@ -1727,13 +1727,13 @@
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
-     "old": "            milestones.append({'id': phase.group(1), 'goal': row[1], 'exit': row[2],\n                               'status': status.get(phase.group(1), 'planned')})",
-     "new": "            milestones.append({'id': phase.group(1), 'goal': row[1], 'exit': row[2],\n                               'status': 'planned'})"
+     "old": "            milestones.append({'id': 'phase-' + phase.group(1), 'goal': row[1], 'exit': row[2],\n                               'status': status.get('phase-' + phase.group(1), 'planned')})",
+     "new": "            milestones.append({'id': 'phase-' + phase.group(1), 'goal': row[1], 'exit': row[2],\n                               'status': 'planned'})"
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
-     "old": "        phase = re.match(r'(P\\d)\\s', row[0] + ' ')",
-     "new": "        phase = re.match(r'(\\S+)\\s', row[0] + ' ')"
+     "old": "        phase = re.fullmatch(r'第 ?(\\d+) ?期', row[0])",
+     "new": "        phase = re.match(r'(\\S+)', row[0])"
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",

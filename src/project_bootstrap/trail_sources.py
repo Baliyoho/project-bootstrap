@@ -8,12 +8,12 @@ records out of them so ``trail`` can check them:
   column, the ``決定`` cell as title and the ``理由`` cell as rationale; the
   ``決策版本：N。YYYY-MM-DD`` line gives the date and the baseline (2026-11-17,
   v3 Q39: replaced the reader of v2's section 7, which v3 does not have);
-- ``routes_from_plan``: the implementation plan's route table (section 3.4)
-  is one decision whose recommended row is the choice and whose other rows
-  are the alternatives, each with its cost as the reason;
-- ``roadmap_from_plan``: the plan's phase table (section 7) gives the
-  milestones; their status comes from the caller, because the plan holds
-  estimates, not progress;
+- ``routes_from_plan``: the implementation plan's route table (the ``路線``
+  section, found by name) is one decision whose recommended row is the choice
+  and whose other rows are the alternatives, each with its cost as the reason;
+- ``roadmap_from_plan``: the plan's phase table (the ``分期`` section, found by
+  name; rows ``第 N 期``) gives the milestones; their status comes from the
+  caller, because the plan holds no progress;
 - ``absences_from_architect``: each bullet of ARCHITECT's "deliberately
   absent" section whose bold lead says something is not installed is an
   accepted decision; the rest of the bullet is its rationale and the last
@@ -25,8 +25,13 @@ records out of them so ``trail`` can check them:
 - ``questions_from_book``: each decided item of the decision book's pending
   section (``待決事項``, found by name: section 6 in v2, 8 in v3), with its
   indented 採用理由／未選／暫緩 sub-bullets as rationale and alternatives;
-- ``nongoals_from_plan``: each non-goal of the efficiency plan's section 3.2 is
-  a rejected route, the text after ``理由：`` its reason.
+- ``nongoals_from_plan``: each bullet of the plan's ``非目標`` section (found by
+  name) is a rejected route, the text after ``理由：`` its reason.
+
+2026-11-17: the plan readers moved from v2's implementation plan (sections
+3.4 and 7) and the efficiency plan (3.2) to implementation plan v3; both old
+plans are archived and no program reads them. Sections are found by name, the
+way v3 Q39 did for the decision book.
 
 A document whose expected section is missing yields no records, which the
 checks then report (a decision without rationale, a roadmap with no open
@@ -75,14 +80,14 @@ def constraints_from_book(text):
 
 
 def routes_from_plan(text, date):
-    body, _ = _section(text, r'3\.4 ')
+    body, _ = _section(text, r'[\d.]*\s*路線')
     rows = [r for r in _rows(body) if len(r) == 4]
     chosen = [r for r in rows if r[3].startswith('推薦')]
     if len(chosen) != 1:
         return []
     route, gain, cost, verdict = chosen[0]
-    return [{'id': 'plan-3.4', 'title': route, 'status': 'accepted', 'date': date,
-             'baseline': '實現規劃第 3.4 節', 'rationale': verdict,
+    return [{'id': 'plan-routes', 'title': route, 'status': 'accepted', 'date': date,
+             'baseline': '實施計畫「路線選擇」', 'rationale': verdict,
              'alternatives': [{'option': r[0], 'outcome': 'rejected', 'reason': f'{r[2]}；{r[3]}'}
                               for r in rows if r is not chosen[0]]}]
 
@@ -108,13 +113,13 @@ def absences_from_architect(text):
 
 
 def roadmap_from_plan(text, status):
-    body, _ = _section(text, r'7\. ')
+    body, _ = _section(text, r'[\d.]*\s*分期')
     milestones = []
     for row in _rows(body):
-        phase = re.match(r'(P\d)\s', row[0] + ' ')
+        phase = re.fullmatch(r'第 ?(\d+) ?期', row[0])
         if phase and len(row) == 4:
-            milestones.append({'id': phase.group(1), 'goal': row[1], 'exit': row[2],
-                               'status': status.get(phase.group(1), 'planned')})
+            milestones.append({'id': 'phase-' + phase.group(1), 'goal': row[1], 'exit': row[2],
+                               'status': status.get('phase-' + phase.group(1), 'planned')})
     return milestones
 
 
@@ -206,13 +211,14 @@ def questions_from_book(text):
 
 
 def nongoals_from_plan(text, date):
-    """Each bullet of the efficiency plan's section 3.2 is a route the plan
-    rejected; the text after ``理由：`` is why (2026-11-10, Q7 (b))."""
-    body, _ = _section(text, r'3\.2 ')
+    """Each bullet of the plan's ``非目標`` section is a route the plan rejected;
+    the text after ``理由：`` is why (2026-11-10, Q7 (b); 2026-11-17 moved to
+    implementation plan v3)."""
+    body, _ = _section(text, r'[\d.]*\s*非目標')
     decisions = []
     for item in re.findall(r'^- (.+)$', body, re.MULTILINE):
         title, _, rationale = item.partition('理由：')
         decisions.append({'id': 'plan-nongoal-%d' % (len(decisions) + 1),
                           'title': title.strip(), 'status': 'rejected', 'date': date,
-                          'baseline': '效率計畫第 3.2 節', 'rationale': rationale.strip()})
+                          'baseline': '實施計畫「非目標」', 'rationale': rationale.strip()})
     return decisions

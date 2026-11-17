@@ -37,8 +37,8 @@
    - README 是 seed，不會自動變成標準 README，要逐一手動遷移；連線資料表也要從 AGENTS 搬到 README。
    - 舊的 `handover-protocol.md` 同步時會列 MIGRATE。裡面若有專案 override，先搬進 AGENTS 鐵律，刪不刪由使用者決定。
 2. **`learn coding with ai agent` 的骨架同步**：它 origin 上的「工作中」仍是另一個 session（2026-11-16 21:38 開工，主題「三方對比報告」）。要那個 session 交棒，或使用者確認標記已無人使用，才能同步。
-3. **資料夾整理等使用者選方案**（還沒登記）：甲＝只把十幾份需求來回討論文件移到 `docs/history/`；乙＝全部分層進 `docs/`；丙＝乙再加上刪減已結案文件。使用者沒選之前不要開工。
-4. **根目錄的 `readme-agents-by-function.md`**：使用者放的外部企劃，本棒已依它做完（採縮小版）。它沒追蹤、也沒提交；要放進 repo 還是刪掉，由使用者決定。
+3. **需求與計畫文件整理已做完（2026-11-17，本 session）**：根目錄只留需求決策書 v3 與新寫的 `project-bootstrap-implementation-plan-v3.md`，其餘 19 份用 `git mv` 封存到 `docs/history/`，加封存索引；分工規則寫進 CONTRIBUTING。plan v3 列了要使用者判定的事：第 1 期是否結案、現況索引（`experiments/v2/status.json`）要不要改成 v3 寫法。
+4. **根目錄的 `readme-agents-by-function.md`**：2026-11-17 依使用者指示移到 macOS 垃圾桶（沒有永久刪除）。
 5. 序號卡、解決網路速度問題，依使用者 2026-11-17 指示刻意停在舊版；Windows 開發人員模式與桌面 App 的 F50 互動驗證沿用既有的暫緩。
 
 ## 地雷與注意事項

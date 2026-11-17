@@ -1,7 +1,7 @@
 # project-bootstrap 需求實現與技術棧規劃
 
 > 最後更新：2026-11-12
-> 狀態：**2026-11-06 使用者已授權在 `codex/project-bootstrap_v2` 按本方向實作；尚未部署、未取代現行程序**。依據需求決策書決策版本 2（2026-11-17 起封存為 `docs/history/requirements-decision-v2.md`，現行以 [v3](project-bootstrap-requirements-decision-v3.md) 為準，v3 Q39）；涵蓋全部 51 個需求 ID（含 v2 啟動補登的 F50）。
+> 狀態：**2026-11-06 使用者已授權在 `codex/project-bootstrap_v2` 按本方向實作；尚未部署、未取代現行程序**。依據需求決策書決策版本 2（2026-11-17 起封存為 `docs/history/requirements-decision-v2.md`，現行以 [v3](../../project-bootstrap-requirements-decision-v3.md) 為準，v3 Q39）；涵蓋全部 51 個需求 ID（含 v2 啟動補登的 F50）。
 > 本機查核基準：`01d60c6`（需求整理完成），骨架 `VERSION=2026-11-03`。本輪只修復誤觸的決策書檔名、研究與撰寫文件，沒有安裝候選工具或呼叫額外模型。
 > 外部資料：2026-11-06 讀取官方文件、官方 repo 與 LICENSE；屬文件查證，**不是整合實測**。選型理由是本規劃的判斷；不把供應者功能描述當成需求驗收。
 
@@ -20,20 +20,20 @@
 
 ## 2. 現有能力盤點：哪些可用、哪些不能推論
 
-這是本次基準的選型依據，不是持續更新的達成表。逐 ID／子項實作進度已移交 [v2 現況索引](experiments/v2/status.json)；[HANDOFF](HANDOFF.md) 保留行動與停點。下面的「有」指程式／程序存在，不代表完整需求通過。
+這是本次基準的選型依據，不是持續更新的達成表。逐 ID／子項實作進度已移交 [v2 現況索引](../../experiments/v2/status.json)；[HANDOFF](../../HANDOFF.md) 保留行動與停點。下面的「有」指程式／程序存在，不代表完整需求通過。
 
 | 基準下的能力與證據 | 可保留的價值 | 尚不能提供的保障／建議處置 |
 |---|---|---|
-| [部署包](PROJECT-BOOTSTRAP.md) 內嵌 22 檔；[驗證器](tools/verify_bootstrap.py) `extract()`／`build_zip()` | 可重建、已有生命週期反例 | 權威程式拆成正常來源檔，部署說明改為生成文件；切換前仍遵守現行部署包權威 |
+| [部署包](../../PROJECT-BOOTSTRAP.md) 內嵌 22 檔；[驗證器](../../tools/verify_bootstrap.py) `extract()`／`build_zip()` | 可重建、已有生命週期反例 | 權威程式拆成正常來源檔，部署說明改為生成文件；切換前仍遵守現行部署包權威 |
 | `verify_bootstrap.py` 本輪 Mac 實跑 exit 0、51 項、無 skip | CLI、local bare Git、同步、負向變異等既有測試資產 | 51 項不是現行 51 個需求的逐項驗收（數字相同不代表對應）；未實測 Windows、Linux 或模型遵循。移入 pytest 後保留一鍵入口 |
-| [同步器](tools/sync_project.py) `Plan`、`preflight()`、`sync_owner_check()` | 先預演、檢查 upstream／遠端 owner、已知內容漂移與自訂 handler 保全 | 不 commit；逐檔 replace 不是整批交易。保留作舊專案遷移器，停止以它常態散發制度副本 |
+| [同步器](../../tools/sync_project.py) `Plan`、`preflight()`、`sync_owner_check()` | 先預演、檢查 upstream／遠端 owner、已知內容漂移與自訂 handler 保全 | 不 commit；逐檔 replace 不是整批交易。保留作舊專案遷移器，停止以它常態散發制度副本 |
 | `known_hook_commands()`／`merge_group()`、`apply_plan()` | R01／R02 命令所有權與 matcher 防護、mode 保留已在程式與回歸案例內 | 不把 2026-11-03 舊反例照抄成仍未修；其他輸入邊界仍需驗 |
 | 生成 `check_docs.py`：連結、快照、staged 集合；生成 `verify_state.py`：PASS／FAIL／ERROR／SKIP | 沿用專案設定與狀態分類；R04 已先 mask 再截斷，R07–R09 有回歸項 | parser 換通用元件；檢查設定變資料；遮罩僅涵蓋已知值，不能等同 F43 全面提交阻擋 |
 | A／B／C 與 `HANDOFF.md` 工作中標記 | 有可追溯的人機接力程序 | 是協調訊號，不是身分證明、互斥鎖或 F11(b) 覆寫事件記錄 |
 | `git-freshness.sh` 版本快取 720 分鐘；`VERSION` 只追 skill | 已有版本方向判讀與跨工具接線 | 不符合逐次確認最新的 D5／F33；hook 單獨更新也不一定觸發落後提示。換整包 manifest 與線上版本確認 |
 | 3.11 `pre-push-handoff.sh` 是 AI 命令文字提醒 | 可提示常見誤推 | 不是 Git 原生 hook；選項、GUI、間接命令可漏過。不能當 F35 發布安全邊界 |
 | `--zip` 拒絕 FAIL，SKIP 調試產物附 UNVERIFIED 且非零退出 | 保留發布前查核和負向案例 | 必須再保護正式發布權限，拒絕調試包進正式 channel；不是任意 Git push 都已被阻擋 |
-| [來源例外](ARCHITECT.md) 刻意少三項防護 | 已有明確決策，保留例外 | 做 F46 情境對照並列缺項；本計畫不撤銷例外、不偷偷補裝 |
+| [來源例外](../../ARCHITECT.md) 刻意少三項防護 | 已有明確決策，保留例外 | 做 F46 情境對照並列缺項；本計畫不撤銷例外、不偷偷補裝 |
 
 已讀 [第二輪複審](project-bootstrap-reaudit-2026-11-03.md)，但本輪不是 R01–R09 的全面獨立複審。舊反例與新需求缺口分開處理。
 
@@ -264,11 +264,11 @@ Git commit author、mtime、檔案 watcher、工作中標記都不足以證明�
 | P4 跨線與證據 | M4 協調端、outbox／ACK／使用屏障、證據失效；純檔案狀態移交 | 斷線／服務重啟／延遲／長操作／重複事件、授權撤銷均 fail closed；備份可恢復 | 5–10 日 |
 | P5 單專案試行至 20 專案 | 先合成 fixture，再一個使用者選定專案，最後分批展開 | 三 OS、各選定 surface、完整接棒到交棒；12,000 字元／5 分鐘／3 次確認如實量測 | 3–5 日 |
 
-P0 的 Mac 部分依決策書 Q19（2026-11-11）以「合成原型加已知缺口清單」收尾，Mac 這半邊不再要求上表 P0 欄的全部退出條件；已知缺口清單在 [v2 說明](experiments/v2/README.md)。Windows 那半邊照 Q12 留到之後，仍照上表。
+P0 的 Mac 部分依決策書 Q19（2026-11-11）以「合成原型加已知缺口清單」收尾，Mac 這半邊不再要求上表 P0 欄的全部退出條件；已知缺口清單在 [v2 說明](../../experiments/v2/README.md)。Windows 那半邊照 Q12 留到之後，仍照上表。
 
 P1 在 2026-11-11 分四片做完（使用者逐片指示）：開發骨架（pyproject、uv.lock、src／tests、pytest）、原型搬進 `src/project_bootstrap`、來源權威切換（`src/kit` 生成部署包，同批改 AGENTS 鐵律 1）、JSON Schema／markdown-it-py／只讀狀態卡／F22 實測。對照退出條件：部署包由來源逐位元組重建（當時骨架 27 檔，不是表上寫的 22）、原反例與 748 個 mutation 不退化、文件同批改、F22 有實測但仍不通過（約 17,400 字元）。jsonschema 與 markdown-it-py 只在 uv 環境用，A4 仍只用標準函式庫；只在這台 macOS 跑過，Windows／Linux 與最低版本以外的 Python 未驗。
 
-P2 第一片（2026-11-11，使用者指示）：正式包格式。`src/kit/owners.json` 記每個範本的歸屬與更新方式，`tools/build_package.py` 生成包資料夾與 manifest，未知歸屬停止、可重現、壞包可檢出。退出條件一項都還沒達成：離線寫入拒絕與「改 hook 也失效」要等專案指標與寫入檢查（第 2 片），簽章與 channel 是第 3 片，客製保留與 20 目標報告是第 5 片。細節見 [v2 說明](experiments/v2/README.md)。
+P2 第一片（2026-11-11，使用者指示）：正式包格式。`src/kit/owners.json` 記每個範本的歸屬與更新方式，`tools/build_package.py` 生成包資料夾與 manifest，未知歸屬停止、可重現、壞包可檢出。退出條件一項都還沒達成：離線寫入拒絕與「改 hook 也失效」要等專案指標與寫入檢查（第 2 片），簽章與 channel 是第 3 片，客製保留與 20 目標報告是第 5 片。細節見 [v2 說明](../../experiments/v2/README.md)。
 
 P2 第二片（2026-11-11，使用者指示）：專案指標與每次寫入的檢查（`pointer.py`）。在合成環境裡，離線拒絕寫入、只改 hook 的新版讓舊專案停下、宣告的 D4 例外只在範圍與期限內放行、專案改自己的檔不受影響，都有測試。但簽章與 channel 仍是測試替身，也還沒接進任何工具，所以退出條件仍算未達成。
 
@@ -313,4 +313,4 @@ P2 第五片（2026-11-11，使用者指示，決策書 Q25）：遷移器。`sy
 
 ## 10. v2 啟動補充（2026-11-06）
 
-使用者已授權開新版分支實作。新增必要要求：保留 session 自動改名與交棒計數；優先改善交接等待及必讀量；部署端延續既有文件分工，重點是共用制度集中、單一資訊權威及按需讀取，不要求大搬目錄。這些補充優先於上文尚稱「僅提案」的授權敘述；後續工作與需求 ID 補登見 [HANDOFF](HANDOFF.md)。本次授權不等於所有候選已驗收或允許外部部署、付費探針、合併 main。（2026-11-12 使用者另行指示合併，見決策書 Q30。）
+使用者已授權開新版分支實作。新增必要要求：保留 session 自動改名與交棒計數；優先改善交接等待及必讀量；部署端延續既有文件分工，重點是共用制度集中、單一資訊權威及按需讀取，不要求大搬目錄。這些補充優先於上文尚稱「僅提案」的授權敘述；後續工作與需求 ID 補登見 [HANDOFF](../../HANDOFF.md)。本次授權不等於所有候選已驗收或允許外部部署、付費探針、合併 main。（2026-11-12 使用者另行指示合併，見決策書 Q30。）

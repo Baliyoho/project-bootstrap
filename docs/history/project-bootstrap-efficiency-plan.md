@@ -14,17 +14,17 @@
 1. **接棒效率**：依任務分類、安排驗證時機、縮短必讀內容，優先改善使用者每次開場的等待。
 2. **維護效率**：把程式來源與單檔部署產物分離，逐步建立可獨立測試的元件。
 
-目前權威仍是 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 與 [AGENTS.md](AGENTS.md) 指定的全域 handoff skill。本文件不授權略過現行 A4、開工標記或發布要求；新版程序正式採納、驗收及同步後，才可依新版執行。規劃中的名稱與命令不得當成已存在的工具。
+目前權威仍是 [PROJECT-BOOTSTRAP.md](../../PROJECT-BOOTSTRAP.md) 與 [AGENTS.md](../../AGENTS.md) 指定的全域 handoff skill。本文件不授權略過現行 A4、開工標記或發布要求；新版程序正式採納、驗收及同步後，才可依新版執行。規劃中的名稱與命令不得當成已存在的工具。
 
-本輪使用者授權的是保存完整計畫，不包含部署新制度、同步其他專案、呼叫額外模型或建立三條永久平台分支。實作進度放 [HANDOFF.md](HANDOFF.md)，不把本文件變成工作日誌。
+本輪使用者授權的是保存完整計畫，不包含部署新制度、同步其他專案、呼叫額外模型或建立三條永久平台分支。實作進度放 [HANDOFF.md](../../HANDOFF.md)，不把本文件變成工作日誌。
 
 ## 2. 現況與問題診斷
 
 ### 2.1 已確認的結構
 
 - 部署用 Python、Shell、JSON 與文件範本的權威內容，存放在部署包的 Markdown 程式碼區塊。
-- [tools/verify_bootstrap.py](tools/verify_bootstrap.py) 已有 `extract()`，能自動抽出 22 個檔案；22 檔包含程式、文件與設定，不是 22 支程式。
-- [tools/sync_project.py](tools/sync_project.py) 使用相同抽取功能；驗證器的 `--zip` 能產出實體檔案部署包。因此不是所有部署都必須靠 AI 手工抄寫。
+- [tools/verify_bootstrap.py](../../tools/verify_bootstrap.py) 已有 `extract()`，能自動抽出 22 個檔案；22 檔包含程式、文件與設定，不是 22 支程式。
+- [tools/sync_project.py](../../tools/sync_project.py) 使用相同抽取功能；驗證器的 `--zip` 能產出實體檔案部署包。因此不是所有部署都必須靠 AI 手工抄寫。
 - 只攜帶單份 Markdown 到新專案時，現行建制流程仍教 agent 逐檔照抄、替換佔位符。
 - 接棒 A4 無條件執行全部 50 項驗證；一項可能含多個子情境、程序啟動及隔離 Git fixture。
 - Claude Code 與 Codex 共用核心 hook；Antigravity 經轉接層使用共用開場檢查。平台差異不等於三份獨立制度。
@@ -295,8 +295,8 @@ P1 可先取得接棒收益，不必等待 P3。P2 的輕量文件檢查可先�
 
 ## 13. 參考與判讀界線
 
-- [AGENTS.md](AGENTS.md)：現行規則、權威與副本義務。
-- [ARCHITECT.md](ARCHITECT.md)：現行結構與副本拓撲。
+- [AGENTS.md](../../AGENTS.md)：現行規則、權威與副本義務。
+- [ARCHITECT.md](../../ARCHITECT.md)：現行結構與副本拓撲。
 - [第二輪複審](project-bootstrap-reaudit-2026-11-03.md)：R01–R09 的反例與驗收門檻；原始探針未隨 Git 保存。
 - [原查核進度](project-bootstrap-audit-progress.md)：前輪修正與部署證據；不代表本輪重新實測。
 - [Git 工作流程](https://git-scm.com/docs/gitworkflows)：短期主題分支與整合參考。

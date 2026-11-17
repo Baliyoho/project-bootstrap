@@ -211,7 +211,7 @@ REPO_CONFIG = {
         # 2026-11-17（v3 Q39）：v2 封存、不再被程式讀取，需求數的權威改看 v3。
         'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'HANDOFF.md',
                  'project-bootstrap-requirements-decision-v3.md',
-                 'project-bootstrap-implementation-plan.md'],
+                 'project-bootstrap-implementation-plan-v3.md'],
         'required_in': ['AGENTS.md', 'project-bootstrap-requirements-decision-v3.md'],
     }, {
         # 2026-11-02／F12: the busy marker coordinates; it is not a mutual-exclusion lock.
@@ -265,7 +265,8 @@ REPO_CONFIG = {
 REPO_DOCS = ('README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md', 'HANDOFF.md',
              # 唯一需求書，也是待決登記處（2026-11-16；2026-11-17 v3 Q39 起 v2 封存不讀）。
              'project-bootstrap-requirements-decision-v3.md',
-             'project-bootstrap-implementation-plan.md')
+             # 2026-11-17：實施權威改成實施計畫 v3，舊實現規劃封存不讀。
+             'project-bootstrap-implementation-plan-v3.md')
 
 
 def read_docs(root, names):

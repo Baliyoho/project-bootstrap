@@ -1,6 +1,6 @@
 # 參與開發
 
-> 最後更新：2026-11-17（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法、ARCHITECT.md 的開發注意事項搬來這裡，需求決策書 v3 Q40）
+> 最後更新：2026-11-17（加「需求與計畫文件的分工」，舊的需求與計畫文件封存到 `docs/history/`）；前次同日（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法、ARCHITECT.md 的開發注意事項搬來這裡，需求決策書 v3 Q40）
 > 這個 repo 由 AI session 輪流做。開工必守的規則在 [AGENTS.md](AGENTS.md)，AI 工具開工時會自動讀到；本檔是碰到才讀的流程與規則：改部署包、動副本或接線、寫本 repo 的交接快照、改兩支 hook 的訊息時才讀。每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 改部署包的流程
@@ -53,6 +53,19 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 - `.agents/` 只放指標與接線，skill 指標的 `description` 寫滿觸發詞。[為什麼](AGENTS-reasons.md#copy-5)
 - Codex 啟動器也要同步（`sync_project.py --codex-only`）；接線改過要重新審核並驗收實際執行。[為什麼](AGENTS-reasons.md#copy-6)
 - 本 repo 自己的 `HANDOFF.md`、兩支 `repo-*.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在拓撲裡，`sync_project.py` 不碰；其中 `repo-git-check.sh`、`repo-pre-push.sh` 是 3.10、3.11 的手貼副本，改了範本要手動重貼，驗證器比對逐字相同。[為什麼](AGENTS-reasons.md#copy-7)
+
+## 需求與計畫文件的分工
+
+四份文件各答一個問題，同一件事只寫在一處；兩份權威文件之間只引用、不重複。[為什麼](AGENTS-reasons.md#doc-roles)
+
+| 文件 | 回答 | 寫什麼 |
+|---|---|---|
+| [需求決策書 v3](project-bootstrap-requirements-decision-v3.md) | 要什麼 | 需求、強度、驗收、待決事項 |
+| [實施計畫 v3](project-bootstrap-implementation-plan-v3.md) | 怎麼走過去 | 從現況到需求的路線、分期與取捨；只引用需求 ID，不重述需求內容 |
+| [ARCHITECT.md](ARCHITECT.md) | 現在長怎樣 | 現況與結構 |
+| [HANDOFF.md](HANDOFF.md) | 做到哪 | 進度與停點 |
+
+結案或被取代的需求與計畫類文件用 `git mv` 移到 `docs/history/`，在它的[索引](docs/history/README.md)加一行；只把還有效的內容併進兩份權威文件。程式與測試不讀封存區（`verify_bootstrap.py`「封存原件」守）。
 
 ## 本 repo 的交接快照
 

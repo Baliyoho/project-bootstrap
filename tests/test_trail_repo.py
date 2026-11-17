@@ -1,4 +1,4 @@
-"""F6／F7／F8 on this repo's real decision book and implementation plan.
+"""F6／F7／F8 on this repo's real decision book and implementation plan v3.
 
 The decision book is v3. Since 2026-11-17 (v3 Q39) v2 is a frozen archive that
 no program reads; its section 7 and Q1–Q31 are no longer checked here.
@@ -18,6 +18,9 @@ from project_bootstrap.trail_sources import (absences_from_architect, constraint
 
 ROOT = Path(__file__).resolve().parents[1]
 BOOK = 'project-bootstrap-requirements-decision-v3.md'
+# 2026-11-17: v2's implementation plan and the efficiency plan are archived; the
+# routes, phases and non-goals now come from implementation plan v3.
+PLAN = 'project-bootstrap-implementation-plan-v3.md'
 
 
 def read(name):
@@ -31,18 +34,17 @@ class RepoTrailTests(unittest.TestCase):
         self.assertEqual(check_decisions(decisions)[0], [])
 
     def test_rejected_routes_are_findable_with_their_cost(self):
-        routes = routes_from_plan(read('project-bootstrap-implementation-plan.md'), '2026-11-06')
+        routes = routes_from_plan(read(PLAN), '2026-11-17')
         findings, by_id = check_decisions(routes)
         self.assertEqual((len(routes), findings), (1, []))
         rejected = rejected_routes(by_id)
-        self.assertEqual(len(rejected), 2)
+        self.assertEqual(len(rejected), 1)
         self.assertTrue(all(r['reason'] for r in rejected))
 
-    def test_roadmap_has_the_six_phases_and_an_open_one(self):
-        # P0 has not exited (HANDOFF); the plan itself holds no progress.
-        milestones = roadmap_from_plan(read('project-bootstrap-implementation-plan.md'),
-                                       {'P0': 'active'})
-        self.assertEqual([m['id'] for m in milestones], ['P0', 'P1', 'P2', 'P3', 'P4', 'P5'])
+    def test_roadmap_has_the_three_phases_and_an_open_one(self):
+        # Phase 1 awaits the user's judgment (2026-11-17); the plan itself holds no progress.
+        milestones = roadmap_from_plan(read(PLAN), {'phase-1': 'active'})
+        self.assertEqual([m['id'] for m in milestones], ['phase-1', 'phase-2', 'phase-3'])
         self.assertEqual(check_roadmap(milestones, []), [])
 
     def test_architect_declared_absences_each_have_reason_and_date(self):
@@ -77,8 +79,8 @@ class RepoTrailTests(unittest.TestCase):
         self.assertEqual({d['baseline'] for d in decisions}, {'決策書第 8 節'})
         self.assertEqual(check_decisions(decisions)[0], [])
 
-    def test_efficiency_nongoals_are_rejected_routes_with_reasons(self):
-        decisions = nongoals_from_plan(read('project-bootstrap-efficiency-plan.md'), '2026-11-03')
+    def test_plan_nongoals_are_rejected_routes_with_reasons(self):
+        decisions = nongoals_from_plan(read(PLAN), '2026-11-17')
         self.assertEqual(len(decisions), 5)
         findings, by_id = check_decisions(decisions)
         self.assertEqual(findings, [])
