@@ -1802,7 +1802,7 @@
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
-     "old": "    body, _ = _section(text, r'3\\.2 ')\n",
+     "old": "    body, _ = _section(text, r'[\\d.]*\\s*非目標')\n",
      "new": "    body = text\n"
     }
    ]

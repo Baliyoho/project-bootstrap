@@ -1,6 +1,6 @@
 # 封存索引
 
-> 最後更新：2026-11-17（建立：根目錄 19 份結案或被取代的需求與計畫類文件封存到這裡）
+> 最後更新：2026-11-17（加 handoff-ab 的改進計畫與 ARCHITECT 的結構變更紀錄）；前次同日（建立：根目錄 19 份結案或被取代的需求與計畫類文件封存到這裡）
 > **平常不讀，要回溯歷史先經使用者同意**（需求決策書 v3 Q39）。程式與測試不得引用這裡任何檔，`verify_bootstrap.py`「封存原件」會擋。現行權威是[需求決策書 v3](../../project-bootstrap-requirements-decision-v3.md)（要什麼）與[實施計畫 v3](../../project-bootstrap-implementation-plan-v3.md)（怎麼走過去）。
 > 除了 v2 決策書逐位元組凍結，其餘檔搬來時只把連到根目錄的相對連結改成 `../../`，內文不改；檔內的「權威版」「待決」「未採納」都是當時的狀態。
 
@@ -30,6 +30,12 @@
 | [project-bootstrap-requirements-final-review-2026-11-05-2214.md](project-bootstrap-requirements-final-review-2026-11-05-2214.md) | v3.2 最後審閱與五項修改指令 | 2026-11-06 實作 | 需求定義 v3.3 |
 | [project-bootstrap-requirements-completeness-audit-2026-11-06.md](project-bootstrap-requirements-completeness-audit-2026-11-06.md) | 功能完整性複查，八項候選缺口 C01–C08 | 2026-11-06 定案 | 需求定義 v3.10，見需求歷史原件「已定案（原待決）：功能完整性複查的八項候選缺口」 |
 
+## 結構紀錄
+
+| 檔案 | 是什麼 | 何時結案 | 結論落在哪裡 |
+|---|---|---|---|
+| [architect-log.md](architect-log.md) | ARCHITECT.md 開頭原本的逐次結構變更紀錄（2026-08-05 到 2026-11-17） | 2026-11-17 搬出，ARCHITECT 改成只寫現況 | 現況在 ARCHITECT.md；之後的變更看 Git 歷史 |
+
 ## 查核、計畫與設計
 
 | 檔案 | 是什麼 | 何時結案 | 結論落在哪裡 |
@@ -40,3 +46,4 @@
 | [project-bootstrap-skill-split-design.md](project-bootstrap-skill-split-design.md) | handoff skill 依模式拆分的設計與實測 | 2026-11-10 寫進部署包（當時的 Q9 (a)） | F22；字元上限後來由 v3 的 D11 行數預算取代 |
 | [project-bootstrap-efficiency-plan.md](project-bootstrap-efficiency-plan.md) | 效率改進提案：接棒分流、驗證分層、必讀精簡、來源與產物分離 | 2026-11-17 由實施計畫 v3 取代 | 驗證分層與沿用結果在實施計畫 v3 第 4 節（F22、F24），還成立的非目標在第 5 節；「接棒 5 分鐘內」使用者不再要（F22 只照 D11） |
 | [project-bootstrap-implementation-plan.md](project-bootstrap-implementation-plan.md) | v2 時代的實現規劃：技術棧、51 項映射、P0–P5 | 2026-11-17 使用者判定 P0–P5 不算數 | 實施計畫 v3 第 2 節的否決路線 |
+| [handoff-ab-optimization-plan.md](handoff-ab-optimization-plan.md) | handoff-ab 的交接棒執行與量測改進計畫（原 `experiments/handoff-ab/OPTIMIZATION-PLAN.md`） | 2026-11-15 兩階段做完，結果在 `experiments/handoff-ab/PHASE2-RESULTS.md`；2026-11-17 封存 | 怎麼跑搬進 `experiments/handoff-ab/README.md`「純任務 A/B 與後續探針」；量測對應 F22、F24 |

@@ -81,7 +81,7 @@ def main():
         print(stream.getvalue().rstrip())
         for error in errors:
             print('ERROR:', error)
-        print(f'F22 必讀量：{baseline["unicode_characters"]} / 12000 字元；{baseline["reading_result"]}')
+        print(f'常態入口字元數：{baseline["unicode_characters"]}（{baseline["reading_result"]}）')
         print('執行屏障模組與探針：已封存於 archive/v2-barrier/（v3 Q33），不在這裡執行')
         if 'verifier' in baseline:
             print('既有驗證器：', json.dumps(baseline['verifier'], ensure_ascii=False))

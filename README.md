@@ -111,7 +111,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 三個平面都接得上 hooks，但**都帶條件**：Codex 要專案被信任、而且每個專案各審一次。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的，不是 WSL 那支）；hook 依序試 `python3`、`python`，Windows 的 WindowsApps `python3` 往往是個 PATH 找得到、執行卻失敗的別名（2026-11-16 實測 rc=49），要靠回退到 `python` 才拿得到 `[facts]`。
 
-## 正式包的發布公鑰（v2 試行，2026-11-11）
+## 正式包的發布公鑰（簽章發布通道已凍結）
 
 v2 時代試行過「由 CI 簽章發布正式包、專案只留指標」（舊實現規劃的 P2，2026-11-17 封存到 [docs/history/](docs/history/README.md)）。需求決策書 v3 第 5 節把簽章發布通道凍結：不再開發，已發出的版本不撤回。發布用的公鑰在 [src/kit/release-keys.txt](src/kit/release-keys.txt)，指紋：
 

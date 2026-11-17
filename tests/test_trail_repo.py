@@ -42,8 +42,8 @@ class RepoTrailTests(unittest.TestCase):
         self.assertTrue(all(r['reason'] for r in rejected))
 
     def test_roadmap_has_the_three_phases_and_an_open_one(self):
-        # Phase 1 awaits the user's judgment (2026-11-17); the plan itself holds no progress.
-        milestones = roadmap_from_plan(read(PLAN), {'phase-1': 'active'})
+        # Phase 1 closed (user, 2026-11-17), phase 2 is open; the plan itself holds no progress.
+        milestones = roadmap_from_plan(read(PLAN), {'phase-1': 'done', 'phase-2': 'active'})
         self.assertEqual([m['id'] for m in milestones], ['phase-1', 'phase-2', 'phase-3'])
         self.assertEqual(check_roadmap(milestones, []), [])
 

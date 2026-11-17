@@ -1,19 +1,19 @@
 {
   "schema": 1,
-  "updated": "2026-11-12",
-  "authority": "全部 51 ID 與 F11／F13／F43 子項的持續實作狀態；需求仍以決策書為準",
+  "updated": "2026-11-17",
+  "authority": "全部 51 ID 與 F11／F13／F43 子項的持續實作狀態，強度與處置照需求決策書 v3 第 4 節（2026-11-17 起；之前照 v2）；需求仍以決策書為準",
   "transfer": {
     "from": "fdc0bbd:HANDOFF.md",
     "date": "2026-11-06",
     "boundary": "只移交需求達成狀態；HANDOFF 保留 writer、行動、風險與續作停點；不可讀時停止狀態判定，不恢復舊摘要權威"
   },
-  "evidence_policy": "程式路徑是重跑入口，不是執行成功證據；本輪結果由 verify_v2 輸出，綁輸入 digest／環境／取得時間。P0 不接受完整通過宣稱。",
+  "evidence_policy": "程式路徑是重跑入口，不是執行成功證據；本輪結果由 verify_v2 輸出，綁輸入 digest／環境／取得時間。P0 不接受完整通過宣稱。2026-11-17 改用 v3：退役與「想要」的 ID 標不適用；v2 時判的「不通過」是對 v2 強度的判定，v3 強度沒有重驗，改回未驗證。v3 第 1 期（Claude Code＋macOS）2026-11-17 由使用者判定結案，但 handoff-ab 的情境沒有逐 ID 對應，所以沒有任何一列據此改標通過。各列 unknown／next 的敘述多半是 v2 時期的觀察，保留備查，不代表 v3 的待辦；v3 的路線與待辦看實施計畫 v3。",
   "requirements": [
     {
       "id": "F1",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/state.py",
@@ -30,8 +30,8 @@
     {
       "id": "F2",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/state.py",
@@ -48,8 +48,8 @@
     {
       "id": "F3",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：留痕＋不變條件（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/evidence.py",
@@ -78,8 +78,8 @@
     {
       "id": "F4",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/gitclaim.py",
@@ -96,8 +96,8 @@
     {
       "id": "F5",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/state.py",
@@ -114,8 +114,8 @@
     {
       "id": "F6",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/trail.py",
@@ -144,8 +144,8 @@
     {
       "id": "F7",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/trail.py",
@@ -174,8 +174,8 @@
     {
       "id": "F8",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/trail.py",
@@ -204,8 +204,8 @@
     {
       "id": "F9",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測＋提示（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/gitclaim.py",
@@ -230,8 +230,8 @@
     {
       "id": "F10",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：偵測＋阻擋（限 push 前 hook）（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/gitclaim.py",
@@ -247,9 +247,9 @@
     },
     {
       "id": "F11",
-      "result": "不通過",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
+      "result": "未驗證",
+      "scope": "v3 強度：(a) 偵測（保留 (a)、退役 (b)）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式＋缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "tests/test_contracts.py",
@@ -361,13 +361,13 @@
       "parts": {
         "a": {
           "result": "未驗證",
-          "scope": "決策書第 4 節對應子項完整門檻",
+          "scope": "v3 第 4 節對應子項的強度；v2 時的門檻已不適用",
           "evidence": [],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
         },
         "b": {
-          "result": "不通過",
-          "scope": "決策書第 4 節對應子項完整門檻",
+          "result": "不適用",
+          "scope": "v3 第 4 節：覆寫歸因退役（屬執行屏障，D9）",
           "evidence": [
             {
               "path": "archive/v2-barrier/src/project_bootstrap/feasibility.py",
@@ -409,8 +409,8 @@
     {
       "id": "F12",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/lines.py",
@@ -427,8 +427,8 @@
     {
       "id": "F13",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "archive/v2-barrier/tests/test_recovery.py",
@@ -456,13 +456,13 @@
       "parts": {
         "normal": {
           "result": "未驗證",
-          "scope": "決策書第 4 節對應子項完整門檻",
+          "scope": "v3 第 4 節對應子項的強度；v2 時的門檻已不適用",
           "evidence": [],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
         },
         "interrupted": {
           "result": "未驗證",
-          "scope": "決策書第 4 節對應子項完整門檻",
+          "scope": "v3 第 4 節對應子項的強度；v2 時的門檻已不適用",
           "evidence": [
             {
               "path": "archive/v2-barrier/tests/test_recovery.py",
@@ -485,7 +485,7 @@
         },
         "device-lost": {
           "result": "未驗證",
-          "scope": "決策書第 4 節對應子項完整門檻",
+          "scope": "v3 第 4 節對應子項的強度；v2 時的門檻已不適用",
           "evidence": [],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
         }
@@ -494,8 +494,8 @@
     {
       "id": "F14",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/capabilities.py",
@@ -520,8 +520,8 @@
     {
       "id": "F15",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [],
       "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
       "next": "中文／空白路徑、LF、執行位元、shell 差異都測"
@@ -529,8 +529,8 @@
     {
       "id": "F16a",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/resume.py",
@@ -550,9 +550,9 @@
     },
     {
       "id": "F16b",
-      "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
+      "result": "不適用",
+      "scope": "v3 強度：—（想要）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=選用（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/doctor.py",
@@ -569,8 +569,8 @@
     {
       "id": "F17",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/install.py",
@@ -587,8 +587,8 @@
     {
       "id": "F18",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：提示（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/release.py",
@@ -625,8 +625,8 @@
     {
       "id": "F19",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/gitclaim.py",
@@ -643,8 +643,8 @@
     {
       "id": "F20",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：留痕＋不變條件（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/facts.py",
@@ -669,8 +669,8 @@
     {
       "id": "F21",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/bypass.py",
@@ -691,8 +691,8 @@
     {
       "id": "F22",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/baseline.py",
@@ -708,13 +708,13 @@
         }
       ],
       "unknown": "字元這一半 2026-11-11 第二輪壓縮後已在上限內：baseline.py 實測 10,462（AGENTS 3,456、HANDOFF 1,622、部署包 skill 入口 3,430＋mode-a.md 1,954），另有本 repo 開場 hook 全綠時輸出約 600，合計約 11,100 ≤ 12,000。做法是 AGENTS 規則縮成短句（壓縮前原文逐條補進 AGENTS-reasons.md）、條件式文件表與 HANDOFF 的地雷搬到 ARCHITECT；skill 與部署包沒動。第一輪前 17,373（AGENTS 6,244、HANDOFF 5,745）。5 分鐘這一半 2026-11-11 在這台 Mac 的 Claude Code 量過：本 session 從使用者說「接棒」到 A5 回報 97 秒、加開工標記 commit＋push 4 秒，約 101 秒 ≤ 300；其中 verify_bootstrap.py 71 秒、開場 hook 0.6 秒（hook 在使用者訊息前跑，不計入），其餘是模型讀檔與判讀。同機 2026-11-10～11 其他四次正常接棒由 transcript 時間戳算出 80～150 秒。auto 模式沒有權限確認等待；有權限確認時等使用者的時間依定義不計。Windows／Linux、Codex 與異常路徑沒量，token 也沒量，所以整體仍是未驗證。HANDOFF 會隨每輪變長：2026-11-11 交棒時 HANDOFF 1,860、四份合計 10,700，加 hook 約 11,300，餘量約 700 字元；條件式文件與理由檔是否在該讀時真的被讀，未驗證。只讀狀態卡輸出約 600 字元，沒有取代任何必讀。六檔版全域副本只在這台 Mac，main、各專案與別台機器尚未換",
-      "next": "在 Windows／Linux 與 Codex 各量一次完整接棒時間（從開始接棒到可判定能否開工，含自動查核等待），都 ≤5 分鐘才能判通過；verify_bootstrap.py 占約七成（其中 v2 原型回歸 41 秒），測試再變多要注意；2026-11-11 列過但使用者指示先不動的優化：A4 快速模式不跑原型回歸、驗證器守常態必讀字元總量；字元若因 HANDOFF 變長再超標要報因，不刪必要門檻。skill 拆分見 skill 拆分設計稿第 10 節（2026-11-17 封存，見封存索引）（六檔版不上 main、不同步專案：Q14 (b)）；動作提醒 hook 在本 repo 試行（Q6 (a)，只接 Claude Code）"
+      "next": "照 D11 的行數預算量（共用制度 ≤ 40 行、AGENTS.md ≤ 100 行、HANDOFF.md ≤ 80 行）；2026-11-17 使用者確認不另設接棒時間上限，原本「完整接棒 ≤5 分鐘」的目標取消。以下是 v2 時期的觀察：verify_bootstrap.py 占約七成（其中 v2 原型回歸 41 秒），測試再變多要注意；2026-11-11 列過但使用者指示先不動的優化：A4 快速模式不跑原型回歸、驗證器守常態必讀字元總量；字元若因 HANDOFF 變長再超標要報因，不刪必要門檻。skill 拆分見 skill 拆分設計稿第 10 節（2026-11-17 封存，見封存索引）（六檔版不上 main、不同步專案：Q14 (b)）；動作提醒 hook 在本 repo 試行（Q6 (a)，只接 Claude Code）"
     },
     {
       "id": "F23",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/readonly.py",
@@ -739,8 +739,8 @@
     {
       "id": "F24",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/campaign.py",
@@ -761,8 +761,8 @@
     {
       "id": "F25",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "tests/test_gitclaim.py",
@@ -774,9 +774,9 @@
     },
     {
       "id": "F26",
-      "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "result": "不適用",
+      "scope": "v3 強度：—（想要）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/confluence.py",
@@ -792,18 +792,18 @@
     },
     {
       "id": "F27",
-      "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
+      "result": "不適用",
+      "scope": "v3 強度：—（想要）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=選用（出自已封存的 v2 實現規劃）",
       "evidence": [],
       "unknown": "既有相關能力不等於本 ID 完整達標；跨工具與跨 OS 尚未驗收",
       "next": "不引入另一套手動看板或 owner 欄"
     },
     {
       "id": "F28",
-      "result": "不通過",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "result": "未驗證",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "tests/test_contracts.py",
@@ -888,8 +888,8 @@
     {
       "id": "F29",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/mutants.py",
@@ -910,8 +910,8 @@
     {
       "id": "F30",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/batch.py",
@@ -935,9 +935,9 @@
     },
     {
       "id": "F31",
-      "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "result": "不適用",
+      "scope": "v3 強度：—（退役）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/impact.py",
@@ -954,8 +954,8 @@
     {
       "id": "F32",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/release.py",
@@ -979,9 +979,9 @@
     },
     {
       "id": "F33",
-      "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "result": "不適用",
+      "scope": "v3 強度：—（退役）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/release.py",
@@ -1022,8 +1022,8 @@
     {
       "id": "F34",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/decisions.py",
@@ -1048,8 +1048,8 @@
     {
       "id": "F35",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/publish.py",
@@ -1086,8 +1086,8 @@
     {
       "id": "F36",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/policy.py",
@@ -1124,8 +1124,8 @@
     {
       "id": "F37",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/policy.py",
@@ -1141,9 +1141,9 @@
     },
     {
       "id": "F38",
-      "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式",
+      "result": "不適用",
+      "scope": "v3 強度：—（退役）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/policy.py",
@@ -1159,9 +1159,9 @@
     },
     {
       "id": "F39",
-      "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
+      "result": "不適用",
+      "scope": "v3 強度：—（退役）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=選用（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/inventory.py",
@@ -1182,8 +1182,8 @@
     {
       "id": "F40",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/evidence.py",
@@ -1211,9 +1211,9 @@
     },
     {
       "id": "F41",
-      "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=選用",
+      "result": "不適用",
+      "scope": "v3 強度：—（退役）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=選用（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "tests/test_resume_repo.py",
@@ -1230,8 +1230,8 @@
     {
       "id": "F42",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "scope": "v3 強度：委託（見決策書）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "tests/test_contracts.py",
@@ -1299,9 +1299,9 @@
     },
     {
       "id": "F43",
-      "result": "不通過",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "result": "未驗證",
+      "scope": "v3 強度：(a) 偵測／(b) 留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "tests/test_contracts.py",
@@ -1320,8 +1320,8 @@
       "next": "未有 ignore、暫存／提交／tag 訊息及輸出邊界都測；已外流不能稱阻擋成功",
       "parts": {
         "a": {
-          "result": "不通過",
-          "scope": "決策書第 4 節對應子項完整門檻",
+          "result": "未驗證",
+          "scope": "v3 第 4 節對應子項的強度；v2 時的門檻已不適用",
           "evidence": [
             {
               "path": "archive/v2-barrier/src/project_bootstrap/feasibility.py",
@@ -1336,7 +1336,7 @@
         },
         "b": {
           "result": "未驗證",
-          "scope": "決策書第 4 節對應子項完整門檻",
+          "scope": "v3 第 4 節對應子項的強度；v2 時的門檻已不適用",
           "evidence": [],
           "unknown": "僅限本列已附的重跑入口；完整需求、其他 OS／surface 尚未驗收"
         }
@@ -1345,8 +1345,8 @@
     {
       "id": "F44",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/decisions.py",
@@ -1362,9 +1362,9 @@
     },
     {
       "id": "F45",
-      "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
+      "result": "不適用",
+      "scope": "v3 強度：—（想要）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式＋缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "src/project_bootstrap/contradictions.py",
@@ -1413,8 +1413,8 @@
     {
       "id": "F46",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "tools/verify_bootstrap.py",
@@ -1431,8 +1431,8 @@
     {
       "id": "F47",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程式＋缺口",
+      "scope": "v3 強度：留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程式＋缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "archive/v2-barrier/src/project_bootstrap/broker_fixture.py",
@@ -1477,8 +1477,8 @@
     {
       "id": "F48",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=缺口",
+      "scope": "v3 強度：委託＋不變條件（見決策書）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=缺口（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "tests/test_contracts.py",
@@ -1511,8 +1511,8 @@
     {
       "id": "F49",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
-      "origin": "fdc0bbd:HANDOFF.md；實現規劃第 6 節基準類別=程序",
+      "scope": "v3 強度：留痕（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
+      "origin": "fdc0bbd:HANDOFF.md；v3 第 4 節；v2 時的基準類別=程序（出自已封存的 v2 實現規劃）",
       "evidence": [
         {
           "path": "tools/verify_v2.py",
@@ -1533,7 +1533,7 @@
     {
       "id": "F50",
       "result": "未驗證",
-      "scope": "v2 完整需求及所有選定 surface；尚無逐項完整驗收",
+      "scope": "v3 強度：提示＋留痕（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
       "origin": "fdc0bbd:HANDOFF.md 第一步，使用者補列必要功能；決策版本 2",
       "evidence": [
         {

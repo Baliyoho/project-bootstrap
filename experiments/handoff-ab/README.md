@@ -1,6 +1,6 @@
 # handoff-ab：完整版與極簡版骨架的對照實測
 
-> 最後更新：2026-11-14（新增 Codex＋macOS 執行入口；原始 Claude Code 實測結果見 [RESULTS.md](RESULTS.md)；下文是跑之前的設計，跑的過程中改過的三處記在結果檔）
+> 最後更新：2026-11-17（加「純任務 A/B 與後續探針」一節：改進計畫封存，怎麼跑搬來這裡）；前次 2026-11-14（新增 Codex＋macOS 執行入口；原始 Claude Code 實測結果見 [RESULTS.md](RESULTS.md)；下文是跑之前的設計，跑的過程中改過的三處記在結果檔）
 > 第二輪（六個較難的情境，12 次，已跑完）的設計在 [ROUND2.md](ROUND2.md)，結果併在 RESULTS.md。
 > 這是實驗，不是制度：不改 `src/kit/`、部署包、全域 skill 或任何專案，結果出來之前不授權改需求決策書。
 
@@ -71,6 +71,50 @@ python3 -X utf8 score.py --all
 單獨重算成績，不呼叫模型。每格的原始資料在工作區的 `runs/<情境>-<組別>-<次>/`：`stream.jsonl` 是完整串流紀錄，`score.json` 是逐項結果，`origin.git/push.log` 是每次推送當下的工作樹狀態。
 
 工作區預設在系統暫存目錄的 `pb-handoff-ab/`，可用 `HANDOFF_AB_ROOT` 改。它必須在任何 repo 之外，因為受測 session 會沿上層目錄找指示檔；`build.py` 會檢查。
+
+### 純任務 A/B 與後續探針（2026-11-15）
+
+`comparable.py`（搭 A/B 兩組同起點的格）、`claude_pair.py`（Claude Code 路徑）、`relay.py`（同 session 先接棒再交棒）、`usage.py`（依指定回合解析用量）。結果在 [PHASE2-RESULTS.md](PHASE2-RESULTS.md)。下面三小節 2026-11-17 從當時的改進計畫搬來（計畫本身已封存），只留怎麼跑。
+
+#### 可比較的純任務設計（Codex）
+
+`comparable.py` 延用現行 `build.py`、`phase2_handoff_probe.py`、`score.py`、`codex_run.py` 與 `usage.py`。這是**同一版本的執行提示對照**，不能稱為制度版本或 hook 版本優化。A 是同一任務只按現有規則完成；B 另明示最小讀取、有效驗證沿用、等待及回合外量測。B 多出的提示字數進入實際 input 成本。若兩組實際讀取／驗證／等待行為相同，不能把時間差歸給提示。
+
+兩個任務分開：純接棒從無人占用、乾淨且同步的 repo 起步，執行 A4 等必要驗證、推自己的開工標記、從遠端確認、回覆後停住；HANDOFF 的下一項等後續指令，不開發。只讀或只回答的 session 本來不 claim；本 fixture 明確要求接棒並推開工標記，所以適用 A5。純交棒從 `celsius_to_kelvin` 已完成、已推送且本 session 占用的 repo 起步，只做 B3／B4／B6／B7／B8 等必要查核、快照、釋回與回覆，不再開發。兩組均不得省略必要驗證。
+
+每情境 A/B 各 3 次，共 **12 個獨立 Codex turn／12 次預計模型呼叫**；沒有額外版本探針或 Claude Code 格。每個情境只建立一份 master Git 狀態，再複製成 6 格；同情境六格的起始 HEAD、tree、refs SHA-256 完全相同。模型固定 `gpt-6-sol`、`medium`，Codex CLI 走同一隔離設定，兩組使用同一份現行 full 骨架、hook、環境與任務終點。交錯順序記在 `paired-plan.json`：第 1 輪接棒 A/B、交棒 B/A；第 2 輪反向；第 3 輪同第 1 輪。各格獨立 bare origin 與 work，不共享執行後 Git 狀態。原始紀錄、工作樹及認證連結只在 repo 外的 `HANDOFF_AB_ROOT`。
+
+離線準備：`HANDOFF_AB_ROOT=<repo 外新目錄> python3 -X utf8 experiments/handoff-ab/comparable.py prepare`；`plan` 列狀態；正式執行才用 `run <CELL> --approved`，完成後可用 `assess <CELL>` 重算。每格啟動前比對 origin snapshot、work HEAD、remote tracking ref、工作樹乾淨與占用值；任何差異拒跑。先各情境各組 1 格作煙霧測試；任一 INVALID、FAIL、損害、fixture 污染、CLI 非零退出或 timeout 即停，查明後才決定是否繼續。所有 12 格完成或既有訂閱用量守門觸發時停止；不自動補跑無效格，也不增加任意授權門檻。本輪只做設計與離線測試，正式 12 次**尚未啟動**。
+
+每格保留 CLI 外層完整 wall 秒數、CLI exit、完成後 `usage.py` 依唯一 turn 算的模型秒數、回應數與 input／cached／noncached／output 及原始欄位；無 rollout、未完成或缺欄位寫 `null`，不填零。CLI JSON 只能可靠計數可見的讀取、驗證、Git 命令；各項耗時、工具等待回合及重試若無可靠事件維持 `null`。回合結束後一次讀紀錄並評分，解析與寫報告的成本另外以離線計時記錄，不混進受測 wall 秒數；不在受測回合中做「途中量測暫計提交」。那個舊觀察是測量行為本身造成的開銷，不能作公平 A 組；如要估計，另用本地無模型的解析／記錄計時，沒有遞迴量測尾巴。
+
+機器評分檢查開工標記先推、末態占用、沒有開發、交棒釋回、成果不變、main 綠、本機同步與禁止操作。遠端確認是否真正比對 own marker、必要驗證是否按順序且有效、實際讀取範圍／等待及是否有多做任務，需看每格原始命令與輸出人工判定。每格 `review.json` 由審查者填 `subject_verification`、`task_scope`、`remote_confirmation` 的布林值或 `null`；審查說明另記於 repo 外，交棒的遠端確認項由 runner 內部標不適用。缺人工核對時總判定是 `PENDING_REVIEW`，不能宣稱全程 PASS；任何人工項 false 是 FAIL。CLI exit 非 0／timeout 一律 INVALID。每格 `run-config.json` 記實際 CLI 版本、模型與推理參數、JSON 事件格式、提示與起點雜湊；rollout 的模型另由有效性檢查。報告先列每格正確性與實際動作，再以配對的全程秒數、token 中位數與範圍及快取比例描述；樣本不足、動作未分化或差異落在波動範圍，寫未定，不推算訂閱額度收益。
+
+#### Claude Code 介面
+
+`comparable.py` 以 `HANDOFF_AB_TOOL=claude` 切到 `claude_pair.py`；不設就是原本的 Codex 路徑，行為不變。兩個工具各用自己的 `HANDOFF_AB_ROOT`，`paired-plan.json` 記工具名，拿錯工作區會在啟動模型前拒跑。設計、提示、交錯順序、起點雜湊與污染檢查同上一節，結果只在 Claude 內部比較。
+
+- **環境**：這台機器的 CLI 是桌面 App 內建的 Claude Code 2.1.325，不在 PATH，由 `CLAUDE_CODE_EXECPATH` 或 `CLAUDE_BIN` 指定。受測用隔離設定目錄需使用者自己登入一次（不搬憑證）；`run.py preflight` 會印出登入指令並檢查訂閱登入。
+- **固定設定**：模型 `claude-opus-5-5`（沿用前兩輪 Claude 受測）、`--effort medium`；跟 Codex 的 medium 不同義。工具清單與權限模式同 `run.py`，拿掉 `--no-session-persistence` 並指定 `--session-id`，回合後才有唯一的 session 紀錄。
+- **交棒起點**：占用標記的工具名改成 `Claude Code`。沿用 Codex fixture 的話，受測者會把它當成別人的占用而依規則停下。
+- **有效性**：沿用 `score.validity` 的串流檢查（模型、handoff skill、第一則回覆前的 `[facts]`、沒碰測試 repo 外的制度檔、正常結束），再加 init 剛好一個且 session id 相符、result 剛好一個 success、唯一 session 紀錄、紀錄裡剛好一則人類訊息。任一不成立即 INVALID。
+- **用量**：`usage.py claude` 依唯一 user UUID 解析。本輪修了一個邊界：載入 skill 時 harness 會插一則 `isMeta` 文字訊息，舊判定把它當成下一輪，整個回合會回報未完成（全部未知）；真實紀錄已確認有這種列。現在略過 `isMeta`。CLI 在 result 事件自報的 `duration_ms`／`num_turns` 另存 `cli_reported` 當對照。
+- **用量守門**：每格前後讀串流最後一筆 `rate_limit_event`；超額、被限流或五小時窗到 85% 就不跑下一格，`score.json` 的 `limit` 會有字。
+- **可觀測動作**：Read／Grep／Glob 與 Bash 讀取、驗證命令、git 命令、Skill 呼叫與工具呼叫總數，同一個 tool_use id 只算一次；耗時、等待回合與重試沒有可靠事件，維持 `null`。
+
+離線測試 `test_claude_pair.py` 5 項：合成串流與 session 紀錄的有效格、重複串流去重、`isMeta` 不切斷回合、模型不符／缺 `[facts]`／session id 不符／錯誤結束／缺 result／碰 repo 外制度檔各自 INVALID、多一則人類訊息／未完成／缺紀錄／紀錄不唯一時用量為未知、指令保留 session 紀錄、Claude fixture 的占用標記與拿錯工作區拒跑。拿掉 `isMeta` 修正時測試會失敗（已實際試過）。串流與 session 紀錄的實際欄位只對過既有真實 session 紀錄與前兩輪的解析碼，2.1.325 的 `-p` 串流要等第一格煙霧才算驗過。
+
+執行：`HANDOFF_AB_TOOL=claude HANDOFF_AB_ROOT=<repo 外新目錄> python3 -X utf8 experiments/handoff-ab/comparable.py prepare`，登入後 `run <CELL> --approved`。先跑 `takeover-A-1`、`takeover-B-1`、`handoff-B-1`、`handoff-A-1` 四格煙霧，有效才續跑其餘八格。macOS 上假家目錄存不了登入憑證，實跑用 `HANDOFF_AB_HOME=real` 並以 `HANDOFF_AB_CONFIG` 指定登入時用的同一個路徑字串。交棒提示 2026-11-15 起明講占用標記是受測 session 自己的，原因見結果檔；Codex 路徑共用這句，尚未實跑。
+
+#### Claude Code 後續探針
+
+使用者同意逐項測。結果寫在 [PHASE2-RESULTS.md](PHASE2-RESULTS.md)；這裡只記怎麼跑。都只支援 `HANDOFF_AB_TOOL=claude`，各用新的 `HANDOFF_AB_ROOT`。
+
+- **占用者核對**：`HANDOFF_AB_VARIANT=occupant` 再 `prepare`。交棒提示不講標記是誰的，起點標記早 90 分鐘；只跑 handoff 格。正解是停下，所以機器評分的 FAIL（沒推、沒釋回）在這個探針裡代表「停下」。
+- **長驗證等待**：`HANDOFF_AB_VARIANT=slow` 再 `prepare`。接棒起點的 `verify_state.py` 多等 150 秒，超過 Bash 工具預設的 120 秒；只跑 takeover 格。`score.json` 的 `tool_timings` 由 session 紀錄算每個工具呼叫的耗時、設了多少 timeout、有沒有丟背景；缺結果的呼叫秒數是 `null`，總和也跟著未知。
+- **同 session 先接棒再交棒**：一般 `prepare` 後用 `relay.py run takeover-<組>-<次> --approved`，每格兩次模型呼叫（第二回合 `--resume`）。第一回合照純接棒評分存 `score-turn1.json`；第二回合的用量只算第二則人類訊息之後，而且那一則的文字必須就是第二句提示，否則用量未知、該格 INVALID。人工審查填 `review2.json`。
+- **用量門檻**：預設 85%，`HANDOFF_AB_LIMIT` 可調；超額與限流的檢查不受影響。帳號開了超額時，五小時窗用滿會直接轉成超額計費，串流不報錯。
+- 離線測試：`test_claude_pair.py`（7 項）、`test_relay.py`（2 項）。
 
 ## 三個坑怎麼處理
 

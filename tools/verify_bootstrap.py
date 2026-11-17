@@ -305,10 +305,10 @@ def write_lf(path, text, encoding='utf-8'):
 # ── 1. 重生骨架 ────────────────────────────────────────────────
 SKILL_DIR = '.claude/skills/handoff/'
 # 入口排最前、新寫的正常路徑摘要排最後：下面依標題找段落的檢查（「### A5 」之類）要先碰到
-# 逐字搬來的原文，摘要另外由「skill 入口與常態必讀量」那一項守。
+# 逐字搬來的原文，摘要另外由「skill 拆分」那一項守。
 SKILL_FILES = ('SKILL.md', 'mode-a-stop.md', 'mode-b.md', 'mode-0.md', 'reasons.md', 'env.md', 'mode-a.md')
 SKILL_ROUTINE = ('SKILL.md', 'mode-a.md')       # 正常接棒要讀的兩個檔
-SKILL_ROUTINE_LIMIT = 6000                       # 設計稿第 3 節；F22 的 12,000 還要留給專案文件
+SKILL_ROUTINE_LIMIT = 6000                       # skill 拆分設計稿第 3 節（2026-11-10）。v3 起 skill 是碰到才讀的參考檔（D12），這個上限只守它的大小
 
 
 def skill_text(dest):
@@ -1144,7 +1144,7 @@ def session_resume_problems(skill, agents):
     if SESSION_RESUME_RULE not in shared_rules(agents):
         problems.append('AGENTS.md 共用制度缺續聊恢復規則')
     # 2026-11-10：命名規則拆到入口（摘要）、mode-b.md（計數）與 reasons.md（細則原文），
-    # 所以這裡看整個 skill 目錄；入口自己該有哪些句子由「skill 入口與常態必讀量」守。
+    # 所以這裡看整個 skill 目錄；入口自己該有哪些句子由「skill 拆分」守。
     naming = skill
     required = (
         '每則使用者新訊息都先檢查 session 狀態',
@@ -4892,7 +4892,7 @@ def skill_split_problems(files, version, whole, baseline):
             bad.append('%s 的版本標記 v%s 與 VERSION %s 不同' % (name, mark[1], version))
     size = sum(len(files[name]) for name in SKILL_ROUTINE)
     if size > SKILL_ROUTINE_LIMIT:
-        bad.append('常態必讀（入口＋mode-a.md）%d 字元，超過 %d' % (size, SKILL_ROUTINE_LIMIT))
+        bad.append('skill 入口＋mode-a.md 共 %d 字元，超過 %d' % (size, SKILL_ROUTINE_LIMIT))
     bad.extend('入口缺：' + token for token in ENTRY_MUST if token not in entry)
     bad.extend('mode-a.md 缺：' + token for token in MODE_A_MUST if token not in files['mode-a.md'])
     have = {line_key(line) for text in files.values() for line in text.split('\n') if line.strip()}
@@ -4951,7 +4951,7 @@ def step_skill_split(dest):
         if not skill_split_problems(*args):
             bad.append('負向測試未擋：' + name)
     record('FAIL' if bad else 'OK', 'skill 拆分', '；'.join(bad) if bad else
-           '%d 個檔齊全、同版本、都在同步清單；常態必讀（入口＋mode-a.md）%d／%d 字元；入口 %d 條、mode-a %d 條必備句；'
+           '%d 個檔齊全、同版本、都在同步清單；入口＋mode-a.md %d／%d 字元；入口 %d 條、mode-a %d 條必備句；'
            '拆分前 %d 行逐字留存、%d 行列為已改寫；%d 個負向測試（不代表模型會去讀模式檔）'
            % (len(SKILL_FILES), size, SKILL_ROUTINE_LIMIT, len(ENTRY_MUST), len(MODE_A_MUST),
               len(baseline['lines']) - len(baseline['rewritten']), len(baseline['rewritten']), len(cases)))

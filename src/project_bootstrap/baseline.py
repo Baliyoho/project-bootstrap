@@ -45,8 +45,10 @@ def measure(root, run_verifier=False):
     report = {'scope': '常態入口（AGENTS、HANDOFF、skill 入口與 mode-a.md）；skill 取部署包權威範本，非任意全域副本；'
                   '不含任務專屬資料、條件式才讀的複審快照、AGENTS 理由檔、異常才讀的模式檔，'
                   '也不含開場 hook 輸出（2026-11-10 手動量本 repo 約 700 字元）',
-        'inputs': rows, 'unicode_characters': total, 'limit': 12000,
-        'reading_result': '通過' if total <= 12000 else '不通過',
+        # 2026-11-17: v3 D11 replaced v2's 12,000-character F22 limit with line budgets,
+        # which verify_bootstrap.py enforces; this count is an observation, not a verdict.
+        'inputs': rows, 'unicode_characters': total, 'limit': None,
+        'reading_result': '觀測值；F22 依 v3 D11 的行數預算判定（verify_bootstrap.py 守）',
         'tokens': '未量測，不以字元冒充 token',
         'full_handoff_seconds': None,
         'full_handoff_result': '未驗證；單一驗證器時間不等於完整接棒時間',

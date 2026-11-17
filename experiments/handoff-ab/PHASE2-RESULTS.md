@@ -31,7 +31,7 @@
 
 ## Claude Code 純任務煙霧四格：2026-11-15
 
-使用者要求 Claude Code 接棒驗證並自行登入受測設定目錄。Claude Code 2.1.325（桌面 App 內建），`claude-opus-5-5`、`--effort medium`，訂閱登入（Pro），macOS。設計與提示見 [OPTIMIZATION-PLAN.md](OPTIMIZATION-PLAN.md) 的純任務設計與 Claude Code 介面兩節。每格一個獨立 `claude -p` session，共 4 次模型呼叫，其餘 8 格未跑。
+使用者要求 Claude Code 接棒驗證並自行登入受測設定目錄。Claude Code 2.1.325（桌面 App 內建），`claude-opus-5-5`、`--effort medium`，訂閱登入（Pro），macOS。設計與提示見 [README.md](README.md)「純任務 A/B 與後續探針」一節（2026-11-17 從當時的改進計畫搬去）。每格一個獨立 `claude -p` session，共 4 次模型呼叫，其餘 8 格未跑。
 
 隔離方式與計劃不同的一點：假家目錄下 macOS 存不了登入憑證，改用真家目錄模式（`HANDOFF_AB_HOME=real`）加隔離設定目錄；skill、設定與 git 設定仍是隔離的，碰到真家目錄制度檔會判 INVALID，四格都沒有碰。登入憑證依設定目錄的路徑字串存放，`HANDOFF_AB_CONFIG` 改成不解析符號連結。
 

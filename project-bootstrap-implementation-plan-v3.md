@@ -1,11 +1,11 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-17（建立：依[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)從現況重新規劃，取代 v2 時代的實現規劃；舊規劃與效率計畫封存在 [docs/history/](docs/history/README.md)）
+> 最後更新：2026-11-17（第 1 期由使用者判定結案；現況索引改成 v3 寫法）；前次同日（建立：依[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)從現況重新規劃，取代 v2 時代的實現規劃；舊規劃與效率計畫封存在 [docs/history/](docs/history/README.md)）
 > 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](experiments/v2/status.json)。
 
 ## 1. 起點
 
-- 部署包已是 v3 第 5 節的形狀（v3 Q34、Q40、Q41），版本與檔數看 [VERSION](VERSION) 與 ARCHITECT。
+- 部署包的入口、hook 與參考檔已照 v3 第 5 節換過（v3 Q34、Q40、Q41），但還帶著第 5 節沒列的 `GEMINI.md`（給舊版 Gemini CLI 的指標），`ARCHITECT.md`、`docs/ai-notes/roadmap.md` 與兩支檢查腳本則可歸在第 5 節的「參考檔」「檢查腳本」兩列。版本與檔案清單看 [VERSION](VERSION) 與 ARCHITECT。
 - v2 的程式已在 main（v3 Q30 快轉合併）。執行屏障類模組依 D9 凍結並封存在 [archive/v2-barrier/](archive/v2-barrier/README.md)（v3 Q33）；簽章發布通道依 v3 第 5 節凍結，已發出的不撤回。
 - 驗收依據是 handoff-ab（v3 第 2 節 E1、第 6 節），結果在 [experiments/handoff-ab/](experiments/handoff-ab/README.md)。
 
@@ -24,8 +24,8 @@
 
 | 期 | 範圍 | 退出條件 | 證據與還差什麼 |
 |---|---|---|---|
-| 第 1 期 | Claude Code＋macOS；F50 | v3 第 6 節 | handoff-ab 兩輪見 [RESULTS](experiments/handoff-ab/RESULTS.md)「v3 第 1 期」，F50 見 [F50.md](experiments/handoff-ab/F50.md)，都跑在部署包 `2026-11-13`。之後部署包跳了 12 版沒有重跑。**結案與否待使用者判定**（2026-11-17 使用者選「先不判定」） |
-| 第 2 期 | Codex＋macOS；F14 | v3 第 6 節 | handoff-ab 兩輪見 [CODEX-RESULTS](experiments/handoff-ab/CODEX-RESULTS.md)（2026-11-14）。Codex 桌面 App 的 F50 標題項還沒判定。依 v3 第 6 節「前一期沒過不開始下一期」，第 1 期判定前這些結果只當參考 |
+| 第 1 期 | Claude Code＋macOS；F50 | v3 第 6 節 | handoff-ab 兩輪見 [RESULTS](experiments/handoff-ab/RESULTS.md)「v3 第 1 期」，F50 見 [F50.md](experiments/handoff-ab/F50.md)，都跑在部署包 `2026-11-13`。**2026-11-17 使用者判定結案**，以這兩份證據為準；之後部署包跳了 12 版沒有整期重跑，往後改制度照 D10、D14 逐條對照 |
+| 第 2 期 | Codex＋macOS；F14 | v3 第 6 節 | handoff-ab 兩輪見 [CODEX-RESULTS](experiments/handoff-ab/CODEX-RESULTS.md)（2026-11-14）。Codex 桌面 App 的 F50 標題項還沒判定。第 1 期結案後這是進行中的一期；這批結果跑在當時的部署包，要不要在現行版重跑沒有決定 |
 | 第 3 期 | 兩個工具＋Windows；F15 | v3 第 6 節 | Codex＋原生 Windows 有部分紀錄（CODEX-RESULTS 的 Windows 各節，2026-11-16），其中 `midway` 斷線情境有可重現的失敗，之後 v3 Q36 改了 B1，沒有重跑。Claude Code＋Windows 沒跑。Windows 開發人員模式與桌面 App 的 F50 暫緩 |
 
 ## 4. 暫緩與另案
@@ -45,8 +45,8 @@
 
 ## 6. 已知缺口
 
-- [現況索引](experiments/v2/status.json)的 `scope` 與 `origin` 欄還是 v2 時代的寫法（「v2 完整需求」「實現規劃第 6 節」），沒有改成 v3 的強度。v3 第 7 節說逐 ID 狀態另有權威位置，目前就是它；要不要改寫、何時改，使用者還沒決定。
-- 第 3 期的 `midway` 失敗與第 1 期是否重跑，都在第 3 節，不重複。
+- [現況索引](experiments/v2/status.json) 2026-11-17 改成 v3 的強度與處置，但沒有任何一列是「通過」：handoff-ab 的情境沒有逐 ID 對應，第 1 期結案也就無法落到個別 ID。各列 `unknown`／`next` 的敘述多半還是 v2 時期的觀察。
+- 第 3 期的 `midway` 失敗在第 3 節，不重複。
 
 ## 7. 改本檔的時機
 

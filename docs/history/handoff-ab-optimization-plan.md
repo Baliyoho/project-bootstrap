@@ -1,6 +1,6 @@
 # 交接棒執行與量測改進計劃
 
-2026-11-15。使用者同意以「保證既有流程／規則正確執行，而不是繼續加長規則」為方針，並授權 Sol sub-agent 執行第一、二階段。第一階段離線改動見下；第二階段首批實測見 [PHASE2-RESULTS.md](PHASE2-RESULTS.md)。
+2026-11-15。使用者同意以「保證既有流程／規則正確執行，而不是繼續加長規則」為方針，並授權 Sol sub-agent 執行第一、二階段。第一階段離線改動見下；第二階段首批實測見 [PHASE2-RESULTS.md](../../experiments/handoff-ab/PHASE2-RESULTS.md)。
 
 ## 開始位置與範圍
 
@@ -10,7 +10,7 @@
 
 ## 已知證據與限制
 
-- 詳細數字見 [CODEX-RESULTS.md](CODEX-RESULTS.md)。.3 完整接棒 147.103 秒、349,246 input、45,246 非快取 input；.4 完整回合 194.283 秒、444,536 input、46,200 非快取 input。
+- 詳細數字見 [CODEX-RESULTS.md](../../experiments/handoff-ab/CODEX-RESULTS.md)。.3 完整接棒 147.103 秒、349,246 input、45,246 非快取 input；.4 完整回合 194.283 秒、444,536 input、46,200 非快取 input。
 - .4 開工推送後的量測截點為 119.285 秒，後續記錄、驗證、推送與回覆增加 74.998 秒。兩次觀測的任務內容不同，無法由全程數字單獨推算優化效果。
 - 單次驗證器串行／重疊對照為 52.72／34.28 秒，均 66 項通過。
 - 本輪已看到執行落差：正常 Git 狀態仍讀整份異常參考；外層等待設成 1 秒，後續兩次 wait；量測中反覆讀 rollout，暫計提交增加一次完整驗證。
@@ -38,7 +38,7 @@
 
 ## 第二階段：取得授權後的模型實測
 
-**原定候選清單與本批調整**：原擬正常接棒、正常交棒各做前版／本版、兩種工具、每格 3 次，共 24 個模型 session，另有六個異常候選。實際盤點後，本輪 hook 差異只在權威 repo 的版本提示，而既有 handoff-ab fixture 用本機 bare origin 且關閉版本查核；`usage.py` 是回合後解析，也不改模型輸入。直接跑 24 格不能量到本輪改善。因此首批改成 Codex 本版正常接棒、正常交棒各一次，加權威版本提示前後各一次。原有 `midway` 是半成品交棒，另建正常交棒 fixture。本輪未找到 Claude Code CLI；Codex 訂閱五小時窗於首批後已到 84%，停止擴樣。結果與限制見 [PHASE2-RESULTS.md](PHASE2-RESULTS.md)。後續若需量化變化，應先明確界定會改變受測模型輸入或工作流的版本，再安排重複樣本；不能用這批單次數據推算效率改善。
+**原定候選清單與本批調整**：原擬正常接棒、正常交棒各做前版／本版、兩種工具、每格 3 次，共 24 個模型 session，另有六個異常候選。實際盤點後，本輪 hook 差異只在權威 repo 的版本提示，而既有 handoff-ab fixture 用本機 bare origin 且關閉版本查核；`usage.py` 是回合後解析，也不改模型輸入。直接跑 24 格不能量到本輪改善。因此首批改成 Codex 本版正常接棒、正常交棒各一次，加權威版本提示前後各一次。原有 `midway` 是半成品交棒，另建正常交棒 fixture。本輪未找到 Claude Code CLI；Codex 訂閱五小時窗於首批後已到 84%，停止擴樣。結果與限制見 [PHASE2-RESULTS.md](../../experiments/handoff-ab/PHASE2-RESULTS.md)。後續若需量化變化，應先明確界定會改變受測模型輸入或工作流的版本，再安排重複樣本；不能用這批單次數據推算效率改善。
 
 以下是原候選設計，僅供將來在可比版本與 fixture 上規劃對照，不是本輪未完成的必要 24 格：
 
@@ -84,7 +84,7 @@
 
 ## Claude Code 後續探針的介面（2026-11-15）
 
-使用者同意逐項測。結果寫在 [PHASE2-RESULTS.md](PHASE2-RESULTS.md)；這裡只記怎麼跑。都只支援 `HANDOFF_AB_TOOL=claude`，各用新的 `HANDOFF_AB_ROOT`。
+使用者同意逐項測。結果寫在 [PHASE2-RESULTS.md](../../experiments/handoff-ab/PHASE2-RESULTS.md)；這裡只記怎麼跑。都只支援 `HANDOFF_AB_TOOL=claude`，各用新的 `HANDOFF_AB_ROOT`。
 
 - **占用者核對**：`HANDOFF_AB_VARIANT=occupant` 再 `prepare`。交棒提示不講標記是誰的，起點標記早 90 分鐘；只跑 handoff 格。正解是停下，所以機器評分的 FAIL（沒推、沒釋回）在這個探針裡代表「停下」。
 - **長驗證等待**：`HANDOFF_AB_VARIANT=slow` 再 `prepare`。接棒起點的 `verify_state.py` 多等 150 秒，超過 Bash 工具預設的 120 秒；只跑 takeover 格。`score.json` 的 `tool_timings` 由 session 紀錄算每個工具呼叫的耗時、設了多少 timeout、有沒有丟背景；缺結果的呼叫秒數是 `null`，總和也跟著未知。
