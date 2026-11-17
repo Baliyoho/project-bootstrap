@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無。
-- **工作中**：無（已交棒）
+- **工作中**：Mac ／ Claude Code（桌面 App）／ 11.17.20｜待指派（2026-11-17 20:55 +08 開工）
 - **骨架版本**：`2026-11-17.3`
 - 本棒跳了一次版（`2026-11-17.3`，拿掉 `GEMINI.md`），七個 skill 檔與共用制度標記同版，本 repo AGENTS.md 的共用制度副本已重貼。**這台 Mac 的兩份全域 skill（`~/.claude`、`~/.codex`）還停在 `2026-11-17.2`**：覆蓋指令被工具權限擋下，見下一步 3。
 - 本機能力：Mac mini；`git push` 可用；本機 `.venv` 可跑驗證器不跑的外部套件測試（`PYTHONPATH=src .venv/bin/python -m pytest`）。
