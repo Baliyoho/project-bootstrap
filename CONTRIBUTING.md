@@ -35,7 +35,7 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 - 各原型都是**偵測**或合成阻擋，沒有接進任何工具。不要寫成保障。崩潰解除的終端確認只抬高 agent 代答門檻；開機識別登記值與錨點都在同 UID 可寫的地方。
 - VM 腳本、`guest_runs.py`、`crash_release.py` 2026-11-14 起封存在 `archive/v2-barrier/`，不再維護（v3 Q33）。
 - `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書 v3 第 8 節的 `Q` 編號（或 `- 無。`）。v3 第 3 節 D 表每列要有「決定」與「理由」；第 8 節已決項目底下子項格式是「採用理由／未選 (x) 名稱：／暫緩 名稱：」，選項名不能省，省了就報 `alternative-incomplete`（2026-11-17 封存 v2 時在 v3 踩到）。這兩個解析器與需求清單的解析器都按節名找節、不看節號（2026-11-17 起），改節名會讓它們讀不到東西，測試會失敗。
-- 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗。
+- 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗；沒加引號的 `$變數` 在 zsh 不會被拆成多個參數，拿它裝多個 git pathspec 會變成一個比對不到任何檔的 pathspec，結果是「零命中」而不是錯誤（2026-11-17 踩到）。
 - AGENTS.md 與本檔只有規則；新增或改規則時在 [AGENTS-reasons.md](AGENTS-reasons.md) 補段落與錨點。開工必守的放 AGENTS.md，碰到才需要的放 CONTRIBUTING.md。
 - 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。新守門用 `denied(code, ...)` 寫法。
 - 僅合成暫存 fixture；原檔、票據、金鑰與合成 Git object 不進本 repo。
