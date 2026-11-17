@@ -32,7 +32,7 @@
 ```
 
 3. AI 會照第 1 節那張表一次問完（專案名、GitHub owner/repo、憑證檔、運行目錄、時區…），生出骨架、建 repo、跑自檢。
-4. 骨架建好後**刪掉該專案裡的 `PROJECT-BOOTSTRAP.md`**——內容已分散進 `AGENTS.md`／`handover-protocol.md`／`handoff` skill，留著就是第二份會腐化的副本。
+4. 骨架建好後**刪掉該專案裡的 `PROJECT-BOOTSTRAP.md`**——內容已分散進 `AGENTS.md`、`ARCHITECT.md` 與 `handoff` skill，留著就是第二份會腐化的副本。
 
 也可以完全手動：照第 3 節自己把每個檔案建出來，效果一樣。
 
@@ -54,7 +54,6 @@
 ├─ .codex/hooks.json                Codex：掛上面同樣那兩個腳本（同格式、同語意）
 ├─ .agents/skills/handoff/SKILL.md  Codex 讀 repo 的 .agents/skills/：指向權威版的指標
 ├─ docs/ai-notes/
-│   ├─ handover-protocol.md         交接協定（規則與判準）
 │   └─ roadmap.md                   持久待辦總表
 └─ tools/
     ├─ check_docs.py                死連結／過期字串／缺日期標頭／硬編數量／殘留佔位符
@@ -70,8 +69,8 @@
 | **程序參考** | `skills/handoff/`（七個檔） | **碰到才讀，不是開工的前提**：逐步程序、Git 異常判讀、HANDOFF 模板、每條規則的理由；也可打 `/handoff`（建制走模式 0，見下節） |
 | **AI push 提醒** | `hooks/pre-push-handoff.sh` | 只依字面命令、目前分支與 origin 檢查已提交 HANDOFF 差異；選項／refspec／其他 remote／GUI／script 不保證，純文字可能誤擋；見部署包 3.11 |
 
-**分工**：`AGENTS.md` 的共用制度＝必守條件（衝突時以它為準）；`SKILL.md` 與同目錄的模式檔＝怎麼做（指令、判讀表、模板）；`handover-protocol.md`＝規則的理由與專案 override。
-在程序細節上，**核心優先序：SKILL.md**（含同目錄的模式檔）優先於 `handover-protocol.md` 這個不同步的專案實例，升級時須人工遷移。
+**分工**：`AGENTS.md` 的共用制度＝必守條件（衝突時以它為準）；`SKILL.md` 與同目錄的模式檔＝怎麼做（指令、判讀表、模板）與理由（`reasons.md`）；專案自己的 override 寫在 `AGENTS.md` 共用制度標記外的鐵律。
+交接協定 `handover-protocol.md` 2026-11-17 起不再部署（需求決策書 v3 Q41）；舊專案留著的那一份是不同步的專案實例，在程序細節上**核心優先序：SKILL.md**，升級時須人工遷移。
 override 只可加嚴或填補專案設定，使用者明確指示仍優先。權威程序只留一份，避免兩份副本各自演化（2026-11-03／複審 R06：人的入口曾保留相反優先序；2026-11-13／v3 第 5 節把「必守」這一層從 skill 移到 `AGENTS.md`，因為把參考檔當成前提，只讀一句話的 session 也得先讀完整份程序）。
 
 ## 完全空白的新專案：模式 0（建制）

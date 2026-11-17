@@ -533,8 +533,10 @@ def sync(project, gen, codex_only=False):
             return next((s.strip() for s in text.splitlines() if '<!-- source:' in s), '無版本標記')
         plan.msgs.append('  核心版本：%s → %s' % (source(core), source(target)))
         protocol = read(project / 'docs/ai-notes/handover-protocol.md')
-        if protocol is not None and '**核心優先序：SKILL.md**' not in protocol:
-            plan.msgs.append('  MIGRATE docs/ai-notes/handover-protocol.md：舊實例須人工遷移優先序與 override；不覆蓋專案規則，新 skill 核心優先')
+        # 2026-11-17（v3 Q41）起不再部署這一份；已部署的舊實例不改寫也不刪，只提示人工遷移。
+        if protocol is not None:
+            plan.msgs.append('  MIGRATE docs/ai-notes/handover-protocol.md：已不在部署包（v3 Q41），不改寫也不刪；'
+                             '專案 override 搬進 AGENTS.md 鐵律後由使用者決定刪不刪，程序細節以新 skill 核心為準')
         sync_shared_section(project, gen, plan)
 
     for rel in WHOLE:

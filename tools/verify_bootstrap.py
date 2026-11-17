@@ -155,7 +155,7 @@ KIT = ROOT / 'PROJECT-BOOTSTRAP.md'
 # 第 3 節應該產出的檔案。少一份就是有人刪了範本卻沒發現；多一份就把它加進來。
 EXPECTED = {
     'AGENTS.md', 'ARCHITECT.md', 'CLAUDE.md', 'GEMINI.md', 'HANDOFF.md', 'README.md',
-    'docs/ai-notes/handover-protocol.md', 'docs/ai-notes/roadmap.md',
+    'docs/ai-notes/roadmap.md',
     '.claude/skills/handoff/SKILL.md', '.claude/skills/handoff/mode-a.md',
     '.claude/skills/handoff/mode-a-stop.md', '.claude/skills/handoff/mode-b.md',
     '.claude/skills/handoff/mode-0.md', '.claude/skills/handoff/reasons.md',
@@ -1659,6 +1659,8 @@ def step_document_parity(dest, tmp):
                 git(['rm', '-q', '--', nested_rel], dest)
             else:
                 write_lf(source_nested, body)
+                # git rm 會把變空的目錄一起刪掉（2026-11-17 起 docs/ai-notes/ 只剩這一份）。
+                nested_target.parent.mkdir(parents=True, exist_ok=True)
                 write_lf(nested_target, body)
                 git(['add', '--', nested_rel], dest)
             dead, undated, missing, holes = source_document_problems(source, [nested_rel])
@@ -1672,6 +1674,7 @@ def step_document_parity(dest, tmp):
     finally:
         write_lf(target, original)
         git(['add', '--', 'ARCHITECT.md'], dest)
+        nested_target.parent.mkdir(parents=True, exist_ok=True)
         write_lf(nested_target, nested_original)
         git(['add', '--', nested_rel], dest)
     record('FAIL' if problems else 'OK', '來源／產物文件同組情境（F46 部分）',
@@ -3189,7 +3192,7 @@ def step_tool_prose(dest):
         ('部署包正文', KIT.read_text(encoding='utf-8')),
         ('本 repo ARCHITECT', (ROOT / 'ARCHITECT.md').read_text(encoding='utf-8')),
         ('重生 ARCHITECT', (dest / 'ARCHITECT.md').read_text(encoding='utf-8')),
-        ('重生交接協定', (dest / 'docs/ai-notes/handover-protocol.md').read_text(encoding='utf-8')),
+        ('重生 handoff skill', skill_text(dest)),
     )
     problems = [f'{name}：{problem}' for name, text in documents
                 for problem in stale_tool_prose_problems(text)]
@@ -3369,7 +3372,7 @@ def claim_text(line):
 
 
 def claim_problems(docs):
-    """docs：{'kit', 'readme', 'dep_readme', 'dep_protocol', 'agents'} → 問題清單。"""
+    """docs：{'kit', 'readme', 'dep_readme', 'dep_skill', 'agents'} → 問題清單。"""
     problems = []
 
     # ① 散文不得否認能力表裡已經 ✅ 的工具（2026-11-02 之前 README 範本還寫著
@@ -3417,8 +3420,9 @@ def claim_problems(docs):
             if 'verify_state' in line and re.search(r'有憑證(?:才|就)', claim_text(line)):
                 problems.append('%s 把 verify_state 寫成有憑證才跑：%s'
                                 % (name, line.strip()[:50]))
-    if '一律跑' not in docs['dep_protocol']:
-        problems.append('協定範本的一鍵驗證沒有寫「一律跑」')
+    # 2026-11-17（v3 Q41）：交接協定移出部署包，「一律跑」改由 skill 的 A4 帶著。
+    if '**一律跑**' not in docs['dep_skill']:
+        problems.append('handoff skill 的一鍵驗證沒有寫「一律跑」')
 
     # ④ 版本序號只有一種算法，而且要講明它跟版本行不保證同號。
     for name in ('kit', 'agents'):
@@ -3466,7 +3470,7 @@ def step_claims(dest):
         'readme': read_lf(ROOT / 'README.md'),
         'agents': read_lf(ROOT / 'AGENTS.md'),
         'dep_readme': read_lf(dest / 'README.md'),
-        'dep_protocol': read_lf(dest / 'docs' / 'ai-notes' / 'handover-protocol.md'),
+        'dep_skill': skill_text(dest),
     }
     problems = claim_problems(docs)
     if problems:
@@ -3483,10 +3487,9 @@ def step_claims(dest):
          lambda t: t.replace('## 協作方式', '## 換一個 AI 接手工作\n\n## 協作方式')),
         ('README 不講接棒交棒', 'dep_readme',
          lambda t: t.replace('「接棒」', '「開工」')),
-        ('verify_state 又變成有憑證才跑', 'dep_protocol',
-         lambda t: t.replace('**一律跑** `tools/verify_state.py`',
-                             '有憑證才跑 `tools/verify_state.py`')),
-        ('協定不寫一律跑', 'dep_protocol', lambda t: t.replace('一律跑', '跑')),
+        ('verify_state 又變成有憑證才跑', 'dep_skill',
+         lambda t: t.replace('**一律跑**，不是「有憑證才跑」', '`verify_state` 有憑證才跑')),
+        ('skill 不寫一律跑', 'dep_skill', lambda t: t.replace('**一律跑**', '跑')),
         ('序號算法退回舊版', 'agents',
          lambda t: t.replace(CLAIM_SERIAL, CLAIM_STALE_SERIAL)),
         ('不再講明跟版本行同不同號', 'kit', lambda t: t.replace('不保證同號', '一樣')),
@@ -4193,9 +4196,12 @@ def step_flow_contract(dest, tmp):
            '本 repo hook 是它的逐字副本；植入 rebase 建議與拿掉停止條件兩個負向測試')
 
 
-def core_priority_problems(skill, protocol, readme=None):
+def core_priority_problems(skill, protocol=None, readme=None):
+    """2026-11-17（v3 Q41）起部署包不再產出交接協定，protocol 只在測舊實例時才給。"""
     bad = []
     for name, text in (('skill', skill), ('protocol', protocol)):
+        if text is None:
+            continue
         if text.count('**核心優先序：SKILL.md**') != 1:
             bad.append(name + ' 核心優先序不唯一或不一致')
         for token in ('不同步的專案實例', '升級時須人工遷移', '不得在單一專案就地修改共用 skill',
@@ -4216,28 +4222,23 @@ def core_priority_problems(skill, protocol, readme=None):
 def step_core_priority(dest, tmp):
     import sync_project as syncer
     skill = skill_text(dest)
-    protocol = read_lf(dest / 'docs/ai-notes/handover-protocol.md')
-    bad = core_priority_problems(skill, protocol)
+    if (dest / 'docs/ai-notes/handover-protocol.md').exists():
+        bad = ['部署包又產出了交接協定（v3 Q41 已移除）']
+    else:
+        bad = core_priority_problems(skill)
     readme = read_lf(ROOT / 'README.md')
-    bad.extend(core_priority_problems(skill, protocol, readme))
+    bad.extend(core_priority_problems(skill, readme=readme))
     for mutant in (readme.replace('核心優先序：SKILL.md', '舊優先序'),
                    readme + '\n兩者衝突以協定為準。\n',
                    readme + '\n兩者衝突時**以協定為準**。\n'):
-        if not core_priority_problems(skill, protocol, mutant):
+        if not core_priority_problems(skill, readme=mutant):
             bad.append('R06 README 負向測試沒擋住反向或缺失宣告')
-    for index in (0, 1):
-        for token in ('**核心優先序：SKILL.md**', '升級時須人工遷移', '不得在單一專案就地修改共用 skill'):
-            pair = [skill, protocol]
-            pair[index] = pair[index].replace(token, '舊規則')
-            if not core_priority_problems(*pair):
-                bad.append('負向測試未擋 ' + token)
-    # 不依賴 Git 歷史也可驗：把兩份文件頂端的舊宣告還原。
-    for index, line in enumerate(('兩者衝突時**以協定為準**，並就地修正本檔。',
-                                  '兩者衝突時**以本檔為準**，並就地修正 skill。')):
-        pair = [skill, protocol]
-        pair[index] = line + '\n' + pair[index]
-        if not core_priority_problems(*pair):
-            bad.append('反向優先序未擋')
+    for token in ('**核心優先序：SKILL.md**', '升級時須人工遷移', '不得在單一專案就地修改共用 skill'):
+        if not core_priority_problems(skill.replace(token, '舊規則')):
+            bad.append('負向測試未擋 ' + token)
+    # 不依賴 Git 歷史也可驗：把 skill 頂端的舊宣告還原。
+    if not core_priority_problems('兩者衝突時**以協定為準**，並就地修正本檔。\n' + skill):
+        bad.append('反向優先序未擋')
     project = tmp / 'priority-project'
     shutil.copytree(dest, project)
     write_lf(project / 'docs/ai-notes/handover-protocol.md', '舊協定，專案自訂規則保留\n')
@@ -4247,18 +4248,19 @@ def step_core_priority(dest, tmp):
     if any(rel == 'docs/ai-notes/handover-protocol.md' for _, _, rel in plan.writes):
         bad.append('同步覆蓋專案協定')
     record('FAIL' if bad else 'OK', '核心與實例優先序', '；'.join(bad) if bad else
-           '核心兩份與 README 宣告一致、override 範圍明確、11 個負向測試；同步列核心版本與 MIGRATE，不覆蓋舊實例')
+           'skill 與 README 宣告一致、override 範圍明確、部署包不再產出交接協定、7 個負向測試；'
+           '同步對舊實例列核心版本與 MIGRATE，不改寫')
 
 
-def coordination_problems(skill, protocol):
+def coordination_problems(skill):
+    """2026-11-17（v3 Q41）：交接協定移出部署包，只剩 skill 的 A2.5 與 A5 要帶著這些邊界。"""
     bad = []
     a25 = skill.split('### A2.5 ', 1)[-1].split('### A3 ', 1)[0]
     a5 = skill.split('### A5 ', 1)[-1].split('### A6 ', 1)[0]
     for label, text, tokens in (
         ('A2.5', a25, ('接力式 single-writer', '協調訊號，不是互斥鎖', '同一工作樹不得同時有兩個 writer',
                        '不得自動奪取 writer', '不是穩定 owner token', '同時記錄觀測到的', '原子 claim 尚未實作', '未做並行實驗')),
-        ('A5', a5, ('協調訊號，不是互斥鎖', 'SHA 與 A2.5 觀測值不同就停止', '不能當一般 merge 衝突合併', '不等於取得原子 claim')),
-        ('協定', protocol, ('接力式 single-writer', '協調訊號，不是互斥鎖', '不得自動奪取 writer', '原子 claim 尚未實作', '未做並行實驗'))):
+        ('A5', a5, ('協調訊號，不是互斥鎖', 'SHA 與 A2.5 觀測值不同就停止', '不能當一般 merge 衝突合併', '不等於取得原子 claim'))):
         for token in tokens:
             if token not in text:
                 bad.append(label + ' 缺 ' + token)
@@ -4267,17 +4269,13 @@ def coordination_problems(skill, protocol):
 
 def step_coordination(dest):
     skill = skill_text(dest)
-    protocol = read_lf(dest / 'docs/ai-notes/handover-protocol.md')
-    bad = coordination_problems(skill, protocol)
+    bad = coordination_problems(skill)
     probes = ('協調訊號，不是互斥鎖', '不得自動奪取 writer', '原子 claim 尚未實作', '未做並行實驗')
-    for i in (0, 1):
-        for token in probes:
-            pair = [skill, protocol]
-            pair[i] = pair[i].replace(token, '移除邊界')
-            if not coordination_problems(*pair):
-                bad.append('負向測試未擋 ' + token)
+    for token in probes:
+        if not coordination_problems(skill.replace(token, '移除邊界')):
+            bad.append('負向測試未擋 ' + token)
     record('FAIL' if bad else 'OK', '接力協調邊界', '；'.join(bad) if bad else
-           'A2.5／A5／協定明列協調範圍、SHA 比對與禁止自動奪取；8 個負向測試，不代表並行互斥實測')
+           'A2.5／A5 明列協調範圍、SHA 比對與禁止自動奪取；4 個負向測試，不代表並行互斥實測')
 
 
 def sync_owner_cli_problems(cli, folder, gen, scenarios=None):

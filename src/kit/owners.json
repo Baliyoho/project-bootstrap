@@ -24,7 +24,6 @@
     "ARCHITECT.md": {"owner": "project", "update": "seed"},
     "GEMINI.md": {"owner": "project", "update": "seed"},
     "README.md": {"owner": "project", "update": "seed"},
-    "docs/ai-notes/handover-protocol.md": {"owner": "project", "update": "seed"},
     "docs/ai-notes/roadmap.md": {"owner": "project", "update": "seed"},
     "tools/verify_state.py": {"owner": "project", "update": "seed"},
     ".gitattributes": {"owner": "project", "update": "seed"}
