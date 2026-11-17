@@ -1,52 +1,51 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-17 06:30（+08）
-- **交棒者**：Claude Code／Windows `DESKTOP-M8MRS05`（Windows 平台感知、Q37／Q38 登記、骨架 2026-11-16.7 全面同步）
+- **交接時間**：2026-11-17 15:08（+08）
+- **交棒者**：Claude Code（桌面 App）／Mac mini（v2 決策書退休，v3 成為唯一需求書，v3 Q39）
 
 ## 任務目標
 
-bootstrap v3 的跨平台驗收已完成四種組合（Codex／Claude Code × macOS／Windows）全部實測。本棒把 Windows 從「固定 exit 2 的平台基線」改成真正 exit 0：平台不適用的檢查改成平台感知地斷言不適用（不收 `skip`），順手修掉四個真的可攜性 bug。制度方向仍依需求決策書 v3 Q35：一套共用規則，工具與平台差異只寫在碰到才讀的 `.claude/skills/handoff/env.md`。
+本棒讓 v2 需求決策書正式退休：v3 是唯一需求書，v2 凍結封存、不被任何程式讀取；回溯歷史要先經使用者同意。另提出根目錄資料夾整理方案（甲／乙／丙），使用者還沒選。制度方向不變，依需求決策書 v3。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
-- **待續分支**：無（`fix/windows-platform-aware` 已以 `--no-ff` 併入 `main`，分支保留不刪）。
-- **工作中**：Mac mini ／ Claude Code（桌面 App）／ ㊣　11.17.13｜待指派｜工作中｜交棒0次；開工 2026-11-17 13:39（+08）
+- **待續分支**：無。
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-16.7`
-- 本棒改了 `.claude/skills/handoff/env.md` 的內容，因此跳版到 `2026-11-16.7`；七個 skill 檔的 `source:` 標記同版本，部署包已重生，所有副本已覆蓋。
+- 本棒沒動 `src/kit/`、部署包與 `VERSION`，各專案不需同步。
+- 本機能力：Mac mini；`git push` 可用；本機 `.venv` 可跑驗證器不跑的 3 支外部套件測試（`PYTHONPATH=src .venv/bin/python -m pytest`）。
 
 ## 已完成
 
-- **Windows 首次 exit 0**（`3a66a1b`，併入 `main`）：68 項全過，`verify_v2` 434 項 run、skipped=0。原本 exit 2 的構成經逐項判讀為：32 個平台不適用、3 個真的可攜性 bug、5 個簽章 skip（`/usr/bin/ssh-keygen` 寫死）、6 個與平台無關的內容失敗（macOS 也會紅，等於前一棒交棒後的 `main` 兩邊都是紅的）。
-- **平台感知而非 skip**：`package.RECORDS_EXECUTE_BIT`、`selftest._runnable` 的 Windows 分支、測試裡的 `can_symlink(root)`；照本 repo「A4 不收 skip」的慣例，能力不存在就斷言不適用結果。
-- **四個真 bug**（兩平台都受益）：`contracts.path_escapes` 取代兩份 POSIX-only 的路徑逃脫判斷（`\server\share`、磁碟機相對路徑原本過得去）；`distribute.pack` 改讀 manifest 決定 tar mode，不再靠本機檔案權限；`approvals.system_ssh_keygen()` 平台釘死絕對路徑、`verifier_env()` 補上 Windows `ssh-keygen -Y verify` 唯一需要的 `ProgramData`；`pointer.SOURCE_RE` 認得 `C:\` 開頭的來源。
-- **Q37／Q38 登記在需求決策書 v3 §8**（`404670d`、`3f5002c`）：Q37 平台感知（已決）、Q38 Windows 驗證耗時寫進 `env.md`（已決）。一致性檢查器的 registry 從 v2 改指 v3 §8，`REPO_DOCS` 補上 v3；這是「HANDOFF 懸置只放指向編號的指標」這條規則第一次真的做得到。
-- **骨架 2026-11-16.7 全面同步**（`5a65da9`、`0f73944`）：`env.md` 新增 Windows 驗證耗時那條 → 重生部署包 → 本 repo `AGENTS.md` 共用制度區塊重貼 → 兩份全域 `skills/handoff/`（`~/.claude`、`~/.codex`，14 檔 byte-identical）→ 桌面六個專案各自走完整流程（Grist_test `7ce1935`、NAA_TR `95d5f66`、NAS_MAINT `8ab3a35`、摘要skill設計 `668e04a`、第三批56箱後檢查 `42a1db9`、鍵鼠同佈署 `d03cd0a`），每個都刪掉 `.claude/.bootstrap-version`。
+- **v2 退休**（`1266088`，需求決策書 v3 Q39，撤銷 Q32 (b) 的並存）：v2 以 `git mv` 封存到 `docs/history/requirements-decision-v2.md`，逐位元組不改。`verify_v2.py`、`test_registry_repo.py`（新）、`test_trail_repo.py` 與一致性檢查改讀 v3；需求清單與 v3 第 8 節改按節名找；讀 v2 第 7 節那條測試改成讀 v3 第 3 節的 D 表。
+- **新守門「封存原件」**（`verify_bootstrap.py`）：封存檔 Git blob 不變、程式與測試不引用 v2 路徑（經使用者同意才可登記 `ARCHIVE_READERS`）、文件與行末檢查不讀 `docs/history/`；四種反例都擋。
+- **修好 `test_registry` 的 mutation 假擋下**：原本 mutation 只複製 `src/`、`tests/`，這支讀不到真文件、每次出錯，8 個變異全是假擋下。改成合成資料，真文件部分拆到 `test_registry_repo.py`；registry 組 10 個、trail_sources 兩組 41 個（27＋14）變異實跑全部擋下（一個等效變異已換掉）。
+- **macOS 驗證補跑**：前一棒在 Windows 做完後，macOS 沒重跑；本棒開工時跑過 exit 0。
 
 ## 未完成／下一步
 
-1. `learn coding with ai agent` 仍未同步：不在這台機器的桌面上，掃不到，應是 Mac 那邊的事。
-2. 序號卡（`.codex/hooks.json` 有無法確認所有權的命令，且專案已完結）與解決網路速度問題（兩個已知的未提交變更，同步器判 dirty 整個跳過）依使用者 2026-11-17 指示刻意停在舊版，不是漏掉。
-3. 使用者若開 Windows「開發人員模式」，`can_symlink` 的分支會走到真的建 symlink 那條，覆蓋率提高；現在不開也 exit 0。
-4. 桌面 App 的 F50 五步互動沿用既有暫緩決定。
+1. **資料夾整理等使用者選方案**（本棒聊天中提出，尚未登記）：甲＝只把 14 份需求來回討論文件移到 `docs/history/`；乙＝全部分層進 `docs/`（需求書、設計、歷史），要改 5 支程式的路徑與 `src/kit/kit.md` 的 4 個 `audit.md` 連結並重生部署包；丙＝乙加刪減已結案文件，並把 ARCHITECT 開頭 134 行更新紀錄移出。使用者沒選之前不要開工。
+2. **`learn coding with ai agent` 的骨架同步**：這台 Mac 有這個專案，但它 origin 的「工作中」是另一個 session（2026-11-16 21:38 開工，主題「三方對比報告」）。要那個 session 交棒，或使用者確認標記已無人使用，才能同步。
+3. 序號卡、解決網路速度問題依使用者 2026-11-17 指示刻意停在舊版；Windows 開發人員模式與桌面 App 的 F50 互動驗證沿用既有暫緩。
+4. F22 必讀量 13,900／12,000 字元，超標是既有狀態（本棒前 13,862），未處理；只印報告，不影響驗證結束碼。
 
 ## 地雷與注意事項
 
-- **全套驗證在原生 Windows 約 3–4 分鐘**（2026-11-17 三次 224／234／244 秒，`verify_v2` 單獨 213 秒占九成），超過指令工具預設 120 秒上限，要提高 timeout 或丟背景；timeout 不等於失敗。這條已寫進 `env.md`。
-- **`--staged` 在 index 空的時候 0 秒回 exit 2**，印「沒有 staged 提交候選」。那既不是過也不是失敗，別讀成「變快了」。
-- **Windows 上 `python3` 是 WindowsApps 別名**（rc=49），要用 `python`；hook 的回退正常運作。
-- **`ssh-keygen -Y verify` 在最小環境下回 255 且無 stderr**：唯一必要的變數是 `ProgramData`，已由 `verifier_env()` 處理；再遇到類似靜默失敗，用貪婪法收斂環境變數。
-- 用腳本改 Python 時，`r'[\/]'`、`b'pack v1\n'` 這類反斜線在 heredoc 裡會被吃掉；本棒用 `B = chr(92)` 組字串並 grep 回驗。含 `C:\Users` 或 `\.` 的 docstring 要寫成 raw。
-- **跳版時別忘了根目錄的 `VERSION` 檔**：本棒漏過一次，`--staged` 直接五項失敗。
-- 跨專案寫入一律先在該專案推開工標記、再用 `--owner` 聲明；`--write` 不吃批次。同步完要刪該專案的 `.claude/.bootstrap-version`，否則它最多 12 小時不知道有新版，且毫無徵兆。
-- `sync_project.py` 的 MIGRATE **只比對標題字串、不看內容**，改完內容要連標題一起改。
-- AI push hook 只擋「推權威分支、沒改 `HANDOFF.md`、origin 標記是無（已交棒）」一種情形。
+- **`docs/history/` 是封存區**：AI 平常不讀，回溯歷史要先經使用者同意。v2 原件的 blob 寫死在 `FROZEN_ARCHIVES`，改內容或搬走都會被擋。若資料夾整理把其他檔移進來：它們會被文件檢查略過，但不會自動凍結。
+- 決策書解析器按節名（需求清單、方案約束、待決事項）找節，改節名會讓測試失敗。v3 第 8 節已決項的「未選／暫緩」子項要寫選項名，否則報 `alternative-incomplete`。
+- 一致性檢查：同一行同時有 Q 編號和「待決」兩字（包括「等待決定」）會報 `decided-still-pending`。本棒寫 ARCHITECT 時踩到兩次。
+- mutation 只複製 `src/`、`tests/`：讀真文件或 `tools/` 的測試一律放 `*_repo.py`，不放進 mutation 群組。
+- **全套驗證在原生 Windows 約 3–4 分鐘**，超過指令工具預設的 120 秒上限；macOS 約 35 秒。逾時不等於失敗。
+- `--staged` 在 index 空的時候 0 秒回 exit 2，那既不是過也不是失敗。Windows 上 `python3` 是 WindowsApps 別名，要用 `python`。
+- 用腳本改 Python 時，heredoc 會吃掉反斜線；改完 grep 回驗。跳版時別忘了根目錄的 `VERSION`。
+- 跨專案寫入一律先在該專案推開工標記，再用 `--owner`；同步完刪該專案的 `.claude/.bootstrap-version`。`sync_project.py` 的 MIGRATE 只比對標題。
 
 ## 服務查證與期望快照
 
-- 2026-11-17 Windows `DESKTOP-M8MRS05`：`python -X utf8 tools/verify_bootstrap.py --staged` → **exit 0**，68 項全過，無 skip。`verify_v2` 434 項 run、failures=0、errors=0、skipped=0（另有 3 個需外部套件的測試檔 A4 不跑，要 `uv run pytest`）。
-- Windows 的「39 個平台失敗基線」已作廢，接棒者在 Windows 看到任何失敗都是回歸。macOS 本棒沒有重跑，前一棒紀錄是 68 項全過。
-- 桌面六個專案 `env.md` 皆為 `v2026-11-16.7`，與 origin 一致、未提交 0 個、標記皆「無（已交棒）」；`sync_project.py --all` 預演只剩上述兩個刻意不動的目標。
+- 2026-11-17 macOS Mac mini，`1266088` 提交前：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，67 項全過，無 skip**（含新的「封存原件」）。`verify_v2` 440 個測試 0 失敗、0 跳過；另外 3 支外部套件測試用 `.venv` 跑，7 passed。
+- 本份 `HANDOFF.md` 提交前同指令再跑一次，結果見交棒回覆。
+- Windows 本棒沒跑；前一棒 2026-11-17 是 68 項全過。兩平台項數不同，是部分檢查只在特定平台執行；接棒者在任一平台看到失敗都是回歸。
 
 ## 懸置事項（AI 勿自行處理）
 
