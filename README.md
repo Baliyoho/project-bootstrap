@@ -2,7 +2,7 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-11-18（簽章發布通道一節改成已封存，v2 的程式全部退出 main，需求決策書 v3 Q46）；前次 2026-11-17（拿掉 `GEMINI.md`：本專案明確不支援 Gemini）；前次同日（發布公鑰一節改寫：舊實現規劃封存，簽章發布通道依 v3 第 5 節凍結）；前次同日（改成標準 README：開發流程與副本同步用法搬到 CONTRIBUTING.md；部署後的 README 也改成標準 README，連線資料從 AGENTS 搬進來，需求決策書 v3 Q40）；前次 2026-11-16（skill 七個檔；優先序改成 v3）。
+> 最後更新：2026-11-18（「簽章發布通道（已封存）」縮成一段，公鑰與指紋只留在封存區；檔頭只留最新一筆，更早的修改見 Git 歷史）
 > 這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 它在解決什麼
@@ -113,13 +113,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 ## 簽章發布通道（已封存）
 
-v2 時代試行過「由 CI 簽章發布正式包、專案只留指標」（舊實現規劃的 P2，2026-11-17 封存到 [archive/docs/](archive/docs/README.md)）。需求決策書 v3 第 5 節把它凍結，2026-11-18 整條通道封存到 `archive/v2-channel/`（決策書 v3 Q46）：本 repo 不再提供發布與安裝工具，origin 上已發出的 `channel/beta/*` tag 不撤回。當時的發布公鑰封存在 `archive/v2-channel/src/kit/release-keys.txt`，指紋：
-
-```text
-SHA256:FjVJTEPBuOaloJZV0GvtZiG3bXYJo68v+cTaVqs0JU0
-```
-
-已發出的版本當時由這把公鑰驗簽，之後每一版只接受上一版列出的金鑰。現行的部署方式（複製 `PROJECT-BOOTSTRAP.md`）不受影響。
+v2 時代試行過的 CI 簽章發布通道依需求決策書 v3 第 5 節凍結，2026-11-18 整條封存到 `archive/v2-channel/`（v3 Q46），當時的發布公鑰也在那裡；origin 上已發出的 `channel/beta/*` tag 不撤回。現行部署方式（複製 `PROJECT-BOOTSTRAP.md`）不受影響。
 
 ## 參與開發
 

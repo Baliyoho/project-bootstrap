@@ -1,6 +1,6 @@
 # 部署包變更紀錄
 
-> 最後更新：2026-11-17（2026-11-17.2 的版本行移進來）；前次同日（查核報告封存到 `docs/history/`，連結改指封存位置）；前次同日（建立：`src/kit/kit.md` 開頭的逐版紀錄逐字搬來，部署包只留目前的版本行）
+> 最後更新：2026-11-18（檔頭只留最新一筆，更早的修改見 Git 歷史）
 > 新的在上面。目前版本與它的說明在 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 開頭的「版本」行（來源是 `src/kit/kit.md`）；發布新一版時，把舊的版本行改寫成「前一版」移到本檔最上面。每一版都寫做了什麼與為什麼，不刪舊事故。
 
 > 前一版 **2026-11-17.2**（交接協定 `docs/ai-notes/handover-protocol.md` 移出部署包（決策書 v3 Q41），3.6 保留編號、改成移除說明。只有它才有的內容搬進 skill：分支模型進 `mode-b.md` 的 B1，「漏交棒的補救」的理由進 `reasons.md`，「verify_state 一律跑」進 `mode-a-stop.md` 的 A4，`mode-a-stop.md` A6 的指標改指 `reasons.md`；入口的核心優先序改成專案 override 寫在 `AGENTS.md` 鐵律。已部署專案裡的舊協定不改寫也不刪，同步時列 MIGRATE。七個 skill 檔與共用制度標記同版。）
