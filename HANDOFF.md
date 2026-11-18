@@ -21,11 +21,12 @@
 - **決策紀錄可標「被取代」**（`c97111a`，v3 Q51）：子項「被取代：Qn：」與「部分被取代：Qn：」；Q32 被 Q39 取代，Q40、Q42、Q44、Q46 部分被取代。`trail.py` 加 `amended-by-unknown`、`successor-older`，變異組加 6 個。
 - **驗證器檢查全域 handoff skill**（`d362198`）：這台 Mac 的兩份已依使用者同意覆蓋成 `2026-11-18.3`。家目錄兩份跟 `src/kit` 範本逐字比對，不同印「提醒」不影響結束碼（使用者選定），兩份都沒裝印 skip。
 - **已部署專案升到 `2026-11-18.3` 並刪掉 `GEMINI.md`**（使用者 2026-11-18 指示）：NAA_TR（`feature/W15-research-shell`，`34da855`）、NAS_MAINT（`91a8983`）、academic-summary-skill（`cb15533`）、claude code內部操作（`e5fa5a5`）、grist-workflow（`a188f74`）、learn coding with ai agent（`bb0196a`，從 `2026-11-14.4` 升上來）。各自先推開工標記、`sync_project.py --write --owner`、改掉 AGENTS／README／ARCHITECT 指向 `GEMINI.md` 的說法、`check_docs.py` exit 0、推上後清回 `無（已交棒）`。
+- **刪掉 6 個專案的舊交接協定 `docs/ai-notes/handover-protocol.md`**（使用者 2026-11-18 選「先搬再刪」）：別處沒記的專案規則先搬走：NAS_MAINT 的同機並行 session 規則進 AGENTS；NAA_TR 的 Git 層 pre-push 理由與「不交棒等於沒做」進 AGENTS，兩次漏交棒經過搬進新的 `docs/ai-notes/handoff-incidents.md`；grist-workflow 的分支模型、Obsidian dirty 例外、SKIPPED 判準與退出碼進 AGENTS。其餘三個沒有獨有規則。連結改指 AGENTS 共用制度與 handoff skill，`check_docs.py` 都 exit 0，同步預演不再列這個檔。NAA_TR 只改了待續分支 `feature/W15-research-shell`，`main` 上的舊檔留著。
 
 ## 未完成／下一步
 
 1. **鍵鼠同部署_mac**：還在 `2026-11-17.3`、留著 `GEMINI.md`。2026-11-18 23:13 起 origin 上的「工作中」是 Windows 那台的 Codex session；等它交棒再同步、刪檔（使用者已同意這兩件）。
-2. **已部署專案的舊交接協定 `docs/ai-notes/handover-protocol.md`**：6 個專案都還在，同步器列 MIGRATE。刪不刪使用者還沒決定（這次只決定刪 `GEMINI.md`）。academic-summary-skill 的 AGENTS 標記外另有舊段落「跨模型／跨機器協作規範」，同步器要人工比對。
+2. **academic-summary-skill 的 AGENTS**：標記外還有舊段落「## 跨模型／跨機器協作規範」，同步器列 MIGRATE，要人工比對（其他專案已改名成「這個專案的知識與文件規則」）。
 3. **第 2 期（Codex＋macOS）**：Codex 桌面 App 的 F50 標題項還沒判定、handoff-ab 要不要在現行版重跑；使用者 2026-11-18 說先等等。
 4. **Q49 在 Windows 與 Codex 上跑**：分別歸第 3、2 期，使用者 2026-11-18 說先等等。
 5. 序號卡、解決網路速度依使用者 2026-11-17 指示刻意停在舊版，2026-11-18 再確認不動（這兩個專案不在 GitHub projects 資料夾）；Windows 開發人員模式與桌面 App 的 F50 互動驗證沿用既有的暫緩。
