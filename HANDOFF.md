@@ -10,7 +10,7 @@
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
-- **待續分支**：`feat/retire-kit-doc`（Q50 部署包退休；驗證全過後併回 `main`，併完改回「無」）。
+- **待續分支**：無（Q49 的 `feat/bootstrap-installer`、Q50 的 `feat/retire-kit-doc` 都已併回 `main`，分支留在 origin 沒刪）。
 - **工作中**：`Mac mini` ／ `Claude Code` ／ `㊣　11.18.14｜待指派｜工作中｜交棒0次`，2026-11-18 14:30 (+08) 開工
 - **骨架版本**：`2026-11-18.2`
 - 本棒跳版兩次：`2026-11-18`（Q49）、`2026-11-18.2`（Q50），handoff skill 七個檔與 `AGENTS.md` 共用制度標記同版。這台 Mac 的兩份全域 skill（`~/.claude`、`~/.codex`）還停在 `2026-11-17.3`；已部署的專案依使用者指示沒動。
@@ -51,7 +51,7 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-18 macOS Mac mini，Q49 提交前：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，67 項全過，無 skip**（拿掉 ZIP 兩項、加「安裝程式由來源生成」）；`.venv` 的 pytest 171 項全過；`mutants.py` 207 個全擋。
+- 2026-11-18 macOS Mac mini，Q50 提交前：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，67 項全過，無 skip**；`.venv` 的 pytest 171 項全過；`mutants.py` 207 個全擋。
 - Windows 本棒沒跑；任一平台看到失敗都是回歸。
 
 ## 懸置事項（AI 勿自行處理）
