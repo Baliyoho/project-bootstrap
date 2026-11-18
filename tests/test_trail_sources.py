@@ -150,9 +150,10 @@ class ArchitectAbsenceTests(unittest.TestCase):
 
 class AgentsRuleTests(unittest.TestCase):
     AGENTS = (
-        '- **規則一。** [為什麼](AGENTS-reasons.md#one)\n'
-        '- **規則二。** [為什麼](AGENTS-reasons.md#two)\n'
-        '- **連到不存在的段落。** [為什麼](AGENTS-reasons.md#gone)\n'
+        '- **規則一。** [為什麼](docs/rationale.md#one)\n'
+        '- **規則二。** [為什麼](rationale.md#two)\n'
+        '- **連到不存在的段落。** [為什麼](docs/rationale.md#gone)\n'
+        '- 舊檔名不算 [為什麼](AGENTS-reasons.md#one)\n'
         '- 一般連結不算 [說明](README.md#one)\n')
     REASONS = (
         '# 理由\n\n> 最後更新：2026-11-10\n\n'
@@ -166,7 +167,7 @@ class AgentsRuleTests(unittest.TestCase):
                                  {'id': 'agents#gone', 'decision': 'reasons#gone'}])
         self.assertEqual(decisions[0], {
             'id': 'reasons#one', 'title': '規則一', 'status': 'accepted',
-            'date': '2026-10-30', 'baseline': 'AGENTS-reasons.md',
+            'date': '2026-10-30', 'baseline': 'docs/rationale.md',
             'rationale': '2026-11-02 改；最早 2026-10-30 踩到。'})
         self.assertEqual([d['id'] for d in decisions], ['reasons#one', 'reasons#two'])
 

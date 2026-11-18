@@ -2,7 +2,7 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-11-18（「簽章發布通道（已封存）」縮成一段，公鑰與指紋只留在封存區；檔頭只留最新一筆，更早的修改見 Git 歷史）
+> 最後更新：2026-11-18（「參與開發」改指 AI 維護手冊 `docs/maintenance.md` 與理由檔 `docs/rationale.md`，需求決策書 v3 Q48）
 > 這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 它在解決什麼
@@ -119,8 +119,8 @@ v2 時代試行過的 CI 簽章發布通道依需求決策書 v3 第 5 節凍結
 
 這個 repo 由 AI session 輪流做，開工時跟 AI 說「接棒」，收工時說「交棒」。
 
-- 開工必守的規則在 [AGENTS.md](AGENTS.md)，AI 工具開工時會自動讀到。
-- 改部署包的流程、同步到已部署專案的用法、碰到才需要的規則在 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- 規則在 [AGENTS.md](AGENTS.md)，AI 工具開工時會自動讀到；每條規則的理由在[理由檔](docs/rationale.md)。
+- 改部署包的流程、同步到已部署專案的用法與其他做法在 [AI 維護手冊](docs/maintenance.md)。
 - 目前做到哪在 [HANDOFF.md](HANDOFF.md)；需求的權威是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)；部署包的逐版變更在 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 來源

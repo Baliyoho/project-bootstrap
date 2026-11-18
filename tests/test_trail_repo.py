@@ -58,9 +58,10 @@ class RepoTrailTests(unittest.TestCase):
 
     def test_every_agents_rule_walks_to_a_dated_reason(self):
         # 2026-11-10 first run: four sections had no date; git first-appearance dates were added.
-        # 2026-11-17 (v3 Q40): the on-demand rules moved to CONTRIBUTING.md; both files are the rule set.
-        rules, decisions = rules_from_agents(read('AGENTS.md') + '\n' + read('CONTRIBUTING.md'),
-                                             read('AGENTS-reasons.md'))
+        # 2026-11-17 (v3 Q40): the on-demand rules moved out of AGENTS; both files are the rule set.
+        # 2026-11-18 (v3 Q48): they live in docs/maintenance.md, the reasons in docs/rationale.md.
+        rules, decisions = rules_from_agents(read('AGENTS.md') + '\n' + read('docs/maintenance.md'),
+                                             read('docs/rationale.md'))
         self.assertGreaterEqual(len(rules), 20)
         findings, by_id = check_decisions(decisions)
         self.assertEqual(findings, [])

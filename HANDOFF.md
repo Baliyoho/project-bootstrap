@@ -26,12 +26,13 @@
 
 ## 未完成／下一步
 
-1. **換 v4 時**：AGENTS 改連新版決策書後，「版本更替」會擋下 v3 的決策書、實施計畫、兩份歷史紀錄，以及寫死 v3 檔名的 `contradictions.py`、`run_tests.py` 和 3 支 `*_repo` 測試。照 CONTRIBUTING「換版」逐一封存或改名。
+1. **換 v4 時**：AGENTS 改連新版決策書後，「版本更替」會擋下 v3 的決策書、實施計畫、兩份歷史紀錄，以及寫死 v3 檔名的 `contradictions.py`、`run_tests.py` 和 3 支 `*_repo` 測試。照 `docs/maintenance.md`「開發注意事項」的換版那條逐一封存或改名。
 2. **第 2 期（Codex＋macOS）**：Codex 桌面 App 的 F50 標題項還沒判定；當時的 handoff-ab 結果要不要在現行版重跑，使用者沒有決定。路線見 plan v3 第 3 節。
 3. **`learn coding with ai agent` 的骨架同步**：它 origin 上的「工作中」仍是另一個 session（2026-11-16 開工，主題「三方對比報告」），骨架停在 `2026-11-14.4`。使用者 2026-11-17 說先放著；要那個 session 交棒，或使用者確認標記已無人使用，才能同步。
 4. **已部署專案的舊 `GEMINI.md` 與舊交接協定檔**：6 個專案都還留著 `GEMINI.md`，刪不刪由使用者決定，不要自己刪。
 5. **決策紀錄的「被取代」狀態**：曾提議加這個狀態（例如 Q32 被 Q39 取代、Q42 的位置被 Q44 取代）並寫明欄位格式，使用者還沒回覆；要做先問。
-6. 序號卡、解決網路速度問題依使用者 2026-11-17 指示刻意停在舊版；Windows 開發人員模式與桌面 App 的 F50 互動驗證沿用既有的暫緩。
+6. **工具與平台怪癖上移到部署包 `env.md`（Q48 另案，要先問使用者）**：`docs/maintenance.md`「開發注意事項」裡 zsh 的三條（管線結束碼用 `${pipestatus[1]}`、`echo =====` 會被當成檔名展開、未加引號的 `$變數` 不拆字）適合上移；Windows 驗證超過 120 秒與 `python3` 別名 `env.md` 已有。改部署包要跳版並同步。
+7. 序號卡、解決網路速度問題依使用者 2026-11-17 指示刻意停在舊版；Windows 開發人員模式與桌面 App 的 F50 互動驗證沿用既有的暫緩。
 
 ## 地雷與注意事項
 
@@ -40,7 +41,7 @@
 - **驗證器不跑變異測試**：改到 `src/project_bootstrap/` 的檢查，要自己跑 `.venv/bin/python -X utf8 src/project_bootstrap/mutants.py --only tests.test_<模組>`。
 - **根目錄有未追蹤檔時，`--staged` 會回 exit 2**：目前根目錄有使用者自己放的 `comparison-adr-memory-bank.md`（未追蹤，不是本棒建立）。本棒每次提交前都先經使用者同意把它暫移到 scratchpad、驗證後原樣移回；不要刪它或提交它。
 - **`docs/ai-notes/` 只剩 `roadmap.md`**：測試用 `git rm` 刪它時 Git 會連空目錄一起刪，寫回前要先建目錄。
-- 其他開發時容易踩的地方在 `CONTRIBUTING.md` 的「開發注意事項」與「參與開發」。
+- 其他開發時容易踩的地方在 `docs/maintenance.md` 的「開發注意事項」。
 
 ## 服務查證與期望快照
 

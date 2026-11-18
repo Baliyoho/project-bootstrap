@@ -1,6 +1,6 @@
 # project-bootstrap 需求決策書 v3
 
-> 最後更新：2026-11-18（第 7 節加「版本更替」：新的穩定版本成為權威後，屬於舊版本名稱的檔案與程式一律刪除、封存或改名，Q47）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
+> 最後更新：2026-11-18（登記並決定 Q48：本 repo 的維護手冊與理由檔搬進 `docs/`，第 8 節的下一個編號改成 Q49）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
 > 決策版本：3。2026-11-13 起是現行需求權威，也是**唯一需求書**（Q39）：v2 決策書凍結封存在 `archive/docs/requirements-decision-v2.md`，逐位元組不改，不被任何程式讀取。
 > 需求編號沿用 v2 的 51 個穩定 ID，不重編；退役的 ID 保留編號與理由。v2 的 Q1–Q31 與逐條理由只在封存的 v2 原件裡（[歷史原件](archive/docs/project-bootstrap-requirements-history.md)沒有收），本檔不複製；平常不讀，要回溯歷史先經使用者同意（Q39）。
 
@@ -214,7 +214,7 @@ v2 的程式不留在 main（Q46）。執行屏障類模組（`launcher`、`supe
 
 ## 8. 待決事項
 
-要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。編號接續，下一個是 Q48。
+要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。編號接續，下一個是 Q49。
 
 目前沒有待決事項。
 

@@ -1274,7 +1274,7 @@ def step_repo_handoff():
     text = handoff.read_text(encoding='utf-8') if handoff.is_file() else None
     version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
     problems = repo_handoff_problems(text, version)
-    for name in ('AGENTS.md', 'CONTRIBUTING.md', 'ARCHITECT.md', 'README.md',
+    for name in ('AGENTS.md', 'docs/maintenance.md', 'ARCHITECT.md', 'README.md',
                  '.claude/hooks/repo-git-check.sh'):
         problems.extend(name + '：' + p for p in
                         repo_handoff_rule_problems((ROOT / name).read_text(encoding='utf-8')))
@@ -1323,11 +1323,21 @@ def step_repo_handoff():
 # 2026-11-10／F22：AGENTS.md 的事故與理由搬到 AGENTS-reasons.md，入口只留規則。
 # 搬走之後「保留每條規則的為什麼」（鐵律 3）不能只靠自律：規則沒有理由連結、
 # 連結指不到段落、或段落是空的，都要被擋下來。
-REASON_FILE = 'AGENTS-reasons.md'
-REASON_LINK = re.compile(r'\]\(' + re.escape(REASON_FILE) + r'#([A-Za-z0-9-]+)\)')
+# 2026-11-18（v3 Q48）：理由檔搬成 docs/rationale.md、CONTRIBUTING.md 搬成 docs/maintenance.md。
+# 連結從各自的位置算相對路徑：AGENTS.md 寫 docs/rationale.md#x，維護手冊寫 rationale.md#x。
+REASON_FILE = 'docs/rationale.md'
+
+
+def reason_link_re(target):
+    return re.compile(r'\]\(' + re.escape(target) + r'#([A-Za-z0-9-]+)\)')
+
+
+REASON_LINK = reason_link_re(REASON_FILE)
 REASON_ITEM_SECTIONS = ('鐵律', '副本規則', '改兩支 hook 的訊息時')
 REASON_MIN_BODY = 40
-CONTRIB_FILE = 'CONTRIBUTING.md'
+CONTRIB_FILE = 'docs/maintenance.md'
+CONTRIB_REASON = 'rationale.md'
+CONTRIB_LINK = reason_link_re(CONTRIB_REASON)
 
 
 def blank_shared_copy(text):
@@ -1361,8 +1371,8 @@ def shared_copy_problems(agents, template):
     return []
 
 
-def reason_link_problems(agents, reasons):
-    """agents／reasons：兩份文件的全文 → 問題清單。"""
+def reason_link_problems(agents, reasons, link=REASON_LINK):
+    """agents／reasons：兩份文件的全文 → 問題清單。link：從規則檔的位置連到理由檔的連結樣式。"""
     problems = []
     agents = blank_shared_copy(agents)
     bodies = {}
@@ -1381,7 +1391,7 @@ def reason_link_problems(agents, reasons):
     for section in sections:
         title, _, body = section.partition('\n')
         title = title.strip()
-        found = REASON_LINK.findall(body)
+        found = link.findall(body)
         used.update(found)
         if not found:
             problems.append('章節沒有理由連結：' + title)
@@ -1399,7 +1409,7 @@ def reason_link_problems(agents, reasons):
         if not items:
             problems.append('章節沒有任何規則項目：' + title)
         for item in items:
-            if not REASON_LINK.search('\n'.join(item)):
+            if not link.search('\n'.join(item)):
                 problems.append('規則沒有理由連結（%s）：%s' % (title, item[0][:30]))
     for anchor in sorted(used):
         if anchor not in bodies:
@@ -1415,13 +1425,15 @@ def step_reason_links():
     path = ROOT / REASON_FILE
     reasons = read_lf(path) if path.is_file() else ''
     problems = reason_link_problems(agents, reasons)
-    # 2026-11-17（v3 Q40）：碰到才需要的規則搬到 CONTRIBUTING.md，同一套理由連結檢查跟過去。
+    # 2026-11-17（v3 Q40）：碰到才需要的規則搬出 AGENTS.md，同一套理由連結檢查跟過去；
+    # 2026-11-18（v3 Q48）起那份是 docs/maintenance.md。
     contrib_path = ROOT / CONTRIB_FILE
     contributing = read_lf(contrib_path) if contrib_path.is_file() else ''
     if not contributing:
         problems.append(CONTRIB_FILE + ' 不存在')
     else:
-        problems.extend(CONTRIB_FILE + '：' + p for p in reason_link_problems(contributing, reasons))
+        problems.extend(CONTRIB_FILE + '：' + p for p in
+                        reason_link_problems(contributing, reasons, CONTRIB_LINK))
     template = read_lf(ROOT / 'src/kit/files/AGENTS.md.tmpl')
     problems.extend(shared_copy_problems(agents, template))
     copy_cases = (
@@ -1451,15 +1463,17 @@ def step_reason_links():
         ('新增規則沒有理由', agents.rstrip('\n') + '\n7. **新規則。**\n', reasons),
     )
     contrib_cases = () if not contributing else (
-        ('CONTRIBUTING 副本規則拿掉理由連結',
-         contributing.replace('[為什麼](%s#copy-1)' % REASON_FILE, '', 1)),
-        ('CONTRIBUTING 新增 hook 訊息規則沒有理由', contributing.rstrip('\n') + '\n- 新規則。\n'),
-        ('CONTRIBUTING 整節沒有理由連結', contributing + '\n## 新的一節\n\n只有規則，沒有理由。\n'),
+        ('維護手冊副本規則拿掉理由連結',
+         contributing.replace('[為什麼](%s#copy-1)' % CONTRIB_REASON, '', 1)),
+        ('維護手冊用根目錄的相對路徑連理由',
+         contributing.replace('](%s#copy-1)' % CONTRIB_REASON, '](%s#copy-1)' % REASON_FILE, 1)),
+        ('維護手冊新增 hook 訊息規則沒有理由', contributing.rstrip('\n') + '\n- 新規則。\n'),
+        ('維護手冊整節沒有理由連結', contributing + '\n## 新的一節\n\n只有規則，沒有理由。\n'),
     )
     for name, mutated in contrib_cases:
         if mutated == contributing:
             problems.append('負向測試沒有改到內容：' + name)
-        elif not reason_link_problems(mutated, reasons):
+        elif not reason_link_problems(mutated, reasons, CONTRIB_LINK):
             problems.append('負向測試未擋住：' + name)
     if not first:
         problems.append('鐵律一節找不到任何理由連結，負向測試無從建立')
@@ -1472,7 +1486,7 @@ def step_reason_links():
         record('FAIL', title, '；'.join(problems))
         return False
     record('OK', title,
-           'AGENTS.md、CONTRIBUTING.md 每節與鐵律／副本規則／hook 訊息每條都連到 %s 的非空段落；%d 個負向測試通過'
+           'AGENTS.md、docs/maintenance.md 每節與鐵律／副本規則／hook 訊息每條都連到 %s 的非空段落；%d 個負向測試通過'
            '；共用制度副本與部署包逐字相同（3 個負向測試）'
            '（只查連結與段落存在，不判斷理由寫得對不對）' % (REASON_FILE, len(cases) + len(contrib_cases)))
     return True

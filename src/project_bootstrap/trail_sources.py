@@ -19,9 +19,11 @@ records out of them so ``trail`` can check them:
   accepted decision; the rest of the bullet is its rationale and the last
   date in the bold lead (else the first in the bullet) its date. A bullet
   with no date yields an empty date, which ``check_decisions`` reports.
-- ``rules_from_agents``: each "why" link in AGENTS.md is a rule citing the
-  AGENTS-reasons.md section it points to; each section is an accepted
-  decision dated by the earliest date written in it.
+- ``rules_from_agents``: each "why" link in AGENTS.md or docs/maintenance.md
+  is a rule citing the docs/rationale.md section it points to (2026-11-18,
+  v3 Q48: the reasons file moved from the root AGENTS-reasons.md, so a link
+  is ``docs/rationale.md#x`` from the root and ``rationale.md#x`` from docs/);
+  each section is an accepted decision dated by the earliest date written in it.
 - ``questions_from_book``: each decided item of the decision record, found by
   name: the ``決策紀錄`` section of the v3 history file (2026-11-17, v3 Q42:
   decided items move there) or, in older books, the ``待決事項`` section (6 in
@@ -126,13 +128,13 @@ def roadmap_from_plan(text, status):
 
 
 _ANCHOR = re.compile(r'^<a id="([a-z0-9-]+)"></a>\n', re.MULTILINE)
-_WHY = re.compile(r'\[為什麼\]\(AGENTS-reasons\.md#([a-z0-9-]+)\)')
+_WHY = re.compile(r'\[為什麼\]\((?:docs/)?rationale\.md#([a-z0-9-]+)\)')
 
 
 def rules_from_agents(agents, reasons):
-    """AGENTS.md rules and the AGENTS-reasons.md sections their "why" links name.
+    """AGENTS.md rules and the docs/rationale.md sections their "why" links name.
 
-    Every ``[為什麼](AGENTS-reasons.md#x)`` link in AGENTS is one rule citing
+    Every ``[為什麼](docs/rationale.md#x)`` (or ``rationale.md#x``) link is one rule citing
     decision ``reasons#x``. Every ``<a id="x">`` section of the reasons file is
     one accepted decision: its heading is the title, the rest its rationale,
     and its date the earliest one written in it (the first time the reason
@@ -149,7 +151,7 @@ def rules_from_agents(agents, reasons):
         decisions.append({'id': 'reasons#' + anchor,
                           'title': heading.group(1).strip() if heading else '',
                           'status': 'accepted', 'date': days[0] if days else '',
-                          'baseline': 'AGENTS-reasons.md', 'rationale': rationale})
+                          'baseline': 'docs/rationale.md', 'rationale': rationale})
     rules = [{'id': 'agents#' + anchor, 'decision': 'reasons#' + anchor}
              for anchor in _WHY.findall(agents)]
     return rules, decisions

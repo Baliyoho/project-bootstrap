@@ -1,6 +1,6 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-18（v2 的程式全部封存，現況索引只寫 v3，決策書 Q46）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
+> 最後更新：2026-11-18（第 5 節一條出處與第 7 節分工表的連結跟著 `CONTRIBUTING.md`、`AGENTS-reasons.md` 搬進 `docs/` 改名，決策書 Q48）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
 > 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](docs/status.json)。
 
 ## 1. 起點
@@ -37,7 +37,7 @@
 
 ## 5. 非目標
 
-- 不以永久的平台分支維護多份核心。理由：Git、占用、文件與同步的判斷要共用，平台差異放模組；兩份各自演化會出現一邊會擋、一邊不會擋的不對稱（出處：效率計畫 7.3、AGENTS-reasons 副本規則 2）。
+- 不以永久的平台分支維護多份核心。理由：Git、占用、文件與同步的判斷要共用，平台差異放模組；兩份各自演化會出現一邊會擋、一邊不會擋的不對稱（出處：效率計畫 7.3、理由檔副本規則 2）。
 - 不延續 v2 的 P0–P5，不恢復凍結的執行屏障與簽章發布通道。理由：D9 把執行屏障交給工具；十個以內的專案用不到金鑰鏈（v3 第 5 節）；2026-11-17 使用者判定舊路線不算數。
 - 不以自動信任 hook、繞過沙箱或搬運憑證換取速度。理由：D9 把權限與沙箱交給工具原生能力；hook 信任不能以快取代替當下觀測（出處：效率計畫 5.2）。
 - 不一次重寫所有程式、不先導入框架、不預先宣稱跨作業系統或 Python 下限通過。理由：框架增加依賴與載入差異，本專案沒有量測支持（出處：效率計畫 14.7）；Python 下限只有靜態檢查；跨作業系統要等第 3 期（F15）。
@@ -50,4 +50,4 @@
 
 ## 7. 改本檔的時機
 
-路線、分期或暫緩項目有變時改，直接改寫成現況，只附日期與使用者決定的出處；同一個 commit 在[歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)的「修改紀錄」加一筆，被改掉的原文值得留就放它的「從內文移出的經過」。歷史紀錄到 v4 時跟本檔一起封存（決策書 Q42）。各期的實際進度不寫在這裡，寫 HANDOFF；本檔與決策書是約束文件，偏離或修改的前提照[決策書](project-bootstrap-requirements-decision-v3.md)第 7 節（Q43）。文件之間的分工在 [CONTRIBUTING.md](CONTRIBUTING.md)「需求與計畫文件的分工」。
+路線、分期或暫緩項目有變時改，直接改寫成現況，只附日期與使用者決定的出處；同一個 commit 在[歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)的「修改紀錄」加一筆，被改掉的原文值得留就放它的「從內文移出的經過」。歷史紀錄到 v4 時跟本檔一起封存（決策書 Q42）。各期的實際進度不寫在這裡，寫 HANDOFF；本檔與決策書是約束文件，偏離或修改的前提照[決策書](project-bootstrap-requirements-decision-v3.md)第 7 節（Q43）。文件之間的分工在 [AI 維護手冊](docs/maintenance.md)「需求與計畫文件的分工」。

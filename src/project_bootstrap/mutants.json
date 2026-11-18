@@ -608,7 +608,7 @@
     },
     {
      "file": "src/project_bootstrap/trail_sources.py",
-     "old": "_WHY = re.compile(r'\\[為什麼\\]\\(AGENTS-reasons\\.md#([a-z0-9-]+)\\)')",
+     "old": "_WHY = re.compile(r'\\[為什麼\\]\\((?:docs/)?rationale\\.md#([a-z0-9-]+)\\)')",
      "new": "_WHY = re.compile(r'\\]\\([A-Za-z.-]*#([a-z0-9-]+)\\)')"
     },
     {
