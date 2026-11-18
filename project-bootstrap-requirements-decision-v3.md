@@ -1,6 +1,6 @@
 # project-bootstrap 需求決策書 v3
 
-> 最後更新：2026-11-18（冷區合併到根目錄 `archive/`，現況索引搬到 `docs/status.json`，Q45）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
+> 最後更新：2026-11-18（v2 的程式全部退出 main：簽章發布通道與沒人用的原型封存，仍在用的檢查改成 v3，Q46）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
 > 決策版本：3。2026-11-13 起是現行需求權威，也是**唯一需求書**（Q39）：v2 決策書凍結封存在 `archive/docs/requirements-decision-v2.md`，逐位元組不改，不被任何程式讀取。
 > 需求編號沿用 v2 的 51 個穩定 ID，不重編；退役的 ID 保留編號與理由。v2 的 Q1–Q31 與逐條理由只在封存的 v2 原件裡（[歷史原件](archive/docs/project-bootstrap-requirements-history.md)沒有收），本檔不複製；平常不讀，要回溯歷史先經使用者同意（Q39）。
 
@@ -190,7 +190,7 @@ D9、D12、D13 一起讀：**資訊進入口，強制進 hook，執行屏障交�
 
 handoff skill 不再是制度成立的前提。保留成選用的參考檔：E1 裡沒有 skill 的那一組沒有比較差。
 
-v2 的程式：`broker`、`launcher`、`supervisor`、`isolation`、`vm_probe` 等執行屏障類模組依 D9 凍結，不再開發、不接進任何程序。除了 `broker` 都封存在 `archive/v2-barrier/`（Q33）。簽章發布通道凍結，已發出的版本不撤回。
+v2 的程式不留在 main（Q46）。執行屏障類模組（`launcher`、`supervisor`、`isolation`、`vm_probe` 等）依 D9 凍結，封存在 `archive/v2-barrier/`（Q33）。簽章發布通道（`broker`、`channel`、`pointer`、`release` 等模組與發布、安裝、遷移工具）凍結，封存在 `archive/v2-channel/`；origin 上已發出的版本 tag 不撤回，本 repo 不再提供安裝工具。其餘沒有任何程序使用的 v2 原型封存在 `archive/v2-prototypes/`。還在用的檢查（文件連結、決策軌跡、跨工具開場比對、換機接續、能力表、變異測試、現況索引與測試入口）是 v3 的檢查，不標 v2。
 
 ## 6. 驗收規則
 
@@ -204,7 +204,7 @@ v2 的程式：`broker`、`launcher`、`supervisor`、`isolation`、`vm_probe` �
 ## 7. 文件權威與變更規則
 
 - 本檔只寫 v3 現在要什麼：目標、約束、強度、驗收與待決事項。修改直接改寫成現況，條文只附 Q 編號或日期當出處；同一個 commit 在[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)的「修改紀錄」加一筆（日期、改了哪裡、牽涉的 ID 或 Q、出處），被改掉的原文值得留就放它的「從條文移出的經過」。歷史紀錄到 v4 時跟本檔一起封存（Q42）。
-- 歷史分兩區（Q44、Q45）。`docs/history/` 是熱歷史：跟現行版本有關、還會增加的紀錄（目前是本檔與實施計畫的歷史紀錄），碰到才讀，讀它不用先經使用者同意，程式可以讀，連結照常檢查。根目錄 `archive/` 是冷區：結案或被取代、不再更動的東西，平常不讀，要回溯先經使用者同意。`archive/docs/` 放文件，程式不讀；`archive/v2-barrier/`、`archive/v2-experiments/` 放退休的 v2 程式與說明，不執行，只被現況索引列為證據路徑（Q33）。熱歷史到 v4 時連同對應的 v3 文件搬進 `archive/docs/`。
+- 歷史分兩區（Q44、Q45）。`docs/history/` 是熱歷史：跟現行版本有關、還會增加的紀錄（目前是本檔與實施計畫的歷史紀錄），碰到才讀，讀它不用先經使用者同意，程式可以讀，連結照常檢查。根目錄 `archive/` 是冷區：結案或被取代、不再更動的東西，平常不讀，要回溯先經使用者同意。`archive/docs/` 放文件，程式不讀；`archive/v2-*/` 放退休的 v2 程式與說明，不執行，程式與現況索引都不引用（Q33、Q46）。熱歷史到 v4 時連同對應的 v3 文件搬進 `archive/docs/`。
 - 本檔與實施計畫約束本 repo 的所有工作（Q43）。本檔全文都約束；計畫只約束分期、範圍、暫緩與取捨，不約束每一步的做法。要偏離就先改文件，改文件要有使用者在聊天中的決定，並照上一條在歷史紀錄記一筆；AI 可以提案，不能自己改。兩份都沒寫到的事不算偏離；會新增或改變需求的，先問使用者。
 - 本檔是唯一需求書。v2 決策書 2026-11-17 起凍結封存（Q39）：`archive/docs/requirements-decision-v2.md` 逐位元組不改、不被任何程式讀取；它的條文、Q1–Q31 與逐條否決理由只供經使用者同意的歷史回溯。
 - 逐 ID 的實作狀態在[現況索引](docs/status.json)（Q45），本檔不寫進度。**v3 定稿不等於實作完成。**
@@ -213,7 +213,7 @@ v2 的程式：`broker`、`launcher`、`supervisor`、`isolation`、`vm_probe` �
 
 ## 8. 待決事項
 
-要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。編號接續，下一個是 Q46。
+要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。編號接續，下一個是 Q47。
 
 目前沒有待決事項。
 

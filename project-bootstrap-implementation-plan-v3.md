@@ -1,12 +1,12 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-18（現況索引搬到 `docs/status.json`，連結跟著改，決策書 Q45）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
+> 最後更新：2026-11-18（v2 的程式全部封存，現況索引只寫 v3，決策書 Q46）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
 > 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](docs/status.json)。
 
 ## 1. 起點
 
 - 部署包的入口、hook 與參考檔是 v3 第 5 節的形狀（v3 Q34、Q40、Q41），不含 `GEMINI.md`（本專案明確不支援 Gemini）；第 5 節沒列的 `ARCHITECT.md`、`docs/ai-notes/roadmap.md` 與兩支檢查腳本則可歸在第 5 節的「參考檔」「檢查腳本」兩列。版本與檔案清單看 [VERSION](VERSION) 與 ARCHITECT。
-- v2 的程式在 main。執行屏障類模組依 D9 凍結並封存在 [archive/v2-barrier/](archive/v2-barrier/README.md)（v3 Q33）；簽章發布通道依 v3 第 5 節凍結，已發出的不撤回。
+- main 上沒有 v2 的程式（v3 Q46）。執行屏障類模組封存在 `archive/v2-barrier/`（v3 Q33），簽章發布通道封存在 `archive/v2-channel/`（已發出的 tag 不撤回），其餘 v2 原型封存在 `archive/v2-prototypes/`。還在用的檢查與工具都是 v3 的，測試入口是 `tools/run_tests.py`。
 - 驗收依據是 handoff-ab（v3 第 2 節 E1、第 6 節），結果在 [experiments/handoff-ab/](experiments/handoff-ab/README.md)。
 
 ## 2. 路線選擇
@@ -33,7 +33,7 @@
 | 項目 | 牽涉的 ID | 狀態與條件 |
 |---|---|---|
 | 原子 claim，以及兩個 clone／同一工作樹的並行實驗 | F12、F25；D1 | 另案，未排期（2026-11-02 使用者選擇只完成協調邊界）。跟 D1「訊號不是鎖」有張力（v3 Q35）；要重開先在決策書第 8 節登記待決 |
-| 驗證分層與沿用結果：局部修改只跑相關測試、同機器同內容沿用結果、A4 快速模式不跑 v2 原型回歸 | F22、F24 | 待排（2026-11-17 使用者確認還要）。提交前仍跑全套，exit 0 才算完成（AGENTS 鐵律 4） |
+| 驗證分層與沿用結果：局部修改只跑相關測試、同機器同內容沿用結果、A4 快速模式不跑全套測試（`tools/run_tests.py`） | F22、F24 | 待排（2026-11-17 使用者確認還要）。提交前仍跑全套，exit 0 才算完成（AGENTS 鐵律 4） |
 
 ## 5. 非目標
 
@@ -45,7 +45,7 @@
 
 ## 6. 已知缺口
 
-- [現況索引](docs/status.json)用 v3 的強度與處置，但沒有任何一列是「通過」：handoff-ab 的情境沒有逐 ID 對應，第 1 期結案也就無法落到個別 ID。各列 `unknown`／`next` 的敘述多半還是 v2 時期的觀察。
+- [現況索引](docs/status.json)用 v3 的強度與處置，但沒有任何一列是「通過」：handoff-ab 的情境沒有逐 ID 對應，第 1 期結案也就無法落到個別 ID。各列只寫 v3 的強度、處置與現行證據；v2 時期的觀察與指向封存程式的證據 2026-11-18 拿掉了（v3 Q46）。
 - 第 3 期的 `midway` 失敗在第 3 節，不重複。
 
 ## 7. 改本檔的時機
