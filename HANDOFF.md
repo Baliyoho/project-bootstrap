@@ -10,10 +10,10 @@
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
-- **待續分支**：無。
+- **待續分支**：`feat/bootstrap-installer`（Q49 安裝程式；驗證全過後併回 `main`，併完改回「無」）。
 - **工作中**：`Mac mini` ／ `Claude Code` ／ `㊣　11.18.14｜待指派｜工作中｜交棒0次`，2026-11-18 14:30 (+08) 開工
-- **骨架版本**：`2026-11-17.3`
-- 本棒沒跳版，部署包內容沒動。這台 Mac 的兩份全域 skill（`~/.claude`、`~/.codex`）已是同版。
+- **骨架版本**：`2026-11-18`
+- 本棒（Q49）跳版到 `2026-11-18`：handoff skill 七個檔與 `AGENTS.md` 共用制度標記。這台 Mac 的兩份全域 skill（`~/.claude`、`~/.codex`）還停在 `2026-11-17.3`；已部署的專案這次依使用者指示沒動。
 - 本機能力：Mac mini；`git push` 可用；本機 `.venv` 可跑驗證器不跑的外部套件測試（`.venv/bin/python -m pytest tests`）。
 
 ## 已完成
@@ -23,6 +23,8 @@
 - **v2 的程式全部退出 main**（`3e45aab`、`d04accf`，Q46）：簽章發布通道封存到 `archive/v2-channel/`（origin 上的 `channel/beta/*` tag 沒動，`release.yml` 一併封存），沒人用的原型封存到 `archive/v2-prototypes/`。`verify_v2.py` 改名 `tools/run_tests.py`；`surfaces` 不再依賴 `selftest`；現況索引只留 v3 的強度、處置與現行證據；`mutants.json` 只留 8 組 193 個變異。
 - **版本更替守門**（`ac222e1`，Q47）：驗證器新增「版本更替」。現行版本取 AGENTS 連到的決策書；`archive/` 以外帶舊版本號的檔名、資料夾名、程式識別字，以及程式引用 `archive/v<N>-`，都會被擋。
 - 同 session 稍早：6 個已部署專案同步到 `2026-11-17.3`，全域 skill 覆蓋到同版。
+- **維護手冊與理由檔搬進 `docs/`**（`63c4193`，Q48）。
+- **部署方式改成安裝程式**（Q49）：對外的安裝途徑改成 `bootstrap.py`（`build_kit.py` 生成，內嵌範本與 `sync_project.py` 的合併函式，原始碼在 `src/project_bootstrap/installer.py`）；`mode-0.md` 改成跑安裝程式再處理第一批工作，部署包第 5 節的清單搬進它的 0-6；`--zip` 與兩項 ZIP 檢查拿掉；新增「安裝程式由來源生成」、`tests/test_installer.py`（14 個變異全擋）與 `tests/test_bootstrap_repo.py`。
 
 ## 未完成／下一步
 
@@ -33,6 +35,10 @@
 5. **決策紀錄的「被取代」狀態**：曾提議加這個狀態（例如 Q32 被 Q39 取代、Q42 的位置被 Q44 取代）並寫明欄位格式，使用者還沒回覆；要做先問。
 6. **工具與平台怪癖上移到部署包 `env.md`（Q48 另案，要先問使用者）**：`docs/maintenance.md`「開發注意事項」裡 zsh 的三條（管線結束碼用 `${pipestatus[1]}`、`echo =====` 會被當成檔名展開、未加引號的 `$變數` 不拆字）適合上移；Windows 驗證超過 120 秒與 `python3` 別名 `env.md` 已有。改部署包要跳版並同步。
 7. 序號卡、解決網路速度問題依使用者 2026-11-17 指示刻意停在舊版；Windows 開發人員模式與桌面 App 的 F50 互動驗證沿用既有的暫緩。
+8. **verify_bootstrap.py 檢查本機全域 handoff skill 是否和目前部署包同版**，不同就提醒重裝；沒裝印 skip（使用者 2026-11-18 指定，這次不做）。
+9. **已部署專案升級到 `2026-11-18`**：它們不是用 `bootstrap.py` 裝的，沒有 `.bootstrap/answers.json`，`bootstrap.py update` 會拒絕；照舊用 `sync_project.py`，或先補答案檔。同步要使用者授權。
+10. **Q49 還沒在 Windows 與 Codex 上跑**：Windows 的安裝、換行與 hook 歸第 3 期，Codex 接手第一批工作歸第 2 期（計畫 v3 第 3 節）。
+11. **`PROJECT-BOOTSTRAP.md` 的去留要使用者決定**（Q49 要它退休）：選項與建議在 2026-11-18 Q49 的回報；`sync_project.py` 還讀它與它的 Git 歷史，刪之前要先改同步器。要登記成決策書第 8 節的待決 Q，先經使用者同意。
 
 ## 地雷與注意事項
 
@@ -45,8 +51,8 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-18 macOS Mac mini，`ac222e1` 提交前：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，68 項全過，無 skip**；`.venv` 的 pytest 148 項全過；`mutants.py` 193 個全擋（`d04accf` 前實跑）。
-- 本份 `HANDOFF.md` 提交前，同指令會再跑一次，結果見交棒回覆。Windows 本棒沒跑；任一平台看到失敗都是回歸。
+- 2026-11-18 macOS Mac mini，Q49 提交前：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，67 項全過，無 skip**（拿掉 ZIP 兩項、加「安裝程式由來源生成」）；`.venv` 的 pytest 171 項全過；`mutants.py` 207 個全擋。
+- Windows 本棒沒跑；任一平台看到失敗都是回歸。
 
 ## 懸置事項（AI 勿自行處理）
 

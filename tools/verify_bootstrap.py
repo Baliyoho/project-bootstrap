@@ -11,10 +11,9 @@
   python -X utf8 tools/verify_bootstrap.py
   python -X utf8 tools/verify_bootstrap.py --staged  # B7：驗提交候選與工作樹一致
   python -X utf8 tools/verify_bootstrap.py --keep   # 保留產生的骨架供人工檢查
-  python -X utf8 tools/verify_bootstrap.py --zip    # 全過才額外輸出解壓即用的 zip
 
-zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重跑一次，永遠不會有
-一份會過期的壓縮檔躺在 repo 裡跟部署包唱反調。
+2026-11-18（決策書 v3 Q49）起對外的安裝途徑是 bootstrap.py，解壓即用的 zip（`--zip`）
+跟 AI 照抄一起拿掉：zip 裡的檔還帶著佔位符，要 AI 照第 1 節換掉，就是 Q49 要取代的那條路。
 
 檢查項（順序即執行順序；增減時同步 ARCHITECT.md「verify_bootstrap.py 守的東西」那張表。
 這裡刻意不寫「做 N 件事」——數字會自己過期，2026-09-13 就漏算過一項）：
@@ -54,9 +53,6 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
   README 跨工具表——README 那張表是部署包那一張的轉述，而保鮮期只守部署包那一份。同名列的
                   判定符號、README 的版本號、指回部署包的指標三者要對得上，否則人的入口會
                   無聲分岔（2026-11-01 加入，加的當下就抓到一處）
-  ZIP 說明指標 ——工具差異只指向同包部署包的權威段落與驗收清單，不再維護另一份能力摘要。
-                  原本的 ZIP_README 留著兩句「沒有 hook」，矩陣改對後它仍會被打包出去
-                  （2026-11-01 加入，附六個負向測試）
   跨工具過期敘述——守住已修掉的「2.0 未測」「骨架還沒附接線」等已知舊斷言，涵蓋部署包正文、
                   重生的結構／協定範本與本 repo 結構說明。表頭的歷史變更記錄不算現況；
                   這不是通用語意檢查，不會重查外部工具（2026-11-01 加入，附負向與範圍測試）
@@ -141,7 +137,6 @@ import io
 import tempfile
 import threading
 import tokenize
-import zipfile
 from contextlib import contextmanager, redirect_stdout, redirect_stderr
 from unittest.mock import patch
 from datetime import date
@@ -2142,9 +2137,13 @@ BOOK_VERSION = re.compile(r'^> 決策版本：([0-9]+)。', re.M)
 
 
 def repo_scanned_files(tracked_files):
-    """本 repo 文件檢查要讀的檔：src/kit/ 另有規則，封存區不讀（v3 Q39）。"""
+    """本 repo 文件檢查要讀的檔：src/kit/ 另有規則，封存區不讀（v3 Q39）。
+
+    bootstrap.py 內嵌全部範本、刻意保留佔位符，跟部署包一樣是 src/kit 的生成結果
+    （「安裝程式由來源生成」守，2026-11-18，v3 Q49），這裡不再查一次。
+    """
     return [p for p in tracked_files
-            if not p.startswith('src/kit/') and not p.startswith(ARCHIVE_DIR)]
+            if not p.startswith('src/kit/') and not p.startswith(ARCHIVE_DIR) and p != 'bootstrap.py']
 
 
 def archive_problems(root, tracked_files, blob_of, frozen=None, readers=None):
@@ -3289,45 +3288,6 @@ def step_readme_table():
     return True
 
 
-def zip_readme_problems(text):
-    """ZIP 的第一份說明只指路，工具能力留在部署包的一個家（2026-11-01）。"""
-    heading = '## 各工具的差異'
-    if heading not in text:
-        return ['缺少「各工具的差異」入口']
-    section = text.split(heading, 1)[1].split('\n## ', 1)[0]
-    problems = []
-    if not re.search(r'\[[^\]\n]+\]\(PROJECT-BOOTSTRAP\.md\)', section):
-        problems.append('缺少同包 PROJECT-BOOTSTRAP.md 的相對連結')
-    if '跨工具與跨平台' not in section:
-        problems.append('未指向部署包的跨工具權威段落')
-    if not re.search(r'第\s*5\s*節', section):
-        problems.append('未指向第 5 節驗收清單')
-    if re.search(r'^- \*\*(?:Claude Code|Codex CLI|Codex 桌面 App|Antigravity)\*\*',
-                 section, re.M):
-        problems.append('又長出逐工具摘要——能力說明只在部署包維護')
-    return problems
-
-
-def step_zip_readme():
-    problems = zip_readme_problems(ZIP_README)
-    cases = (
-        ('入口刪掉', ZIP_README.replace('## 各工具的差異', '## 其他')),
-        ('連結指錯', ZIP_README.replace('](PROJECT-BOOTSTRAP.md)', '](missing.md)')),
-        ('權威段落抽掉', ZIP_README.replace('跨工具與跨平台', '工具說明')),
-        ('驗收指標抽掉', ZIP_README.replace('第 5 節', '另一節')),
-        ('App 舊說回來', ZIP_README + '\n- **Codex 桌面 App**：沒有 hook 機制。\n'),
-        ('AG 舊說回來', ZIP_README + '\n- **Antigravity**：沒有 hook 機制。\n'),
-    )
-    for name, mutated in cases:
-        if not zip_readme_problems(mutated):
-            problems.append('負向測試未擋住：' + name)
-    if problems:
-        record('FAIL', 'ZIP 說明指標', '；'.join(problems))
-        return False
-    record('OK', 'ZIP 說明指標', '指向同包部署包的權威段落與第 5 節，無逐工具副本；六個負向測試通過')
-    return True
-
-
 # 只守已知回歸，不把所有「未解」「沒觸發」都擋掉，也不掃表頭的歷史變更記錄。
 # 若未來有新證據改變結論，應連同本表一起更新；不是用保鮮期代替實際查證。
 STALE_TOOL_PROSE = (
@@ -3998,7 +3958,6 @@ def step_misc(dest, work=None):
 
     step_table_freshness()
     step_readme_table()
-    step_zip_readme()
     step_tool_prose(dest)
     step_python_floor(dest)
     step_claims(dest)
@@ -4041,168 +4000,6 @@ def step_misc(dest, work=None):
                    f'exit {r.returncode}：{"；".join(bad)}：{(r.stdout + r.stderr).strip()[:160]}')
             ok = False
     return ok
-
-
-# 解壓即用的說明檔。刻意只存在於壓縮檔裡、不進部署包第 3 節——它講的是「怎麼用這個 zip」，
-# 屬於發佈方式，不是專案要長期保留的制度。部署完成就跟部署包一起刪掉。
-ZIP_README = """# 先看這個——三步驟
-
-本資料夾是「AI 協作專案管理骨架」解壓後的樣子。檔案都已就位，但裡面還有 `{{佔位符}}` 沒填。
-
-## 1. 確認位置
-
-這些檔案應該直接躺在**你的專案資料夾根目錄**（跟你的程式碼同一層）。
-如果解壓後多包了一層資料夾，把裡面的東西搬上來。
-
-## 2. 開一個 AI session，貼這段
-
-```text
-本資料夾已經解壓好一套 AI 協作管理骨架，檔案都在，但裡面還有 {{佔位符}} 沒填。
-請照 PROJECT-BOOTSTRAP.md 第 1 節的表格問我問題（一次問完），拿到答案後：
-1. 把所有檔案裡的 {{佔位符}} 換成我的答案，其他內容一個字都不要改、不要自行增刪制度。
-2. 依第 4 節先本機驗收（含 ignore、文件與執行位元），通過才提交及首次發布。
-3. 跑第 5 節遠端與工具驗收清單，逐項回報通過／不適用／有問題。
-4. 最後刪掉 PROJECT-BOOTSTRAP.md 與本說明檔。
-```
-
-**如果這是一個已經在進行中的專案**（已有 README.md／AGENTS.md），再加一句：
-「已存在的檔案不要覆蓋，只補上缺的段落，動手前先把你打算加什麼列給我看。」
-
-## 3. macOS／Linux 要多做一步
-
-給 hook 腳本執行權限（Windows 不需要）：
-
-```bash
-chmod +x .claude/hooks/*.sh
-```
-
-## 各工具的差異
-
-工具能力、信任審核與已實測版本，請讀同包的 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)
-「跨工具與跨平台」；實際驗收照該檔第 5 節，設定檔存在不代表 hook 已生效。
-本說明只放指標，不另維護一份工具能力摘要：重查後若只修部署包，這裡的舊說法就會無聲留下。
-
-`python` 指令不存在的機器（macOS 常見）一律改用 `python3`。
-"""
-
-
-def build_zip(out_path, skipped=()):
-    """打包未填的骨架；呼叫端先檢查門檻，有 skipped 時明確標示未驗證。
-
-    刻意從部署包重新抽一次未填的範本，不用驗證流程裡那份——那一份的佔位符已經
-    被測試用假值填掉了，打包出去會讓人拿到「驗證用假專案」當專案名。
-    """
-    tmp = pathlib.Path(tempfile.mkdtemp(prefix='pack-'))
-    try:
-        src = tmp / 'gen'
-        src.mkdir()
-        extract(src)
-        warning = ''
-        if skipped:
-            # F07：顯式調試產物不能看起來像完整通過的發行包。
-            warning = '# 未驗證產物（UNVERIFIED）\n\n部分檢查被跳過；不可視為正式驗證通過。詳見 UNVERIFIED.json。\n\n'
-            manifest = {'status': 'UNVERIFIED', 'skipped': [
-                {'name': title, 'reason': detail} for _, title, detail in skipped]}
-            write_lf(src / 'UNVERIFIED.json', json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
-        write_lf(src / '讀我-先看這個.md', warning + ZIP_README)
-        shutil.copyfile(KIT, src / KIT.name)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(out_path, 'w', zipfile.ZIP_DEFLATED) as z:
-            for f in sorted(src.rglob('*')):
-                if not f.is_file():
-                    continue
-                arc = f.relative_to(src).as_posix()
-                # 固定時間戳，同一份部署包每次打包都得到相同的 zip（可比對）
-                info = zipfile.ZipInfo(arc, date_time=(2026, 1, 1, 0, 0, 0))
-                # 讓 macOS／Linux 解壓後 .sh 直接可執行，省掉一步 chmod
-                info.external_attr = (0o755 if arc.endswith('.sh') else 0o644) << 16
-                info.compress_type = zipfile.ZIP_DEFLATED
-                z.writestr(info, f.read_bytes())
-        with zipfile.ZipFile(out_path) as z:
-            n = len(z.namelist())
-        label = '未驗證產物（UNVERIFIED）' if skipped else '已驗證產物'
-        print(f'\n已打包 {label} {n} 檔 → {out_path}')
-        return True
-    finally:
-        shutil.rmtree(tmp, ignore_errors=True)
-
-
-def zip_gate_problems(entry, tmp):
-    """注入檢查結果走真正的 CLI main 與 ZIP 寫入，不啟動模型或外部發布。"""
-    problems = []
-    scenarios = (
-        ('全過', ('OK',), True, False, False, 0, True),
-        ('全過加例外', ('OK',), True, True, False, 0, True),
-        ('SKIP 不打包', ('SKIP',), False, False, False, 1, False),
-        ('SKIP 預設拒絕', ('SKIP',), True, False, False, 1, False),
-        ('SKIP 顯式調試', ('SKIP',), True, True, False, 1, True),
-        ('FAIL 拒絕', ('FAIL',), True, False, False, 2, False),
-        ('FAIL 不能覆寫', ('FAIL',), True, True, False, 2, False),
-        ('FAIL 優先於 SKIP', ('FAIL', 'SKIP'), True, True, False, 2, False),
-        ('SKIP 保留既有檔', ('SKIP',), True, False, True, 1, False),
-        ('FAIL 保留既有檔', ('FAIL',), True, True, True, 2, False),
-    )
-    for i, (name, statuses, zip_requested, allow, existing, want_rc, want_zip) in enumerate(scenarios):
-        out = tmp / ('gate-%d.zip' % i)
-        sentinel = b'existing artifact'
-        if existing:
-            out.write_bytes(sentinel)
-        rows = [(s, 'fixture-' + s, 'injected reason') for s in statuses]
-        argv = ['verify_bootstrap.py'] + (['--zip', str(out)] if zip_requested else [])
-        if allow:
-            argv.append('--allow-unverified-zip')
-        capture = io.StringIO()
-        # 使用獨立 results，巢狀 main 清空結果時不會吃掉外層驗證。
-        with patch.dict(entry.__globals__, {'results': [], 'run_checks': lambda d, t: results.extend(rows)}), \
-                patch.object(sys, 'argv', argv), redirect_stdout(capture), redirect_stderr(capture):
-            rc = entry()
-        if rc != want_rc:
-            problems.append('%s exit %s，期望 %s' % (name, rc, want_rc))
-        if want_zip:
-            if not out.exists() or not zipfile.is_zipfile(out):
-                problems.append(name + ' 缺 ZIP')
-                continue
-            with zipfile.ZipFile(out) as z:
-                unverified = 'SKIP' in statuses
-                has_manifest = 'UNVERIFIED.json' in z.namelist()
-                if has_manifest != unverified:
-                    problems.append(name + ' 未驗證 manifest 判定錯誤')
-                if unverified and has_manifest:
-                    manifest = json.loads(z.read('UNVERIFIED.json'))
-                    if manifest != {'status': 'UNVERIFIED', 'skipped': [
-                            {'name': 'fixture-SKIP', 'reason': 'injected reason'}]}:
-                        problems.append(name + ' manifest 沒有保留跳過項目與原因')
-                readme = z.read('讀我-先看這個.md').decode('utf-8')
-                if ('UNVERIFIED' in readme) != unverified:
-                    problems.append(name + ' 說明檔標示錯誤')
-        elif existing:
-            if out.read_bytes() != sentinel:
-                problems.append(name + ' 覆寫了既有產物')
-        elif out.exists():
-            problems.append(name + ' 不該產出 ZIP')
-        if 'SKIP' in statuses and 'FAIL' not in statuses and 'fixture-SKIP' not in capture.getvalue():
-            problems.append(name + ' 沒說明哪項 SKIP')
-    return problems
-
-
-def step_zip_gate(tmp):
-    problems = zip_gate_problems(main, tmp)
-    # 負向測試：移除 SKIP 提前返回的門檻，必須抓到錯誤產物與舊檔被覆寫。
-    import inspect
-    source = inspect.getsource(main)
-    guard = 'if not args.allow_unverified_zip:'
-    if guard not in source:
-        problems.append('負向測試找不到 SKIP 門檻')
-    else:
-        mutant = {}
-        exec(compile(source.replace(guard, 'if False:', 1), '<zip-gate-mutant>', 'exec'), globals(), mutant)
-        negative_dir = tmp / 'negative-zip'
-        negative_dir.mkdir()
-        caught = zip_gate_problems(mutant['main'], negative_dir)
-        if not any('不該產出 ZIP' in p for p in caught) or not any('覆寫了既有產物' in p for p in caught):
-            problems.append('負向測試沒有抓到移除門檻後的錯誤打包')
-    record('FAIL' if problems else 'OK', 'ZIP 發布門檻',
-           '；'.join(problems) if problems else '10 情境：SKIP 預設不打包、例外附未驗證清單且 exit 1、FAIL 不可覆寫、既有產物保留；移除門檻的負向測試確實失敗')
 
 
 def flow_contract_problems(skill):
@@ -4641,18 +4438,23 @@ def step_sync_scope(dest, tmp):
            '真 worktree／含 worktrees 普通目錄／已完結 inventory；R03 自身 writer→同步→B7→B8、七種資格拒絕與負向變異；R05 active 失效、archived、重複路徑與 CLI 負向變異；dirty／占用／整份檔與共用程式漂移拒絕且零寫入')
 
 
-def deployment_order_problems(kit, skill, zip_readme, readme):
+def deployment_order_problems(skill, readme):
+    """本機驗收、首次提交、發布的順序（2026-11-18 起在 mode-0.md 的 0-5，決策書 v3 Q49）。
+
+    部署包第 4 節的指令搬進了 skill：安裝後由 agent 做，部署包不在專案裡。
+    """
     bad = []
-    section = kit.split('## 4. ', 1)[-1].split('## 5. ', 1)[0]
-    sequence = ('### 4.1 本機驗收', 'git add .', 'git check-ignore',
-                'python -X utf8 tools/check_docs.py', '### 4.2 首次發布',
-                'git commit -m', 'gh repo create')
+    section = skill.split('### 0-5 ', 1)[-1].split('### 0-6 ', 1)[0] if '### 0-5 ' in skill else ''
+    sequence = ('本機驗收後才首次發布', '`.gitignore` 必須先就位再 `git add`', 'git add <路徑>',
+                'git check-ignore', 'tools/check_docs.py', 'git commit -m', 'gh repo create')
     positions = [section.find(token) for token in sequence]
     if any(i < 0 for i in positions) or positions != sorted(positions):
         bad.append('本機驗收／首次提交／發布順序缺失或反轉')
-    for name, text in (('skill', skill), ('ZIP', zip_readme), ('README', readme)):
-        if '先本機驗收' not in text and '先完成第 4 節的本機驗收' not in text:
-            bad.append(name + ' 入口未要求先本機驗收')
+    told = section.replace('不用 `git add .` 或 `git add -A`', '')
+    if 'git add .' in told or 'git add -A' in told:
+        bad.append('0-5 叫人整批 git add')
+    if 'bootstrap.py' not in readme or '本機驗收' not in readme:
+        bad.append('README 入口沒指向 bootstrap.py 或沒要求先本機驗收')
     return bad
 
 
@@ -4689,7 +4491,7 @@ def step_deployment_lifecycle(tmp):
     must(['git', 'add', '.'], work)
     kit = read_lf(KIT)
     skill = skill_text(work)
-    bad = deployment_order_problems(kit, skill, ZIP_README, read_lf(ROOT / 'README.md'))
+    bad = deployment_order_problems(skill, read_lf(ROOT / 'README.md'))
     for invalid in (' !fixture', '` !fixture`'):
         try:
             ignore_rules(invalid)
@@ -4708,9 +4510,11 @@ def step_deployment_lifecycle(tmp):
     if not any('未忽略' in s for s in deployment_index_problems(work, paths)):
         bad.append('負向測試未抓到自訂 ignore 缺失')
     write_lf(work / '.gitignore', ignore)
-    for token in ('git check-ignore', '### 4.1 本機驗收'):
-        if not deployment_order_problems(kit.replace(token, '移除門檻'), skill, ZIP_README, read_lf(ROOT / 'README.md')):
+    for token in ('git check-ignore', '### 0-5 ', 'gh repo create'):
+        if not deployment_order_problems(skill.replace(token, '移除門檻', 1), read_lf(ROOT / 'README.md')):
             bad.append('順序負向測試未擋 ' + token)
+    if not deployment_order_problems(skill.replace('git add <路徑>', 'git add .', 1), read_lf(ROOT / 'README.md')):
+        bad.append('順序負向測試未擋整批 git add')
     if bad:
         record('FAIL', '部署生命週期', '；'.join(bad))
         return
@@ -5358,7 +5162,6 @@ def _run_checks(dest, tmp, collect):
     step_sync_self_guard()
     step_sync_safety(tmp)
     step_misc(dest, work)
-    step_zip_gate(tmp)
     step_flow_contract(dest, tmp)
     step_core_priority(dest, tmp)
     step_coordination(dest)
@@ -5532,6 +5335,22 @@ def step_dev_layout():
                len(re.findall(r'source = \{ registry = ', lock)), len(sources), len(DEV_EXTRAS), len(cases)))
 
 
+def bootstrap_source_problems(build_kit, files, installer, sync, current):
+    """2026-11-18（決策書 v3 Q49）：bootstrap.py 必須等於 build_kit 的生成結果。
+
+    來源有三個：src/kit 的範本與 owners.json、src/project_bootstrap/installer.py、
+    tools/sync_project.py 的合併函式。任何一個改了沒重生都要擋，手改產物也要擋。
+    """
+    owners = json.loads(read_lf(ROOT / 'src/kit/owners.json'))['files']
+    try:
+        built = build_kit.build_bootstrap(files, installer, sync, owners)
+    except (build_kit.KitError, SyntaxError) as exc:
+        return ['生不出 bootstrap.py：%s' % exc]
+    if built != current:
+        return ['bootstrap.py 與來源生成結果不同；改來源後跑 python3 -X utf8 tools/build_kit.py，不要手改 bootstrap.py']
+    return []
+
+
 def kit_source_problems(build_kit, prose, files, kit):
     """2026-11-11 P1 第三片：PROJECT-BOOTSTRAP.md 必須等於 src/kit 生成的結果。
 
@@ -5596,6 +5415,27 @@ def step_kit_source():
     record('FAIL' if bad else 'OK', '部署包由來源生成', '；'.join(bad) if bad else
            'PROJECT-BOOTSTRAP.md 與 src/kit（kit.md＋%d 個 .tmpl 範本）生成結果逐位元組相同；'
            '%d 個負向測試（只證明部署包是生成的，範本內容由其他各項驗）' % (len(files), len(cases)))
+    installer = read_lf(ROOT / 'src/project_bootstrap/installer.py')
+    sync = read_lf(ROOT / 'tools/sync_project.py')
+    current = read_lf(ROOT / 'bootstrap.py') if (ROOT / 'bootstrap.py').exists() else ''
+    bad = bootstrap_source_problems(build_kit, files, installer, sync, current)
+    cases = []
+    if not bad:
+        cases = [
+            ('手改 bootstrap.py', bootstrap_source_problems(build_kit, files, installer, sync,
+                                                           current.replace('不碰網路', '不碰網際網路', 1))),
+            ('改範本沒重生', bootstrap_source_problems(build_kit, dict(files, **{'CLAUDE.md': files['CLAUDE.md'] + 'x\n'}),
+                                                    installer, sync, current)),
+            ('改 installer.py 沒重生', bootstrap_source_problems(build_kit, files, installer + '\n# x\n', sync, current)),
+            ('改 sync_project.py 的合併函式沒重生', bootstrap_source_problems(
+                build_kit, files, installer, sync.replace("BUSY_FIELD = '", "BUSY_FIELD = ' ", 1), current)),
+            ('sync_project.py 少一個共用函式', bootstrap_source_problems(
+                build_kit, files, installer, sync.replace('def ensure_claude_import(', 'def ensure_claude_import_x(', 1), current)),
+        ]
+        bad = ['bootstrap.py 負向測試未擋：' + label for label, problems in cases if not problems]
+    record('FAIL' if bad else 'OK', '安裝程式由來源生成', '；'.join(bad) if bad else
+           'bootstrap.py 與 src/kit、installer.py、sync_project.py 的生成結果逐位元組相同；%d 個負向測試'
+           '（安裝、更新與換行的行為由 tests/test_bootstrap_repo.py 實跑）' % len(cases))
 
 
 def main():
@@ -5606,14 +5446,8 @@ def main():
     ap.add_argument('--staged', action='store_true',
                     help='B7 提交前拒絕未暫存或未追蹤檔，驗證實際 staged 候選')
     ap.add_argument('--keep', action='store_true', help='保留產生的骨架，印出路徑')
-    ap.add_argument('--zip', nargs='?', const='', metavar='PATH',
-                    help='驗證全過時，額外輸出解壓即用的 zip（預設 dist/project-skeleton-<日期>.zip）')
-    ap.add_argument('--allow-unverified-zip', action='store_true',
-                    help='搭配 --zip：容許 SKIP 的調試產物，附未驗證清單且仍 exit 1；FAIL 不可覆寫')
     args = ap.parse_args()
     QUIET = args.quiet
-    if args.allow_unverified_zip and args.zip is None:
-        ap.error('--allow-unverified-zip 必須搭配 --zip')
     results.clear()
 
     if not KIT.exists():
@@ -5644,21 +5478,9 @@ def main():
     print()
     if failed:
         print(f'FAIL：{len(failed)} 項未通過 —— {"、".join(failed)}')
-        if args.zip is not None:
-            print('（有項目未通過，不產出 zip——沒驗過的東西不該發出去）')
         return 2
     if skipped:
         print(f'SKIP：{len(skipped)} 項未驗證 —— {"、".join(skipped)}')
-        if not args.allow_unverified_zip:
-            if args.zip is not None:
-                print('（有 SKIP，不產出 zip；既有檔案不覆寫。調試時可明確加 --allow-unverified-zip）')
-            return 1
-    if args.zip is not None:
-        out = pathlib.Path(args.zip) if args.zip else \
-            ROOT / 'dist' / f'project-skeleton-{date.today().isoformat()}.zip'
-        build_zip(out, [r for r in results if r[0] == 'SKIP'])
-    if skipped:
-        print('UNVERIFIED：僅供調試，跳過的項目沒有被驗證，結束碼仍為 1')
         return 1
     print('OK：部署包驗證全數通過（%d 項）' % len(results))
     return 0

@@ -1,8 +1,9 @@
 # 部署包變更紀錄
 
-> 最後更新：2026-11-18（檔頭只留最新一筆，更早的修改見 Git 歷史）
+> 最後更新：2026-11-18（加入前一版 2026-11-17.3：2026-11-18 這一版建制改成安裝程式，決策書 v3 Q49）
 > 新的在上面。目前版本與它的說明在 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 開頭的「版本」行（來源是 `src/kit/kit.md`）；發布新一版時，把舊的版本行改寫成「前一版」移到本檔最上面。每一版都寫做了什麼與為什麼，不刪舊事故。
 
+> 前一版 **2026-11-17.3**（本專案明確不支援 Gemini：不再產出 `GEMINI.md`，3.2 只剩 `CLAUDE.md`；部署樹、HANDOFF 範本的部署清單、ARCHITECT 範本的指標列、跨工具環境變數表與跨模型的說法都拿掉 Gemini。handoff skill 兩處跟著改：`mode-a-stop.md` 的工具名慣用寫法只列 `Claude Code`／`Codex CLI`，`reasons.md` 的「任何模型」與「沒有改名能力的工具」不再提 Gemini。已部署專案裡的 `GEMINI.md` 是專案自己的檔，同步時不改寫也不刪，只列 MIGRATE，刪不刪由使用者決定。）
 > 前一版 **2026-11-17.2**（交接協定 `docs/ai-notes/handover-protocol.md` 移出部署包（決策書 v3 Q41），3.6 保留編號、改成移除說明。只有它才有的內容搬進 skill：分支模型進 `mode-b.md` 的 B1，「漏交棒的補救」的理由進 `reasons.md`，「verify_state 一律跑」進 `mode-a-stop.md` 的 A4，`mode-a-stop.md` A6 的指標改指 `reasons.md`；入口的核心優先序改成專案 override 寫在 `AGENTS.md` 鐵律。已部署專案裡的舊協定不改寫也不刪，同步時列 MIGRATE。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-17**（清掉 README／AGENTS 改成職能分工之後留下的過期說法（決策書 v3 Q40）：`mode-b.md` B2 與 `mode-a-stop.md` A3 不再說 `AGENTS.md` 有知識庫地圖，改指 `ARCHITECT.md`；`mode-0.md` 建制後的下一步改成填 README 的連線資料。同一輪也改了交接協定範本對開場 hook 的舊描述（它 2026-11-13 起只印事實），HANDOFF 範本的「地雷」不再重複 AGENTS 與 README 已有的規則。七個 skill 檔與共用制度標記同版。）
 > 2026-11-17（**只改 README、AGENTS、ARCHITECT 等範本，刻意不跳 `VERSION`**：handoff skill 一個字沒動）：README 改成標準 README，不再按「給人看／給 AI 看」分工（決策書 v3 Q40）。README 寫專案是什麼、為什麼做、快速開始（含原本 AGENTS 的連線資料）、開發與驗證、結構指標、協作方式、授權；「三個入口」表、兩段交接 prompt、檔案樹、腳本表與紅線刪掉，因為它們跟 AGENTS、ARCHITECT、skill 重複，而 README 是 `seed`，部署後不會跟著更新。AGENTS 只留開工必讀：共用制度與鐵律，「Git 不是資料備份」併進鐵律 1，「只寫 key 名不寫值」併進鐵律 3。已部署專案的 README 是 `seed`、AGENTS 只同步共用制度，不會自動搬，要逐一手動遷移。

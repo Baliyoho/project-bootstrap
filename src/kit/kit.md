@@ -1,16 +1,14 @@
 # PROJECT-BOOTSTRAP.md — AI 協作專案管理骨架（部署包）
 
-> 把這一份檔案複製到**新專案的空資料夾**，然後開一個 AI session 貼上：
+> **本檔不是安裝途徑（2026-11-18 起，需求決策書 v3 Q49）。** 新專案跑 project-bootstrap repo 根目錄的 `bootstrap.py`：
 >
 > ```text
-> 請完全依照本資料夾的 PROJECT-BOOTSTRAP.md 建立本專案的管理骨架：先做第 1 節訪談問我問題，
-> 拿到答案後照第 3 節逐檔建立（內容照抄、只替換佔位符），依第 4 節先完成本機驗收才首次發布，再跑第 5 節遠端與工具驗收並回報。
-> 過程中不要自行增刪制度，也不要把佔位符留在檔案裡。
+> python3 bootstrap.py --target <新專案資料夾>
 > ```
 >
-> 也可以完全手動：照第 3 節把每個檔案自己建出來，效果一樣。
-> 骨架建好後，**這份 PROJECT-BOOTSTRAP.md 就可以刪掉**（內容已分散進 AGENTS.md、ARCHITECT.md 與 `handoff` skill）。
-> 版本：**2026-11-17.3**（本專案明確不支援 Gemini：不再產出 `GEMINI.md`，3.2 只剩 `CLAUDE.md`；部署樹、HANDOFF 範本的部署清單、ARCHITECT 範本的指標列、跨工具環境變數表與跨模型的說法都拿掉 Gemini。handoff skill 兩處跟著改：`mode-a-stop.md` 的工具名慣用寫法只列 `Claude Code`／`Codex CLI`，`reasons.md` 的「任何模型」與「沒有改名能力的工具」不再提 Gemini。已部署專案裡的 `GEMINI.md` 是專案自己的檔，同步時不改寫也不刪，只列 MIGRATE，刪不刪由使用者決定。）
+> 它問完第 1 節的訪談，把第 3 節的每個檔寫進去（已存在的同名檔不覆寫，新內容寫成 `<路徑>.bootstrap-new`），逐檔比對雜湊，再把安裝後要由 agent 做的第一批工作寫進 `HANDOFF.md`。之後在那個資料夾開 Claude Code 或 Codex 說「接棒」即可。已部署的專案升級跑 `python3 bootstrap.py update --target <專案>`（先預演，加 `--write` 才寫入）。
+> 本檔是部署包的完整說明與每個範本的全文，跟 `bootstrap.py` 一樣由 `tools/build_kit.py` 從 `src/kit/` 產生；給人讀、給 `sync_project.py` 用，不複製進專案。
+> 版本：**2026-11-18**（建制改成「安裝程式寫檔＋安裝後由 agent 接手」（決策書 v3 Q49）：對外的安裝途徑從本檔改成單一檔 `bootstrap.py`，拿掉 AI 照抄這條路。handoff skill 的 `mode-0.md` 改成跑安裝程式、再處理第一批工作，原本第 5 節的遠端與工具驗收清單逐字搬進它的 0-6；`reasons.md` 的模式 0 權威與兩條反例跟著改，規則對照表換成新的小節名。`HANDOFF.md` 範本改成安裝後的狀態（還沒 commit、還沒有 GitHub repo）。第 1、2、4、5 節改寫：訪談由程式問、部署樹多一個 `.bootstrap/answers.json`、本機驗收與首次發布及遠端驗收都改指 `mode-0.md`。）
 > 更早的版本與每一版的理由在 project-bootstrap repo 的 `CHANGELOG.md`（2026-11-17 起從本檔開頭搬出，逐字不改；部署後用不到）。
 > 萃取自兩個實際運行的專案：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，一個是文本識別系統。兩個都是多模型、多機器協作。
 
@@ -27,7 +25,7 @@
 **分工**：`AGENTS.md` 的共用制度＝必守條件；skill＝**怎麼做**（指令、判讀表、模板）與理由（`reasons.md`）；專案自己的 override 寫在 `AGENTS.md` 共用制度標記外的鐵律，只可加嚴。
 2026-11-17 起不再部署 `docs/ai-notes/handover-protocol.md`（v3 Q41）；舊專案留著的那一份是不同步的實例，程序細節上以同步的 skill 為準，這樣不同步的舊實例才不會推翻已升級的制度（2026-11-02／F10）。
 
-**還沒有這套制度的資料夾走 skill 的模式 0（建制）**：使用者講一句「幫我把交接機制建起來」，agent 就照本部署包逐檔生成，而不是憑印象重刻——憑印象生出來的版本缺的永遠是最貴的那部分（每條規則後面的「為什麼」、hook 的邊界條件），看起來像那套制度，實際擋不住任何事。
+**還沒有這套制度的資料夾走 skill 的模式 0（建制）**：使用者講一句「幫我把交接機制建起來」，agent 就跑 `bootstrap.py`（2026-11-18 起，決策書 v3 Q49），再處理它寫進 `HANDOFF.md` 的第一批工作，而不是憑印象重刻——憑印象生出來的版本缺的永遠是最貴的那部分（每條規則後面的「為什麼」、hook 的邊界條件），看起來像那套制度，實際擋不住任何事。2026-11-18 以前這一步是讓 agent 照本部署包逐檔照抄；輸出二十幾個檔最貴也最容易抄錯，所以改由程式寫檔。
 這裡有個雞生蛋問題：skill 是部署**之後**才存在於專案裡的。所以模式 0 真正會被載入的地方是**全域副本**（`~/.claude/skills/handoff/`、`~/.codex/skills/handoff/`）；專案內那份仍保留模式 0，是為了讓副本可以無腦整份覆蓋，不必維護兩種版本。
 
 ## 跨工具與跨平台
@@ -161,9 +159,9 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ---
 
-## 1. 部署前訪談（AI 執行時必做，一次問完）
+## 1. 部署前訪談（安裝程式問，一次問完）
 
-把答案填進下列佔位符；**檔案裡不能留下任何 `{{...}}`**。
+`bootstrap.py` 用 `input()` 一次問完下表（2026-11-18 起，決策書 v3 Q49），把答案換進佔位符；**寫出去的檔案裡不會留下任何 `{{...}}`**。不能互動時用 `--answers <檔案.json>`、`--set KEY=VALUE` 與 `--non-interactive`。答案存成專案裡的 `.bootstrap/answers.json`，日後 `update` 用；答案裡不得有祕密，看到金鑰樣式會拒絕。可以留空的題目留空時寫成 `<部署後填>`，列進 `HANDOFF.md` 的第一批工作；`{{TODAY}}` 由程式填當天日期，不問。
 
 | 佔位符 | 意義 | 例 |
 |---|---|---|
@@ -179,7 +177,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 | `{{STACK_DIRS}}` | 專案主要程式目錄（寫進 ARCHITECT 的結構） | `src/`、`migrations/` |
 | `{{VERIFY_TARGETS}}` | 「一鍵驗證」該查什麼（沒有就先留空） | 健康檢查 API、docker 容器狀態 |
 
-追問一句就好：**「這個專案有沒有已知的『絕對不能做』的操作？」**（例：不能直接改資料庫檔、不能在正式環境跑 migration）。有的話寫進 AGENTS.md 鐵律第 4 條之後；沒有就先放空著，日後踩到再補。
+最後一題問：**「這個專案有沒有已知的『絕對不能做』的操作？」**（例：不能直接改資料庫檔、不能在正式環境跑 migration）。它跟 `{{VERIFY_TARGETS}}` 一樣有判斷空間，程式只記下原話：怎麼寫成 AGENTS.md 鐵律（第 4 條之後）、怎麼寫成 `verify_state.py` 的檢查項，列進安裝後 agent 的第一批工作；沒有就先放空著，日後踩到再補。
 
 ---
 
@@ -192,6 +190,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ├─ CLAUDE.md                        ← 指標，指向 AGENTS.md
 ├─ HANDOFF.md                       ← 當下工作狀態（≤80 行，不累積歷史）
 ├─ ARCHITECT.md                     ← 專案結構的唯一權威（只有結構變動才改）
+├─ .bootstrap/answers.json          ← 訪談答案（安裝程式寫，update 用；不含祕密）
 ├─ .gitignore
 ├─ .gitattributes
 ├─ .claude/                         ← Claude Code 讀這裡
@@ -219,7 +218,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ---
 
-## 3. 各檔案內容（照抄，只換佔位符）
+## 3. 各檔案內容（範本全文；安裝程式寫檔時換佔位符）
 
 ### 3.1 `AGENTS.md`
 
@@ -272,7 +271,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ### 3.8 `.claude/skills/handoff/SKILL.md`、`.claude/skills/handoff/mode-a.md`、`.claude/skills/handoff/mode-a-stop.md`、`.claude/skills/handoff/mode-b.md`、`.claude/skills/handoff/mode-0.md`、`.claude/skills/handoff/reasons.md`、`.claude/skills/handoff/env.md`（交接程序，本骨架的核心）
 
-> **這一份就是「教 agent 自動交接同步」的東西。** 內容照抄不要改，包含檔頭的 `source:` 版本標記——它讓你日後能一眼看出某個專案的副本是不是落後了。
+> **這一份就是「教 agent 自動交接同步」的東西。** 內容不要改（安裝程式與 update 原樣寫入），包含檔頭的 `source:` 版本標記——它讓你日後能一眼看出某個專案的副本是不是落後了。
 > **2026-11-10 起這支 skill 是一個目錄，2026-11-16.4 起七個檔（加 `env.md`）**（決策書 F22：單檔 22,040 字元，正常接棒只需要其中一小部分）。入口與 `mode-a.md` 是新寫的摘要，其餘四個檔是從單檔逐字搬來的；六個檔的 `source:` 標記必須是同一個版本，同步時整個目錄一起覆蓋。下面六個區塊依序對應標題上的六個檔名。
 
 **`.claude/skills/handoff/SKILL.md`**——參考檔入口：碰到才讀（2026-11-13 起，v3 第 5 節）。適用判斷、要細節時讀哪個檔、全程禁令、必須停下來問人的清單；session 命名指回 `AGENTS.md`。
@@ -396,7 +395,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 > 功能**預設開啟**（`codex features list` 可以確認 `hooks  stable  true`；要關是 `[features] hooks = false`）。來源不只這一個檔：`~/.codex/hooks.json`、兩層 `config.toml` 的 `[hooks]`、plugin 都會**合併**進來，同一層同時用兩種寫法會在啟動時警告。
 > **路徑一律相對**——寫成 `C:\Users\...` 的絕對路徑，換到另一台機器或 macOS 必定失效，而且失效時是靜默的。
 > **但「不寫死絕對路徑」跟「可以假設 cwd 是 repo 根目錄」是兩件事**——後者就是 F05，所以路徑前面要掛 `$(git rev-parse --show-cdup)`（它回的也是相對路徑，理由見 3.9 那一段）。
-> 🔴 **要兩道信任，而且失敗是靜默的。** ①專案的 `.codex/` 整層要先被信任（記在 `~/.codex/config.toml` 的 `[projects.'<路徑>'] trust_level`）；②每一支非 managed 的 hook 還要按**當前雜湊**逐一審核（CLI 打 `/hooks`），所以改過接線定義要重新審核。2026-10-30 實測：在未信任的資料夾跑 `codex exec`，hook 完全沒跑，而且 **stderr 一個字都沒有**。所以部署完**一定要照第 5 節真的開一個 session**，不能看到檔案在就算裝好了。⚠️ **而且要在互動模式、而且要送出一句話**：2026-11-01 實測互動 TUI 開場不跑 `SessionStart`（跟著第一個 turn 才跑），所以盯著開場看是假陰性。互動模式的補償是 hook 失敗會印 `• Hook failed`，而 `codex exec` 連失敗都不吭聲。
+> 🔴 **要兩道信任，而且失敗是靜默的。** ①專案的 `.codex/` 整層要先被信任（記在 `~/.codex/config.toml` 的 `[projects.'<路徑>'] trust_level`）；②每一支非 managed 的 hook 還要按**當前雜湊**逐一審核（CLI 打 `/hooks`），所以改過接線定義要重新審核。2026-10-30 實測：在未信任的資料夾跑 `codex exec`，hook 完全沒跑，而且 **stderr 一個字都沒有**。所以部署完**一定要照 `mode-0.md` 的 0-6 真的開一個 session**，不能看到檔案在就算裝好了。⚠️ **而且要在互動模式、而且要送出一句話**：2026-11-01 實測互動 TUI 開場不跑 `SessionStart`（跟著第一個 turn 才跑），所以盯著開場看是假陰性。互動模式的補償是 hook 失敗會印 `• Hook failed`，而 `codex exec` 連失敗都不吭聲。
 > **2026-10-31 實測完畢（`0.164.0`／Windows），兩個未知都收掉了，其中一個是問錯問題。**
 > ① **`statusMessage` 不是 Claude 專屬的 key**：官方把它列在 hook 定義的正式鍵裡（`type`／`command`／`commandWindows`／`timeout`／`statusMessage`／`additionalContextLimit`／`async`／`server`／`tool`／`input`），語意就是「Optional UI message」。所以它不會被當成雜訊，也不會讓設定失效。實測 `codex exec` 的 stdout／stderr **都不會出現它**（非互動沒有 UI 可顯示）；**互動 TUI 會顯示**——2026-11-01 在 `0.166.0` 量到它接在狀態行後面（`Working (1s • esc to interrupt) · <字串>`），所以互動模式下它是使用者唯一看得到的那行字。
 > ② **`PreToolUse` 沒有 matcher＝每一次都觸發，而且不分工具名**：官方寫「省略、`""`、`"*"` 都等於比對該事件的每一次發生」，實測同一個 session 裡 `Bash`×2 ＋ `apply_patch`×1 全部觸發。所以 `pre-push-handoff.sh` 會跟著**每一個**工具呼叫跑一次——它自己對非 push 的呼叫是 `exit 0` 立刻收手（2026-11-12 起只看 `command` 欄位，編輯工具的內容提到 `git push` 也放行；在那之前會被擋，Claude Code 卻不會，見決策書 Q27），功能上沒問題，但**要知道這是「每次都跑」而不是「只在 push 時跑」**。要縮成只比對殼層工具就加 `"matcher": "Bash"`，但那是拿一次實測的工具名去賭所有情境（MCP 工具名長得完全不同），**這個取捨刻意留著不改**。
@@ -462,90 +461,13 @@ description: Pointer to the authoritative copy in .claude/skills/. <一句話說
 
 ## 4. 先本機驗收，再首次發布
 
-### 4.1 本機驗收（第一個 commit 與 push 之前）
-
-```bash
-git init -b main
-```
-
-先確認 `.gitignore` 已就位再 `git add`（**順序不可反**，不然祕密會進第一個 commit）：
-
-```bash
-git status --porcelain
-```
-
-確認清單裡沒有憑證／運行資料後：
-
-```bash
-git add . && git diff --cached --name-only
-```
-
-依訪談逐一執行 `git check-ignore -- <憑證或運行路徑>`，必須列出該路徑；不要以檔案還沒建立為理由略過。核對 staged 清單沒有任何憑證或運行資料。關鍵字掃描只能降低風險，不能涵蓋所有祕密格式。
-
-接著跑兩個本機檢查：
-
-```bash
-python -X utf8 tools/check_docs.py
-python -X utf8 tools/verify_state.py
-```
-
-沒有 `python` 就用 `python3`。文件必須 exit 0；服務 FAIL／ERROR 不得當通過，SKIP／NOT_CONFIGURED 明列原因與待配置事項。核對 `ARCHITECT.md` 與 `HANDOFF.md` 是實況。這些本機驗收全部完成才可往下；遠端與工具注入尚未驗證，留到第 5 節，不可預先寫成通過。
-
-### 4.2 首次發布（本機驗收完成後）
-
-再次確認 staged 清單乾淨，然後提交並建 repo（需先裝好 `gh` 並登入）；owner／repo 名與 public／private 須先取得使用者確認：
-
-```bash
-git commit -m "chore: bootstrap project management skeleton"
-```
-
-```bash
-gh repo create {{GH_OWNER}}/{{GH_REPO}} --{{GH_VISIBILITY}} --source=. --remote=origin --push
-```
-
-沒有 `gh` 就到 GitHub 網頁開一個空 repo，然後：
-
-```bash
-git remote add origin https://github.com/{{GH_OWNER}}/{{GH_REPO}}.git && git push -u origin main
-```
-
-最後確認 upstream 有對齊（hook 需要 upstream 才能比對）：
-
-```bash
-git status -sb
-```
+2026-11-18 起（決策書 v3 Q49）這一步是安裝後 agent 的第一批工作，做法在 3.8 的 `mode-0.md`「0-5 本機驗收後才首次發布」：`.gitignore` 先就位再逐檔 `git add`、`git check-ignore` 逐一確認憑證與運行路徑、`check_docs.py` 與 `verify_state.py` 通過才第一個 commit，建 GitHub repo 前先問使用者。安裝程式本身不 add、不 commit、不碰網路。原本寫在這裡的指令搬進了 `mode-0.md`：部署包不在專案裡，專案裡讀得到的只有 skill。
 
 ---
 
 ## 5. 部署後自檢清單
 
-第 4.1 節已先完成本機驗收。這一節補遠端、runtime 與工具實際注入的驗收；逐項回報，全過或明列不適用／未配置才算交代完整，未驗證不能宣稱通過。
-
-- [ ] `python -X utf8 tools/check_docs.py` → `OK`（一次涵蓋死連結與**殘留佔位符**；佔位符那一項掃 `.md`／`.py`／`.sh`／`.json`／`.gitignore`／`.gitattributes` 的 tracked 檔，所以要先 `git add`。本部署包自己被豁免——照最後一項刪掉它就好）
-- [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）
-- [ ] `bash .claude/hooks/git-freshness.sh` → 印出三行 `[facts]`：時間（含 session 名用的 `MM.DD.HH`）與本機、落後 0 領先 0、origin 上「工作中」那一行的原文。印「origin 上沒有分支」表示第 4 節沒做完
-- [ ] **子目錄也要有防護**（2026-11-02／F05）：`cd tools && sh -c 'bash "$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh"'; cd ..` → 要印出跟在根目錄一樣的 `[facts]`。**要跑的是 `.claude/settings.json`／`.codex/hooks.json` 裡原始的那一串命令**，不是直接拿完整路徑跑腳本——後者在任何 cwd 都會過，測不到入口。hook 的 `command` 以 session 的 cwd 執行，而人會從子目錄開 session（`cd tools && claude`）；舊接線在那裡是 exit 127，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**
-- [ ] **工作中標記看得見**：把 `HANDOFF.md` 的「工作中」改成 `` `假機器名` ／ `Claude Code` ``，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 第三行要印出那個值的原文；改回「無（已交棒）」、commit、push 後再跑 → 要印回 `無（已交棒）`。**驗完記得改回來**
-- [ ] **共用制度版本提示**：`printf 2099-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要多印一行「共用制度落後」。快取裡放的是**上游最新版**，所以要餵一個比本機**新**的值。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
-- [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）；同目錄有 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 五個檔，六個檔檔頭的 `source:` 版本相同（少一個，入口就會指向不存在的檔）
-- [ ] **`CLAUDE.md` 只有 `@AGENTS.md` 這一行 import**，不是「去讀 AGENTS.md」那種句子——有 `CLAUDE.md` 時 Claude Code 不會自己讀 `AGENTS.md`，而用文字請它去讀不保證它真的開那個檔（理由見開頭「跨工具與跨平台」）。開一個 session 問它「`AGENTS.md` 的鐵律第 1 條是什麼」，答得出來才算接上
-- [ ] `ARCHITECT.md` 存在且有「最後更新」標頭（`check_docs.py` 會擋），「專案本體」那節寫的是**實況**——還沒有程式碼就照實寫，不要先畫一個想像中的架構
-- [ ] 在 Claude Code 打 `/handoff` 看得到這個 skill
-- [ ] pre-push hook 會放行無關指令：`echo '{"tool_input":{"command":"git status"}}' | bash .claude/hooks/pre-push-handoff.sh; echo $?` → `0`
-- [ ] `git log --stat -1` 確認第一個 commit **沒有**含憑證或運行資料
-- [ ] 關掉 session 重開一次，確認 hook 在對話開頭自動跑
-
-**跨工具（只驗你真的會用的那幾個，用不到的不必建檔）**
-
-- [ ] **可攜層**：`AGENTS.md` 有共用制度一節（開始與結束標記之間 ≤ 40 行）——**這一項不能跳過**，它是唯一不需要任何設定就會被讀到的那一層（**「讀得到」不等於「照做」**，見開頭那一節），其餘都只是輔助
-- [ ] **Codex CLI**：`.codex/hooks.json` 與 `.claude/hooks/codex-hook.cmd` 存在且接線路徑全是相對路徑（`grep -n ':[\\/]' .codex/hooks.json` 應無輸出——絕對路徑在別台機器會靜默失效）；**專案要先被信任**（否則整層 `.codex/` 被跳過）；Windows 的 `commandWindows` 要指向 `.claude/hooks/codex-hook.cmd`，該檔也必須在場；然後**開一次互動式 `codex`**——它開場就會問「Hooks need review」，選 `Trust all and continue`（想一條條看就選 `Review hooks`）。🔴 **這一項不能只看檔案在不在**，而且有三個會讓你誤判的點：①**信任綁 `hooks.json` 的絕對路徑，所以每個專案都要各做一次**，審過一個不會全通；②**在那個 session 裡送出一句話才驗得到**——2026-11-01 實測互動 TUI 開場不跑 `SessionStart`，它跟著第一個 turn 才跑；舊版這裡寫「你按下同意的那個 session 不會跑，要再開一個才算」，那是推論而實測是反的，而且它教人用**保證看不到**的方式驗收（再開一個、然後盯著開場）；③**不要去畫面上找 `[git-check]`**——Codex 把純文字 stdout 當 developer context 餵給模型、不顯示給人，所以要驗就問 agent 一個不必複述的是非題（「只回 YES／NO：你的 context 裡有沒有以 `[git-check]` 開頭的行」），或暫時讓 hook 自己寫一個檔。`codex exec` 從頭到尾不問也不印，**不能拿它當驗收手段**（2026-10-30／31 兩輪實測）
-- [ ] **Codex skill 來源**：`codex debug prompt-input` 會印一張「Skill roots」表，確認裡面有 `~/.codex/skills`（全域副本放這裡）與本專案的 `.agents/skills`。這比問模型「你有哪些 skill」可靠，也不花一次模型呼叫
-- [ ] **Codex 桌面 App**：它**有** hooks（App `26.506` 起有 in-app 信任審核，Settings 裡找 Hooks），而且跟 CLI 共用 `~/.codex`。舊版這裡寫「App 沒有 hooks」是 2026-08-06 的實測，已經過期。全域 skill 仍然放 `~/.codex/skills/handoff/SKILL.md`（2026-10-30 實測 CLI `0.164.0` 仍讀這個路徑，雖然官方文件已經不列它）
-- [ ] **Codex 指標檔**：`.agents/skills/handoff/SKILL.md` 存在，內容只有指標、沒有複製程序內容（見 3.16）
-- [ ] **共通的真正驗收**（不論哪個工具）：在專案裡講一句「我要接手這個專案」，agent 應該先 `git fetch`、讀 `AGENTS.md` ＋ `HANDOFF.md`，回報 3–5 行才動手。它直接開始翻程式碼就是沒接上——改用明講版：「請先讀 `.claude/skills/handoff/SKILL.md`，照 A 模式接棒」
-- [ ] **另一台機器**：clone 後重跑上面「python 可執行」與「hook 自動跑」兩項。`python` 不存在就用 `python3`；Windows 需要 Git for Windows 附的 bash
-- [ ] `HANDOFF.md` 的「本機能力」已填實際狀況
-- [ ] 刪掉 `PROJECT-BOOTSTRAP.md`，以及用壓縮檔部署時附的 `讀我-先看這個.md`。前者的內容已分散進 AGENTS.md、ARCHITECT.md 與 handoff skill，留著就是第二份會腐化的副本；後者的內容在部署完成的當下就是假的（它寫著「檔案都在，但裡面還有佔位符沒填」），下一棒讀到會以為部署沒做完而重跑一次訪談
+2026-11-18 起（決策書 v3 Q49）原本這一節的清單逐字搬進 3.8 的 `mode-0.md`「0-6 遠端與工具驗收」，理由同第 4 節。安裝程式寫完會逐檔比對雜湊，但遠端、runtime 與工具實際注入仍要照那份清單驗，未驗證不能宣稱通過。
 
 ---
 
@@ -553,7 +475,7 @@ git status -sb
 
 **每次開工／收工**：跟 AI 說「接棒」或「交棒」（Claude Code 也可以打 `/handoff`）；工具沒自動找到 skill 時，指它讀 `.claude/skills/handoff/SKILL.md` 的 A 或 B 模式。**順序永遠是先交棒、後接棒**（舊 session 先把狀態寫進 `HANDOFF.md` 並 push，新 session 才讀得到）。
 
-**改到 skill 或 hook 時**：權威版在本部署包 → 改這裡 → 覆蓋各專案 `.claude/skills/handoff/` 整個目錄（七個檔一起，與選用的全域副本）→ 檔頭 `source:` 標記跳版。
+**改到 skill 或 hook 時**：權威版在本部署包 → 改這裡 → 覆蓋各專案 `.claude/skills/handoff/` 整個目錄（七個檔一起，與選用的全域副本）→ 檔頭 `source:` 標記跳版。專案那一端用 `python3 bootstrap.py update --target <專案>`：只換 core 與 adapter 擁有的部分（`owners.json`），專案自己的內容不動。
 
 標記的格式是 **`v<日期>`，同一天改第二次起在日期後面加序號**（`v2026-10-24.2`、`.3`），當天第一次不加。序號算的是**當天第幾個帶 `source:` 標記的改動**，不是單一檔案的、也不是當天第幾次碰部署包——只改敘述而沒有任何標記動過的那幾次不算。標記寫的本來就是「這份副本來自部署包的哪一版」。⚠️ **它跟本檔開頭的「版本」行不保證同號**：那一行與 `VERSION` 只跟著 handoff skill 目錄走（鐵律 1；2026-11-10 起 skill 是 3.8 的六個檔，之前是單檔 `SKILL.md`），所以當天後續沒動到 skill 目錄的改動會讓標記序號**超前**版本行——2026-11-02 就是這樣，標記到 `.2` 而版本行仍是裸的 `2026-11-02`。舊版這裡寫「算的是部署包當天的第幾次修改（跟版本行同一個號）」，兩個斷言都不成立，而 `AGENTS.md` 鐵律 2 寫的是另一種算法——同一條規則兩個家、兩種說法（2026-11-02／F15 一起修）。2026-10-24 那天這份 skill 改了三次，三次的標記卻都是 `v2026-10-24`——副本明明落後，標記顯示一樣新，於是把「舊版 session 名稱少一個全形空格」誤判成同步漏掉，白查一輪。日期粒度只能證明「不早於那一天」，證明不了最新。
 

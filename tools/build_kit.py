@@ -13,15 +13,26 @@ Source layout:
   the cross-tool tables have one home. Rendering lives in
   src/project_bootstrap/capabilities.py.
 
-PROJECT-BOOTSTRAP.md stays committed: projects copy it, and sync_project.py
-reads it and its Git history. It is a build output; edit the source and rerun:
+Two build outputs, both committed and regenerated together:
 
-    python3 -X utf8 tools/build_kit.py            # write PROJECT-BOOTSTRAP.md
-    python3 -X utf8 tools/build_kit.py --check    # exit 1 if it is out of date
+- PROJECT-BOOTSTRAP.md: the package's documentation with every template in full.
+  sync_project.py reads it and its Git history. Since v3 Q49 it is not the
+  install route any more.
+- bootstrap.py: the installer projects run (v3 Q49). It is
+  src/project_bootstrap/installer.py, the templates and owners.json embedded,
+  and the merge functions of tools/sync_project.py copied verbatim (SHARED), so
+  install, update and sync share one implementation.
+
+Edit the source and rerun:
+
+    python3 -X utf8 tools/build_kit.py            # write both outputs
+    python3 -X utf8 tools/build_kit.py --check    # exit 1 if either is out of date
 
 Standard library only (Python 3.8+), like verify_bootstrap.py.
 """
 import argparse
+import ast
+import json
 import pathlib
 import re
 import sys
@@ -35,6 +46,22 @@ SOURCE = ROOT / 'src' / 'kit'
 PROSE = SOURCE / 'kit.md'
 FILES = SOURCE / 'files'
 OUTPUT = ROOT / 'PROJECT-BOOTSTRAP.md'
+INSTALLER = ROOT / 'src' / 'project_bootstrap' / 'installer.py'
+SYNC = ROOT / 'tools' / 'sync_project.py'
+BOOTSTRAP = ROOT / 'bootstrap.py'
+# Names bootstrap.py takes verbatim from sync_project.py, in that file's order.
+# sync() and apply_plan() are the update mode; the rest is what they call.
+SHARED = (
+    'read', 'write', 'by_update',
+    'SKILL_DIR', 'SKILL_ENTRY', 'SKILL_PARTS', 'WHOLE', 'SURGICAL', 'SETTINGS_START', 'SETTINGS_END',
+    'WIRING', 'OWNED_SCRIPTS', 'CODEX_WIRING', 'CODEX_LAUNCHER', 'PARTIAL', 'INSTANCE',
+    'BUSY_FIELD', 'GITIGNORE_LINES', 'CLAUDE_IMPORT', 'SHARED_START', 'SHARED_END',
+    'LEGACY_HANDOFF_HEADINGS',
+    'split_settings', 'merge_check_docs', 'known_hook_commands', 'handler_scripts', 'scripts_in',
+    'merge_group', 'merge_wiring', 'ensure_busy_field', 'ensure_gitignore', 'ensure_claude_import',
+    'shared_block', 'merge_shared_section', 'legacy_handoff_sections', 'Plan', 'apply_plan',
+    'sync_wiring', 'sync_shared_section', 'sync',
+)
 SUFFIX = '.tmpl'
 DIRECTIVE_RE = re.compile(r'^<!-- kit-file: (\S+) -->$')
 HEAD_RE = re.compile(r'^### 3\.\d+ ')
@@ -170,28 +197,114 @@ def write_source(prose, files, source=SOURCE):
         write_lf(source / 'files' / (rel + SUFFIX), text)
 
 
+def node_names(node):
+    if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+        return {node.name}
+    if isinstance(node, ast.Assign):
+        return {t.id for t in node.targets if isinstance(t, ast.Name)}
+    return set()
+
+
+def shared_source(sync_text):
+    """The SHARED definitions of sync_project.py, verbatim and in file order."""
+    tree = ast.parse(sync_text)
+    chunks, found = [], set()
+    for node in tree.body:
+        names = node_names(node) & set(SHARED)
+        if names:
+            found |= names
+            chunks.append(ast.get_source_segment(sync_text, node))
+    missing = [n for n in SHARED if n not in found]
+    if missing:
+        raise KitError('sync_project.py has no ' + ', '.join(missing))
+    return '\n\n\n'.join(chunks)
+
+
+def installer_body(text):
+    """installer.py without its module docstring (bootstrap.py has its own)."""
+    tree = ast.parse(text)
+    first = tree.body[0]
+    if not (isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant)):
+        raise KitError('installer.py must start with a docstring')
+    return '\n'.join(text.split('\n')[first.end_lineno:]).lstrip('\n')
+
+
+def build_bootstrap(files, installer_text, sync_text, owners):
+    """bootstrap.py: one stdlib-only file with every template embedded."""
+    version_match = re.search(r'共用制度開始 source: PROJECT-BOOTSTRAP\.md v([0-9][0-9.-]*)',
+                              files.get('AGENTS.md', ''))
+    if not version_match:
+        raise KitError('AGENTS.md template has no shared-section version marker')
+    version = version_match.group(1)
+    out = ['#!/usr/bin/env python3',
+           '# -*- coding: utf-8 -*-',
+           '"""AI 協作專案管理骨架的安裝程式（v%s）。' % version,
+           '',
+           '用法：',
+           '  python3 bootstrap.py --target <專案資料夾>            # 安裝：程式會問訪談題目',
+           '  python3 bootstrap.py --target <專案資料夾> --answers answers.json --non-interactive',
+           '  python3 bootstrap.py update --target <專案資料夾>     # 更新預演；加 --write 才寫入',
+           '',
+           '只用 Python 標準函式庫，需要 Python 3.12 以上；只寫本機檔案，不碰網路、不推送。',
+           '已存在的同名檔一律不覆寫，新內容寫到旁邊的 <路徑>.bootstrap-new。',
+           '"""',
+           '# 產物，不要手改：由 project-bootstrap 的 tools/build_kit.py 從 src/kit/、',
+           '# src/project_bootstrap/installer.py 與 tools/sync_project.py 產生（需求決策書 v3 Q49）。',
+           'import copy',
+           installer_body(installer_text).rstrip('\n'),
+           '',
+           '',
+           '# ── 內嵌的部署包 ─────────────────────────────────────────────',
+           'OWNERS = %s' % json.dumps(owners, ensure_ascii=False, indent=1, sort_keys=True),
+           'UPDATES = {rel: entry[\'update\'] for rel, entry in OWNERS.items()}',
+           'TEMPLATES = {}']
+    for rel in sorted(files):
+        out.append('TEMPLATES[%r] = %r' % (rel, files[rel]))
+    out += ['KIT = {\'version\': %r, \'owners\': OWNERS, \'templates\': TEMPLATES}' % version,
+            '',
+            '',
+            '# ── 以下原樣取自 tools/sync_project.py（update 模式與 sync_project.py 共用同一套合併邏輯）──',
+            shared_source(sync_text),
+            '',
+            '',
+            "if __name__ == '__main__':",
+            '    sys.exit(main(sys.argv[1:], KIT, sys.modules[__name__]))',
+            '']
+    return '\n'.join(out)
+
+
+def load_bootstrap(files):
+    owners = json.loads(read_lf(SOURCE / 'owners.json'))['files']
+    return build_bootstrap(files, read_lf(INSTALLER), read_lf(SYNC), owners)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    parser.add_argument('--check', action='store_true', help='exit 1 if PROJECT-BOOTSTRAP.md is out of date')
+    parser.add_argument('--check', action='store_true', help='exit 1 if either output is out of date')
     args = parser.parse_args(argv)
     try:
-        built = build(*load_source())
-    except (KitError, OSError) as exc:
+        prose, files = load_source()
+        outputs = ((OUTPUT, build(prose, files)), (BOOTSTRAP, load_bootstrap(files)))
+    except (KitError, OSError, SyntaxError) as exc:
         print('build_kit: ' + str(exc))
         return 2
-    current = read_lf(OUTPUT) if OUTPUT.exists() else None
-    if args.check:
-        if built != current:
-            print('build_kit: PROJECT-BOOTSTRAP.md 與 src/kit 不一致；改來源後跑 python3 -X utf8 tools/build_kit.py')
-            return 1
-        print('build_kit: PROJECT-BOOTSTRAP.md 與 src/kit 一致')
-        return 0
-    if built != current:
-        write_lf(OUTPUT, built)
-        print('build_kit: 已重生 PROJECT-BOOTSTRAP.md')
-    else:
-        print('build_kit: PROJECT-BOOTSTRAP.md 已是最新')
-    return 0
+    stale = 0
+    for path, built in outputs:
+        current = read_lf(path) if path.exists() else None
+        if args.check:
+            if built != current:
+                stale += 1
+                print('build_kit: %s 與來源不一致；改來源後跑 python3 -X utf8 tools/build_kit.py' % path.name)
+            else:
+                print('build_kit: %s 與來源一致' % path.name)
+        elif built != current:
+            write_lf(path, built)
+            if path.suffix == '.py' and hasattr(path, 'chmod'):
+                path.chmod(0o755)
+            print('build_kit: 已重生 ' + path.name)
+        else:
+            print('build_kit: %s 已是最新' % path.name)
+    return 1 if stale else 0
 
 
 if __name__ == '__main__':

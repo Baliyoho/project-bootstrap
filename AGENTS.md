@@ -1,9 +1,9 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-18（做法搬到 `docs/maintenance.md`、理由搬到 `docs/rationale.md`，本檔只寫規則，需求決策書 v3 Q48）
+> 最後更新：2026-11-18（產出物改成安裝程式 `bootstrap.py` 與部署包說明，鐵律 1 加上 `bootstrap.py` 一起重生，需求決策書 v3 Q49）
 > 本檔只放規則：每個 session 一定要守、不能做的事，不寫步驟。改部署包、同步副本、改接線或 hook 訊息、寫本 repo 交接快照的做法在 [AI 維護手冊](docs/maintenance.md)，做到那件事才讀。每條的現行理由在[理由檔](docs/rationale.md)，被取代的理由在它的[歷史紀錄](docs/history/rationale-history.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-18 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -49,11 +49,11 @@
 
 ## 這個 repo 是什麼
 
-AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)（用法見 [README.md](README.md)）；不是知識庫，不存各專案的知識或狀態。唯一需求書是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）。從現況走到需求的路線在[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)。兩份只寫現況，修改經過與已決事項在 `docs/history/` 各自成對的 `-v3-history.md`，改權威文件時同一個 commit 加一筆（v3 Q42）。`docs/history/` 是熱歷史，碰到才讀，不用先問（v3 Q44）。根目錄 `archive/` 是冷區：`archive/docs/` 放封存文件（v2 決策書逐位元組凍結，其餘是結案或被取代的需求、計畫與查核文件，程式不讀），`archive/v2-*/` 放退休的 v2 程式與說明（v3 Q46 起 main 上沒有 v2 的程式）；整個冷區**平常不讀，要回溯歷史先經使用者同意**（v3 Q39、Q45）。逐 ID 的實作狀態在 `docs/status.json`。不部署的例外（本 repo 的檢查與測試、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`check_docs.py` 列在 ARCHITECT：那是已宣告的例外，不是空白，改成補裝由使用者決定。[為什麼](docs/rationale.md#what)
+AI 協作專案管理骨架的權威版，產出物是安裝程式 [bootstrap.py](bootstrap.py) 與部署包說明 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)（用法見 [README.md](README.md)，v3 Q49）；不是知識庫，不存各專案的知識或狀態。唯一需求書是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）。從現況走到需求的路線在[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)。兩份只寫現況，修改經過與已決事項在 `docs/history/` 各自成對的 `-v3-history.md`，改權威文件時同一個 commit 加一筆（v3 Q42）。`docs/history/` 是熱歷史，碰到才讀，不用先問（v3 Q44）。根目錄 `archive/` 是冷區：`archive/docs/` 放封存文件（v2 決策書逐位元組凍結，其餘是結案或被取代的需求、計畫與查核文件，程式不讀），`archive/v2-*/` 放退休的 v2 程式與說明（v3 Q46 起 main 上沒有 v2 的程式）；整個冷區**平常不讀，要回溯歷史先經使用者同意**（v3 Q39、Q45）。逐 ID 的實作狀態在 `docs/status.json`。不部署的例外（本 repo 的檢查與測試、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`check_docs.py` 列在 ARCHITECT：那是已宣告的例外，不是空白，改成補裝由使用者決定。[為什麼](docs/rationale.md#what)
 
 ## 鐵律
 
-1. **制度權威是 `src/kit/`**：改 `src/kit/kit.md` 或 `src/kit/files/<部署路徑>.tmpl`，跑 `python3 -X utf8 tools/build_kit.py` 重生 `PROJECT-BOOTSTRAP.md`，兩者同一個 commit；不要手改部署包，也不要在單一專案就地改 skill 或 hook。覆蓋到專案用 `tools/sync_project.py`，用法與前提先讀理由。只有 `.claude/skills/handoff/` 目錄裡的檔真的改了內容才跳 `VERSION`，七個檔的 `source:` 標記同版本。[為什麼](docs/rationale.md#rule-1)
+1. **制度權威是 `src/kit/`**：改 `src/kit/kit.md` 或 `src/kit/files/<部署路徑>.tmpl`，跑 `python3 -X utf8 tools/build_kit.py` 重生 `PROJECT-BOOTSTRAP.md` 與 `bootstrap.py`，來源與產物同一個 commit；改 `src/project_bootstrap/installer.py` 或 `tools/sync_project.py` 的合併函式也要重生；不要手改這兩個產物，也不要在單一專案就地改 skill 或 hook。覆蓋到專案用 `tools/sync_project.py`，用法與前提先讀理由。只有 `.claude/skills/handoff/` 目錄裡的檔真的改了內容才跳 `VERSION`，七個檔的 `source:` 標記同版本。[為什麼](docs/rationale.md#rule-1)
 2. **改 skill／hook 內容時同步更新檔頭的 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`**；同一天第二次起加 `.2`、`.3`，序號算的是當天第幾個帶 `source:` 標記的改動，跟部署包「版本」行不保證同號。[為什麼](docs/rationale.md#rule-2)
 3. **保留每條規則的「為什麼」**：可以搬到理由檔，不能刪；驗證器會擋。[為什麼](docs/rationale.md#rule-3)
 4. **改完跑 `verify_bootstrap.py`，exit 0 才算改完**；印 `skip` 的項目會回傳 1，照實回報。[為什麼](docs/rationale.md#rule-4)

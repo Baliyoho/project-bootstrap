@@ -272,16 +272,40 @@
       "result": "未驗證",
       "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
       "origin": "需求決策書 v3 第 4 節",
-      "unknown": "v3 下沒有逐 ID 的驗收：handoff-ab 的情境沒有對應到個別需求（實施計畫 v3 第 6 節）。目前沒有現行程式或測試對應這條需求。",
-      "next": "照實施計畫 v3 的分期驗收；改到這條需求時補 v3 證據"
+      "unknown": "2026-11-18 起新專案跑 bootstrap.py（決策書 v3 Q49）；測試只證明安裝程式在 macOS 寫得出目標形狀，還沒有 handoff-ab 式的結果檢查，也沒在 Windows 跑過。",
+      "next": "照實施計畫 v3 的分期驗收；改到這條需求時補 v3 證據",
+      "evidence": [
+        {
+          "path": "src/project_bootstrap/installer.py",
+          "scope": "bootstrap.py 的安裝與更新邏輯（決策書 v3 Q49）：訪談、寫檔不覆寫、逐檔雜湊、答案檔擋祕密"
+        },
+        {
+          "path": "tests/test_installer.py",
+          "scope": "安裝模式的守門：同名檔寫成 .bootstrap-new、雜湊不符、祕密與錯誤答案、重複安裝；有變異組"
+        },
+        {
+          "path": "tests/test_bootstrap_repo.py",
+          "scope": "在暫存資料夾實跑 bootstrap.py：空資料夾、已有檔案、update 保留專案內容、CRLF、兩支 hook（只在 macOS 跑過）"
+        }
+      ]
     },
     {
       "id": "F18",
       "result": "未驗證",
       "scope": "v3 強度：提示（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
       "origin": "需求決策書 v3 第 4 節",
-      "unknown": "v3 下沒有逐 ID 的驗收：handoff-ab 的情境沒有對應到個別需求（實施計畫 v3 第 6 節）。目前沒有現行程式或測試對應這條需求。",
-      "next": "照實施計畫 v3 的分期驗收；改到這條需求時補 v3 證據"
+      "unknown": "2026-11-18 起專案升級可跑 bootstrap.py update（決策書 v3 Q49）；提示仍靠開場 hook，沒有 handoff-ab 式的結果檢查。",
+      "next": "照實施計畫 v3 的分期驗收；改到這條需求時補 v3 證據",
+      "evidence": [
+        {
+          "path": "src/project_bootstrap/installer.py",
+          "scope": "bootstrap.py 的安裝與更新邏輯（決策書 v3 Q49）：訪談、寫檔不覆寫、逐檔雜湊、答案檔擋祕密"
+        },
+        {
+          "path": "tests/test_bootstrap_repo.py",
+          "scope": "在暫存資料夾實跑 bootstrap.py：空資料夾、已有檔案、update 保留專案內容、CRLF、兩支 hook（只在 macOS 跑過）"
+        }
+      ]
     },
     {
       "id": "F19",
@@ -454,8 +478,18 @@
       "result": "未驗證",
       "scope": "v3 強度：偵測（保留）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
       "origin": "需求決策書 v3 第 4 節",
-      "unknown": "v3 下沒有逐 ID 的驗收：handoff-ab 的情境沒有對應到個別需求（實施計畫 v3 第 6 節）。目前沒有現行程式或測試對應這條需求。",
-      "next": "照實施計畫 v3 的分期驗收；改到這條需求時補 v3 證據"
+      "unknown": "2026-11-18 起 bootstrap.py update 照 owners.json 只動骨架擁有的部分（決策書 v3 Q49），測試只在 macOS 跑過，沒有 handoff-ab 式的結果檢查。",
+      "next": "照實施計畫 v3 的分期驗收；改到這條需求時補 v3 證據",
+      "evidence": [
+        {
+          "path": "src/kit/owners.json",
+          "scope": "每個部署檔的歸屬與更新方式；sync_project.py 與 bootstrap.py update 都照它只換 core／adapter 的部分"
+        },
+        {
+          "path": "tests/test_bootstrap_repo.py",
+          "scope": "在暫存資料夾實跑 bootstrap.py：空資料夾、已有檔案、update 保留專案內容、CRLF、兩支 hook（只在 macOS 跑過）"
+        }
+      ]
     },
     {
       "id": "F37",
@@ -510,7 +544,7 @@
       "result": "未驗證",
       "scope": "v3 強度：(a) 偵測／(b) 留痕（降強度）；達成證據依 v3 第 6 節的 handoff-ab 結果檢查",
       "origin": "需求決策書 v3 第 4 節",
-      "unknown": "v3 下沒有逐 ID 的驗收：handoff-ab 的情境沒有對應到個別需求（實施計畫 v3 第 6 節）。目前沒有現行程式或測試對應這條需求。",
+      "unknown": "v3 下沒有逐 ID 的驗收：handoff-ab 的情境沒有對應到個別需求（實施計畫 v3 第 6 節）。目前沒有現行程式或測試對應這條需求。 2026-11-18 起安裝程式的答案檔會進 Git，bootstrap.py 看到常見金鑰樣式會拒絕（決策書 v3 Q49，tests/test_installer.py）；這只擋這一個入口，不是 (a) 的整體證據。",
       "next": "照實施計畫 v3 的分期驗收；改到這條需求時補 v3 證據",
       "parts": {
         "a": {

@@ -1,6 +1,6 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-18（第 5 節一條出處與第 7 節分工表的連結跟著 `CONTRIBUTING.md`、`AGENTS-reasons.md` 搬進 `docs/` 改名，決策書 Q48）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
+> 最後更新：2026-11-18（第 3 節排進安裝程式 `bootstrap.py` 各部分的歸期，決策書 Q49）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
 > 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](docs/status.json)。
 
 ## 1. 起點
@@ -27,6 +27,13 @@
 | 第 1 期 | Claude Code＋macOS；F50 | v3 第 6 節 | handoff-ab 兩輪見 [RESULTS](experiments/handoff-ab/RESULTS.md)「v3 第 1 期」，F50 見 [F50.md](experiments/handoff-ab/F50.md)，都跑在部署包 `2026-11-13`。**已結案**（2026-11-17 使用者判定），以這兩份證據為準，不整期重跑；之後改制度照 D10、D14 逐條對照 |
 | 第 2 期 | Codex＋macOS；F14 | v3 第 6 節 | handoff-ab 兩輪見 [CODEX-RESULTS](experiments/handoff-ab/CODEX-RESULTS.md)（2026-11-14）。**進行中**。還差：Codex 桌面 App 的 F50 標題項判定；這批結果跑在當時的部署包，要不要在現行版重跑待使用者決定 |
 | 第 3 期 | 兩個工具＋Windows；F15 | v3 第 6 節 | Codex＋原生 Windows 有部分紀錄（CODEX-RESULTS 的 Windows 各節，2026-11-16），`midway` 斷線情境的失敗在 v3 Q36 改了 B1 之後還沒重跑。Claude Code＋Windows 沒跑。Windows 開發人員模式與桌面 App 的 F50 暫緩 |
+
+安裝程式（決策書 Q49，2026-11-18）照上表的期別分攤，不另開一期：
+
+- macOS 的安裝、更新、換行與兩支 hook 在 `tests/test_bootstrap_repo.py` 實跑，跟著第 1 期的範圍。第 1 期已結案，不因此重開，也不把這些測試當成 handoff-ab 的結果檢查。
+- 在 Codex 上照 HANDOFF 的第一批工作接手，歸第 2 期，還沒跑。
+- Windows 的安裝、`.gitattributes` 換行與 hook 實跑歸第 3 期，還沒跑。測試裡的 CRLF 只是在 macOS 上模擬。
+- `PROJECT-BOOTSTRAP.md` 不再是安裝途徑，要不要刪待使用者決定（`sync_project.py` 還讀它與它的 Git 歷史）。
 
 ## 4. 暫緩與另案
 

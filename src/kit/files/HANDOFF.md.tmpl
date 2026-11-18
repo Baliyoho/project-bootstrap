@@ -1,29 +1,30 @@
 # HANDOFF — 工作交接狀態
 
 - **交接時間**：{{TODAY}} HH:MM（{{TZ}}）
-- **交棒者**：<模型／機器>（專案管理骨架部署完成）
+- **交棒者**：`bootstrap.py`（安裝程式寫完管理骨架；還沒有 commit）
 
 ## 任務目標
 
-專案剛建立，管理骨架（AGENTS／HANDOFF／handoff skill／hook／驗證腳本）已就緒。下一步是定義專案本體的第一批工作。
+專案剛建立，管理骨架（AGENTS／HANDOFF／handoff skill／hook／驗證腳本）已由安裝程式寫入，還沒有 commit、還沒有 GitHub repo。下一棒照下面的第一批工作補完需要理解專案的部分，再首次發布。
 
 ## Git 狀態
 
-- Repo：{{GH_VISIBILITY}} `{{GH_OWNER}}/{{GH_REPO}}`；權威分支：`main`。
+- Repo：{{GH_VISIBILITY}} `{{GH_OWNER}}/{{GH_REPO}}`（尚未建立）；權威分支：`main`。
 - **待續分支**：無。
 - **工作中**：無（已交棒）
 - 本機能力：<作業系統；哪些憑證可用／未配置，不寫祕密值>
 
 ## 已完成
 
-- 管理骨架部署：README／AGENTS／ARCHITECT／CLAUDE／HANDOFF／roadmap／`handoff` skill／兩個 `.claude` hook／`tools/check_docs.py`／`tools/verify_state.py`。
-- `check_docs.py` 通過；首次 commit 已 push 到 `main`。
+- 安裝程式寫入管理骨架：README／AGENTS／ARCHITECT／CLAUDE／HANDOFF／roadmap／`handoff` skill／兩個 `.claude` hook／`tools/check_docs.py`／`tools/verify_state.py`，逐檔雜湊相符；訪談答案在 `.bootstrap/answers.json`。
 
 ## 未完成／下一步
 
-1. 填 README.md 的「為什麼做」「快速開始」與 AGENTS.md 的專案專屬鐵律。
-2. 填 `tools/verify_state.py` 的檢查項目（目前是骨架）。
-3. 把第一批工作寫進 [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md)。
+安裝後的第一批工作，做法在 `.claude/skills/handoff/mode-0.md`（安裝程式會依實際情況重寫這份清單）：
+
+1. 補寫 `ARCHITECT.md` 的「專案本體」、`README.md` 與 [docs/ai-notes/roadmap.md](docs/ai-notes/roadmap.md)，照實寫。
+2. 填 `tools/verify_state.py` 要查證的項目。
+3. 建 GitHub repo、本機驗收後首次推送，再跑遠端與工具驗收並回報。
 
 ## 地雷與注意事項
 

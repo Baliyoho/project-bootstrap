@@ -1,6 +1,6 @@
 # AI 維護手冊
 
-> 最後更新：2026-11-18（從根目錄 `CONTRIBUTING.md` 搬來改名，定位改成 AI 維護手冊；跟 AGENTS 重述的規則句改成連回 AGENTS，v3 Q48）
+> 最後更新：2026-11-18（加「改安裝程式」，拿掉 `--zip` 的做法，v3 Q49）
 > 這個 repo 由維護者與 AI session 維護。本檔是改這個 repo 時的做法：步驟、指令與踩過的坑，做到那件事才讀。規則在 [AGENTS.md](../AGENTS.md)，每個 session 開場自動載入；本檔提到規則時連回去，不重述。每條的現行理由在[理由檔](rationale.md)，被取代的理由與經過在[理由檔歷史紀錄](history/rationale-history.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 改部署包的流程
@@ -10,7 +10,6 @@
 - 動到結構（增刪檔案、部署包增刪一節範本、驗證項增減）就更新 [ARCHITECT.md](../ARCHITECT.md)，跟該變動同一個 commit。
 - 部署包跳版時，`src/kit/kit.md` 開頭只留新的「版本」行；舊的那一行改寫成「前一版」，移到 [CHANGELOG.md](../CHANGELOG.md) 最上面。不跳版的修改也在 CHANGELOG 最上面記一條。
 - 全套驗證在 macOS 約 35 秒，在原生 Windows 約 3–4 分鐘，超過指令工具預設的 120 秒上限，逾時不等於失敗。Windows 上 `python3` 是 WindowsApps 別名，要用 `python`。[為什麼](rationale.md#rule-4)
-- 需要 ZIP 時跑 `python -X utf8 tools/verify_bootstrap.py --zip`（可在 `--zip` 後指定路徑）。只有全過才產出正式包；FAIL 回 2、SKIP 回 1，兩者預設都不產出或覆寫 ZIP。若確實需要未完整驗證的調試包，明確加 `--allow-unverified-zip`：僅容許 SKIP，仍回 1，包內附 `UNVERIFIED.json`（跳過項目與原因），「讀我」也會標示未驗證；FAIL 仍禁止。這避免「缺 bash 的檢查被跳過，卻產出看似驗證全過的 ZIP」（2026-11-02／F07）。
 
 ## 同步到已部署的專案
 
@@ -25,6 +24,15 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 `--all`／inventory 僅供批次預演；`--write` 必須指定單一專案與 owner，空閒標記不能寫入。同步後留在該專案完成 B7 最終檔案檢查、B8 發布與清標記；若要中途安全點則走 C，保留占用。這修正了舊工具「正常 A5 writer 被拒絕、陳舊空閒 checkout 卻能寫」的矛盾。
 
 副本存在哪些地方見 [ARCHITECT.md](../ARCHITECT.md) 的副本拓撲；改 skill 的規則見 [AGENTS.md](../AGENTS.md) 鐵律 1、2。
+
+## 改安裝程式
+
+規則見 [AGENTS.md](../AGENTS.md) 的鐵律 1；這裡只寫操作細節。[為什麼](rationale.md#rule-1)
+
+- `bootstrap.py` 是產物：安裝與更新邏輯在 `src/project_bootstrap/installer.py`，範本與 `owners.json` 在 `src/kit/`，`update` 用的合併函式是 `tools/sync_project.py` 裡 `build_kit.SHARED` 列的那些，原樣搬進去。改任何一邊都跑 `python3 -X utf8 tools/build_kit.py`，同一個 commit 提交。
+- 新增一個要搬進 `bootstrap.py` 的同步函式，名字要加進 `build_kit.SHARED`；少了會在重生時報 `sync_project.py has no …`。
+- 測試：`tests/test_installer.py` 直接 import `installer.py`、從 `src/kit/` 讀範本，是變異測試的對象；`tests/test_bootstrap_repo.py` 在暫存資料夾實跑建好的 `bootstrap.py`（空資料夾、已有檔案、更新、CRLF、兩支 hook）。
+- 安裝程式只碰本機：不連網、不 commit、不推送、不建 GitHub repo。要加這類動作先改需求決策書（v3 Q49）。
 
 ## 開發注意事項
 

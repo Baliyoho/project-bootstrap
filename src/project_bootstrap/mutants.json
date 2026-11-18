@@ -1021,6 +1021,83 @@
      "new": "SKILLS = {'claude-code': ('project:.claude/' + SKILL, 'home:.claude/' + SKILL),\n"
     }
    ]
+  },
+  {
+   "tests": [
+    "tests.test_installer"
+   ],
+   "mutants": [
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "        dest = rel + SIDECAR if rel in conflicts else rel",
+     "new": "        dest = rel"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "        if digest(got) != digest(data):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "            if isinstance(value, str) and pattern.search(value):",
+     "new": "            if False:"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "                if item.startswith('!') or '`' in item:",
+     "new": "                if False:"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "    if conflicts:\n",
+     "new": "    if False:\n"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "    if (target / ANSWERS_FILE).exists() or (target / '.claude/skills/handoff/SKILL.md').exists():",
+     "new": "    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "            eol = value",
+     "new": "            pass"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "    if resolved == home or resolved == pathlib.Path(resolved.anchor)",
+     "new": "    if resolved == pathlib.Path(resolved.anchor)"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "        if q.get('required') and not value.strip():",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "        if q.get('choices') and value and value not in q['choices']:",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "    if leftovers:",
+     "new": "    if False:"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "            raise InstallError('%s 用到訪談沒有的佔位符 %s' % (rel, key))",
+     "new": "            return ''"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "            if not errors:",
+     "new": "            if True:"
+    },
+    {
+     "file": "src/project_bootstrap/installer.py",
+     "old": "    unknown = sorted(set(preset) - set(KEYS))",
+     "new": "    unknown = []"
+    }
+   ]
   }
  ]
 }

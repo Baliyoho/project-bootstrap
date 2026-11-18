@@ -1,9 +1,9 @@
 # project-bootstrap — AI 協作專案管理骨架
 
-把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
+把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一支安裝程式**：[bootstrap.py](bootstrap.py)。
 
-> 最後更新：2026-11-18（「參與開發」改指 AI 維護手冊 `docs/maintenance.md` 與理由檔 `docs/rationale.md`，需求決策書 v3 Q48）
-> 這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
+> 最後更新：2026-11-18（安裝途徑從 `PROJECT-BOOTSTRAP.md` 改成 `bootstrap.py`，需求決策書 v3 Q49）
+> 這個 repo 的產出物是安裝程式 `bootstrap.py` 與部署包說明 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)，兩者都由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 它在解決什麼
 
@@ -22,19 +22,20 @@
 
 ## 怎麼用
 
-1. 把 `PROJECT-BOOTSTRAP.md` 複製到**新專案的空資料夾**。
-2. 在該資料夾開一個 AI session，貼上：
+需要 Python 3.12 以上（`bootstrap.py` 只用標準函式庫，macOS 與 Windows）。
 
-```text
-請完全依照本資料夾的 PROJECT-BOOTSTRAP.md 建立本專案的管理骨架：先做第 1 節訪談問我問題，
-拿到答案後照第 3 節逐檔建立（內容照抄、只替換佔位符），依第 4 節先本機驗收再首次發布，最後跑第 5 節遠端與工具驗收並回報。
-過程中不要自行增刪制度，也不要把佔位符留在檔案裡。
+1. 取得 `bootstrap.py`（本 repo 根目錄的單一檔），在終端機跑：
+
+```bash
+python3 bootstrap.py --target <新專案資料夾>
 ```
 
-3. AI 會照第 1 節那張表一次問完（專案名、GitHub owner/repo、憑證檔、運行目錄、時區…），生出骨架、建 repo、跑自檢。
-4. 骨架建好後**刪掉該專案裡的 `PROJECT-BOOTSTRAP.md`**——內容已分散進 `AGENTS.md`、`ARCHITECT.md` 與 `handoff` skill，留著就是第二份會腐化的副本。
+2. 程式一次問完訪談（專案名、GitHub owner/repo、憑證檔、運行目錄、時區…），把骨架寫進資料夾、逐檔比對雜湊；不在 Git 工作樹裡時 `git init`。它不碰網路、不 commit、不推送，**已存在的同名檔一律不覆寫**，新內容寫到旁邊的 `<路徑>.bootstrap-new`。不能互動時用 `--answers <檔案.json>`、`--set KEY=VALUE` 與 `--non-interactive`。
+3. 在那個資料夾開 Claude Code 或 Codex，說「接棒」。安裝程式已把第一批工作寫進 `HANDOFF.md`：補寫需要理解專案的檔、合併 `.bootstrap-new`、回答留空的題目、先本機驗收再建 GitHub repo 首次推送、跑遠端與工具驗收。做法在 handoff skill 的 `mode-0.md`。
 
-也可以完全手動：照第 3 節自己把每個檔案建出來，效果一樣。
+已部署的專案升級跑 `python3 bootstrap.py update --target <專案>`：先預演，加 `--write` 才寫入；只換骨架擁有的部分，專案自己的內容不動。
+
+2026-11-18 以前的用法是把 `PROJECT-BOOTSTRAP.md` 複製進資料夾，讓 AI 照抄二十幾個檔；那條路已拿掉（需求決策書 v3 Q49）。`PROJECT-BOOTSTRAP.md` 留著當部署包的完整說明與範本全文。
 
 ## 部署後的專案長什麼樣
 
@@ -45,6 +46,7 @@
 ├─ CLAUDE.md                        指標，用 @AGENTS.md import
 ├─ HANDOFF.md                       當下工作狀態（≤80 行、覆寫不累積）
 ├─ ARCHITECT.md                     專案結構的唯一權威（只有結構變動才改）
+├─ .bootstrap/answers.json          訪談答案（安裝程式寫、update 用；不含祕密）
 ├─ .claude/                         Claude Code
 │   ├─ settings.json                hook 設定
 │   ├─ hooks/git-freshness.sh       SessionStart：fetch 後只印 [facts]（時間與 session 名用的 MM.DD.HH、落後領先、origin 的「工作中」）
@@ -76,8 +78,8 @@ override 只可加嚴或填補專案設定，使用者明確指示仍優先。�
 ## 完全空白的新專案：模式 0（建制）
 
 上面那三層是**部署完成之後**才會動的；空白資料夾裡什麼都還沒有。所以同一支 skill 多了一個**模式 0**：
-使用者講一句「幫我把交接機制建起來」，agent 就照部署包逐檔生成——訪談一次問完、照抄範本、上 GitHub、
-跑自檢、寫第一份 `HANDOFF.md` 與 `ARCHITECT.md`，最後刪掉部署包（留著就是第二份會腐化的副本）。
+使用者講一句「幫我把交接機制建起來」，agent 就跑 `bootstrap.py`，再做它寫進 `HANDOFF.md` 的第一批工作——
+補寫專案本體、合併衝突檔、本機驗收後上 GitHub、跑遠端與工具驗收（2026-11-18 起，需求決策書 v3 Q49）。
 
 **要讓它自動觸發，把 skill 裝成全域的**（一次就好，之後每個新專案都吃得到）：
 
@@ -85,8 +87,8 @@ override 只可加嚴或填補專案設定，使用者明確指示仍優先。�
 mkdir -p ~/.claude/skills/handoff && cp <某個已部署專案>/.claude/skills/handoff/*.md ~/.claude/skills/handoff/
 ```
 
-Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-16.4 起多 `env.md`；2026-11-10 起 skill 是一個目錄，少複製一個，入口就會指向不存在的檔）。沒裝全域副本也可以——把 `PROJECT-BOOTSTRAP.md`
-複製進資料夾，用最上面那段 prompt 手動指路，結果一樣。
+Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-16.4 起多 `env.md`；2026-11-10 起 skill 是一個目錄，少複製一個，入口就會指向不存在的檔）。沒裝全域副本也可以——自己跑
+`python3 bootstrap.py --target <資料夾>`，再開 session 說「接棒」，結果一樣。
 
 模式 0 有兩條硬規定，都對應會實際發生的事：
 

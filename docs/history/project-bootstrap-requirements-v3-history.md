@@ -1,12 +1,13 @@
 # project-bootstrap 需求決策書 v3 歷史紀錄
 
-> 最後更新：2026-11-18（登記並決定 Q48：本 repo 的 `CONTRIBUTING.md`、`AGENTS-reasons.md` 搬進 `docs/`，分成維護手冊、理由檔與理由檔歷史紀錄）；更早的修改見下面的修改紀錄
+> 最後更新：2026-11-18（登記並決定 Q49：部署方式改成安裝程式寫檔、安裝後由 agent 接手）；更早的修改見下面的修改紀錄
 > 回答「決策書怎麼變成現在這樣」。現在要什麼只看決策書；這裡是它的修改紀錄、已決的 Q 與從條文移出的經過。決策書每改一次就在這裡加一筆，到 v4 時跟 v3 決策書一起搬進封存區 `archive/docs/`（Q44、Q45）。碰到才讀，不在常態入口，讀它不用先經使用者同意。v2 時代的 Q1–Q31 不在這裡，在封存的 v2 原件。2026-11-18 以前的紀錄裡寫的 `docs/history/` 是當時的封存區，現在在 `archive/docs/`（Q44 先改名 `docs/archive/`，同日 Q45 再搬到根目錄冷區）。
 
 ## 1. 修改紀錄
 
 新的在上。每筆寫日期、改了哪裡、牽涉的 ID 或 Q、出處。
 
+- 2026-11-18：D7 從「一個包」改成安裝程式；F17、F18 的處置寫進 `bootstrap.py`；第 5 節加「部署方式」；第 8 節的下一個編號改成 Q50（Q49）。
 - 2026-11-18：第 8 節的下一個編號改成 Q49；條文沒有寫到 `CONTRIBUTING.md`、`AGENTS-reasons.md` 的檔名或定位，不必改（Q48）。
 - 2026-11-18：第 7 節加「版本更替」；第 8 節的下一個編號改成 Q48（Q47）。
 - 2026-11-18：第 5 節的 v2 程式改成全部封存（三個位置）、仍在用的檢查是 v3；第 7 節 `archive/v2-*/` 改成程式與現況索引都不引用；第 8 節的下一個編號改成 Q47（Q46）。
@@ -109,6 +110,14 @@ Q37、Q38 是 2026-11-16 登記並決定的，當時的「最後更新」沒有�
   - 未選 (b) 小步：理由檔變乾淨了，但 `CONTRIBUTING.md` 的名字與內容仍對不上業界預期，理由檔的名字也仍綁著 AGENTS（出處：2026-11-18 本 session 評估）
   - 未選 (c) 不改：同起因，而且理由檔會繼續一路累積經過（出處：同上）
   - 結果：兩份用 `git mv` 搬進 `docs/`。維護手冊改檔頭、連結改成從 `docs/` 出發，跟 AGENTS 重述的規則句改成連回 AGENTS，「需求與計畫文件的分工」表加上 AGENTS、維護手冊與理由檔三列。理由檔改寫成每節只寫現行理由，26 個錨點全部保留；拆分前每節的完整原文（含原文照錄、被推翻的舊理由與當天從 ARCHITECT 搬來的兩段）依錨點分組搬到 `docs/history/rationale-history.md`，被取代的部分標日期或 Q 編號，只改連結的相對路徑。`verify_bootstrap.py`「規則理由連結」的連結樣式改成依來源位置計算（AGENTS 連 `docs/rationale.md#x`，維護手冊連 `rationale.md#x`），加一個負向測試：維護手冊用根目錄的相對路徑連理由要被擋；`rules_from_agents` 兩種寫法都認，變異組跟著改。AGENTS、ARCHITECT、README、HANDOFF、現況索引與實施計畫第 5 節一條出處的檔名跟著改。工具與平台怪癖要不要上移到部署包 `env.md` 另案，這次不改部署包
+- **Q49**（2026-11-18 登記）：部署方式要不要從「AI 讀 `PROJECT-BOOTSTRAP.md`、逐檔照抄」改成「安裝程式寫檔＋安裝後由 agent 接手」？起因是使用者指出現行做法要讓 AI 讀進約 200KB 的部署包、再把二十幾個檔逐字輸出：輸出最貴、也最容易抄錯，部署包第 4 節的驗收就是在補這個洞；同類專案都用安裝程式（GitHub Spec Kit 的 `specify init`、BMAD Method 的 `npx bmad-method install` 與 quick-update、Agent OS 的 base install 加 project install、Ruler 的 `ruler apply`；其中 Spec Kit、Agent OS、BMAD 都是程式寫檔，裝好後由 agent 補專案專屬內容，以上是使用者提供的觀察，本 session 沒有另外查證）。選項：(a) 照使用者的方案：對外改成單一檔 `bootstrap.py`（標準函式庫、範本內嵌、只支援 macOS 與 Windows），訪談由程式問、可非互動，照抄、換佔位符、合併接線與自我檢查交給程式，需要理解專案的部分列成安裝後 agent 的第一批工作；安裝與更新共用同一支，依 `owners.json` 寫檔並重用 `sync_project.py` 的邏輯；拿掉 AI 照抄這條路、不留備援；`PROJECT-BOOTSTRAP.md` 退休；(b) 保留 AI 照抄，另加一支檢查程式驗抄出來的結果；(c) 不改。影響 D7、F17、F18、F36、F43、第 5 節、handoff skill 的 `mode-0.md`、部署包第 1、3、4、5 節、本 repo 的 AGENTS／ARCHITECT／README／維護手冊／理由檔與 `verify_bootstrap.py`。狀態：已決（2026-11-18，使用者在聊天中選 (a)：給出完整方案並要求登記成 Q49）。
+  - 取代的條目：決策書 D7「新專案取得一個包」與 F17「制度變小後門檻自然降低」的處置；第 5 節沒寫明、但部署包一直採用的「AI 照第 3 節逐檔照抄」；部署包第 1 節「AI 執行時必做」的訪談、第 3 節標題「照抄，只換佔位符」、第 4 節的本機驗收指令與第 5 節的自檢清單（後兩者搬進 `mode-0.md` 的 0-5、0-6）；`mode-0.md` 的 0-2 到 0-8（取得部署包、照第 1 節訪談、逐檔建立、刪掉部署包）；`reasons.md` 說模式 0 的權威是 `PROJECT-BOOTSTRAP.md`；README「怎麼用」的貼上 prompt；理由檔 #rule-1「各專案複製部署包」；`verify_bootstrap.py --zip` 解壓即用的骨架壓縮檔與它的「ZIP 說明指標」（2026-11-01）、「ZIP 發布門檻」（2026-11-02／F07）兩項檢查——zip 裡的檔帶佔位符，要 AI 照第 1 節換，是同一條路。v2 決策書與 Q1–Q31 在冷區，依 Q39 未經同意不讀，所以沒有查 v2 時期有沒有相關的 Q
+  - 採用理由：照抄的成本與錯誤都在 AI 的輸出端，換成程式寫檔就同時拿掉兩者；需要理解專案的部分（專案本體、README、驗證項、衝突合併、留空的題目、建 repo 與遠端驗收）程式做不了，正好寫成 HANDOFF 的第一批工作，讓 agent 照平常接棒就接手，不需要額外的貼上指令（出處：2026-11-18 聊天）
+  - 未選 (b) 保留照抄再加檢查程式：讀與寫的成本都還在，檢查程式只是把錯誤發現得早一點；而且檢查程式要知道正確結果，等於已經有一支能寫出正確結果的程式（出處：2026-11-18 本 session 評估）
+  - 未選 (c) 不改：同起因（出處：同上）
+  - 交給 AI 判斷的兩件：最低 Python 版本照 `pyproject.toml` 的 `requires-python` 定為 3.12。要不要在本機 `git init`：只在目標不屬於任何 Git 工作樹時 `git init -b main`，不 add、不 commit。理由是兩支 hook 要在 Git repo 裡才跑得起來；`.gitignore` 是第一個寫的檔，又不 add，祕密不會進索引；`git init` 可以整個刪掉重來，也不碰網路。目標在別的 repo 裡面時不動，免得長出巢狀 repo（`--no-git-init` 可關掉）
+  - 已知弱點：使用者的前提是 macOS 與 Windows 都有 Python。本機實測 `/usr/bin/python3` 是 3.9.6，低於 3.12；這台機器另外裝的 `python3` 是 3.15.2。Windows 沒有驗證。所以只有內建 Python 的 Mac 要先另裝 3.12 以上，`bootstrap.py` 會在開頭擋下並說明
+  - 結果：新增 `src/project_bootstrap/installer.py`（安裝與更新邏輯）與生成的 `bootstrap.py`（`tools/build_kit.py` 從 `src/kit/`、`installer.py` 與 `sync_project.py` 的合併函式產生，跟部署包同一個 commit 重生）。`verify_bootstrap.py` 加「安裝程式由來源生成」（五個負向測試），「部署生命週期」改讀 `mode-0.md` 0-5 的順序，拿掉 `--zip` 與兩項 ZIP 檢查。新增 `tests/test_installer.py`（變異組 14 個全擋）與 `tests/test_bootstrap_repo.py`（空資料夾、已有 `AGENTS.md`／`.gitignore`／`.claude/settings.json`、更新保留專案內容、CRLF、在部署出的暫存 repo 跑兩支 hook）。handoff skill 的 `mode-0.md` 改成跑安裝程式再處理第一批工作，`reasons.md` 跟著改，七個檔的 `source:` 與 `VERSION` 跳到 `2026-11-18`；`HANDOFF.md` 範本改成安裝後的狀態。`PROJECT-BOOTSTRAP.md` 不再是安裝途徑，但這次沒有刪：`sync_project.py` 讀它與它的 Git 歷史，去留另請使用者決定。已部署的專案沒有動
 
 ## 3. 從條文移出的經過
 
