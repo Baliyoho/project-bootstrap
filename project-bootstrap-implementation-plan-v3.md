@@ -1,6 +1,6 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-18（第 7 節的變更前提改指決策書第 7 節，決策書 Q43）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](project-bootstrap-implementation-v3-history.md)。
+> 最後更新：2026-11-18（歷史紀錄搬進 `docs/history/`，決策書 Q44）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
 > 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](experiments/v2/status.json)。
 
 ## 1. 起點
@@ -50,4 +50,4 @@
 
 ## 7. 改本檔的時機
 
-路線、分期或暫緩項目有變時改，直接改寫成現況，只附日期與使用者決定的出處；同一個 commit 在[歷史紀錄](project-bootstrap-implementation-v3-history.md)的「修改紀錄」加一筆，被改掉的原文值得留就放它的「從內文移出的經過」。歷史紀錄到 v4 時跟本檔一起封存（決策書 Q42）。各期的實際進度不寫在這裡，寫 HANDOFF；本檔與決策書是約束文件，偏離或修改的前提照[決策書](project-bootstrap-requirements-decision-v3.md)第 7 節（Q43）。文件之間的分工在 [CONTRIBUTING.md](CONTRIBUTING.md)「需求與計畫文件的分工」。
+路線、分期或暫緩項目有變時改，直接改寫成現況，只附日期與使用者決定的出處；同一個 commit 在[歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)的「修改紀錄」加一筆，被改掉的原文值得留就放它的「從內文移出的經過」。歷史紀錄到 v4 時跟本檔一起封存（決策書 Q42）。各期的實際進度不寫在這裡，寫 HANDOFF；本檔與決策書是約束文件，偏離或修改的前提照[決策書](project-bootstrap-requirements-decision-v3.md)第 7 節（Q43）。文件之間的分工在 [CONTRIBUTING.md](CONTRIBUTING.md)「需求與計畫文件的分工」。

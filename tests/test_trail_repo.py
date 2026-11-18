@@ -22,7 +22,7 @@ BOOK = 'project-bootstrap-requirements-decision-v3.md'
 # routes, phases and non-goals now come from implementation plan v3.
 PLAN = 'project-bootstrap-implementation-plan-v3.md'
 # 2026-11-17 (v3 Q42): decided questions moved from the book's section 8 to here.
-BOOK_HISTORY = 'project-bootstrap-requirements-v3-history.md'
+BOOK_HISTORY = 'docs/history/project-bootstrap-requirements-v3-history.md'
 
 
 def read(name):

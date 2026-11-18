@@ -113,7 +113,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 ## 正式包的發布公鑰（簽章發布通道已凍結）
 
-v2 時代試行過「由 CI 簽章發布正式包、專案只留指標」（舊實現規劃的 P2，2026-11-17 封存到 [docs/history/](docs/history/README.md)）。需求決策書 v3 第 5 節把簽章發布通道凍結：不再開發，已發出的版本不撤回。發布用的公鑰在 [src/kit/release-keys.txt](src/kit/release-keys.txt)，指紋：
+v2 時代試行過「由 CI 簽章發布正式包、專案只留指標」（舊實現規劃的 P2，2026-11-17 封存到 [docs/archive/](docs/archive/README.md)）。需求決策書 v3 第 5 節把簽章發布通道凍結：不再開發，已發出的版本不撤回。發布用的公鑰在 [src/kit/release-keys.txt](src/kit/release-keys.txt)，指紋：
 
 ```text
 SHA256:FjVJTEPBuOaloJZV0GvtZiG3bXYJo68v+cTaVqs0JU0
