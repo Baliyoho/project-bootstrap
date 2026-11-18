@@ -75,7 +75,7 @@ class RepoTrailTests(unittest.TestCase):
         # 2026-11-17 Q39: v3 section 8 (Q32 on). An option the question lists but the
         # record leaves out still comes back with an empty reason and is reported by
         # check_decisions. Q34–Q36 listed no options, so "every decision has an
-        # alternative" (the v2-era assertion) no longer holds and is not asserted.
+        # alternative" (an assertion from the v2 era) no longer holds and is not asserted.
         decisions = questions_from_book(read(BOOK_HISTORY))
         self.assertGreaterEqual(len(decisions), 11)
         self.assertEqual({d['baseline'] for d in decisions}, {'決策紀錄第 2 節'})

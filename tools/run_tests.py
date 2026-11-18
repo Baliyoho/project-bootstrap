@@ -7,7 +7,7 @@ round (A4), so it needs plain Python only: test files that need a locked
 third-party package start with NEEDS_UV_MARKER, are left out here and listed in
 the report; ``uv run pytest`` runs them.
 
-2026-11-18 (decision v3 Q46): renamed from verify_v2.py. The v2 prototype
+2026-11-18 (decision v3 Q46): renamed from the runner that carried the v2 name. The v2 prototype
 report fields (strict_ready, the archive location, the ssh-keygen fingerprint
 and the read-cost baseline) went with the archived v2 code.
 """

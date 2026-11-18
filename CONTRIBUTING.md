@@ -1,6 +1,6 @@
 # 參與開發
 
-> 最後更新：2026-11-18（「參與開發」改成 v2 的程式全部封存、拿掉發正式包與 workflow 權杖兩條，需求決策書 v3 Q46）；前次同日（冷區合併：封存區搬到根目錄 `archive/docs/`，v2 舊說明封存到 `archive/v2-experiments/`，現況索引搬到 `docs/status.json`，需求決策書 v3 Q45）；前次同日（歷史紀錄搬進熱歷史 `docs/history/`，封存區改名 `docs/archive/`，需求決策書 v3 Q44）；前次 2026-11-17（「需求與計畫文件的分工」加兩份成對的歷史紀錄，需求決策書 v3 Q42）；前次同日（指標檔一節拿掉 `GEMINI.md`：本專案不支援 Gemini）；前次同日（開發注意事項去掉跟 AGENTS 鐵律 1 重複的句子，v2 原型三條併成一條；加「需求與計畫文件的分工」，舊的需求與計畫文件封存到 `docs/history/`）；前次同日（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法、ARCHITECT.md 的開發注意事項搬來這裡，需求決策書 v3 Q40）
+> 最後更新：2026-11-18（「參與開發」加換版時舊版本名稱的清理，需求決策書 v3 Q47）；前次同日（「參與開發」改成 v2 的程式全部封存、拿掉發正式包與 workflow 權杖兩條，需求決策書 v3 Q46）；前次同日（冷區合併：封存區搬到根目錄 `archive/docs/`，v2 舊說明封存到 `archive/v2-experiments/`，現況索引搬到 `docs/status.json`，需求決策書 v3 Q45）；前次同日（歷史紀錄搬進熱歷史 `docs/history/`，封存區改名 `docs/archive/`，需求決策書 v3 Q44）；前次 2026-11-17（「需求與計畫文件的分工」加兩份成對的歷史紀錄，需求決策書 v3 Q42）；前次同日（指標檔一節拿掉 `GEMINI.md`：本專案不支援 Gemini）；前次同日（開發注意事項去掉跟 AGENTS 鐵律 1 重複的句子，v2 原型三條併成一條；加「需求與計畫文件的分工」，舊的需求與計畫文件封存到 `docs/history/`）；前次同日（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法、ARCHITECT.md 的開發注意事項搬來這裡，需求決策書 v3 Q40）
 > 這個 repo 由 AI session 輪流做。開工必守的規則在 [AGENTS.md](AGENTS.md)，AI 工具開工時會自動讀到；本檔是碰到才讀的流程與規則：改部署包、動副本或接線、寫本 repo 的交接快照、改兩支 hook 的訊息時才讀。每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 改部署包的流程
@@ -32,6 +32,7 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 - 手改部署包會被「部署包由來源生成」擋（規則本身是 AGENTS 鐵律 1）。handoff skill 的七個檔改 `src/kit/files/.claude/skills/handoff/*.tmpl`，七個 `source:` 標記、AGENTS 共用制度標記與 `VERSION` 要同版本，本 repo AGENTS.md 的共用制度副本要重貼；同一天再改要加序號。改到逐字搬來的行，「skill 拆分」會擋：要嘛還原，要嘛在 `tools/skill_split_baseline.json` 的 `rewritten` 寫明去處。改了模式檔的段落標題，「skill 規則對照表」會擋，要一起改 `reasons.md` 對照表。改完要重新覆蓋這台的兩個全域目錄。
 - v2 的程式全部封存在 `archive/v2-*/`（v3 Q33、Q46），不執行、不維護；main 上的程式、測試與現況索引不能引用它們（`verify_bootstrap.py`「封存原件」擋）。要重新研究照各自的 README 在暫存目錄拼回。
+- 換版（v3 Q47）：新版決策書成為權威時，`AGENTS.md` 改連新版，驗證器的「版本更替」就開始擋舊版本名稱。現行區裡檔名、資料夾名或程式識別字帶舊版本號的東西，逐一刪除、`git mv` 到 `archive/`，或改成新版本的名稱，同時更新讀它們的程式與文件。舊版的權威文件與它的熱歷史照決策書第 7 節搬進 `archive/docs/`。
 - `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書 v3 第 8 節的 `Q` 編號（或 `- 無。`）。v3 第 3 節 D 表每列要有「決定」與「理由」；第 8 節已決項目底下子項格式是「採用理由／未選 (x) 名稱：／暫緩 名稱：」，選項名不能省，省了就報 `alternative-incomplete`（2026-11-17 封存 v2 時在 v3 踩到）。這兩個解析器與需求清單的解析器都按節名找節、不看節號（2026-11-17 起），改節名會讓它們讀不到東西，測試會失敗。
 - 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗；沒加引號的 `$變數` 在 zsh 不會被拆成多個參數，拿它裝多個 git pathspec 會變成一個比對不到任何檔的 pathspec，結果是「零命中」而不是錯誤（2026-11-17 踩到）。
 - AGENTS.md 與本檔只有規則；新增或改規則時在 [AGENTS-reasons.md](AGENTS-reasons.md) 補段落與錨點。開工必守的放 AGENTS.md，碰到才需要的放 CONTRIBUTING.md。

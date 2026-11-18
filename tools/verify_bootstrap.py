@@ -79,8 +79,10 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   歷史要先經使用者同意並登記）、文件檢查不讀封存區；五種反例都要擋（2026-11-17，v3 Q39；
                   同日封存需求與計畫類舊文件，擋的範圍從 v2 檔名擴大到整個封存區；2026-11-18 v3 Q44
                   封存區從 docs/history/ 改名 docs/archive/，docs/history/ 改放照常檢查的熱歷史；同日 v3 Q45
-                  再搬到根目錄冷區 archive/docs/，機械檢查的範圍仍只有這個資料夾；同日 v3 Q46 加一條：
-                  程式、測試與設定檔不得出現 archive/ 底下 v2 封存目錄的路徑）
+                  再搬到根目錄冷區 archive/docs/，機械檢查的範圍仍只有這個資料夾）
+  版本更替     ——現行版本取 AGENTS 連到的決策書（檔名與「決策版本」行要相同）；archive/ 以外的
+                  檔名、資料夾名與程式識別字不得帶比它舊的版本號，程式不得引用 archive/ 底下的
+                  版本封存資料夾；四類反例都要擋（2026-11-18，v3 Q47，取代 Q46 只擋 v2 的那一條）
   本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
   來源例外可見性——逐項印出已宣告減項（2026-11-14 起剩 handoff skill 與 check_docs.py 兩項），核對來源缺而產物有；漏宣告、來源增項及
@@ -2114,9 +2116,15 @@ ARCHIVE_INDEX = ARCHIVE_DIR + 'README.md'
 # 經使用者同意、為回溯歷史而讀封存原件的程式。加一筆之前先取得使用者同意，並登記在決策書。
 ARCHIVE_READERS = ()
 ARCHIVE_CODE_SUFFIXES = ('.py', '.sh', '.cmd', '.json', '.toml', '.tmpl', '.yml', '.lock')
-# 2026-11-18（v3 Q46）：v2 的程式全部封存在 archive/ 底下以 v2- 開頭的資料夾，程式、測試、設定與
-# 現況索引都不得再指向它們。用拼接寫，因為本檔自己也在掃描範圍內。
-V2_ARCHIVE_PREFIX = 'archive/' + 'v2-'
+# 2026-11-18（v3 Q47）：新的穩定版本成為權威後，屬於舊版本名稱的一切要刪除、封存或改名。
+# 版本號是 v 加數字；後面接 .數字 的是工具版本（Claude Code v2.1.277），不算。
+VERSION_TOKEN = re.compile(r'(?<![A-Za-z0-9.])[vV]([0-9]+)(?![0-9])(?!\.[0-9])')
+# 程式裡用 _ 或 - 黏在識別字或標籤上的版本號（step_vN、vN_report、bootstrap-vN-…）。
+VERSION_LABEL = re.compile(r'(?<![A-Za-z0-9])[vV]([0-9]+)(?=[_-][A-Za-z])'
+                           r'|(?<=[A-Za-z0-9][_-])[vV]([0-9]+)(?![0-9A-Za-z])(?!\.[0-9])')
+ARCHIVED_VERSION = re.compile(r'archive/[vV]([0-9]+)-')
+BOOK_LINK = re.compile(r'唯一需求書是\[[^\]]*\]\((project-bootstrap-requirements-decision-v([0-9]+)\.md)\)')
+BOOK_VERSION = re.compile(r'^> 決策版本：([0-9]+)。', re.M)
 
 
 def repo_scanned_files(tracked_files):
@@ -2154,9 +2162,6 @@ def archive_problems(root, tracked_files, blob_of, frozen=None, readers=None):
             if name in text:
                 problems.append('%s 引用封存區的檔（%s）：平常不讀，要回溯歷史先經使用者'
                                 '同意，再登記到 ARCHIVE_READERS' % (rel, name))
-        if V2_ARCHIVE_PREFIX in text:
-            problems.append('%s 指向 v2 的封存程式（%s…）：v2 的程式不再被引用（v3 Q46）'
-                            % (rel, V2_ARCHIVE_PREFIX))
     return problems
 
 
@@ -2314,14 +2319,6 @@ def step_archive(tmp):
         problems.append('程式引用凍結原件以外的封存檔沒被擋')
     if any(c.startswith('tools/index.py ') for c in caught):
         problems.append('封存索引的通用檔名被當成封存檔')
-    # 2026-11-18（v3 Q46）：程式指向 v2 封存目錄要擋，文件提到不算。
-    (root / 'tools/old_v2.py').write_text("OLD = '%sbarrier/x.py'\n" % V2_ARCHIVE_PREFIX, encoding='utf-8')
-    (root / 'docs/v2.md').write_text('舊程式在 `%sbarrier/`\n' % V2_ARCHIVE_PREFIX, encoding='utf-8')
-    caught = archive_problems(root, ['tools/old_v2.py', 'docs/v2.md'], blobs.get, frozen, ())
-    if not any(c.startswith('tools/old_v2.py ') for c in caught):
-        problems.append('程式指向 v2 封存目錄沒被擋')
-    if any(c.startswith('docs/v2.md') for c in caught):
-        problems.append('文件提到 v2 封存目錄被當成程式引用')
     for label, lookup in (('內容改動', {ARCHIVE_DIR + new: 'b' * 40}.get),
                           ('搬走或刪掉', {}.get)):
         if not archive_problems(root, [], lookup, frozen, ()):
@@ -2346,9 +2343,111 @@ def step_archive(tmp):
     if problems:
         record('FAIL', '封存原件', '；'.join(problems))
         return False
-    record('OK', '封存原件', '%d 份凍結原件 blob 未變、程式與測試不引用封存區任何檔也不指向 v2 封存目錄、文件檢查不讀封存區；'
-           '引用／其他封存檔／v2 封存目錄／改動／搬走／略過外溢六種反例都擋下，已登記讀取者與索引放行'
+    record('OK', '封存原件', '%d 份凍結原件 blob 未變、程式與測試不引用封存區任何檔、文件檢查不讀封存區；'
+           '引用／其他封存檔／改動／搬走／略過外溢五種反例都擋下，已登記讀取者與索引放行'
            % len(FROZEN_ARCHIVES))
+    return True
+
+
+def current_version(agents, read):
+    """(現行版本, 問題)：AGENTS 連到的決策書檔名的版本號，且要跟它的「決策版本」行相同（v3 Q47）。"""
+    link = BOOK_LINK.search(agents)
+    if not link:
+        return None, 'AGENTS.md 找不到「唯一需求書是[…](project-bootstrap-requirements-decision-vN.md)」'
+    try:
+        book = read(link.group(1))
+    except OSError:
+        return None, '讀不到 %s' % link.group(1)
+    line = BOOK_VERSION.search(book)
+    if not line or line.group(1) != link.group(2):
+        return None, '%s 的「決策版本」行跟檔名的版本號不同' % link.group(1)
+    return int(link.group(2)), ''
+
+
+def version_name_problems(current, tracked, read_text):
+    """archive/ 以外屬於舊版本名稱的東西（v3 Q47）。文件內文的對照與歷史說明不查。"""
+    bad = []
+    for rel in tracked:
+        if rel.startswith('archive/'):
+            continue
+        old = sorted({int(n) for n in VERSION_TOKEN.findall(rel) if int(n) < current})
+        if old:
+            bad.append('%s：檔名或資料夾名帶舊版本號 %s' % (rel, '、'.join('v%d' % n for n in old)))
+        if not rel.endswith(ARCHIVE_CODE_SUFFIXES):
+            continue
+        text = read_text(rel)
+        for number, line in enumerate((text or '').split('\n'), 1):
+            labels = [int(a or b) for a, b in VERSION_LABEL.findall(line)]
+            if any(n < current for n in labels):
+                bad.append('%s:%d：識別字或標籤帶舊版本號' % (rel, number))
+            if ARCHIVED_VERSION.search(line):
+                bad.append('%s:%d：程式引用 archive/ 底下的版本封存資料夾' % (rel, number))
+    return bad
+
+
+def step_version_names(tmp):
+    """版本更替（2026-11-18，需求決策書 v3 Q47）。
+
+    新的穩定版本成為權威後，舊版本名稱的檔案、資料夾、程式識別字與對封存版本的引用都要清掉。
+    現行版本從 AGENTS 連到的決策書讀，所以換版只要 AGENTS 改連新版，這一項就開始要求清理。
+    """
+    def read_repo(rel):
+        try:
+            return (ROOT / rel).read_text(encoding='utf-8')
+        except (OSError, UnicodeDecodeError):
+            return None
+    problems = []
+    current, why = current_version(read_lf(ROOT / 'AGENTS.md'),
+                                   lambda rel: (ROOT / rel).read_text(encoding='utf-8'))
+    if current is None:
+        problems.append(why)
+    else:
+        tracked = [p for p in run(['git', 'ls-files', '-z'], cwd=ROOT).stdout.split('\0') if p]
+        problems += version_name_problems(current, tracked, read_repo)
+
+    # 反例用合成的現行版本 3。版本號一律在執行時拼出來：本檔自己也在掃描範圍內，
+    # 寫死的字面值換版後會變成「舊版本名稱」擋住自己。
+    def v(n):
+        return 'v' + str(n)
+    book = 'project-bootstrap-requirements-decision-%s.md' % v(3)
+    agents = '唯一需求書是[需求決策書 %s](%s)。' % (v(3), book)
+    texts = {book: '> 決策版本：3。2026-11-13 起是現行需求權威\n'}
+    if current_version(agents, lambda rel: texts[rel]) != (3, ''):
+        problems.append('版本來源：正常的 AGENTS 與決策書讀不出 3')
+    for label, a, t in (('AGENTS 沒連決策書', '唯一需求書在別處。', texts),
+                        ('決策版本行跟檔名不同', agents, {book: '> 決策版本：4。\n'}),
+                        ('決策書讀不到', agents, {})):
+        def read(rel, t=t):
+            if rel not in t:
+                raise OSError(rel)
+            return t[rel]
+        if current_version(a, read)[0] is not None:
+            problems.append('版本來源反例沒被擋：' + label)
+    # 反例：檔名、識別字、封存引用；放行：現行與較新的版本、工具版本號、文件內文、封存區本身
+    files = {
+        'docs/plan-%s.md' % v(2): '', 'docs/plan-%s.md' % v(3): '', 'docs/plan-%s-draft.md' % v(4): '',
+        'archive/%s-old/tools/x.py' % v(2): 'def step_%s(): pass\n' % v(2),
+        'tools/label.py': 'def step_%s():\n    pass\n' % v(2),
+        'tools/temp.py': "PREFIX = 'bootstrap-%s-x'\n" % v(1),
+        'tools/ref.py': "OLD = 'archive/%s-x/a.py'\n" % v(1),
+        'tools/ok.py': "TOOL = '%s.1.277'\n# %s 時代的做法，見歷史紀錄\nNEW = 'step_%s'\n" % (v(2), v(2), v(3)),
+        'docs/history.md': 'step_%s 與 archive/%s-x 是舊名\n' % (v(2), v(1)),
+    }
+    found = version_name_problems(3, sorted(files), files.get)
+    for rel in ('docs/plan-%s.md' % v(2), 'tools/label.py', 'tools/temp.py', 'tools/ref.py'):
+        if not any(f.startswith(rel) for f in found):
+            problems.append('反例沒被擋：' + rel)
+    for rel in ('docs/plan-%s.md' % v(3), 'docs/plan-%s-draft.md' % v(4), 'archive/', 'tools/ok.py',
+                'docs/history.md'):
+        if any(f.startswith(rel) for f in found):
+            problems.append('不該擋的被擋：' + rel)
+
+    if problems:
+        record('FAIL', '版本更替', '；'.join(problems))
+        return False
+    record('OK', '版本更替', '現行版本 v%d（AGENTS 連到的決策書，檔名與「決策版本」行一致）；archive/ 以外沒有舊版本名稱的'
+           '檔案、資料夾或程式識別字，程式不引用版本封存資料夾；版本來源 3 種、檔名／識別字／封存引用 4 種反例都擋下，'
+           '現行與較新版本、工具版本號、文件內文與封存區放行' % current)
     return True
 
 
@@ -4752,7 +4851,7 @@ def step_architecture_summary(dest):
 def tests_report_problem(report):
     """Reject an empty, partial or failed test report (tools/run_tests.py --json).
 
-    2026-11-18（v3 Q46）：取代 v2_report_problem。v2 原型報告的 strict_ready、封存位置與
+    2026-11-18（v3 Q46）：取代 v2 原型報告的判定。那份報告的 strict_ready、封存位置與
     ssh-keygen 指紋隨 v2 程式封存，只留測試與現況索引本身的判定。
     """
     try:
@@ -5230,6 +5329,7 @@ def _run_checks(dest, tmp, collect):
     step_eol(dest)
     step_self()
     step_archive(tmp)
+    step_version_names(tmp)
     step_repo_handoff()
     step_reason_links()
     if seen:
