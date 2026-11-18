@@ -1,17 +1,17 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-18 23:45（+08），中途更新，本 session 仍在工作中
-- **交棒者**：Claude Code（桌面 App）／Mac mini（待辦查核與執行：Q51、2026-11-18.3、全域 skill 檢查、同步 6 個專案）
+- **交接時間**：2026-11-18 23:56（+08）
+- **交棒者**：Claude Code（桌面 App）／Mac mini（待辦查核與執行：Q51、2026-11-18.3、全域 skill 檢查與覆蓋、6 個專案同步並刪掉 `GEMINI.md` 與舊交接協定）
 
 ## 任務目標
 
-使用者要求先核對上一棒 HANDOFF 的 10 條待辦，再逐條決定：zsh 怪癖上移部署包、決策紀錄可標「被取代」、驗證器檢查全域 skill 版本、能升的已部署專案升級並刪掉 `GEMINI.md`；第 2 期與 Q49 的 Windows／Codex 先等等，序號卡、網路速度不動。
+使用者要求先核對上一棒 HANDOFF 的 10 條待辦，再逐條決定：zsh 怪癖上移部署包、決策紀錄可標「被取代」、驗證器檢查全域 skill 版本、能升的已部署專案升級並刪掉 `GEMINI.md`；第 2 期與 Q49 的 Windows／Codex 先等等，序號卡、網路速度不動。之後又依指示覆蓋全域 skill、刪掉舊交接協定（先搬專案規則）、整理 academic-summary-skill 的舊交接段落。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無（`feat/bootstrap-installer`、`feat/retire-kit-doc` 都已併回 `main`，分支留在 origin 沒刪）。
-- **工作中**：`Mac mini` ／ `Claude Code（桌面 App）` ／ `㊣　11.18.23｜待辦執行｜工作中｜交棒0次`，2026-11-18 23:26 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-18.3`
 - 本機能力：Mac mini；`git push` 可用；本機 `.venv` 可跑驗證器不跑的外部套件測試（`.venv/bin/python -m pytest tests`）。`/usr/bin/python3` 是 3.9.6，跑不了 `bootstrap.py`（要 3.12），用另裝的 `python3`（3.15.2）。
 
@@ -26,7 +26,7 @@
 
 ## 未完成／下一步
 
-1. **鍵鼠同部署_mac**：還在 `2026-11-17.3`、留著 `GEMINI.md`。2026-11-18 23:13 起 origin 上的「工作中」是 Windows 那台的 Codex session；等它交棒再同步、刪檔（使用者已同意這兩件）。
+1. **鍵鼠同部署_mac**：還在 `2026-11-17.3`，留著 `GEMINI.md` 與 `docs/ai-notes/handover-protocol.md`。2026-11-18 23:13 起 origin 上的「工作中」是 Windows 那台的 Codex session（交棒前再查仍是它）；等它交棒再同步、刪這兩個檔（使用者已同意；協定先比對有沒有專案獨有規則，有就先搬進 AGENTS 或 ai-notes）。做法照其他 6 個專案：先推開工標記，`sync_project.py --write --owner`，`check_docs.py` exit 0，推上後清標記。
 2. **第 2 期（Codex＋macOS）**：Codex 桌面 App 的 F50 標題項還沒判定、handoff-ab 要不要在現行版重跑；使用者 2026-11-18 說先等等。
 3. **Q49 在 Windows 與 Codex 上跑**：分別歸第 3、2 期，使用者 2026-11-18 說先等等。
 4. 序號卡、解決網路速度依使用者 2026-11-17 指示刻意停在舊版，2026-11-18 再確認不動（這兩個專案不在 GitHub projects 資料夾）；Windows 開發人員模式與桌面 App 的 F50 互動驗證沿用既有的暫緩。
@@ -45,7 +45,7 @@
 
 ## 服務查證與期望快照
 
-- 2026-11-18 23:45 macOS Mac mini，本份 HANDOFF 提交前：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，68 項全過，無 skip，無提醒**（兩份全域 skill 已依使用者同意用 `2026-11-18.3` 範本覆蓋）；`mutants.py` 的 `test_trail` 27 個、`test_trail_sources` 45 個全擋。
+- 2026-11-18 23:57 macOS Mac mini，本份 HANDOFF 提交前：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，68 項全過，無 skip，無提醒**（兩份全域 skill 已依使用者同意用 `2026-11-18.3` 範本覆蓋）；`mutants.py` 的 `test_trail` 27 個、`test_trail_sources` 45 個全擋。
 - 6 個已部署專案：`check_docs.py` 都 exit 0；`verify_state.py` 5 個 exit 0，grist-workflow exit 2（`errors=0 skipped=2`，缺 `GRIST_API_KEY`，跟它 HANDOFF 記的既有狀態相同）。
 - Windows 本棒沒跑；任一平台看到失敗都是回歸。
 
