@@ -10,7 +10,7 @@
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
-- **待續分支**：`feat/bootstrap-installer`（Q49 安裝程式；驗證全過後併回 `main`，併完改回「無」）。
+- **待續分支**：無（Q49 的 `feat/bootstrap-installer` 已併回 `main`，分支留在 origin 沒刪）。
 - **工作中**：`Mac mini` ／ `Claude Code` ／ `㊣　11.18.14｜待指派｜工作中｜交棒0次`，2026-11-18 14:30 (+08) 開工
 - **骨架版本**：`2026-11-18`
 - 本棒（Q49）跳版到 `2026-11-18`：handoff skill 七個檔與 `AGENTS.md` 共用制度標記。這台 Mac 的兩份全域 skill（`~/.claude`、`~/.codex`）還停在 `2026-11-17.3`；已部署的專案這次依使用者指示沒動。
