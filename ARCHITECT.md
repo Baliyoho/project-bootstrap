@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-18（`PROJECT-BOOTSTRAP.md` 退休：不再生成與提交，部署包全文只在驗證與同步時於記憶體組出，需求決策書 v3 Q50）
+> 最後更新：2026-11-18（驗證器加「全域 handoff skill 跟部署包同版」，只提醒不擋；同日稍早 `PROJECT-BOOTSTRAP.md` 退休：不再生成與提交，部署包全文只在驗證與同步時於記憶體組出，需求決策書 v3 Q50）
 > 本檔回答「現在長怎樣」。進度看 [HANDOFF.md](HANDOFF.md)，部署包的逐版變更看 [CHANGELOG.md](CHANGELOG.md)，更早的結構變更經過看 Git 歷史；2026-11-17 前的逐次紀錄封存在 `archive/docs/architect-log.md`（冷區，回溯先經使用者同意）。
 
 ## 一句話
@@ -184,11 +184,12 @@
 | 安裝程式由來源生成 | `bootstrap.py` 與 `src/kit`、`installer.py`、`sync_project.py` 的生成結果逐位元組相同；5 個負向測試（手改、改範本／installer／合併函式沒重生、少一個共用函式）。安裝、衝突、更新、CRLF 與兩支 hook 由 `tests/test_bootstrap_repo.py` 在暫存資料夾實跑 | 手改了安裝程式，或改了來源沒重生（2026-11-18，v3 Q49） |
 | 部署包由來源生成 | `src/kit` 組得出部署包全文、每個範本剛好用一次、範本集合等於 `EXPECTED`，而且 `PROJECT-BOOTSTRAP.md` 沒被放回來；7 個負向測試（放回來、多／少範本、指錯、重複、缺結尾換行、範本含收尾圍籬） | 部署包全文是範本的第二份副本；2026-11-18 起不提交（v3 Q50），放回來就又多一份會過期的家 |
 | 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `src/project_bootstrap` 的程式除 `DEV_EXTRAS` 列的模組外不 import 鎖檔裡的套件，也不 import 那些模組；import 它們的測試缺套件時 SkipTest；10 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
+| 全域 handoff skill 跟部署包同版 | 家目錄 `~/.claude/skills/handoff/`、`~/.codex/skills/handoff/` 的七個檔跟 `src/kit` 範本逐字相同（不只比 `source:` 版本號）；不同只印「提醒」、不影響結束碼，兩份都沒裝印 skip；4 個負向測試 | 改了部署包卻忘了重裝全域副本，沒有專案層 skill 的 session 讀到舊程序（2026-11-18 使用者指定） |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
 2026-11-13 第 1 期對驗證項的取捨（留、改或移除哪些，以及 2026-11-14 使用者逐項定案的四項）在[理由檔歷史紀錄](docs/history/rationale-history.md)的「#rule-4」那組。
 
-**exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫。
+**exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫；印「提醒」的項目不影響結束碼，但要轉告使用者。
 
 ## 副本拓撲（同一份東西存在於多個地方的，只有這些）
 

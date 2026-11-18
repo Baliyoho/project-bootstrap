@@ -109,6 +109,9 @@
   同步清單     ——sync_project.py 的清單要涵蓋骨架每一個檔，且 hook 接線合併要真的換掉
                   舊值又保住專案自己的設定。兩份 JSON 接線從來不在清單裡，於是 matcher
                   的修正一年半沒發下去，pre-push 防呆在那些專案等於沒裝（2026-10-30 加入）
+  全域 skill 同版——家目錄兩份全域 handoff skill 跟 src/kit 範本逐字比對，不同只印「提醒」、
+                  不影響結束碼；兩份都沒裝印 skip。改完部署包要重裝全域副本，忘了的話沒有
+                  專案層 skill 的 session 會讀到舊程序（2026-11-18 使用者指定）
 
 
 
@@ -118,7 +121,7 @@ Python 版本下限：這兩支維護工具（本檔與 `sync_project.py`）宣�
 維護工具＋兩支部署後工具）有沒有用到高於下限的 API，所以下一棒順手用一個新 API 時會當場
 FAIL，而不是在別人的舊 python 上才炸（查核報告 F14）。
 
-結束碼：0＝全過；1＝有跳過項（缺 bash 之類）但無失敗；2＝有失敗。
+結束碼：0＝全過；1＝有跳過項（缺 bash 之類）但無失敗；2＝有失敗。印「提醒」的項目不影響結束碼。
 本工具唯讀本 repo，只在系統暫存區寫檔。
 """
 import argparse
@@ -244,9 +247,9 @@ QUIET = False
 
 def record(status, title, detail=''):
     results.append((status, title, detail))
-    if QUIET and status == 'OK':
+    if QUIET and status == 'OK':  # NOTE 跟 FAIL／SKIP 一樣在 --quiet 下照印
         return
-    icon = {'OK': '  ok  ', ' FAIL ': ' FAIL ', 'FAIL': ' FAIL ', 'SKIP': ' skip '}[status]
+    icon = {'OK': '  ok  ', ' FAIL ': ' FAIL ', 'FAIL': ' FAIL ', 'SKIP': ' skip ', 'NOTE': ' 提醒 '}[status]
     print(f'[{icon}] {title}{("  — " + detail) if detail else ""}')
 
 
@@ -5192,6 +5195,7 @@ def _run_checks(dest, tmp, collect):
     step_tests(collect())
     step_dev_layout()
     step_kit_source()
+    step_global_skill()
 
 
 # 鎖檔裡的套件名 → import 名，名字不一樣的才列
@@ -5448,6 +5452,73 @@ def step_kit_source():
            '（安裝、更新與換行的行為由 tests/test_bootstrap_repo.py 實跑）' % len(cases))
 
 
+GLOBAL_SKILL_DIRS = ('.claude/skills/handoff', '.codex/skills/handoff')
+
+
+def global_skill_problems(home, templates):
+    """家目錄的兩份全域 handoff skill 跟部署包範本比對（2026-11-18 使用者指定）。
+
+    回傳 (已安裝的目錄, 問題)。templates 是 {檔名: 內容}，取自 src/kit 的
+    `.claude/skills/handoff/*.tmpl`（這七個範本沒有佔位符，部署出去就是原文）。
+    比對整份內容而不只看 `source:` 版本號：同版號但內容不同也算過期。
+    """
+    installed, problems = [], []
+    for rel in GLOBAL_SKILL_DIRS:
+        folder = home / rel
+        if not folder.is_dir():
+            continue
+        installed.append('~/' + rel)
+        stale = []
+        for name, text in sorted(templates.items()):
+            try:
+                same = (folder / name).read_text(encoding='utf-8') == text
+            except (OSError, UnicodeDecodeError):
+                same = False
+            if not same:
+                stale.append(name)
+        if stale:
+            found = re.search(r'source: PROJECT-BOOTSTRAP\.md v([0-9][0-9.-]*)',
+                              (folder / 'SKILL.md').read_text(encoding='utf-8', errors='replace')
+                              if (folder / 'SKILL.md').is_file() else '')
+            problems.append('~/%s 是 %s，跟部署包不同的檔：%s' % (
+                rel, found.group(1) if found else '版本不明', '、'.join(stale)))
+    return installed, problems
+
+
+def step_global_skill():
+    """只提醒、不影響結束碼（使用者 2026-11-18 選定）；兩份都沒裝印 skip。"""
+    title = '全域 handoff skill 跟部署包同版'
+    folder = ROOT / 'src/kit/files/.claude/skills/handoff'
+    templates = {p.name[:-len('.tmpl')]: p.read_text(encoding='utf-8')
+                 for p in sorted(folder.glob('*.tmpl'))}
+    with tempfile.TemporaryDirectory() as raw:
+        fake = pathlib.Path(raw)
+        good = fake / GLOBAL_SKILL_DIRS[0]
+        good.mkdir(parents=True)
+        for name, text in templates.items():
+            (good / name).write_bytes(text.encode('utf-8'))
+        cases = [('同內容被當成過期', global_skill_problems(fake, templates)[1] == [])]
+        (good / 'env.md').write_bytes((templates['env.md'] + '\n舊內容\n').encode('utf-8'))
+        cases.append(('同版號但內容不同沒抓到', global_skill_problems(fake, templates)[1] != []))
+        (good / 'env.md').unlink()
+        cases.append(('少一個檔沒抓到', global_skill_problems(fake, templates)[1] != []))
+        empty = fake / 'empty'
+        empty.mkdir()
+        cases.append(('沒裝被當成已裝', global_skill_problems(empty, templates)[0] == []))
+    bad = [label for label, ok in cases if not ok]
+    if bad:
+        record('FAIL', title, '負向測試未擋：' + '、'.join(bad))
+        return
+    installed, problems = global_skill_problems(pathlib.Path.home(), templates)
+    if not installed:
+        record('SKIP', title, '本機沒有 ~/%s 也沒有 ~/%s' % GLOBAL_SKILL_DIRS)
+    elif problems:
+        record('NOTE', title, '；'.join(problems) + '。要重裝：把 src/kit/files/.claude/skills/handoff/ '
+               '的七個範本去掉 .tmpl 覆蓋過去（%d 個負向測試）' % len(cases))
+    else:
+        record('OK', title, '%s 七個檔跟部署包逐字相同；%d 個負向測試' % ('、'.join(installed), len(cases)))
+
+
 def main():
     global QUIET
     ap = argparse.ArgumentParser()
@@ -5485,7 +5556,10 @@ def main():
 
     failed = [t for s, t, _ in results if s == 'FAIL']
     skipped = [t for s, t, _ in results if s == 'SKIP']
+    noted = [t for s, t, _ in results if s == 'NOTE']
     print()
+    if noted:
+        print(f'提醒：{len(noted)} 項（不影響結束碼）—— {"、".join(noted)}')
     if failed:
         print(f'FAIL：{len(failed)} 項未通過 —— {"、".join(failed)}')
         return 2
