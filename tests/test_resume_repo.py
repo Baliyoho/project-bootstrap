@@ -19,7 +19,8 @@ class ResumeRepoTests(unittest.TestCase):
             result = check(ROOT, home, heading='跟部署出去的專案不同的地方')
         self.assertEqual((result['result'], result['reasons'], result['missing']),
                          ('通過', [], []))
-        self.assertIn('PROJECT-BOOTSTRAP.md', [p['path'] for p in result['procedures']])
+        # 2026-11-18 (decision v3 Q50): the fallback is the skill template in src/kit, not the retired package.
+        self.assertIn('src/kit/files/.claude/skills/handoff/SKILL.md.tmpl', [p['path'] for p in result['procedures']])
         version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
         self.assertTrue(all(p['source'] for p in result['procedures']))
         # The procedure's marker follows its own edits, so it may be ahead of VERSION, not behind.

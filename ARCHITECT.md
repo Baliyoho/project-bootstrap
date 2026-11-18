@@ -1,11 +1,11 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-18（安裝途徑改成 `bootstrap.py`：新增 `bootstrap.py` 與 `src/project_bootstrap/installer.py`，`PROJECT-BOOTSTRAP.md` 不再是安裝途徑，`--zip` 與 `dist/` 拿掉，需求決策書 v3 Q49）
+> 最後更新：2026-11-18（`PROJECT-BOOTSTRAP.md` 退休：不再生成與提交，部署包全文只在驗證與同步時於記憶體組出，需求決策書 v3 Q50）
 > 本檔回答「現在長怎樣」。進度看 [HANDOFF.md](HANDOFF.md)，部署包的逐版變更看 [CHANGELOG.md](CHANGELOG.md)，更早的結構變更經過看 Git 歷史；2026-11-17 前的逐次紀錄封存在 `archive/docs/architect-log.md`（冷區，回溯先經使用者同意）。
 
 ## 一句話
 
-產出物是安裝程式 [bootstrap.py](bootstrap.py)——一個只用標準函式庫、內嵌所有範本的單一檔，新專案跑它就寫出整套制度；以及部署包說明 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。兩者都由 `src/kit/` 生成（2026-11-18 起，需求決策書 v3 Q49）。
+產出物是安裝程式 [bootstrap.py](bootstrap.py)——一個只用標準函式庫、內嵌所有範本的單一檔，新專案跑它就寫出整套制度。它由 `src/kit/` 生成（2026-11-18 起，需求決策書 v3 Q49）；部署包的說明與範本就在 `src/kit/`，舊的生成檔 `PROJECT-BOOTSTRAP.md` 同日退休（Q50）。
 其餘每個檔案都是它的**說明、指標或測試**，沒有第二個產出物（例外是 `HANDOFF.md`，它是範本 3.3 的*實例*，承載當下交接快照與「工作中」標記）。
 
 ## 碰到才讀的文件
@@ -28,9 +28,8 @@
 | 路徑 | 是什麼 | 什麼時候動 |
 |---|---|---|
 | [bootstrap.py](bootstrap.py) | **安裝程式**（發給各專案的產物，2026-11-18 起，v3 Q49）：訪談、寫檔（同名檔不覆寫，寫成 `.bootstrap-new`）、逐檔雜湊、`git init`、寫 HANDOFF 的第一批工作；`update` 依 `owners.json` 只換骨架的部分。內嵌全部範本，`sync_project.py` 的合併函式原樣搬進來 | 不手改；改 `src/kit/`、`installer.py` 或 `sync_project.py` 後跑 `tools/build_kit.py`（鐵律第 1 條） |
-| [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **部署包說明**：訪談表＋各檔範本全文＋維持操作卡。2026-11-11 起由 `src/kit/` 生成，仍提交（`sync_project.py` 讀它與它的 Git 歷史）；2026-11-18 起不是安裝途徑（v3 Q49） | 不手改；改 `src/kit/` 後跑 `tools/build_kit.py`（鐵律第 1 條） |
 | [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 23 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`owners.json` 是每個範本的歸屬（2026-11-11 起；`sync_project.py` 的檔案清單直接由它算出）；`capabilities.json` 是能力矩陣（2026-11-11，決策書 Q24），「跨工具與跨平台」那兩張表由它生成，`kit.md` 那裡只有一行 `<!-- kit-table: 表名 -->` | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬；改跨工具表要改 `capabilities.json`，不改 `kit.md` |
-| [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `PROJECT-BOOTSTRAP.md` 與 `bootstrap.py`；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
+| [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `bootstrap.py`；`kit_text()` 在記憶體組出部署包全文給驗證器與同步器（2026-11-18 起不再寫成 `PROJECT-BOOTSTRAP.md`，v3 Q50）；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
 | [src/project_bootstrap/installer.py](src/project_bootstrap/installer.py) | `bootstrap.py` 的安裝與更新邏輯（原始碼，2026-11-18，v3 Q49）。測試直接 import 它；`update` 呼叫的合併函式在 `sync_project.py` | 安裝行為改變時，同一個 commit 重生 `bootstrap.py` |
 | [README.md](README.md) | 標準 README：解決什麼、怎麼用、部署後長什麼樣、跨工具相容性、發布公鑰、參與開發的指標、授權 | 用法或相容性改變 |
 | [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本、跟部署出去的專案不同的地方、這個 repo 是什麼、鐵律 | 多一條開工必守的規則 |
@@ -68,6 +67,8 @@
 本 repo 的 `.claude/hooks/codex-hook.cmd` 是 **3.17 啟動器的副本**，跟 `repo-git-check.sh` 的角色不同；更新時從部署包抽取這一檔覆蓋，不把本 repo 當成 `sync_project.py` 的目標。它只尋找 Git Bash、加上避免 JSON 誤判的純文字標頭，並保留 stdin／輸出內容／結束碼，沒有交接規則。既有專案的 Codex 接線升級時會補齊這個新依賴；沒有 Codex 接線的專案仍不自動補裝。`--codex-only` 只同步這兩檔，專案 SKILL 與其他設定不變。
 
 ## 部署包的內部結構
+
+部署包是 `src/kit/kit.md` 的散文加 `src/kit/files/` 的範本；2026-11-18 以前生成成根目錄的 `PROJECT-BOOTSTRAP.md` 提交，之後只在記憶體組出（v3 Q50）。下面的節號指組出來的全文，也就是 `kit.md` 的節號。
 
 測試入口 `tools/run_tests.py` 不在部署包內。驗證器的「測試套件與現況索引」一項背景跑它：現況索引要跟決策書的 ID 一致，測試不能為空、失敗或略過；報告的壞形狀有負向測試。
 
@@ -181,7 +182,7 @@
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
 | 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，clone 後開場 hook 印出 `[facts]`；`mode-0.md` 0-5 的驗收、提交、發布順序與不整批 `git add`（2026-11-18 起，v3 Q49）；6 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit |
 | 安裝程式由來源生成 | `bootstrap.py` 與 `src/kit`、`installer.py`、`sync_project.py` 的生成結果逐位元組相同；5 個負向測試（手改、改範本／installer／合併函式沒重生、少一個共用函式）。安裝、衝突、更新、CRLF 與兩支 hook 由 `tests/test_bootstrap_repo.py` 在暫存資料夾實跑 | 手改了安裝程式，或改了來源沒重生（2026-11-18，v3 Q49） |
-| 部署包由來源生成 | `src/kit` 生成結果與 `PROJECT-BOOTSTRAP.md` 逐位元組相同、每個範本剛好用一次、範本集合等於 `EXPECTED`；9 個負向測試（手改部署包、改範本或散文沒重生、多／少範本、指錯、重複、缺結尾換行、範本含收尾圍籬） | 有人手改了部署包，或改了來源沒重生 |
+| 部署包由來源生成 | `src/kit` 組得出部署包全文、每個範本剛好用一次、範本集合等於 `EXPECTED`，而且 `PROJECT-BOOTSTRAP.md` 沒被放回來；7 個負向測試（放回來、多／少範本、指錯、重複、缺結尾換行、範本含收尾圍籬） | 部署包全文是範本的第二份副本；2026-11-18 起不提交（v3 Q50），放回來就又多一份會過期的家 |
 | 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `src/project_bootstrap` 的程式除 `DEV_EXTRAS` 列的模組外不 import 鎖檔裡的套件，也不 import 那些模組；import 它們的測試缺套件時 SkipTest；10 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 

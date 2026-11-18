@@ -1,8 +1,9 @@
 # 部署包變更紀錄
 
-> 最後更新：2026-11-18（加入前一版 2026-11-17.3：2026-11-18 這一版建制改成安裝程式，決策書 v3 Q49）
-> 新的在上面。目前版本與它的說明在 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) 開頭的「版本」行（來源是 `src/kit/kit.md`）；發布新一版時，把舊的版本行改寫成「前一版」移到本檔最上面。每一版都寫做了什麼與為什麼，不刪舊事故。
+> 最後更新：2026-11-18（「版本」行的位置改成 `src/kit/kit.md`：`PROJECT-BOOTSTRAP.md` 退休，決策書 v3 Q50）
+> 新的在上面。目前版本與它的說明在 [src/kit/kit.md](src/kit/kit.md) 開頭的「版本」行（2026-11-18 以前在生成的 `PROJECT-BOOTSTRAP.md`，v3 Q50）；發布新一版時，把舊的版本行改寫成「前一版」移到本檔最上面。每一版都寫做了什麼與為什麼，不刪舊事故。
 
+> 前一版 **2026-11-18**（建制改成「安裝程式寫檔＋安裝後由 agent 接手」（決策書 v3 Q49）：對外的安裝途徑從本檔改成單一檔 `bootstrap.py`，拿掉 AI 照抄這條路。handoff skill 的 `mode-0.md` 改成跑安裝程式、再處理第一批工作，原本第 5 節的遠端與工具驗收清單逐字搬進它的 0-6；`reasons.md` 的模式 0 權威與兩條反例跟著改，規則對照表換成新的小節名。`HANDOFF.md` 範本改成安裝後的狀態（還沒 commit、還沒有 GitHub repo）。第 1、2、4、5 節改寫：訪談由程式問、部署樹多一個 `.bootstrap/answers.json`、本機驗收與首次發布及遠端驗收都改指 `mode-0.md`。）
 > 前一版 **2026-11-17.3**（本專案明確不支援 Gemini：不再產出 `GEMINI.md`，3.2 只剩 `CLAUDE.md`；部署樹、HANDOFF 範本的部署清單、ARCHITECT 範本的指標列、跨工具環境變數表與跨模型的說法都拿掉 Gemini。handoff skill 兩處跟著改：`mode-a-stop.md` 的工具名慣用寫法只列 `Claude Code`／`Codex CLI`，`reasons.md` 的「任何模型」與「沒有改名能力的工具」不再提 Gemini。已部署專案裡的 `GEMINI.md` 是專案自己的檔，同步時不改寫也不刪，只列 MIGRATE，刪不刪由使用者決定。）
 > 前一版 **2026-11-17.2**（交接協定 `docs/ai-notes/handover-protocol.md` 移出部署包（決策書 v3 Q41），3.6 保留編號、改成移除說明。只有它才有的內容搬進 skill：分支模型進 `mode-b.md` 的 B1，「漏交棒的補救」的理由進 `reasons.md`，「verify_state 一律跑」進 `mode-a-stop.md` 的 A4，`mode-a-stop.md` A6 的指標改指 `reasons.md`；入口的核心優先序改成專案 override 寫在 `AGENTS.md` 鐵律。已部署專案裡的舊協定不改寫也不刪，同步時列 MIGRATE。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-17**（清掉 README／AGENTS 改成職能分工之後留下的過期說法（決策書 v3 Q40）：`mode-b.md` B2 與 `mode-a-stop.md` A3 不再說 `AGENTS.md` 有知識庫地圖，改指 `ARCHITECT.md`；`mode-0.md` 建制後的下一步改成填 README 的連線資料。同一輪也改了交接協定範本對開場 hook 的舊描述（它 2026-11-13 起只印事實），HANDOFF 範本的「地雷」不再重複 AGENTS 與 README 已有的規則。七個 skill 檔與共用制度標記同版。）

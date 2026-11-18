@@ -10,10 +10,10 @@
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
-- **待續分支**：無（Q49 的 `feat/bootstrap-installer` 已併回 `main`，分支留在 origin 沒刪）。
+- **待續分支**：`feat/retire-kit-doc`（Q50 部署包退休；驗證全過後併回 `main`，併完改回「無」）。
 - **工作中**：`Mac mini` ／ `Claude Code` ／ `㊣　11.18.14｜待指派｜工作中｜交棒0次`，2026-11-18 14:30 (+08) 開工
-- **骨架版本**：`2026-11-18`
-- 本棒（Q49）跳版到 `2026-11-18`：handoff skill 七個檔與 `AGENTS.md` 共用制度標記。這台 Mac 的兩份全域 skill（`~/.claude`、`~/.codex`）還停在 `2026-11-17.3`；已部署的專案這次依使用者指示沒動。
+- **骨架版本**：`2026-11-18.2`
+- 本棒跳版兩次：`2026-11-18`（Q49）、`2026-11-18.2`（Q50），handoff skill 七個檔與 `AGENTS.md` 共用制度標記同版。這台 Mac 的兩份全域 skill（`~/.claude`、`~/.codex`）還停在 `2026-11-17.3`；已部署的專案依使用者指示沒動。
 - 本機能力：Mac mini；`git push` 可用；本機 `.venv` 可跑驗證器不跑的外部套件測試（`.venv/bin/python -m pytest tests`）。
 
 ## 已完成
@@ -25,6 +25,7 @@
 - 同 session 稍早：6 個已部署專案同步到 `2026-11-17.3`，全域 skill 覆蓋到同版。
 - **維護手冊與理由檔搬進 `docs/`**（`63c4193`，Q48）。
 - **部署方式改成安裝程式**（Q49）：對外的安裝途徑改成 `bootstrap.py`（`build_kit.py` 生成，內嵌範本與 `sync_project.py` 的合併函式，原始碼在 `src/project_bootstrap/installer.py`）；`mode-0.md` 改成跑安裝程式再處理第一批工作，部署包第 5 節的清單搬進它的 0-6；`--zip` 與兩項 ZIP 檢查拿掉；新增「安裝程式由來源生成」、`tests/test_installer.py`（14 個變異全擋）與 `tests/test_bootstrap_repo.py`。
+- **`PROJECT-BOOTSTRAP.md` 退休**（Q50）：不再生成與提交，驗證器與同步器在記憶體組出全文；同步器的「已發布版本」改從它的 Git 歷史加 `bootstrap.py` 的歷史取；檔頭 `source: PROJECT-BOOTSTRAP.md v…` 的字樣刻意不改（已部署的開場 hook 用它比對版本）。
 
 ## 未完成／下一步
 
@@ -36,9 +37,8 @@
 6. **工具與平台怪癖上移到部署包 `env.md`（Q48 另案，要先問使用者）**：`docs/maintenance.md`「開發注意事項」裡 zsh 的三條（管線結束碼用 `${pipestatus[1]}`、`echo =====` 會被當成檔名展開、未加引號的 `$變數` 不拆字）適合上移；Windows 驗證超過 120 秒與 `python3` 別名 `env.md` 已有。改部署包要跳版並同步。
 7. 序號卡、解決網路速度問題依使用者 2026-11-17 指示刻意停在舊版；Windows 開發人員模式與桌面 App 的 F50 互動驗證沿用既有的暫緩。
 8. **verify_bootstrap.py 檢查本機全域 handoff skill 是否和目前部署包同版**，不同就提醒重裝；沒裝印 skip（使用者 2026-11-18 指定，這次不做）。
-9. **已部署專案升級到 `2026-11-18`**：它們不是用 `bootstrap.py` 裝的，沒有 `.bootstrap/answers.json`，`bootstrap.py update` 會拒絕；照舊用 `sync_project.py`，或先補答案檔。同步要使用者授權。
+9. **已部署專案升級到 `2026-11-18.2`**：照舊用 `sync_project.py`（Q50 使用者選定）；它們沒有 `.bootstrap/answers.json`，`bootstrap.py update` 會拒絕。同步要使用者授權。
 10. **Q49 還沒在 Windows 與 Codex 上跑**：Windows 的安裝、換行與 hook 歸第 3 期，Codex 接手第一批工作歸第 2 期（計畫 v3 第 3 節）。
-11. **`PROJECT-BOOTSTRAP.md` 的去留要使用者決定**（Q49 要它退休）：選項與建議在 2026-11-18 Q49 的回報；`sync_project.py` 還讀它與它的 Git 歷史，刪之前要先改同步器。要登記成決策書第 8 節的待決 Q，先經使用者同意。
 
 ## 地雷與注意事項
 

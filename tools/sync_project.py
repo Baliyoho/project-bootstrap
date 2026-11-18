@@ -706,6 +706,26 @@ def shared_digest(rel, text):
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 
+def embedded_templates(text):
+    """bootstrap.py 裡 `TEMPLATES['路徑'] = '內容'` 的每一行；讀不出來就是空的。"""
+    import ast
+    found = {}
+    try:
+        tree = ast.parse(text or '')
+    except SyntaxError:
+        return found
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Subscript)
+                and isinstance(node.targets[0].value, ast.Name) and node.targets[0].value.id == 'TEMPLATES'):
+            try:
+                key = ast.literal_eval(node.targets[0].slice)
+                found[key] = ast.literal_eval(node.value)
+            except ValueError:
+                continue
+    return found
+
+
 def published_hashes(gen):
     """共用整份覆蓋檔的已發布內容；缺歷史時保守拒絕，不能把未知客製當舊版。"""
     global _published
@@ -720,12 +740,31 @@ def published_hashes(gen):
                     except ValueError:
                         pass  # 舊版無法辨識的區塊不列為可信來源。
         remember(gen)
+        # 已發布過的版本：2026-11-18 前在 PROJECT-BOOTSTRAP.md 的歷史，之後在 bootstrap.py
+        # 內嵌的範本（v3 Q49、Q50）。刪檔的那個 commit 讀不到檔，跳過。
         history = git_output(ROOT, 'log', '--format=%H', '--', 'PROJECT-BOOTSTRAP.md')
         with tempfile.TemporaryDirectory(prefix='bootstrap-history-') as td:
             folder = pathlib.Path(td)
             for sha in history.splitlines():
-                extract(folder, git_output(ROOT, 'show', sha + ':PROJECT-BOOTSTRAP.md') + '\n')
-                remember(folder)
+                try:
+                    text = git_output(ROOT, 'show', sha + ':PROJECT-BOOTSTRAP.md')
+                except ValueError:
+                    continue
+                if text:
+                    shutil.rmtree(folder, ignore_errors=True)
+                    extract(folder, text + '\n')
+                    remember(folder)
+            for sha in git_output(ROOT, 'log', '--format=%H', '--', 'bootstrap.py').splitlines():
+                try:
+                    text = git_output(ROOT, 'show', sha + ':bootstrap.py')
+                except ValueError:
+                    continue
+                for rel, body in embedded_templates(text).items():
+                    if rel in _published:
+                        try:
+                            _published[rel].add(shared_digest(rel, body))
+                        except ValueError:
+                            pass
     return _published
 
 
@@ -812,8 +851,8 @@ def main():
     if args.write and (not args.project or not args.owner):
         ap.error('--write 須單一專案搭配 --owner；先 A1–A5，批次僅可預演')
 
-    if not (ROOT / 'PROJECT-BOOTSTRAP.md').exists():
-        print('找不到 PROJECT-BOOTSTRAP.md——請在本 repo 根目錄執行')
+    if not (ROOT / 'src/kit/kit.md').exists():
+        print('找不到 src/kit/kit.md——請在本 repo 根目錄執行')
         return 2
     try:
         decisions = (inventory_decisions(args.inventory.resolve()) if args.inventory else

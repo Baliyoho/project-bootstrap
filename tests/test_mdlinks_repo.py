@@ -3,8 +3,9 @@
 Reads the real repo (so it is not in a mutation group). The A4 check in
 verify_bootstrap.py uses a regex; this reads the same files with markdown-it-py
 and must agree that no local link is dead. src/kit/ is skipped for the same
-reason A4 skips it: its text is generated into PROJECT-BOOTSTRAP.md, where
-links to files that exist only after deployment are template content.
+reason A4 skips it: links in the templates point at files that exist only
+after deployment. (PROJECT-BOOTSTRAP.md, the built package, was retired on
+2026-11-18, decision v3 Q50.)
 Needs markdown-it-py: A4 (tools/run_tests.py) leaves this file out and lists it; `uv run pytest` runs it.
 """
 from pathlib import Path
@@ -32,7 +33,7 @@ class RepoLinkTests(unittest.TestCase):
         # 2026-11-17 (v3 Q39): the frozen archive (archive/docs/ since 2026-11-18, v3 Q44/Q45) is not read.
         documents = [p for p in verify_bootstrap.repo_scanned_files([p for p in listed if p])
                      if p.endswith('.md')]
-        self.assertIn('PROJECT-BOOTSTRAP.md', documents)
+        self.assertNotIn('PROJECT-BOOTSTRAP.md', documents)
 
         # AGENTS.md carries a verbatim copy of the kit's shared section (2026-11-14); it links
         # the deployed skill path, which this repo deliberately lacks (it reads the global copy).

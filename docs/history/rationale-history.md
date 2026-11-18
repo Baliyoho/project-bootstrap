@@ -1,6 +1,6 @@
 # 理由檔歷史紀錄
 
-> 最後更新：2026-11-18（記一筆：#rule-1 的「各專案複製部署包」被安裝程式取代，ZIP 打包的做法與兩項檢查移除，v3 Q49）
+> 最後更新：2026-11-18（記一筆：#rule-1 的「部署包仍提交」被 `PROJECT-BOOTSTRAP.md` 退休取代，指向它的連結改成純文字，v3 Q50）
 > 這是[理由檔](../rationale.md)的熱歷史：被取代的理由、F22 入口壓縮前的原文照錄、一路累積的帶日期經過。碰到才讀，讀它不用先經使用者同意。
 > 下面每一組對應理由檔的一個錨點，內容是 2026-11-18 拆分前 `AGENTS-reasons.md` 那一節的完整原文（含當時仍有效、已改寫進理由檔的部分），只有連結改成從本檔出發的相對路徑；連到 `CONTRIBUTING.md` 的改指 [AI 維護手冊](../maintenance.md)。之後理由檔有理由被取代時，把舊文字加到對應那一組的最後，標明日期或 Q 編號。
 
@@ -23,7 +23,7 @@
 
 **先走接棒程序的 A 模式，A 沒跑完之前不要改任何檔案**；收工走 B 模式，中途要拉最新或推一個安全點走 C 模式。
 
-程序檔在**全域**副本：`~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）——**這個 repo 刻意沒有專案層的那一份**（理由見 [ARCHITECT.md](../../ARCHITECT.md)「這個 repo 刻意沒有的東西」）。工具不會自動載入 skill 的時候就直接開那個檔讀，它是純 Markdown。**這台機器沒有全域副本（例如乾淨的新機器）時，程序在 [PROJECT-BOOTSTRAP.md](../../PROJECT-BOOTSTRAP.md) 的「3.8」節，那段就是同一份 `SKILL.md`**；照讀它，不要從別台機器搬檔或憑記憶重刻。（2026-11-10／F16a：舊句在沒有全域副本時叫人開一個不存在的檔，乾淨 clone 加空家目錄實測找不到程序。）
+程序檔在**全域**副本：`~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）——**這個 repo 刻意沒有專案層的那一份**（理由見 [ARCHITECT.md](../../ARCHITECT.md)「這個 repo 刻意沒有的東西」）。工具不會自動載入 skill 的時候就直接開那個檔讀，它是純 Markdown。**這台機器沒有全域副本（例如乾淨的新機器）時，程序在 `PROJECT-BOOTSTRAP.md` 的「3.8」節，那段就是同一份 `SKILL.md`**；照讀它，不要從別台機器搬檔或憑記憶重刻。（2026-11-10／F16a：舊句在沒有全域副本時叫人開一個不存在的檔，乾淨 clone 加空家目錄實測找不到程序。）
 
 **下一輪接棒完成 A 模式後，開始任務前先讀 [project-bootstrap-reaudit-2026-11-03.md](../../archive/docs/project-bootstrap-reaudit-2026-11-03.md)**（2026-11-03 使用者明確要求）。這是第二輪複審快照，列出 R01–R09、重現證據與驗收門檻。先讀它才能分清「舊反例已修」與「修正邊界仍有缺口」，不能只看到前輪結案就當作沒有待辦。報告不累積實作進度，當下狀態看 HANDOFF。
 
@@ -56,7 +56,7 @@
 
 > **先走接棒程序的 A 模式，A 沒跑完之前不要改任何檔案**；收工走 B 模式，中途要拉最新或推一個安全點走 C 模式。
 >
-> - 程序檔在**全域**副本 `~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）；這個 repo 刻意沒有專案層的那一份。工具不會自動載入 skill 就直接開那個檔讀。**這台機器沒有全域副本時，程序在 [PROJECT-BOOTSTRAP.md](../../PROJECT-BOOTSTRAP.md) 的「3.8」節**；不要從別台機器搬檔或憑記憶重刻。
+> - 程序檔在**全域**副本 `~/.claude/skills/handoff/SKILL.md`（Codex 是 `~/.codex/skills/handoff/SKILL.md`）；這個 repo 刻意沒有專案層的那一份。工具不會自動載入 skill 就直接開那個檔讀。**這台機器沒有全域副本時，程序在 `PROJECT-BOOTSTRAP.md` 的「3.8」節**；不要從別台機器搬檔或憑記憶重刻。
 > - 部署包 `2026-11-10` 起 skill 是一個目錄：`SKILL.md` 是入口，再照它讀同目錄的模式檔；這台 Mac 的全域副本 2026-11-10 已換成六檔版（決策書 Q11 (a) 試用）；**別台還沒換的仍是單檔**，照單檔走。本 repo 的「全綠」行由 `.claude/hooks/repo-git-check.sh` 印（前綴 `[repo-check]`），要重跑就跑它。
 > - **A4 改跑 `python -X utf8 tools/verify_bootstrap.py`**（不是 `verify_state.py`），**exit 0 才算改完**。
 > - 沒有 `check_docs.py`、沒有 pre-push 防呆，所以 B4 與擋 push 的關卡不存在；文件檢查由 `verify_bootstrap.py` 顧。
@@ -73,7 +73,7 @@
 
 **被取代：「三項例外」被 2026-11-14 補裝 push 前 hook 取代（剩兩項）；F22 原文裡的 `tools/verify_v2.py` 被 Q46 改名取代；2026-11-18 從 ARCHITECT 搬來的四條裡，開場 hook「不是 3.10 的副本」被 2026-11-14 改成逐字副本取代。**
 
-**AI 協作專案管理骨架的權威版。** 唯一產出物是 [PROJECT-BOOTSTRAP.md](../../PROJECT-BOOTSTRAP.md)——一份自帶所有檔案範本的部署包，複製到新專案資料夾就能生出整套制度。用法見 [README.md](../../README.md)。
+**AI 協作專案管理骨架的權威版。** 唯一產出物是 `PROJECT-BOOTSTRAP.md`——一份自帶所有檔案範本的部署包，複製到新專案資料夾就能生出整套制度。用法見 [README.md](../../README.md)。
 
 **結構問題（有哪些檔、部署包各節產出什麼、副本存在於哪些地方）看 [ARCHITECT.md](../../ARCHITECT.md)**——動到結構就跟它同一個 commit 改；本檔只放規則。
 
@@ -87,7 +87,7 @@
 
 2026-11-11（F22 第二輪）：入口壓縮成短句，壓縮前在 AGENTS.md 的完整措辭照錄如下；之後以 AGENTS.md 現行短句為準，這段是原文備查。
 
-> - **AI 協作專案管理骨架的權威版。** 唯一產出物是 [PROJECT-BOOTSTRAP.md](../../PROJECT-BOOTSTRAP.md)：自帶所有檔案範本的部署包。用法見 [README.md](../../README.md)。
+> - **AI 協作專案管理骨架的權威版。** 唯一產出物是 `PROJECT-BOOTSTRAP.md`：自帶所有檔案範本的部署包。用法見 [README.md](../../README.md)。
 > - **這裡不是知識庫**：不累積專案知識、踩坑紀錄或狀態，那些屬於各自的專案 repo。
 > - 不部署的例外：`tools/verify_bootstrap.py`（部署包的測試）；`src/project_bootstrap/`、`tests/`、`docs/status.json`（現況索引）與 `tools/verify_v2.py`（隔離原型，只用合成 fixture，不保存其他專案資料；**原型通過不授權切換程序或宣稱跨工具強保障**）；`pyproject.toml`／`uv.lock`（P1 開發骨架，A4 不需要）；`tools/build_kit.py`（由 `src/kit/` 生成部署包）；[HANDOFF.md](../../HANDOFF.md)；本檔的理由檔。
 > - 刻意沒有 handoff skill、`pre-push-handoff.sh`、`check_docs.py`。這是**已宣告的例外**，不是空白；宣告不等於 F46 已達成；撤銷宣告改成補裝是使用者的決定。
@@ -103,6 +103,8 @@
 > - **但有一支自己的 SessionStart hook**（`.claude/hooks/repo-git-check.sh`，2026-10-30 加）：做 git 新鮮度比對、「工作中」判讀（2026-10-30 加）與開工改名提示（2026-11-01 加）；2026-11-14 起改成部署包 3.10 的逐字副本，只印事實、不再判讀或提示（v3 D12）。**2026-11-01 起 Codex 這一面也接上了**（`.codex/hooks.json`，掛同一支腳本、不複製第二份）——在此之前只有 Claude Code 會跑它，而這個 repo 本來就在多工具維護；代價是它跟那六個專案一樣進了「Codex 要各審一次」的清單（信任綁 `hooks.json` 的絕對路徑），2026-11-01 已完成現行 hook 的注入與阻擋驗收，本次桌面 session 亦收到開場輸出；檔頭明寫**不是 3.10 的副本、不要同步**（2026-11-14 起改成 3.10 的手貼逐字副本，見根目錄表與 AGENTS-reasons 的副本規則 7）。在此之前這個 repo 開場完全沒有提醒，A1 的 fetch 全靠使用者記得打「接棒」把全域 skill 載進來。為什麼不直接抄 3.10——`sync_project.py` 的 `discover()` 靠 handoff skill 發現專案，這個 repo 沒有 skill，`--all` 永遠掃不到它，抄過來就會變成「所有專案都同步了、只有來源自己落後」而且毫無跡象的那一份副本。
 
 ## #rule-1　鐵律 1
+
+**2026-11-18 被取代（v3 Q50）**：理由檔這一節同日稍早改寫成「部署包仍提交，因為 `sync_project.py` 讀它與它的 Git 歷史。2026-11-18 起各專案跑的是 `bootstrap.py`（v3 Q49），它同樣是生成的產物，`update` 用的合併函式原樣取自 `sync_project.py`，所以安裝、更新與同步只有一套邏輯；兩個產物手改都會被擋（「部署包由來源生成」「安裝程式由來源生成」）。」部署包隨後退休，不再提交。
 
 **2026-11-18 被取代（v3 Q49）**：理由檔這一節原本寫「部署包仍提交，因為各專案複製它、`sync_project.py` 讀它與它的 Git 歷史；手改會被「部署包由來源生成」擋。」各專案改跑 `bootstrap.py`，不再複製部署包。
 

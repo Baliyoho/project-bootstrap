@@ -36,7 +36,9 @@ class RepoMatrixTests(unittest.TestCase):
         self.assertEqual(raw.count('<!-- kit-table: '), len(self.data['tables']))
         prose, files = build_kit.load_source()
         built = build_kit.build(prose, files)
-        self.assertEqual(built, (ROOT / 'PROJECT-BOOTSTRAP.md').read_text(encoding='utf-8'))
+        # 2026-11-18 (decision v3 Q50): the package text is no longer committed; it is built in memory.
+        self.assertEqual(built, build_kit.kit_text())
+        self.assertFalse((ROOT / 'PROJECT-BOOTSTRAP.md').exists())
         changed = copy.deepcopy(self.data)
         next(c for c in changed['cells'] if c['id'] == 'codex-cli/hooks')['text'] = '✅ 改過'
         self.assertNotEqual(build_kit.build(cap.render_tables(raw, changed), files), built)

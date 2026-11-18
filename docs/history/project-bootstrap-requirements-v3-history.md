@@ -1,12 +1,13 @@
 # project-bootstrap 需求決策書 v3 歷史紀錄
 
-> 最後更新：2026-11-18（登記並決定 Q49：部署方式改成安裝程式寫檔、安裝後由 agent 接手）；更早的修改見下面的修改紀錄
+> 最後更新：2026-11-18（登記並決定 Q50：`PROJECT-BOOTSTRAP.md` 退休，已部署專案照舊用 `sync_project.py` 升級）；更早的修改見下面的修改紀錄
 > 回答「決策書怎麼變成現在這樣」。現在要什麼只看決策書；這裡是它的修改紀錄、已決的 Q 與從條文移出的經過。決策書每改一次就在這裡加一筆，到 v4 時跟 v3 決策書一起搬進封存區 `archive/docs/`（Q44、Q45）。碰到才讀，不在常態入口，讀它不用先經使用者同意。v2 時代的 Q1–Q31 不在這裡，在封存的 v2 原件。2026-11-18 以前的紀錄裡寫的 `docs/history/` 是當時的封存區，現在在 `archive/docs/`（Q44 先改名 `docs/archive/`，同日 Q45 再搬到根目錄冷區）。
 
 ## 1. 修改紀錄
 
 新的在上。每筆寫日期、改了哪裡、牽涉的 ID 或 Q、出處。
 
+- 2026-11-18：第 5 節「部署方式」加兩條：唯一產出物是 `bootstrap.py`、部署包說明是 `src/kit/kit.md`；已部署專案照舊用 `sync_project.py` 升級。第 8 節的下一個編號改成 Q51（Q50）。
 - 2026-11-18：D7 從「一個包」改成安裝程式；F17、F18 的處置寫進 `bootstrap.py`；第 5 節加「部署方式」；第 8 節的下一個編號改成 Q50（Q49）。
 - 2026-11-18：第 8 節的下一個編號改成 Q49；條文沒有寫到 `CONTRIBUTING.md`、`AGENTS-reasons.md` 的檔名或定位，不必改（Q48）。
 - 2026-11-18：第 7 節加「版本更替」；第 8 節的下一個編號改成 Q48（Q47）。
@@ -118,6 +119,12 @@ Q37、Q38 是 2026-11-16 登記並決定的，當時的「最後更新」沒有�
   - 交給 AI 判斷的兩件：最低 Python 版本照 `pyproject.toml` 的 `requires-python` 定為 3.12。要不要在本機 `git init`：只在目標不屬於任何 Git 工作樹時 `git init -b main`，不 add、不 commit。理由是兩支 hook 要在 Git repo 裡才跑得起來；`.gitignore` 是第一個寫的檔，又不 add，祕密不會進索引；`git init` 可以整個刪掉重來，也不碰網路。目標在別的 repo 裡面時不動，免得長出巢狀 repo（`--no-git-init` 可關掉）
   - 已知弱點：使用者的前提是 macOS 與 Windows 都有 Python。本機實測 `/usr/bin/python3` 是 3.9.6，低於 3.12；這台機器另外裝的 `python3` 是 3.15.2。Windows 沒有驗證。所以只有內建 Python 的 Mac 要先另裝 3.12 以上，`bootstrap.py` 會在開頭擋下並說明
   - 結果：新增 `src/project_bootstrap/installer.py`（安裝與更新邏輯）與生成的 `bootstrap.py`（`tools/build_kit.py` 從 `src/kit/`、`installer.py` 與 `sync_project.py` 的合併函式產生，跟部署包同一個 commit 重生）。`verify_bootstrap.py` 加「安裝程式由來源生成」（五個負向測試），「部署生命週期」改讀 `mode-0.md` 0-5 的順序，拿掉 `--zip` 與兩項 ZIP 檢查。新增 `tests/test_installer.py`（變異組 14 個全擋）與 `tests/test_bootstrap_repo.py`（空資料夾、已有 `AGENTS.md`／`.gitignore`／`.claude/settings.json`、更新保留專案內容、CRLF、在部署出的暫存 repo 跑兩支 hook）。handoff skill 的 `mode-0.md` 改成跑安裝程式再處理第一批工作，`reasons.md` 跟著改，七個檔的 `source:` 與 `VERSION` 跳到 `2026-11-18`；`HANDOFF.md` 範本改成安裝後的狀態。`PROJECT-BOOTSTRAP.md` 不再是安裝途徑，但這次沒有刪：`sync_project.py` 讀它與它的 Git 歷史，去留另請使用者決定。已部署的專案沒有動
+- **Q50**（2026-11-18 登記）：Q49 讓 `PROJECT-BOOTSTRAP.md` 不再是安裝途徑，它要怎麼退休？起因是 Q49 的結果沒有刪它，因為 `sync_project.py` 讀它與它的 Git 歷史；AI 在 Q49 的回報裡列了選項並建議 (b)。選項：(a) 保留：只當部署包說明與範本全文；(b) 改小：只留說明、範本全文不放進去，同步器改讀 `src/kit`；(c) 刪除：同步器要改，也要決定已部署專案怎麼升級。影響 F18、F30、F36、本 repo 的 AGENTS／ARCHITECT／README／CHANGELOG／理由檔、`build_kit.py`、`verify_bootstrap.py`、`sync_project.py`、`contradictions.py`。狀態：已決（2026-11-18，使用者在聊天中選 (c)；接著的提問裡，已部署專案的升級選「照舊用 sync_project.py」）。
+  - 採用理由：使用者原話「我選Ｃ」；範本已經在 `src/kit/files/` 與 `bootstrap.py` 各有一份，部署包全文是第三份（出處：2026-11-18 聊天與 Q49 回報）
+  - 未選 (a) 保留：第三份範本副本要一直跟著重生與提交，而它已經不是任何人的入口（出處：2026-11-18 Q49 回報）
+  - 未選 (b) 改小：說明本來就在 `src/kit/kit.md`，生成一份只有說明的檔等於複製它；使用者選了 (c)（出處：同上）
+  - 已部署專案的升級：選項是照舊用 `sync_project.py`（同步器改讀 `src/kit`）、改用 `bootstrap.py update`（要替每個專案補答案檔，之後同步器退休）、兩條都留；使用者選照舊，理由是已部署專案不用動、接棒檢查與占用守門照舊（出處：2026-11-18 聊天的選項卡）
+  - 結果：`git rm PROJECT-BOOTSTRAP.md`。`build_kit.py` 只寫 `bootstrap.py`，`kit_text()` 在記憶體組出全文，根目錄出現 `PROJECT-BOOTSTRAP.md` 就失敗。`verify_bootstrap.py` 讀部署包的地方全部改用 `kit_text()`；「部署包由來源生成」改成擋檔案被放回來（7 個負向測試）。`sync_project.py` 抽範本改用記憶體全文，「已發布版本」從 `PROJECT-BOOTSTRAP.md` 的 Git 歷史（刪檔那個 commit 跳過）加上 `bootstrap.py` 的歷史取。`contradictions.py` 的部署包文件改成 `src/kit/` 整個資料夾。AGENTS 沒有全域 skill 時的退路改指 `src/kit/files/.claude/skills/handoff/`。`mode-0.md` 0-6 的一句改指 `src/kit/kit.md`，skill 跳到 `2026-11-18.2`。各檔檔頭的 `source: PROJECT-BOOTSTRAP.md v…` 字樣不改：它是版本標記的格式，已部署專案的開場 hook 用這個字面比對版本，改了會讀不到
 
 ## 3. 從條文移出的經過
 

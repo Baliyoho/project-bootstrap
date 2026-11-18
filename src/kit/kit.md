@@ -7,8 +7,8 @@
 > ```
 >
 > 它問完第 1 節的訪談，把第 3 節的每個檔寫進去（已存在的同名檔不覆寫，新內容寫成 `<路徑>.bootstrap-new`），逐檔比對雜湊，再把安裝後要由 agent 做的第一批工作寫進 `HANDOFF.md`。之後在那個資料夾開 Claude Code 或 Codex 說「接棒」即可。已部署的專案升級跑 `python3 bootstrap.py update --target <專案>`（先預演，加 `--write` 才寫入）。
-> 本檔是部署包的完整說明與每個範本的全文，跟 `bootstrap.py` 一樣由 `tools/build_kit.py` 從 `src/kit/` 產生；給人讀、給 `sync_project.py` 用，不複製進專案。
-> 版本：**2026-11-18**（建制改成「安裝程式寫檔＋安裝後由 agent 接手」（決策書 v3 Q49）：對外的安裝途徑從本檔改成單一檔 `bootstrap.py`，拿掉 AI 照抄這條路。handoff skill 的 `mode-0.md` 改成跑安裝程式、再處理第一批工作，原本第 5 節的遠端與工具驗收清單逐字搬進它的 0-6；`reasons.md` 的模式 0 權威與兩條反例跟著改，規則對照表換成新的小節名。`HANDOFF.md` 範本改成安裝後的狀態（還沒 commit、還沒有 GitHub repo）。第 1、2、4、5 節改寫：訪談由程式問、部署樹多一個 `.bootstrap/answers.json`、本機驗收與首次發布及遠端驗收都改指 `mode-0.md`。）
+> 本檔（`src/kit/kit.md`）是部署包的說明，範本全文在 `src/kit/files/`。2026-11-18 起不再生成成 `PROJECT-BOOTSTRAP.md` 提交（需求決策書 v3 Q50）：驗證器與同步器需要全文時，由 `tools/build_kit.py` 在記憶體把兩者組起來；下面的「第 N 節」「3.x」指的就是組出來的全文。不複製進專案。
+> 版本：**2026-11-18.2**（`PROJECT-BOOTSTRAP.md` 退休（決策書 v3 Q50）：不再生成與提交，部署包說明就是 `src/kit/kit.md`。`mode-0.md` 0-6 開頭那句「3.x 指 `PROJECT-BOOTSTRAP.md`」改指 `src/kit/kit.md`，所以 skill 七個檔跳版。已部署的專案照舊用 `sync_project.py` 升級。）
 > 更早的版本與每一版的理由在 project-bootstrap repo 的 `CHANGELOG.md`（2026-11-17 起從本檔開頭搬出，逐字不改；部署後用不到）。
 > 萃取自兩個實際運行的專案：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，一個是文本識別系統。兩個都是多模型、多機器協作。
 

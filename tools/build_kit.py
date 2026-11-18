@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build PROJECT-BOOTSTRAP.md from its source in src/kit/ (P1 slice 3, 2026-11-11).
+"""Build bootstrap.py from its source in src/kit/ (P1 slice 3, 2026-11-11; v3 Q49, Q50).
 
 Source layout:
 - src/kit/kit.md: the deployment package's prose. Inside a section 3.x fenced
@@ -13,20 +13,23 @@ Source layout:
   the cross-tool tables have one home. Rendering lives in
   src/project_bootstrap/capabilities.py.
 
-Two build outputs, both committed and regenerated together:
+One committed build output:
 
-- PROJECT-BOOTSTRAP.md: the package's documentation with every template in full.
-  sync_project.py reads it and its Git history. Since v3 Q49 it is not the
-  install route any more.
 - bootstrap.py: the installer projects run (v3 Q49). It is
   src/project_bootstrap/installer.py, the templates and owners.json embedded,
   and the merge functions of tools/sync_project.py copied verbatim (SHARED), so
   install, update and sync share one implementation.
 
+build() still assembles kit.md and the templates into one text, the way the
+deployment package PROJECT-BOOTSTRAP.md used to be committed. Since v3 Q50 that
+text is not a file any more: verify_bootstrap.py and sync_project.py build it in
+memory with kit_text(). The Git history of PROJECT-BOOTSTRAP.md stays readable
+for sync_project.py's list of published versions.
+
 Edit the source and rerun:
 
-    python3 -X utf8 tools/build_kit.py            # write both outputs
-    python3 -X utf8 tools/build_kit.py --check    # exit 1 if either is out of date
+    python3 -X utf8 tools/build_kit.py            # write bootstrap.py
+    python3 -X utf8 tools/build_kit.py --check    # exit 1 if it is out of date
 
 Standard library only (Python 3.8+), like verify_bootstrap.py.
 """
@@ -45,7 +48,8 @@ from project_bootstrap import capabilities  # noqa: E402
 SOURCE = ROOT / 'src' / 'kit'
 PROSE = SOURCE / 'kit.md'
 FILES = SOURCE / 'files'
-OUTPUT = ROOT / 'PROJECT-BOOTSTRAP.md'
+# Retired output (v3 Q50). Kept as a name so a stray copy can be refused.
+RETIRED = ROOT / 'PROJECT-BOOTSTRAP.md'
 INSTALLER = ROOT / 'src' / 'project_bootstrap' / 'installer.py'
 SYNC = ROOT / 'tools' / 'sync_project.py'
 BOOTSTRAP = ROOT / 'bootstrap.py'
@@ -273,6 +277,11 @@ def build_bootstrap(files, installer_text, sync_text, owners):
     return '\n'.join(out)
 
 
+def kit_text():
+    """The deployment package text, built in memory from src/kit (v3 Q50)."""
+    return build(*load_source())
+
+
 def load_bootstrap(files):
     owners = json.loads(read_lf(SOURCE / 'owners.json'))['files']
     return build_bootstrap(files, read_lf(INSTALLER), read_lf(SYNC), owners)
@@ -284,7 +293,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         prose, files = load_source()
-        outputs = ((OUTPUT, build(prose, files)), (BOOTSTRAP, load_bootstrap(files)))
+        build(prose, files)  # the package text must still assemble
+        outputs = ((BOOTSTRAP, load_bootstrap(files)),)
     except (KitError, OSError, SyntaxError) as exc:
         print('build_kit: ' + str(exc))
         return 2
@@ -304,6 +314,9 @@ def main(argv=None):
             print('build_kit: 已重生 ' + path.name)
         else:
             print('build_kit: %s 已是最新' % path.name)
+    if RETIRED.exists():
+        print('build_kit: PROJECT-BOOTSTRAP.md 已退休（v3 Q50），不要放回來；說明在 src/kit/kit.md')
+        return 1
     return 1 if stale else 0
 
 

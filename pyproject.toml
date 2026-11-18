@@ -1,5 +1,5 @@
 # Development layout for this repo's own checks. Nothing here is deployed, and the
-# deployment package (PROJECT-BOOTSTRAP.md) is still the policy authority.
+# policy authority is src/kit/ (the installer bootstrap.py is built from it).
 # tools/verify_bootstrap.py stays standard-library only and does not need uv.
 [project]
 name = "project-bootstrap"

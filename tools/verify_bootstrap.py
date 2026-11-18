@@ -151,7 +151,22 @@ if sys.version_info < MIN_PY:
              % (MIN_PY + sys.version_info[:2]))
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+# 部署包的全文（kit.md＋範本）。2026-11-18（v3 Q50）起不再提交成 PROJECT-BOOTSTRAP.md，
+# 每次從 src/kit 在記憶體生成；KIT 只剩一個名字，用來擋有人把檔放回來。
 KIT = ROOT / 'PROJECT-BOOTSTRAP.md'
+_KIT_TEXT = None
+
+
+def kit_text():
+    global _KIT_TEXT
+    if _KIT_TEXT is None:
+        sys.path.insert(0, str(ROOT / 'tools'))
+        try:
+            import build_kit
+        finally:
+            sys.path.remove(str(ROOT / 'tools'))
+        _KIT_TEXT = build_kit.kit_text()
+    return _KIT_TEXT
 
 # 第 3 節應該產出的檔案。少一份就是有人刪了範本卻沒發現；多一份就把它加進來。
 EXPECTED = {
@@ -276,7 +291,7 @@ def find_bash():
         if not c.exists():
             continue
         probe = subprocess.run(
-            [str(c), '-c', f'test -f "{KIT.as_posix()}"'], capture_output=True)
+            [str(c), '-c', f'test -f "{(ROOT / "src/kit/kit.md").as_posix()}"'], capture_output=True)
         if probe.returncode == 0:
             _bash = str(c)
             return _bash
@@ -317,7 +332,7 @@ def skill_text(dest):
 
 
 def extract(dest, text=None):
-    lines = (read_lf(KIT) if text is None else text).split('\n')
+    lines = (kit_text() if text is None else text).split('\n')
     heads = [i for i, ln in enumerate(lines) if HEAD_RE.match(ln)]
     written = set()
     for n, i in enumerate(heads):
@@ -543,7 +558,7 @@ def step_deploy_shape(dest):
     """
     kit_copy = dest / KIT.name
     noise = dest / '讀我-先看這個.md'
-    shutil.copyfile(KIT, kit_copy)
+    write_lf(kit_copy, kit_text())  # 2026-11-18（v3 Q50）起部署包不再提交；舊專案裡可能還留著一份
     with open(noise, 'w', encoding='utf-8', newline='') as fh:
         fh.write('# 說明\n\n> 最後更新：2026-08-05\n')
     try:
@@ -3152,7 +3167,7 @@ def step_table_freshness():
     if os.environ.get('BOOTSTRAP_FRESHNESS') == 'off':
         record('SKIP', '跨工具表保鮮期', 'BOOTSTRAP_FRESHNESS=off')
         return True
-    m = re.search(r'查證日期：(\d{4})-(\d{2})-(\d{2})', KIT.read_text(encoding='utf-8'))
+    m = re.search(r'查證日期：(\d{4})-(\d{2})-(\d{2})', kit_text())
     if not m:
         record('FAIL', '跨工具表保鮮期',
                '「跨工具與跨平台」那節找不到「查證日期：YYYY-MM-DD」——這一項是靠它判斷的')
@@ -3258,7 +3273,7 @@ def step_readme_table():
     同名的列——代價是部署包新增一整列（新的能力類別）不會逼 README 跟上。
     """
     readme = (ROOT / 'README.md').read_text(encoding='utf-8')
-    problems = compare_tool_tables(readme, KIT.read_text(encoding='utf-8'))
+    problems = compare_tool_tables(readme, kit_text())
     if problems:
         record('FAIL', 'README 跨工具表一致性', '；'.join(problems))
         return False
@@ -3309,7 +3324,7 @@ def stale_tool_prose_problems(text):
 
 def step_tool_prose(dest):
     documents = (
-        ('部署包正文', KIT.read_text(encoding='utf-8')),
+        ('部署包正文', kit_text()),
         ('本 repo ARCHITECT', (ROOT / 'ARCHITECT.md').read_text(encoding='utf-8')),
         ('重生 ARCHITECT', (dest / 'ARCHITECT.md').read_text(encoding='utf-8')),
         ('重生 handoff skill', skill_text(dest)),
@@ -3586,7 +3601,7 @@ def step_claims(dest):
     所以引用舊說法的那些行必須放行。
     """
     docs = {
-        'kit': read_lf(KIT),
+        'kit': kit_text(),
         'readme': read_lf(ROOT / 'README.md'),
         'agents': read_lf(ROOT / 'AGENTS.md'),
         'dep_readme': read_lf(dest / 'README.md'),
@@ -3941,7 +3956,7 @@ def step_misc(dest, work=None):
     # VERSION 檔是落後偵測的依據：各專案抓它跟自己的 source 標記比。它跟部署包開頭
     # 「版本：**…**」那一行必須一致——不一致的話偵測就會說謊，而那種謊沒有任何徵兆：
     # 落後的專案會以為自己是最新的，正好是這個機制要解決的問題本身。
-    kit_ver = re.search(r'^> 版本：\*\*([^*]+)\*\*', KIT.read_text(encoding='utf-8'), re.M)
+    kit_ver = re.search(r'^> 版本：\*\*([^*]+)\*\*', kit_text(), re.M)
     vfile = ROOT / 'VERSION'
     if not vfile.exists():
         record('FAIL', 'VERSION 檔', '不存在——落後偵測沒有依據')
@@ -4489,7 +4504,7 @@ def step_deployment_lifecycle(tmp):
         return r
     must(['git', 'init', '-q', '-b', 'main', str(work)])
     must(['git', 'add', '.'], work)
-    kit = read_lf(KIT)
+    kit = kit_text()
     skill = skill_text(work)
     bad = deployment_order_problems(skill, read_lf(ROOT / 'README.md'))
     for invalid in (' !fixture', '` !fixture`'):
@@ -5351,23 +5366,20 @@ def bootstrap_source_problems(build_kit, files, installer, sync, current):
     return []
 
 
-def kit_source_problems(build_kit, prose, files, kit):
-    """2026-11-11 P1 第三片：PROJECT-BOOTSTRAP.md 必須等於 src/kit 生成的結果。
+def kit_source_problems(build_kit, prose, files, retired_exists):
+    """src/kit 生得出部署包全文、範本集合等於 EXPECTED，而且 PROJECT-BOOTSTRAP.md 沒被放回來。
 
-    只查生成結果逐位元組相同、每個範本剛好被用一次、範本集合等於 EXPECTED。
-    範本內容對不對由本檔其他各項（重生骨架起）照舊在生成出來的部署包上驗。
+    2026-11-11 P1 第三片起要求提交的 PROJECT-BOOTSTRAP.md 等於生成結果；2026-11-18
+    （v3 Q50）起不再提交它，全文只在記憶體生成（kit_text），所以改成擋它回來——
+    回來就又多一份會過期的範本副本。範本內容對不對由本檔其他各項照舊驗。
     """
     try:
-        built = build_kit.build(prose, files)
+        build_kit.build(prose, files)
     except build_kit.KitError as exc:
         return ['src/kit 生不出部署包：%s' % exc]
     bad = []
-    if built != kit:
-        lines = (built.split('\n'), kit.split('\n'))
-        first = next((i for i, pair in enumerate(zip(*lines)) if pair[0] != pair[1]),
-                     min(len(lines[0]), len(lines[1])))
-        bad.append('PROJECT-BOOTSTRAP.md 與 src/kit 生成結果不同（第 %d 行起）；'
-                   '改來源後跑 python3 -X utf8 tools/build_kit.py，不要手改部署包' % (first + 1))
+    if retired_exists:
+        bad.append('PROJECT-BOOTSTRAP.md 已退休（v3 Q50），不要提交回來；說明在 src/kit/kit.md')
     if set(files) != EXPECTED:
         bad.append('src/kit/files 的範本與 EXPECTED 不同：缺 %s 多 %s'
                    % (sorted(EXPECTED - set(files)), sorted(set(files) - EXPECTED)))
@@ -5387,34 +5399,32 @@ def step_kit_source():
         return
     finally:
         sys.path.remove(str(ROOT / 'tools'))
-    kit = read_lf(KIT)
-    bad = kit_source_problems(build_kit, prose, files, kit)
+    retired = KIT.exists()
+    bad = kit_source_problems(build_kit, prose, files, retired)
     cases = []
     if not bad:
         name = 'AGENTS.md'
         directive = '<!-- kit-file: %s -->' % name
         cases = [
-            ('手改部署包', kit_source_problems(build_kit, prose, files, kit.replace('鐵律', '鐵則', 1))),
-            ('改範本沒重生', kit_source_problems(build_kit, prose, dict(files, **{name: files[name] + 'x\n'}), kit)),
-            ('改 kit.md 沒重生', kit_source_problems(build_kit, prose.replace('## 0.', '## 0 .', 1), files, kit)),
-            ('多一個沒用到的範本', kit_source_problems(build_kit, prose, dict(files, **{'extra.md': 'x\n'}), kit)),
+            ('部署包又被放回來', kit_source_problems(build_kit, prose, files, True)),
+            ('多一個沒用到的範本', kit_source_problems(build_kit, prose, dict(files, **{'extra.md': 'x\n'}), retired)),
             ('kit.md 指到不存在的範本', kit_source_problems(build_kit, prose.replace(
-                directive, '<!-- kit-file: missing.md -->', 1), files, kit)),
+                directive, '<!-- kit-file: missing.md -->', 1), files, retired)),
             ('同一個範本用兩次', kit_source_problems(build_kit, prose.replace(
-                '<!-- kit-file: CLAUDE.md -->', directive, 1), files, kit)),
-            ('範本少了結尾換行', kit_source_problems(build_kit, prose, dict(files, **{name: files[name][:-1]}), kit)),
+                '<!-- kit-file: CLAUDE.md -->', directive, 1), files, retired)),
+            ('範本少了結尾換行', kit_source_problems(build_kit, prose, dict(files, **{name: files[name][:-1]}), retired)),
             ('範本含收尾圍籬', kit_source_problems(build_kit, prose, dict(
-                files, **{'.gitattributes': files['.gitattributes'] + '````\n'}), kit)),  # 3.13 用四個反引號圍
+                files, **{'.gitattributes': files['.gitattributes'] + '````\n'}), retired)),  # 3.13 用四個反引號圍
             ('範本集合少一個', kit_source_problems(build_kit, prose.replace(
                 '<!-- kit-file: .gitattributes -->\n', '', 1),
-                {k: v for k, v in files.items() if k != '.gitattributes'}, kit)),
+                {k: v for k, v in files.items() if k != '.gitattributes'}, retired)),
         ]
         for label, problems in cases:
             if not problems:
                 bad.append('負向測試未擋：' + label)
     record('FAIL' if bad else 'OK', '部署包由來源生成', '；'.join(bad) if bad else
-           'PROJECT-BOOTSTRAP.md 與 src/kit（kit.md＋%d 個 .tmpl 範本）生成結果逐位元組相同；'
-           '%d 個負向測試（只證明部署包是生成的，範本內容由其他各項驗）' % (len(files), len(cases)))
+           'src/kit（kit.md＋%d 個 .tmpl 範本）生得出部署包全文，PROJECT-BOOTSTRAP.md 沒被放回來；'
+           '%d 個負向測試（只證明全文生得出來，範本內容由其他各項驗）' % (len(files), len(cases)))
     installer = read_lf(ROOT / 'src/project_bootstrap/installer.py')
     sync = read_lf(ROOT / 'tools/sync_project.py')
     current = read_lf(ROOT / 'bootstrap.py') if (ROOT / 'bootstrap.py').exists() else ''
@@ -5450,8 +5460,8 @@ def main():
     QUIET = args.quiet
     results.clear()
 
-    if not KIT.exists():
-        print(f'找不到 {KIT}——請在本 repo 根目錄執行')
+    if not (ROOT / 'src/kit/kit.md').exists():
+        print('找不到 src/kit/kit.md——請在本 repo 根目錄執行')
         return 2
 
     if args.staged:

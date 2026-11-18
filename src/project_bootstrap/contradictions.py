@@ -188,6 +188,11 @@ def check(docs, config):
             'note': '只比對宣告的規則表與待決登記；未發現不等於文件一致'}
 
 
+# The deployment package's text. PROJECT-BOOTSTRAP.md was its committed build output until
+# 2026-11-18 (decision v3 Q50); now the rules read its source, src/kit/kit.md and every
+# template, joined by read_docs into one document under this name.
+KIT_DOC = 'src/kit/'
+
 # This repo's own declared table. Narrow on purpose: a pattern that also
 # matches a sentence describing the old rule would turn history into a finding.
 REPO_CONFIG = {
@@ -199,8 +204,8 @@ REPO_CONFIG = {
             'protocol': [r'(?<!宣稱)(衝突|兩者)[^。\n]{0,6}以(專案)?協定為準',
                          r'(?<!宣稱)協定優先於 ?(SKILL|skill)'],
         },
-        'docs': ['README.md', 'AGENTS.md', 'PROJECT-BOOTSTRAP.md'],
-        'required_in': ['README.md', 'PROJECT-BOOTSTRAP.md'],
+        'docs': ['README.md', 'AGENTS.md', KIT_DOC],
+        'required_in': ['README.md', KIT_DOC],
     }, {
         'id': 'requirement-count',
         'canonical': '51',
@@ -221,7 +226,7 @@ REPO_CONFIG = {
             'signal': [r'協調訊號，不是'],
             'lock': [r'(?<![不非、])是(一把|個)?互斥鎖'],
         },
-        'required_in': ['PROJECT-BOOTSTRAP.md'],
+        'required_in': [KIT_DOC],
     }, {
         # 2026-11-02／F15: the source marker's serial can run ahead of the version line.
         'id': 'serial-vs-version-line',
@@ -232,8 +237,8 @@ REPO_CONFIG = {
             'same': [r'序號[^。\n「」（）]{0,12}(跟|與)[^。\n「」（）]{0,10}版本」?行'
                      r'[^。\n「」（）]{0,4}(?<!不保證)同(一個)?號'],
         },
-        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md'],
-        'required_in': ['AGENTS.md', 'PROJECT-BOOTSTRAP.md'],
+        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', KIT_DOC],
+        'required_in': ['AGENTS.md', KIT_DOC],
     }, {
         # Iron rule 1: only a real SKILL.md change bumps VERSION and the version line.
         'id': 'version-follows-skill',
@@ -249,8 +254,8 @@ REPO_CONFIG = {
                            r'[^。\n「」（）]{0,8}(就|都)要?跳 ?`?VERSION(?!`?」)',
                            r'(?<!「)`?VERSION`? ?跟著 ?`?source'],
         },
-        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md'],
-        'required_in': ['AGENTS.md', 'PROJECT-BOOTSTRAP.md'],
+        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', KIT_DOC],
+        'required_in': ['AGENTS.md', KIT_DOC],
     }],
     # 2026-11-16（v3 Q37 的連帶）：登記處改指 v3 第 8 節。v3 Q32 (b) 讓兩本並存時
     # 寫著「工具認得的仍是 v2 第 6 節」，但新編號從 Q32 起就只發在 v3，HANDOFF 的
@@ -260,9 +265,9 @@ REPO_CONFIG = {
     'pending_sections': [{'doc': 'HANDOFF.md', 'heading': r'懸置事項'}],
     # Dated log lines and the decisions record state what was true then.
     'history': [{'doc': 'ARCHITECT.md', 'line': r'^> (最後更新：)?\d{4}-\d{2}-\d{2}'}],
-    'scan_fences': ['PROJECT-BOOTSTRAP.md'],
+    'scan_fences': [KIT_DOC],
 }
-REPO_DOCS = ('README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md', 'HANDOFF.md',
+REPO_DOCS = ('README.md', 'AGENTS.md', 'ARCHITECT.md', KIT_DOC, 'HANDOFF.md',
              # 唯一需求書，也是待決登記處（2026-11-16；2026-11-17 v3 Q39 起 v2 封存不讀）。
              'project-bootstrap-requirements-decision-v3.md',
              # 2026-11-17：實施權威改成實施計畫 v3，舊實現規劃封存不讀。
@@ -272,6 +277,15 @@ REPO_DOCS = ('README.md', 'AGENTS.md', 'ARCHITECT.md', 'PROJECT-BOOTSTRAP.md', '
 def read_docs(root, names):
     docs = {}
     for name in names:
+        if name.endswith('/'):
+            folder = Path(root) / name
+            try:
+                parts = [(folder / 'kit.md').read_text(encoding='utf-8')]
+                parts += [p.read_text(encoding='utf-8') for p in sorted((folder / 'files').rglob('*.tmpl'))]
+                docs[name] = '\n\n'.join(parts)
+            except (OSError, UnicodeDecodeError):
+                docs[name] = None
+            continue
         try:
             docs[name] = (Path(root) / name).read_text(encoding='utf-8')
         except (OSError, UnicodeDecodeError):

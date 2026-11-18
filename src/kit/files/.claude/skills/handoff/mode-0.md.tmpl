@@ -1,4 +1,4 @@
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-18 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-18.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -97,7 +97,7 @@ gh repo create <owner>/<repo> --private --source=. --remote=origin --push
 
 ### 0-6 遠端與工具驗收
 
-2026-11-18 起從部署包第 5 節原文搬來（Q49）；文內的「3.x」與「開頭那一節」指 project-bootstrap repo 的 `PROJECT-BOOTSTRAP.md`。0-5 已先完成本機驗收。這一節補遠端、runtime 與工具實際注入的驗收；逐項回報，全過或明列不適用／未配置才算交代完整，未驗證不能宣稱通過。
+2026-11-18 起從部署包第 5 節原文搬來（Q49）；文內的「3.x」與「開頭那一節」指 project-bootstrap repo 的部署包說明 `src/kit/kit.md`（2026-11-18 以前是生成的 `PROJECT-BOOTSTRAP.md`，Q50）。0-5 已先完成本機驗收。這一節補遠端、runtime 與工具實際注入的驗收；逐項回報，全過或明列不適用／未配置才算交代完整，未驗證不能宣稱通過。
 
 - [ ] `python -X utf8 tools/check_docs.py` → `OK`（一次涵蓋死連結與**殘留佔位符**；佔位符那一項掃 `.md`／`.py`／`.sh`／`.json`／`.gitignore`／`.gitattributes` 的 tracked 檔，所以要先 `git add`）
 - [ ] `python -X utf8 tools/verify_state.py` → 可執行（尚未填檢查項時印 `NOT_CONFIGURED`，正常）

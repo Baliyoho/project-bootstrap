@@ -1,6 +1,6 @@
 # project-bootstrap 需求決策書 v3
 
-> 最後更新：2026-11-18（登記並決定 Q49：部署方式改成安裝程式 `bootstrap.py` 寫檔、安裝後由 agent 接手；D7、F17、F18 與第 5 節跟著改，第 8 節的下一個編號改成 Q50）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
+> 最後更新：2026-11-18（登記並決定 Q50：`PROJECT-BOOTSTRAP.md` 退休、已部署專案照舊用 `sync_project.py` 升級；第 5 節「部署方式」加一條，第 8 節的下一個編號改成 Q51）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
 > 決策版本：3。2026-11-13 起是現行需求權威，也是**唯一需求書**（Q39）：v2 決策書凍結封存在 `archive/docs/requirements-decision-v2.md`，逐位元組不改，不被任何程式讀取。
 > 需求編號沿用 v2 的 51 個穩定 ID，不重編；退役的 ID 保留編號與理由。v2 的 Q1–Q31 與逐條理由只在封存的 v2 原件裡（[歷史原件](archive/docs/project-bootstrap-requirements-history.md)沒有收），本檔不複製；平常不讀，要回溯歷史先經使用者同意（Q39）。
 
@@ -179,7 +179,8 @@ D9、D12、D13 一起讀：**資訊進入口，強制進 hook，執行屏障交�
 - 不碰網路、不推送、不建 GitHub repo；不在任何 Git 工作樹裡時 `git init -b main`，不 add、不 commit。
 - 寫完的 `HANDOFF.md`「工作中」是 `無（已交棒）`，「未完成／下一步」列第一批工作，agent 照平常接棒接手。
 - 安裝與更新是同一支程式；更新依 `owners.json` 只換 core 與 adapter 擁有的部分，合併邏輯與 `sync_project.py` 是同一套。
-- `bootstrap.py` 由 `tools/build_kit.py` 從 `src/kit/` 生成，不手改。
+- `bootstrap.py` 由 `tools/build_kit.py` 從 `src/kit/` 生成，不手改。它是唯一的產出物：部署包的說明就是 `src/kit/kit.md`，不再生成成 `PROJECT-BOOTSTRAP.md`（Q50）。
+- 不是用 `bootstrap.py` 裝的已部署專案（沒有答案檔），照舊由 `sync_project.py` 升級（Q50）。
 
 | 檔案 | 內容 | 預算 |
 |---|---|---|
@@ -224,7 +225,7 @@ v2 的程式不留在 main（Q46）。執行屏障類模組（`launcher`、`supe
 
 ## 8. 待決事項
 
-要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。編號接續，下一個是 Q50。
+要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。編號接續，下一個是 Q51。
 
 目前沒有待決事項。
 

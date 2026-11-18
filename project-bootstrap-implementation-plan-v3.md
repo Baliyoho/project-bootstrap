@@ -1,6 +1,6 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-18（第 3 節排進安裝程式 `bootstrap.py` 各部分的歸期，決策書 Q49）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
+> 最後更新：2026-11-18（第 3 節安裝程式一段：`PROJECT-BOOTSTRAP.md` 已刪，已部署專案照舊用 `sync_project.py`，決策書 Q50）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
 > 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](docs/status.json)。
 
 ## 1. 起點
@@ -33,7 +33,7 @@
 - macOS 的安裝、更新、換行與兩支 hook 在 `tests/test_bootstrap_repo.py` 實跑，跟著第 1 期的範圍。第 1 期已結案，不因此重開，也不把這些測試當成 handoff-ab 的結果檢查。
 - 在 Codex 上照 HANDOFF 的第一批工作接手，歸第 2 期，還沒跑。
 - Windows 的安裝、`.gitattributes` 換行與 hook 實跑歸第 3 期，還沒跑。測試裡的 CRLF 只是在 macOS 上模擬。
-- `PROJECT-BOOTSTRAP.md` 不再是安裝途徑，要不要刪待使用者決定（`sync_project.py` 還讀它與它的 Git 歷史）。
+- `PROJECT-BOOTSTRAP.md` 2026-11-18 刪除，已部署專案照舊用 `sync_project.py` 升級（決策書 Q50），不排進任何一期。
 
 ## 4. 暫緩與另案
 

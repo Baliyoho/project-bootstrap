@@ -2,8 +2,8 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一支安裝程式**：[bootstrap.py](bootstrap.py)。
 
-> 最後更新：2026-11-18（安裝途徑從 `PROJECT-BOOTSTRAP.md` 改成 `bootstrap.py`，需求決策書 v3 Q49）
-> 這個 repo 的產出物是安裝程式 `bootstrap.py` 與部署包說明 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)，兩者都由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
+> 最後更新：2026-11-18（`PROJECT-BOOTSTRAP.md` 退休，需求決策書 v3 Q50）
+> 這個 repo 唯一的產出物是安裝程式 `bootstrap.py`，由 `src/kit/` 以 `tools/build_kit.py` 生成；部署包的說明與每個範本在 [src/kit/](src/kit/kit.md)。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 它在解決什麼
 
@@ -35,7 +35,7 @@ python3 bootstrap.py --target <新專案資料夾>
 
 已部署的專案升級跑 `python3 bootstrap.py update --target <專案>`：先預演，加 `--write` 才寫入；只換骨架擁有的部分，專案自己的內容不動。
 
-2026-11-18 以前的用法是把 `PROJECT-BOOTSTRAP.md` 複製進資料夾，讓 AI 照抄二十幾個檔；那條路已拿掉（需求決策書 v3 Q49）。`PROJECT-BOOTSTRAP.md` 留著當部署包的完整說明與範本全文。
+2026-11-18 以前的用法是把部署包 `PROJECT-BOOTSTRAP.md` 複製進資料夾，讓 AI 照抄二十幾個檔；那條路已拿掉（需求決策書 v3 Q49），`PROJECT-BOOTSTRAP.md` 也在同一天刪掉（Q50）。部署包的說明在 [src/kit/kit.md](src/kit/kit.md)，範本在 `src/kit/files/`。
 
 ## 部署後的專案長什麼樣
 

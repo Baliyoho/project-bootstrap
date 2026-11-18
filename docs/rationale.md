@@ -12,7 +12,7 @@
 
 代價與守門：`sync_project.py` 拒絕本 repo，副本只能手動重貼；`verify_bootstrap.py`「規則理由連結」要求它跟 `src/kit/files/AGENTS.md.tmpl` 逐字相同，並只對兩個標記之間跳過死連結與理由連結檢查（副本連到部署後才存在的 skill 路徑），標記壞掉就不跳。
 
-共用制度裡各條條件本身的理由在部署包 handoff skill 的 `reasons.md`（本機讀全域 `~/.claude/skills/handoff/reasons.md`；沒有全域副本時看 [PROJECT-BOOTSTRAP.md](../PROJECT-BOOTSTRAP.md) 的 3.8 節）與需求決策書 v3，這裡不重抄。
+共用制度裡各條條件本身的理由在部署包 handoff skill 的 `reasons.md`（本機讀全域 `~/.claude/skills/handoff/reasons.md`；沒有全域副本時看範本 [src/kit/files/.claude/skills/handoff/](../src/kit/files/.claude/skills/handoff/reasons.md.tmpl)）與需求決策書 v3，這裡不重抄。
 
 <a id="start"></a>
 
@@ -38,7 +38,7 @@
 
 ## 鐵律 1
 
-**權威只有一個家。** 在單一專案就地改 skill 或 hook，就是「同一個事實有多個家」的失控起點；改了要經部署包發出去。2026-11-11（P1 第三片）權威從手改的 `PROJECT-BOOTSTRAP.md` 搬到 `src/kit/`：一份 28 萬位元組的檔案夾著 27 個範本，範本無法單獨 diff 或測試。部署包仍提交，因為 `sync_project.py` 讀它與它的 Git 歷史。2026-11-18 起各專案跑的是 `bootstrap.py`（v3 Q49），它同樣是生成的產物，`update` 用的合併函式原樣取自 `sync_project.py`，所以安裝、更新與同步只有一套邏輯；兩個產物手改都會被擋（「部署包由來源生成」「安裝程式由來源生成」）。
+**權威只有一個家。** 在單一專案就地改 skill 或 hook，就是「同一個事實有多個家」的失控起點；改了要經部署包發出去。2026-11-11（P1 第三片）權威從手改的 `PROJECT-BOOTSTRAP.md` 搬到 `src/kit/`：一份 28 萬位元組的檔案夾著 27 個範本，範本無法單獨 diff 或測試。2026-11-18 起各專案跑的是 `bootstrap.py`（v3 Q49），`update` 用的合併函式原樣取自 `sync_project.py`，所以安裝、更新與同步只有一套邏輯。同日 `PROJECT-BOOTSTRAP.md` 退休（v3 Q50）：它是範本的第二份副本，提交著就得一直保持同步；驗證器與同步器改成在記憶體組出全文，同步器認得的「已發布版本」來自它的 Git 歷史與 `bootstrap.py` 的歷史。手改 `bootstrap.py` 或把部署包放回來都會被擋（「安裝程式由來源生成」「部署包由來源生成」）。
 
 **`VERSION` 只跟 handoff skill 目錄走。** 各專案的開場檢查拿 skill 檔頭的 `source:` 標記比上游 `VERSION`；只改了不同步的範本就跳版，每個專案會永遠印「骨架落後」，而且同步修不掉（2026-10-30 踩到）。2026-11-10 skill 拆成目錄後，目錄裡所有檔的標記要同版：開場只讀入口那一行，模式檔落後時不會有提示。
 
