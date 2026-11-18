@@ -1,6 +1,6 @@
 # AI 維護手冊
 
-> 最後更新：2026-11-18（加「改安裝程式」，拿掉 `--zip` 的做法，v3 Q49）
+> 最後更新：2026-11-18（zsh 的三種寫法移到部署包 `env.md`；加「改安裝程式」，拿掉 `--zip` 的做法，v3 Q49）
 > 這個 repo 由維護者與 AI session 維護。本檔是改這個 repo 時的做法：步驟、指令與踩過的坑，做到那件事才讀。規則在 [AGENTS.md](../AGENTS.md)，每個 session 開場自動載入；本檔提到規則時連回去，不重述。每條的現行理由在[理由檔](rationale.md)，被取代的理由與經過在[理由檔歷史紀錄](history/rationale-history.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 改部署包的流程
@@ -42,7 +42,7 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 - v2 的程式全部封存在 `archive/v2-*/`（v3 Q33、Q46），不執行、不維護；main 上的程式、測試與現況索引不能引用它們（`verify_bootstrap.py`「封存原件」擋）。要重新研究照各自的 README 在暫存目錄拼回。
 - 換版（v3 Q47）：新版決策書成為權威時，`AGENTS.md` 改連新版，驗證器的「版本更替」就開始擋舊版本名稱。現行區裡檔名、資料夾名或程式識別字帶舊版本號的東西，逐一刪除、`git mv` 到 `archive/`，或改成新版本的名稱，同時更新讀它們的程式與文件。舊版的權威文件與它的熱歷史照決策書第 7 節搬進 `archive/docs/`。
 - `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書 v3 第 8 節的 `Q` 編號（或 `- 無。`）。v3 第 3 節 D 表每列要有「決定」與「理由」；第 8 節已決項目底下子項格式是「採用理由／未選 (x) 名稱：／暫緩 名稱：」，選項名不能省，省了就報 `alternative-incomplete`（2026-11-17 封存 v2 時在 v3 踩到）。這兩個解析器與需求清單的解析器都按節名找節、不看節號（2026-11-17 起），改節名會讓它們讀不到東西，測試會失敗。
-- 提交指令要用 `&&` 綁住 verify 的結束碼。這台的互動殼層是 zsh：管線的結束碼是 `${pipestatus[1]}`，不是 bash 的 `PIPESTATUS`；`echo =====` 在 zsh 會被當成檔名展開而失敗；沒加引號的 `$變數` 在 zsh 不會被拆成多個參數，拿它裝多個 git pathspec 會變成一個比對不到任何檔的 pathspec，結果是「零命中」而不是錯誤（2026-11-17 踩到）。
+- 提交指令要用 `&&` 綁住 verify 的結束碼。macOS 上 zsh 跟 bash 不同的三種寫法（管線結束碼、`echo =====`、未加引號的 `$變數`）2026-11-18 起寫在部署包 handoff skill 的 `env.md`「macOS」一節，本 repo 讀全域那份或 `src/kit/files/.claude/skills/handoff/env.md.tmpl`。
 - 新增或改規則：每個 session 都要守的寫進 `AGENTS.md`，只有做那件事時才用得到的做法寫進本檔對應的一節；兩邊的「為什麼」都連到[理由檔](rationale.md)的錨點。理由改了就改寫理由檔那一節，舊理由加到[理由檔歷史紀錄](history/rationale-history.md)同一個錨點那組的最後（鐵律 3）。
 - 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。改了檢查模組就用 `mutants.py --only` 實跑對應的變異組。
 - 僅合成暫存 fixture；原檔、票據、金鑰與合成 Git object 不進本 repo。

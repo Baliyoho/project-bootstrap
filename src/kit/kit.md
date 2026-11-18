@@ -8,7 +8,7 @@
 >
 > 它問完第 1 節的訪談，把第 3 節的每個檔寫進去（已存在的同名檔不覆寫，新內容寫成 `<路徑>.bootstrap-new`），逐檔比對雜湊，再把安裝後要由 agent 做的第一批工作寫進 `HANDOFF.md`。之後在那個資料夾開 Claude Code 或 Codex 說「接棒」即可。已部署的專案升級跑 `python3 bootstrap.py update --target <專案>`（先預演，加 `--write` 才寫入）。
 > 本檔（`src/kit/kit.md`）是部署包的說明，範本全文在 `src/kit/files/`。2026-11-18 起不再生成成 `PROJECT-BOOTSTRAP.md` 提交（需求決策書 v3 Q50）：驗證器與同步器需要全文時，由 `tools/build_kit.py` 在記憶體把兩者組起來；下面的「第 N 節」「3.x」指的就是組出來的全文。不複製進專案。
-> 版本：**2026-11-18.2**（`PROJECT-BOOTSTRAP.md` 退休（決策書 v3 Q50）：不再生成與提交，部署包說明就是 `src/kit/kit.md`。`mode-0.md` 0-6 開頭那句「3.x 指 `PROJECT-BOOTSTRAP.md`」改指 `src/kit/kit.md`，所以 skill 七個檔跳版。已部署的專案照舊用 `sync_project.py` 升級。）
+> 版本：**2026-11-18.3**（zsh 跟 bash 不同的三種寫法（管線結束碼用 `${pipestatus[1]}`、`echo =====` 被當成檔名展開、未加引號的 `$變數` 不拆字）從本 repo 的維護手冊上移到 handoff skill 的 `env.md`「macOS」一節，因為部署出去的專案在 macOS 上一樣會踩到。七個 skill 檔與共用制度標記同版。）
 > 更早的版本與每一版的理由在 project-bootstrap repo 的 `CHANGELOG.md`（2026-11-17 起從本檔開頭搬出，逐字不改；部署後用不到）。
 > 萃取自兩個實際運行的專案：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，一個是文本識別系統。兩個都是多模型、多機器協作。
 

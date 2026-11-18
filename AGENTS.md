@@ -3,7 +3,7 @@
 > 最後更新：2026-11-18（`PROJECT-BOOTSTRAP.md` 退休，唯一產出物是 `bootstrap.py`，部署包說明在 `src/kit/kit.md`，需求決策書 v3 Q50）
 > 本檔只放規則：每個 session 一定要守、不能做的事，不寫步驟。改部署包、同步副本、改接線或 hook 訊息、寫本 repo 交接快照的做法在 [AI 維護手冊](docs/maintenance.md)，做到那件事才讀。每條的現行理由在[理由檔](docs/rationale.md)，被取代的理由在它的[歷史紀錄](docs/history/rationale-history.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-18.2 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-18.3 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
