@@ -826,7 +826,7 @@
           "scope": "程序群組停止一般後代但 setsid 脫離仍存活；多程序切換不能憑 leader 退場放行"
         },
         {
-          "path": "experiments/v2/README.md",
+          "path": "archive/v2-experiments/README.md",
           "scope": "Mac VM 候選的本機邊界、合成 guest 實測結果與未驗範圍"
         },
         {

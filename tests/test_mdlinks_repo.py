@@ -29,7 +29,7 @@ class RepoLinkTests(unittest.TestCase):
             sys.path.remove(str(ROOT / 'tools'))
         listed = subprocess.run(['git', 'ls-files', '-z', '--', '*.md'], cwd=ROOT,
                                 capture_output=True, check=True).stdout.decode('utf-8').split('\0')
-        # 2026-11-17 (v3 Q39): the frozen archive (docs/archive/ since 2026-11-18, v3 Q44) is not read.
+        # 2026-11-17 (v3 Q39): the frozen archive (archive/docs/ since 2026-11-18, v3 Q44/Q45) is not read.
         documents = [p for p in verify_bootstrap.repo_scanned_files([p for p in listed if p])
                      if p.endswith('.md')]
         self.assertIn('PROJECT-BOOTSTRAP.md', documents)

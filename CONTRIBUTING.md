@@ -1,6 +1,6 @@
 # 參與開發
 
-> 最後更新：2026-11-18（歷史紀錄搬進熱歷史 `docs/history/`，封存區改名 `docs/archive/`，需求決策書 v3 Q44）；前次 2026-11-17（「需求與計畫文件的分工」加兩份成對的歷史紀錄，需求決策書 v3 Q42）；前次同日（指標檔一節拿掉 `GEMINI.md`：本專案不支援 Gemini）；前次同日（開發注意事項去掉跟 AGENTS 鐵律 1 重複的句子，v2 原型三條併成一條；加「需求與計畫文件的分工」，舊的需求與計畫文件封存到 `docs/history/`）；前次同日（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法、ARCHITECT.md 的開發注意事項搬來這裡，需求決策書 v3 Q40）
+> 最後更新：2026-11-18（冷區合併：封存區搬到根目錄 `archive/docs/`，v2 舊說明封存到 `archive/v2-experiments/`，現況索引搬到 `docs/status.json`，需求決策書 v3 Q45）；前次同日（歷史紀錄搬進熱歷史 `docs/history/`，封存區改名 `docs/archive/`，需求決策書 v3 Q44）；前次 2026-11-17（「需求與計畫文件的分工」加兩份成對的歷史紀錄，需求決策書 v3 Q42）；前次同日（指標檔一節拿掉 `GEMINI.md`：本專案不支援 Gemini）；前次同日（開發注意事項去掉跟 AGENTS 鐵律 1 重複的句子，v2 原型三條併成一條；加「需求與計畫文件的分工」，舊的需求與計畫文件封存到 `docs/history/`）；前次同日（建立：AGENTS.md 裡碰到才需要的規則、README.md 裡的開發流程與副本同步用法、ARCHITECT.md 的開發注意事項搬來這裡，需求決策書 v3 Q40）
 > 這個 repo 由 AI session 輪流做。開工必守的規則在 [AGENTS.md](AGENTS.md)，AI 工具開工時會自動讀到；本檔是碰到才讀的流程與規則：改部署包、動副本或接線、寫本 repo 的交接快照、改兩支 hook 的訊息時才讀。每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 改部署包的流程
@@ -65,9 +65,9 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 | [ARCHITECT.md](ARCHITECT.md) | 現在長怎樣 | 現況與結構 |
 | [HANDOFF.md](HANDOFF.md) | 做到哪 | 進度與停點 |
 
-兩份權威文件只寫現況：改它們時直接改寫條文，只附 Q 編號或日期當出處，同一個 commit 在成對的歷史紀錄「修改紀錄」加一筆；決策書第 8 節的 Q 決定後，完整紀錄搬到歷史紀錄的「決策紀錄」（`tests/test_trail_repo.py` 讀它，查 F7）。歷史紀錄不是封存：放在熱歷史 `docs/history/`，會一直加、程式會讀，碰到才讀、不用先經使用者同意；到 v4 時跟 v3 的兩份權威一起搬進 `docs/archive/`（v3 Q44）。[為什麼](AGENTS-reasons.md#doc-roles)
+兩份權威文件只寫現況：改它們時直接改寫條文，只附 Q 編號或日期當出處，同一個 commit 在成對的歷史紀錄「修改紀錄」加一筆；決策書第 8 節的 Q 決定後，完整紀錄搬到歷史紀錄的「決策紀錄」（`tests/test_trail_repo.py` 讀它，查 F7）。歷史紀錄不是封存：放在熱歷史 `docs/history/`，會一直加、程式會讀，碰到才讀、不用先經使用者同意；到 v4 時跟 v3 的兩份權威一起搬進 `archive/docs/`（v3 Q44）。[為什麼](AGENTS-reasons.md#doc-roles)
 
-結案或被取代的需求與計畫類文件用 `git mv` 移到 `docs/archive/`，在它的[索引](docs/archive/README.md)加一行；只把還有效的內容併進兩份權威文件。程式與測試不讀封存區（`verify_bootstrap.py`「封存原件」守）。
+結案或被取代的需求與計畫類文件用 `git mv` 移到 `archive/docs/`，在它的[索引](archive/docs/README.md)加一行；只把還有效的內容併進兩份權威文件。程式與測試不讀封存區（`verify_bootstrap.py`「封存原件」守）。
 
 ## 本 repo 的交接快照
 

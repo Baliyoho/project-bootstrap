@@ -16,7 +16,7 @@ import jsonschema
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-TARGETS = {'status': ROOT / 'experiments/v2/status.json', 'mutants': HERE / 'mutants.json'}
+TARGETS = {'status': ROOT / 'docs/status.json', 'mutants': HERE / 'mutants.json'}
 
 
 def schema(name):

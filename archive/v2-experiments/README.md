@@ -1,10 +1,10 @@
 # v2 P0：可重跑的契約與架構門檻
 
-> 最後更新：2026-11-17（自測與比較拿掉 Gemini）；前次同日（實現規劃封存到 `docs/history/`，連結改指封存位置並指向實施計畫 v3）；前次 2026-11-12（P2 第 5 片，加 Q26 行末）
-> 2026-11-11 P1 第二片：本目錄的程式已搬到 [src/project_bootstrap](../../src/project_bootstrap/__init__.py)、測試搬到 [tests](../../tests/__init__.py)；這裡只留本說明與 [現況索引](status.json)。下文提到的檔名是同一份程式，指令已改成新位置；各節日期的歷史敘述不改。
+> 最後更新：2026-11-18（從 `experiments/v2/` 封存到 `archive/v2-experiments/`，現況索引搬到 `docs/status.json`，連結跟著改，需求決策書 v3 Q45）；前次 2026-11-17（自測與比較拿掉 Gemini）；前次同日（實現規劃封存到 `docs/history/`，連結改指封存位置並指向實施計畫 v3）；前次 2026-11-12（P2 第 5 片，加 Q26 行末）
+> 2026-11-11 P1 第二片：本目錄的程式已搬到 [src/project_bootstrap](../../src/project_bootstrap/__init__.py)、測試搬到 [tests](../../tests/__init__.py)；這裡只留本說明與 [現況索引](../../docs/status.json)（2026-11-18 起在 `docs/`，v3 Q45）。下文提到的檔名是同一份程式，指令已改成新位置；各節日期的歷史敘述不改。
 > 範圍：v2 分支的合成實驗，沒有部署、模型呼叫、付費服務或正式制度切換。
 
-需求以 [決策書 v3](../../project-bootstrap-requirements-decision-v3.md) 為準（2026-11-17 起唯一需求書；v2 決策書封存不讀，v3 Q39）；[實現規劃](../../docs/archive/project-bootstrap-implementation-plan.md)（2026-11-17 封存）定義 P0–P5；現行路線見[實施計畫 v3](../../project-bootstrap-implementation-plan-v3.md)，v2 的 P0–P5 不再算數。現行部署包仍是 22 檔的唯一權威。本目錄不是第二份 handoff 制度，也不複製其他專案的檔案。
+需求以 [決策書 v3](../../project-bootstrap-requirements-decision-v3.md) 為準（2026-11-17 起唯一需求書；v2 決策書封存不讀，v3 Q39）；[實現規劃](../docs/project-bootstrap-implementation-plan.md)（2026-11-17 封存）定義 P0–P5；現行路線見[實施計畫 v3](../../project-bootstrap-implementation-plan-v3.md)，v2 的 P0–P5 不再算數。現行部署包仍是 22 檔的唯一權威。本目錄不是第二份 handoff 制度，也不複製其他專案的檔案。
 
 ## 執行與結果語意
 
@@ -301,7 +301,7 @@ PYTHONPATH=src python3 -X utf8 -m project_bootstrap.presence_probe
 
 `session.py` 實作狀態轉移及改名 adapter 契約；接棒／續聊、等待、交棒、重試、下限次數、缺工具、讀回不符都有測試。handoff receipt 的真實來源尚須工具 adapter 驗證，呼叫端自己填四個 True 不是可信交棒證據。returned state 要先耐久保存再重試外部改名；目前尚無正式持久儲存與工具事件接線，不能宣稱自動改名完整交付。`from_title` 只能恢復顯示欄位；事件去重須保存整份 state，不能只靠標題復原。
 
-全部 51 ID 與 F11／F13／F43 子項的**持續實作狀態唯一權威**已從 `fdc0bbd:HANDOFF.md` 移交 [status.json](status.json)。欄位保留原狀態來源、範圍、重跑入口、未知與下一個驗收點；未驗證不是待決。`registry.py` 直接從決策書第 3 節核對 ID，測缺漏、重複、子項遺失、證據不存在與憑空成功。P0 不接受任何整項「通過」宣稱；日後正式驗收須改驗收證據模型與負向案例，不能只改狀態字串。
+全部 51 ID 與 F11／F13／F43 子項的**持續實作狀態唯一權威**已從 `fdc0bbd:HANDOFF.md` 移交 [status.json](../../docs/status.json)。欄位保留原狀態來源、範圍、重跑入口、未知與下一個驗收點；未驗證不是待決。`registry.py` 直接從決策書第 3 節核對 ID，測缺漏、重複、子項遺失、證據不存在與憑空成功。P0 不接受任何整項「通過」宣稱；日後正式驗收須改驗收證據模型與負向案例，不能只改狀態字串。
 
 HANDOFF 保留 writer、目前行動與此索引的指標；若索引不可讀就停止判定，不從舊摘要恢復權威。原查核報告 F01–F16 是另一組編號，不與需求 ID 混用。
 

@@ -75,10 +75,11 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   取代原本的「本 repo 工作中判讀」與「全綠行」），附負向測試
   本 repo push 前 hook——repo-pre-push.sh 要跟部署包 3.11 逐位元組相同，兩份接線的 PreToolUse
                   都指向它（2026-11-14 v3 F10 補裝，取代「動作當下送規則」），接線守門附負向測試
-  封存原件     ——docs/archive/ 的 v2 決策書 Git blob 不變、程式與測試不引用封存區任何檔名（回溯
+  封存原件     ——archive/docs/ 的 v2 決策書 Git blob 不變、程式與測試不引用封存區任何檔名（回溯
                   歷史要先經使用者同意並登記）、文件檢查不讀封存區；五種反例都要擋（2026-11-17，v3 Q39；
                   同日封存需求與計畫類舊文件，擋的範圍從 v2 檔名擴大到整個封存區；2026-11-18 v3 Q44
-                  封存區從 docs/history/ 改名 docs/archive/，docs/history/ 改放照常檢查的熱歷史）
+                  封存區從 docs/history/ 改名 docs/archive/，docs/history/ 改放照常檢查的熱歷史；同日 v3 Q45
+                  再搬到根目錄冷區 archive/docs/，機械檢查的範圍仍只有這個資料夾）
   本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
   來源例外可見性——逐項印出已宣告減項（2026-11-14 起剩 handoff skill 與 check_docs.py 兩項），核對來源缺而產物有；漏宣告、來源增項及
@@ -2099,7 +2100,7 @@ REPO_PRE_PUSH_HOOK = '.claude/hooks/repo-pre-push.sh'
 # 2026-11-17（需求決策書 v3 Q39）：v2 決策書凍結封存。使用者原話：「v2 應該是凍結的對照原件，
 # 不該再被任何程式讀取」「一般時候不能讀，除非需要回朔歷史，在經過我的同意以後可以讀」。
 # 檔名用拼接寫，因為本檔自己也在「封存原件」的掃描範圍內。
-ARCHIVE_DIR = 'docs/archive/'
+ARCHIVE_DIR = 'archive/docs/'
 FROZEN_ARCHIVES = {
     ARCHIVE_DIR + 'requirements-decision' + '-v2.md': '95277d358a0a09131bc3e85115806f991bf528bd',
 }
@@ -2226,7 +2227,7 @@ def step_self():
     # 2026-11-11：src/kit/ 是部署包的來源，內容逐位元組生成進 PROJECT-BOOTSTRAP.md
     # （「部署包由來源生成」守），在那裡照部署包的豁免規則查；這裡再查一次只會因為
     # kit.md 放在子目錄、範本保留佔位符而誤報。
-    # 2026-11-17（v3 Q39）：封存區不讀（2026-11-18 起是 docs/archive/，v3 Q44）。v2 原件逐位元組凍結，檔內相對連結
+    # 2026-11-17（v3 Q39）：封存區不讀（2026-11-18 起是 archive/docs/，v3 Q44、Q45）。v2 原件逐位元組凍結，檔內相對連結
     # 在新位置失效是已宣告例外；內容不變由「封存原件」的 blob 比對守。
     tracked_files = repo_scanned_files(tracked_files)
     mds = [p for p in tracked_files if p.endswith('.md')]
@@ -2266,7 +2267,7 @@ def step_self():
 def step_archive(tmp):
     """封存原件（2026-11-17，需求決策書 v3 Q39）。
 
-    v2 決策書凍結在 docs/archive/（2026-11-18 前叫 docs/history/，v3 Q44）：程式與測試不引用它的路徑（回溯歷史要先經使用者同意並
+    v2 決策書凍結在 archive/docs/（2026-11-18 前叫 docs/history/，同日先改 docs/archive/ 再搬來，v3 Q44、Q45）：程式與測試不引用它的路徑（回溯歷史要先經使用者同意並
     登記到 ARCHIVE_READERS）、Git 記的 blob 不變、文件檢查不讀它。三件事都對合成 fixture
     跑負向測試：只有真檔案一次乾淨，不足以證明守門會擋。
     """
@@ -2275,7 +2276,8 @@ def step_archive(tmp):
 
     root = tmp / 'archive-fixture'
     (root / 'tools').mkdir(parents=True)
-    (root / 'docs/archive').mkdir(parents=True)
+    (root / 'archive/docs').mkdir(parents=True)
+    (root / 'docs').mkdir()
     old, new = ARCHIVE_NAMES
     (root / 'tools/ok.py').write_text("BOOK = 'v3.md'\n", encoding='utf-8')
     (root / 'tools/reader.py').write_text("BOOK = '%s'\n" % new, encoding='utf-8')
@@ -2311,17 +2313,19 @@ def step_archive(tmp):
             problems.append('封存原件%s沒被擋' % label)
 
     # 文件檢查略過封存區，但不能連帶略過別處的死連結；2026-11-18（v3 Q44）起熱歷史
-    # docs/history/ 是活文件，照常檢查。
+    # docs/history/ 是活文件，照常檢查。同日（v3 Q45）封存區搬到 archive/docs/：只略過這個
+    # 資料夾，archive/ 底下其他說明檔（v2-barrier、v2-experiments）照常檢查連結。
     (root / 'docs/history').mkdir(parents=True)
-    (root / 'docs/archive/x.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
+    (root / 'archive/v2-x').mkdir(parents=True)
+    (root / 'archive/docs/x.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
+    (root / 'archive/v2-x/README.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
     (root / 'docs/history/h.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
     (root / 'docs/live.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
-    scanned = repo_scanned_files(['docs/archive/x.md', 'docs/history/h.md', 'docs/live.md',
-                                  'src/kit/kit.md'])
+    checked = ['archive/v2-x/README.md', 'docs/history/h.md', 'docs/live.md']
+    scanned = repo_scanned_files(['archive/docs/x.md'] + checked + ['src/kit/kit.md'])
     dead = source_document_problems(root, [p for p in scanned if p.endswith('.md')])[0]
-    if (scanned != ['docs/history/h.md', 'docs/live.md']
-            or not all(any(d.startswith(p) for d in dead)
-                       for p in ('docs/history/h.md', 'docs/live.md'))):
+    if (scanned != checked
+            or not all(any(d.startswith(p) for d in dead) for p in checked)):
         problems.append('封存區的略過蓋到別處：掃描 %s、死連結 %s' % (scanned, dead))
 
     if problems:

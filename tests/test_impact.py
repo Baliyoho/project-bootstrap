@@ -62,7 +62,7 @@ class ImpactTests(unittest.TestCase):
 
     def test_real_index_maps_each_v2_test_to_some_requirement(self):
         root = Path(__file__).resolve().parents[1]
-        graph = graph_from_status(json.loads((root / 'experiments/v2/status.json').read_text(encoding='utf-8')))
+        graph = graph_from_status(json.loads((root / 'docs/status.json').read_text(encoding='utf-8')))
         mapped = {path for path in graph if path.startswith('tests/test_')}
         self.assertIn('tests/test_impact.py', mapped)
         result = impact(['src/project_bootstrap/gitclaim.py'], graph, {})
@@ -71,7 +71,7 @@ class ImpactTests(unittest.TestCase):
 
     def test_every_v2_file_is_claimed_except_the_index_itself(self):
         root = Path(__file__).resolve().parents[1]
-        graph = graph_from_status(json.loads((root / 'experiments/v2/status.json').read_text(encoding='utf-8')))
+        graph = graph_from_status(json.loads((root / 'docs/status.json').read_text(encoding='utf-8')))
         files = {f'{folder}/{p.name}' for folder in ('src/project_bootstrap', 'tests')
                  for p in (root / folder).iterdir()
                  if p.is_file() and p.suffix in ('.py', '.sh', '.swift', '.json')}

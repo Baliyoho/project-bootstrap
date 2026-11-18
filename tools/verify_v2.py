@@ -47,7 +47,7 @@ def main():
     parser.add_argument('--json', action='store_true', help='print reproducible structured evidence')
     args = parser.parse_args()
     artifacts = runtime_artifacts()
-    data = json.loads((ROOT / 'experiments/v2/status.json').read_text(encoding='utf-8'))
+    data = json.loads((ROOT / 'docs/status.json').read_text(encoding='utf-8'))
     errors = validate(data, (ROOT / 'project-bootstrap-requirements-decision-v3.md').read_text(encoding='utf-8'), ROOT)
     stream = io.StringIO()
     # P1 slice 4: test files that need a locked third-party package start with

@@ -20,7 +20,7 @@ class RepoRegistryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.decision = (ROOT / BOOK).read_text(encoding='utf-8')
-        cls.data = json.loads((ROOT / 'experiments/v2/status.json').read_text(encoding='utf-8'))
+        cls.data = json.loads((ROOT / 'docs/status.json').read_text(encoding='utf-8'))
 
     def test_decision_and_registry_cover_same_stable_ids(self):
         self.assertEqual(len(requirement_ids(self.decision)), 51)

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "project-bootstrap/status.schema.json",
-  "title": "v2 現況索引（experiments/v2/status.json）",
+  "title": "現況索引（docs/status.json）",
   "description": "只驗結構。ID 是否與決策書一致、證據路徑是否存在、P0 不接受通過，仍由 registry.validate 檢查；schema 合格不代表內容正確。",
   "type": "object",
   "additionalProperties": false,

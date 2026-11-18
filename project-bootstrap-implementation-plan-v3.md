@@ -1,7 +1,7 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-18（歷史紀錄搬進 `docs/history/`，決策書 Q44）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
-> 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](experiments/v2/status.json)。
+> 最後更新：2026-11-18（現況索引搬到 `docs/status.json`，連結跟著改，決策書 Q45）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
+> 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](docs/status.json)。
 
 ## 1. 起點
 
@@ -45,7 +45,7 @@
 
 ## 6. 已知缺口
 
-- [現況索引](experiments/v2/status.json)用 v3 的強度與處置，但沒有任何一列是「通過」：handoff-ab 的情境沒有逐 ID 對應，第 1 期結案也就無法落到個別 ID。各列 `unknown`／`next` 的敘述多半還是 v2 時期的觀察。
+- [現況索引](docs/status.json)用 v3 的強度與處置，但沒有任何一列是「通過」：handoff-ab 的情境沒有逐 ID 對應，第 1 期結案也就無法落到個別 ID。各列 `unknown`／`next` 的敘述多半還是 v2 時期的觀察。
 - 第 3 期的 `midway` 失敗在第 3 節，不重複。
 
 ## 7. 改本檔的時機
