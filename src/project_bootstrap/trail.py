@@ -2,7 +2,8 @@
 rejected) and F8 (the long-term roadmap, not only this round).
 
 Decisions are MADR-like records: id, title, status (accepted, superseded or
-rejected), date, the baseline they were taken against, rationale, and the
+rejected; a decision partly replaced stays accepted and lists the later ones in
+``amended_by``, 2026-11-18 v3 Q51), date, the baseline they were taken against, rationale, and the
 alternatives considered with each one's outcome and reason. A rule names the
 decision that adopted it, so ``why`` can walk from the rule to its rationale
 and, if the decision was later replaced, on to the current one while keeping
@@ -70,6 +71,13 @@ def check_decisions(decisions):
         older = d.get('supersedes')
         if older is not None and (older not in by_id or by_id[older].get('superseded_by') != did):
             findings.append((did, 'supersedes-unknown-or-not-mutual'))
+        amended = d.get('amended_by') or []
+        if any(later not in by_id for later in amended):
+            findings.append((did, 'amended-by-unknown'))
+        replaced_by = [newer] if d.get('status') == 'superseded' else []
+        later_dates = [by_id[x].get('date') for x in replaced_by + amended if x in by_id]
+        if _date(d.get('date')) and any(_date(day) and day < d['date'] for day in later_dates):
+            findings.append((did, 'successor-older'))
     return findings, by_id
 
 

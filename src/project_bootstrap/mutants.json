@@ -272,6 +272,21 @@
      "file": "src/project_bootstrap/trail.py",
      "old": "        elif task.get('status') != 'done' and by_id[mid].get('status') in ('done', 'dropped'):",
      "new": "        elif by_id[mid].get('status') == 'done':"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if any(later not in by_id for later in amended):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        if _date(d.get('date')) and any(_date(day) and day < d['date'] for day in later_dates):",
+     "new": "        if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail.py",
+     "old": "        replaced_by = [newer] if d.get('status') == 'superseded' else []",
+     "new": "        replaced_by = []"
     }
    ]
   },
@@ -419,6 +434,21 @@
      "file": "src/project_bootstrap/trail_sources.py",
      "old": "    body, _ = _section(text, r'[\\d.]*\\s*非目標')\n",
      "new": "    body = text\n"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "                if replaced.group(1):",
+     "new": "                if False:"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "            decision.update(status='superseded', superseded_by=superseded_by)",
+     "new": "            pass"
+    },
+    {
+     "file": "src/project_bootstrap/trail_sources.py",
+     "old": "            newer['supersedes'] = d['id']",
+     "new": "            pass"
     }
    ]
   },

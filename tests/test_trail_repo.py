@@ -83,6 +83,10 @@ class RepoTrailTests(unittest.TestCase):
         # The book's own section 8 now holds only undecided items.
         self.assertEqual(questions_from_book(read(BOOK)), [])
         self.assertEqual(check_decisions(decisions)[0], [])
+        # 2026-11-18 v3 Q51: replaced items point to a later question.
+        by_id = {d['id']: d for d in decisions}
+        self.assertEqual(by_id['book-Q32'].get('superseded_by'), 'book-Q39')
+        self.assertEqual(by_id['book-Q42'].get('amended_by'), ['book-Q44'])
 
     def test_plan_nongoals_are_rejected_routes_with_reasons(self):
         decisions = nongoals_from_plan(read(PLAN), '2026-11-17')

@@ -159,6 +159,7 @@ def rules_from_agents(agents, reasons):
 
 _QUESTION = re.compile(r'^- \*\*(Q\d+)\*\*(.*)$')
 _TRADEOFF = re.compile(r'^  - (採用理由|未選|暫緩)(?: (.+?))?：(.+)$')
+_REPLACED = re.compile(r'^  - (部分)?被取代：(?:(Q\d+)：)?')
 _LETTER = re.compile(r'\(([a-z])\) ')
 _CHOSEN = re.compile(r'[採選](?: AI 建議)? \(([a-z])\)')
 
@@ -169,7 +170,10 @@ def questions_from_book(text):
     Each ``- **Qn**`` item whose ``狀態：`` starts with ``已決`` is an accepted
     decision dated by the first date in its status. Its indented sub-bullets
     hold the trade-off: ``採用理由：`` is the rationale, ``未選 <option>：`` a
-    rejected alternative and ``暫緩 <option>：`` a deferred one. A lettered
+    rejected alternative and ``暫緩 <option>：`` a deferred one.
+    ``被取代：Qm：`` makes the item superseded by Qm, which then supersedes it;
+    ``部分被取代：Qm：`` keeps it accepted with Qm in ``amended_by`` (2026-11-18,
+    v3 Q51). Without a ``Qm：`` the successor is empty and the checks report it. A lettered
     option that was neither chosen nor given a sub-bullet becomes an
     alternative with an empty reason, which ``check_decisions`` reports, so a
     route cannot drop out of the record by being left unmentioned.
@@ -192,7 +196,16 @@ def questions_from_book(text):
         day = _DAY.search(status)
         title = re.search(r'）：(.+?？)', options)
         rationale, alternatives = status.partition('理由：')[2].rstrip('）'), []
+        superseded_by, amended_by = None, []
         for sub in subs:
+            replaced = _REPLACED.match(sub)
+            if replaced:
+                later = 'book-' + replaced.group(2) if replaced.group(2) else ''
+                if replaced.group(1):
+                    amended_by.append(later)
+                else:
+                    superseded_by = later
+                continue
             kind = _TRADEOFF.match(sub)
             if not kind:
                 continue
@@ -206,11 +219,21 @@ def questions_from_book(text):
         named = {a['option'][1] for a in alternatives if re.match(r'\([a-z]\)', a['option'])}
         for letter in sorted(set(_LETTER.findall(listed)) - set(_CHOSEN.findall(status)) - named):
             alternatives.append({'option': '(%s)' % letter, 'outcome': 'rejected', 'reason': ''})
-        decisions.append({'id': 'book-' + qid,
-                          'title': title.group(1) if title else options.strip(),
-                          'status': 'accepted', 'date': day.group(0) if day else '',
-                          'baseline': baseline, 'rationale': rationale.strip(),
-                          'alternatives': alternatives})
+        decision = {'id': 'book-' + qid,
+                    'title': title.group(1) if title else options.strip(),
+                    'status': 'accepted', 'date': day.group(0) if day else '',
+                    'baseline': baseline, 'rationale': rationale.strip(),
+                    'alternatives': alternatives}
+        if superseded_by is not None:
+            decision.update(status='superseded', superseded_by=superseded_by)
+        if amended_by:
+            decision['amended_by'] = amended_by
+        decisions.append(decision)
+    by_id = {d['id']: d for d in decisions}
+    for d in decisions:
+        newer = by_id.get(d.get('superseded_by'))
+        if newer is not None and 'supersedes' not in newer:
+            newer['supersedes'] = d['id']
     return decisions
 
 

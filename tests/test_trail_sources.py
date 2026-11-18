@@ -224,6 +224,27 @@ class QuestionTests(unittest.TestCase):
     def test_missing_section_yields_nothing(self):
         self.assertEqual(questions_from_book('# 沒有第六節\n'), [])
 
+    def test_replaced_items_link_to_the_later_question(self):
+        # 2026-11-18 v3 Q51: 被取代 makes a chain, 部分被取代 keeps the item accepted.
+        book = (self.BOOK.replace('  - 暫緩 (c) 丙：等金鑰\n', '  - 暫緩 (c) 丙：等金鑰\n  - 被取代：Q3：整個換掉\n')
+                .replace('  - 未選 (a) 一：寫了\n', '  - 未選 (a) 一：寫了\n  - 部分被取代：Q4：改一半\n'))
+        by_id = {d['id']: d for d in questions_from_book(book)}
+        self.assertEqual((by_id['book-Q1']['status'], by_id['book-Q1']['superseded_by']),
+                         ('superseded', 'book-Q3'))
+        self.assertEqual(by_id['book-Q3']['supersedes'], 'book-Q1')
+        self.assertEqual((by_id['book-Q3']['status'], by_id['book-Q3']['amended_by']),
+                         ('accepted', ['book-Q4']))
+        self.assertEqual(len(by_id['book-Q1']['alternatives']), 2)
+        findings, _ = check_decisions(list(by_id.values()))
+        self.assertNotIn(('book-Q1', 'superseded-without-successor'), findings)
+        self.assertNotIn(('book-Q3', 'amended-by-unknown'), findings)
+        bare = self.BOOK.replace('  - 暫緩 (c) 丙：等金鑰\n', '  - 暫緩 (c) 丙：等金鑰\n  - 被取代：沒寫編號\n')
+        findings, _ = check_decisions(questions_from_book(bare))
+        self.assertIn(('book-Q1', 'superseded-without-successor'), findings)
+        bare = self.BOOK.replace('  - 暫緩 (c) 丙：等金鑰\n', '  - 暫緩 (c) 丙：等金鑰\n  - 部分被取代：Q9：別節\n')
+        findings, _ = check_decisions(questions_from_book(bare))
+        self.assertIn(('book-Q1', 'amended-by-unknown'), findings)
+
     def test_section_is_found_by_name_and_baseline_follows_its_number(self):
         # 2026-11-17 v3 Q39: v3 kept the pending items in section 8.
         book = self.BOOK.replace('## 6. 待決事項', '## 8. 待決事項')

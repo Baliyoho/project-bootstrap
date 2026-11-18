@@ -106,6 +106,17 @@ class TrailTests(unittest.TestCase):
         stray, _ = check_decisions(decisions(D3={'superseded_by': 'D2'}))
         self.assertEqual(stray, [('D3', 'successor-on-unsuperseded')])
 
+    def test_partial_replacement_must_point_somewhere_and_be_later(self):
+        # 2026-11-18 v3 Q51: a decision partly replaced stays accepted.
+        ok, _ = check_decisions(decisions(D3={'amended_by': ['D2']}, D2={'date': '2026-11-03'}))
+        self.assertEqual(ok, [])
+        unknown, _ = check_decisions(decisions(D3={'amended_by': ['D9']}))
+        self.assertEqual(unknown, [('D3', 'amended-by-unknown')])
+        older, _ = check_decisions(decisions(D3={'amended_by': ['D2']}))
+        self.assertEqual(older, [('D3', 'successor-older')])
+        backward, _ = check_decisions(decisions(D2={'date': '2026-10-29'}))
+        self.assertEqual(backward, [('D1', 'successor-older')])
+
     def test_erasing_or_rewriting_history_is_found(self):
         self.assertEqual(compare(DECISIONS, DECISIONS + [{'id': 'D4'}]), [])
         erased = [d for d in decisions() if d['id'] != 'D3']
