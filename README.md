@@ -2,8 +2,8 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一份可直接部署的檔案**：[PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)。
 
-> 最後更新：2026-11-17（拿掉 `GEMINI.md`：本專案明確不支援 Gemini）；前次同日（發布公鑰一節改寫：舊實現規劃封存，簽章發布通道依 v3 第 5 節凍結）；前次同日（改成標準 README：開發流程與副本同步用法搬到 CONTRIBUTING.md；部署後的 README 也改成標準 README，連線資料從 AGENTS 搬進來，需求決策書 v3 Q40）；前次 2026-11-16（skill 七個檔；優先序改成 v3）。
-> 這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標、測試或 v2 原型；結構見 [ARCHITECT.md](ARCHITECT.md)。
+> 最後更新：2026-11-18（簽章發布通道一節改成已封存，v2 的程式全部退出 main，需求決策書 v3 Q46）；前次 2026-11-17（拿掉 `GEMINI.md`：本專案明確不支援 Gemini）；前次同日（發布公鑰一節改寫：舊實現規劃封存，簽章發布通道依 v3 第 5 節凍結）；前次同日（改成標準 README：開發流程與副本同步用法搬到 CONTRIBUTING.md；部署後的 README 也改成標準 README，連線資料從 AGENTS 搬進來，需求決策書 v3 Q40）；前次 2026-11-16（skill 七個檔；優先序改成 v3）。
+> 這個 repo 只有一個產出物：上面那份部署包，由 `src/kit/` 以 `tools/build_kit.py` 生成。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 它在解決什麼
 
@@ -111,15 +111,15 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 三個平面都接得上 hooks，但**都帶條件**：Codex 要專案被信任、而且每個專案各審一次。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的，不是 WSL 那支）；hook 依序試 `python3`、`python`，Windows 的 WindowsApps `python3` 往往是個 PATH 找得到、執行卻失敗的別名（2026-11-16 實測 rc=49），要靠回退到 `python` 才拿得到 `[facts]`。
 
-## 正式包的發布公鑰（簽章發布通道已凍結）
+## 簽章發布通道（已封存）
 
-v2 時代試行過「由 CI 簽章發布正式包、專案只留指標」（舊實現規劃的 P2，2026-11-17 封存到 [archive/docs/](archive/docs/README.md)）。需求決策書 v3 第 5 節把簽章發布通道凍結：不再開發，已發出的版本不撤回。發布用的公鑰在 [src/kit/release-keys.txt](src/kit/release-keys.txt)，指紋：
+v2 時代試行過「由 CI 簽章發布正式包、專案只留指標」（舊實現規劃的 P2，2026-11-17 封存到 [archive/docs/](archive/docs/README.md)）。需求決策書 v3 第 5 節把它凍結，2026-11-18 整條通道封存到 `archive/v2-channel/`（決策書 v3 Q46）：本 repo 不再提供發布與安裝工具，origin 上已發出的 `channel/beta/*` tag 不撤回。當時的發布公鑰封存在 `archive/v2-channel/src/kit/release-keys.txt`，指紋：
 
 ```text
 SHA256:FjVJTEPBuOaloJZV0GvtZiG3bXYJo68v+cTaVqs0JU0
 ```
 
-第一次安裝時 `tools/install_package.py` 用這把公鑰驗簽；之後每一版只接受上一版列出的金鑰。私鑰只存在本 repo `release` environment 的 secret，每次發布都要 repo 擁有者核准。現行的部署方式（複製 `PROJECT-BOOTSTRAP.md`）不受影響。
+已發出的版本當時由這把公鑰驗簽，之後每一版只接受上一版列出的金鑰。現行的部署方式（複製 `PROJECT-BOOTSTRAP.md`）不受影響。
 
 ## 參與開發
 

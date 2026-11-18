@@ -24,7 +24,7 @@ class T(unittest.TestCase):
 
 class MutantRunnerTests(unittest.TestCase):
     def setUp(self):
-        directory = tempfile.TemporaryDirectory(prefix='bootstrap-v2-mutant-test-')
+        directory = tempfile.TemporaryDirectory(prefix='bootstrap-mutant-test-')
         self.addCleanup(directory.cleanup)
         self.root = Path(directory.name)
         package = self.root / 'src' / 'demo'

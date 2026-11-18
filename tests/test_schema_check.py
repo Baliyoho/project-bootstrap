@@ -1,6 +1,6 @@
-"""M2: the JSON Schemas accept the real index and spec and reject broken shapes.
+"""The JSON Schemas accept the real index and spec and reject broken shapes.
 
-Needs jsonschema: A4 (verify_v2) leaves this file out and lists it; `uv run pytest` runs it.
+Needs jsonschema: A4 (tools/run_tests.py) leaves this file out and lists it; `uv run pytest` runs it.
 """
 import copy
 import json

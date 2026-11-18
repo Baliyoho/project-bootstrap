@@ -421,7 +421,7 @@ def merge_shared_section(authority, current):
 
 
 def legacy_handoff_sections(text):
-    """共用制度以外、v2 留下的交接段落標題。"""
+    """共用制度以外、舊版部署包留下的交接段落標題。"""
     span = shared_block(text)
     outside = text if span is None else text[:span[0]] + text[span[1]:]
     return [l.strip() for l in outside.split('\n')

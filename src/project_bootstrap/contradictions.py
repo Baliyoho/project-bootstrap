@@ -1,4 +1,4 @@
-"""M4 detection for F45: the same fact stated differently across documents.
+"""F45: the same fact stated differently across documents.
 
 Covers what the acceptance names and no more: a rule written in reverse
 (including README, AGENTS and the operation card), two sections of one file

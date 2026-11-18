@@ -35,8 +35,63 @@ import shutil
 import subprocess
 
 from project_bootstrap import capabilities
-from project_bootstrap import selftest
-from project_bootstrap.selftest import SKILLS, WIRING, session_commands
+
+SKILL = 'skills/handoff/SKILL.md'
+# In the order each loader prefers them. Claude Code 2.1.321 was measured on 2026-11-12:
+# with a handoff skill in both places, the Skill tool and the skill list use the home
+# copy. The Codex order is the documented one, not measured. (Moved here from the
+# archived selftest module on 2026-11-18, decision v3 Q46.)
+SKILLS = {'claude-code': ('home:.claude/' + SKILL, 'project:.claude/' + SKILL),
+          'codex-cli': ('project:.agents/' + SKILL, 'home:.codex/' + SKILL),
+          'codex-app': ('project:.agents/' + SKILL, 'home:.codex/' + SKILL),
+          'antigravity-cli': ('project:.agents/' + SKILL,),
+          'antigravity-2': ('project:.agents/' + SKILL,),
+          'antigravity-ide': ('project:.agents/' + SKILL,)}
+WIRING = {'claude-code': '.claude/settings.json', 'codex-cli': '.codex/hooks.json',
+          'codex-app': '.codex/hooks.json', 'antigravity-cli': '.agents/hooks.json',
+          'antigravity-2': '.agents/hooks.json', 'antigravity-ide': '.agents/hooks.json'}
+
+
+def _read(path):
+    try:
+        return path.read_text(encoding='utf-8')
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def _instructions(surface, project):
+    if not (project / 'AGENTS.md').is_file():
+        return {'ok': False, 'detail': '沒有 AGENTS.md'}
+    if surface == 'claude-code' and (project / 'CLAUDE.md').exists():
+        text = _read(project / 'CLAUDE.md')
+        if text is None or '@AGENTS.md' not in [line.strip() for line in text.split('\n')]:
+            return {'ok': False,
+                    'detail': 'CLAUDE.md 沒有單獨一行 @AGENTS.md；Claude Code 有 CLAUDE.md 就不讀 AGENTS.md'}
+    return {'ok': True, 'detail': 'AGENTS.md 在，指示檔指向它'}
+
+
+def session_entries(surface, data):
+    """The handler objects wired to SessionStart, or None when the shape is wrong."""
+    if not isinstance(data, dict):
+        return None
+    if surface.startswith('antigravity-'):
+        groups = [v for v in data.values() if isinstance(v, dict) and v.get('enabled') is True]
+        return [e for g in groups for e in (g.get('SessionStart') or []) if isinstance(e, dict)]
+    hooks = data.get('hooks')
+    if not isinstance(hooks, dict):
+        return None
+    return [h for g in (hooks.get('SessionStart') or []) if isinstance(g, dict)
+            for h in (g.get('hooks') or []) if isinstance(h, dict)]
+
+
+def session_commands(surface, data):
+    """POSIX commands wired to SessionStart, or None when the shape is wrong."""
+    entries = session_entries(surface, data)
+    if entries is None:
+        return None
+    return [e['command'] for e in entries
+            if e.get('type') == 'command' and isinstance(e.get('command'), str)]
+
 
 FRESHNESS = 'git-freshness.sh'
 # Antigravity runs project hooks with .agents/ as the working directory.
@@ -268,12 +323,12 @@ def _skill_entry(surface, project, home):
 def procedure(surface, project, home):
     """What one surface reaches: {'entry', 'instructions', 'description', 'files'}."""
     project, home = Path(project), Path(home)
-    check = selftest._instructions(surface, project)
+    check = _instructions(surface, project)
     if not check['ok']:
         raise AdapterError('%s: %s' % (surface, check['detail']))
-    instructions = selftest._read(project / 'AGENTS.md')
+    instructions = _read(project / 'AGENTS.md')
     label, path = _skill_entry(surface, project, home)
-    text = selftest._read(path)
+    text = _read(path)
     meta = _frontmatter(text or '')
     if not meta or meta.get('name') != 'handoff' or not meta.get('description'):
         raise AdapterError('%s: %s 的 frontmatter 沒有 name: handoff 與 description' % (surface, label))
@@ -287,7 +342,7 @@ def procedure(surface, project, home):
             raise AdapterError('%s: %s 是指標，但 description 沒有指標開頭' % (surface, label))
         description = POINTER_LEAD.sub('', description)
         path = target
-    files = {f.name: selftest._read(f) for f in sorted(path.parent.glob('*.md'))}
+    files = {f.name: _read(f) for f in sorted(path.parent.glob('*.md'))}
     return {'entry': label, 'instructions': instructions, 'description': description, 'files': files}
 
 

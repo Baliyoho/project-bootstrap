@@ -1,4 +1,4 @@
-"""P2 slice 4: the capability matrix (F47, and the matrix part of F14).
+"""The capability matrix (F47, and the matrix part of F14).
 
 ``src/kit/capabilities.json`` is the only home for what each tool surface can
 do. ``tools/build_kit.py`` renders the deployment package's cross-tool tables

@@ -1,4 +1,4 @@
-"""M2 trail records for F6 (why a rule exists), F7 (routes considered and
+"""Trail records for F6 (why a rule exists), F7 (routes considered and
 rejected) and F8 (the long-term roadmap, not only this round).
 
 Decisions are MADR-like records: id, title, status (accepted, superseded or

@@ -1,6 +1,6 @@
 # ARCHITECT — 這個 repo 的結構
 
-> 最後更新：2026-11-18（冷區合併到根目錄 `archive/`：封存區搬到 `archive/docs/`，v2 舊說明封存到 `archive/v2-experiments/`，現況索引搬到 `docs/status.json`，需求決策書 v3 Q45）；前次同日（歷史分冷熱兩區：封存區改名 `docs/archive/`，兩份歷史紀錄從根目錄搬進 `docs/history/`，需求決策書 v3 Q44）；前次 2026-11-17（兩份權威文件只留現況，修改經過與已決事項移到根目錄成對的兩份歷史紀錄，需求決策書 v3 Q42）；前次同日（本專案明確不支援 Gemini：部署包 `2026-11-17.3` 不再產出 `GEMINI.md`，本 repo 的那一份也刪了）；前次同日（根目錄的需求與計畫類文件只留[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)與[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)，其餘封存到 `docs/history/`；本檔開頭原本約 140 行的逐次變更紀錄搬到 [docs/history/architect-log.md](archive/docs/architect-log.md)，本檔只寫現況）
+> 最後更新：2026-11-18（v2 的程式全部退出 main：簽章發布通道與沒人用的原型封存到 `archive/v2-channel/`、`archive/v2-prototypes/`，`src/project_bootstrap/` 只留本 repo 在用的檢查，測試入口改名 `tools/run_tests.py`，需求決策書 v3 Q46）；前次同日（冷區合併到根目錄 `archive/`：封存區搬到 `archive/docs/`，v2 舊說明封存到 `archive/v2-experiments/`，現況索引搬到 `docs/status.json`，需求決策書 v3 Q45）；前次同日（歷史分冷熱兩區：封存區改名 `docs/archive/`，兩份歷史紀錄從根目錄搬進 `docs/history/`，需求決策書 v3 Q44）；前次 2026-11-17（兩份權威文件只留現況，修改經過與已決事項移到根目錄成對的兩份歷史紀錄，需求決策書 v3 Q42）；前次同日（本專案明確不支援 Gemini：部署包 `2026-11-17.3` 不再產出 `GEMINI.md`，本 repo 的那一份也刪了）；前次同日（根目錄的需求與計畫類文件只留[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)與[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)，其餘封存到 `docs/history/`；本檔開頭原本約 140 行的逐次變更紀錄搬到 [docs/history/architect-log.md](archive/docs/architect-log.md)，本檔只寫現況）
 > 本檔回答「現在長怎樣」。進度看 [HANDOFF.md](HANDOFF.md)，部署包的逐版變更看 [CHANGELOG.md](CHANGELOG.md)，更早的結構變更經過看上面那份紀錄或 Git 歷史。
 
 ## 一句話
@@ -18,7 +18,7 @@
 | 查某個需求 ID 做到哪 | [現況索引](docs/status.json)（2026-11-17 起照 v3 的強度與處置）；HANDOFF 只留停點與行動 |
 | 規劃路線、分期或暫緩項目 | [實施計畫 v3](project-bootstrap-implementation-plan-v3.md)：從現況走到 v3 需求的路線與取捨，只引用需求 ID |
 | 回溯已封存的查核、計畫或需求討論 | [封存索引](archive/docs/README.md)；**平常不讀，要回溯歷史先經使用者同意** |
-| 動 v2 原型 | 程式在 `src/project_bootstrap/`、測試在 `tests/`；舊說明封存在 `archive/v2-experiments/`，**平常不讀，要回溯先經使用者同意**（v3 Q45） |
+| 改本 repo 自己的檢查 | 程式在 `src/project_bootstrap/`、測試在 `tests/`，入口是 `tools/run_tests.py`；v2 的程式與說明都封存在 `archive/v2-*/`，**平常不讀，要回溯先經使用者同意**（v3 Q46） |
 | 改部署包、同步副本、改 hook 訊息、寫本 repo 交接快照 | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | 結構問題（有哪些檔、副本在哪） | 本檔；動到結構就跟它同一個 commit 改 |
 
@@ -27,12 +27,8 @@
 | 路徑 | 是什麼 | 什麼時候動 |
 |---|---|---|
 | [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md) | **部署包**（發給各專案的產物）：訪談表＋各檔範本＋上 GitHub＋自檢清單＋維持操作卡。2026-11-11 起由 `src/kit/` 生成，仍提交（專案複製它、`sync_project.py` 讀它與它的 Git 歷史） | 不手改；改 `src/kit/` 後跑 `tools/build_kit.py`（鐵律第 1 條） |
-| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 23 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`release-keys.txt` 是發布公鑰（P2 第 3b 片；2026-11-11 E1 填入 CI 公鑰，指紋也寫在 README）；`owners.json` 是每個範本的歸屬（2026-11-11 P2 第一片；第 5 片起 `sync_project.py` 的檔案清單直接由它算出）；`capabilities.json` 是能力矩陣（2026-11-11 P2 第 4 片，決策書 Q24），「跨工具與跨平台」那兩張表由它生成，`kit.md` 那裡只有一行 `<!-- kit-table: 表名 -->` | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬；改跨工具表要改 `capabilities.json`，不改 `kit.md` |
+| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 23 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`owners.json` 是每個範本的歸屬（2026-11-11 起；`sync_project.py` 的檔案清單直接由它算出）；`capabilities.json` 是能力矩陣（2026-11-11，決策書 Q24），「跨工具與跨平台」那兩張表由它生成，`kit.md` 那裡只有一行 `<!-- kit-table: 表名 -->` | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬；改跨工具表要改 `capabilities.json`，不改 `kit.md` |
 | [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `PROJECT-BOOTSTRAP.md`；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
-| [tools/release_package.py](tools/release_package.py) | P2 第 3b 片：CI 用的發布入口。要求 checkout 乾淨、建 debug 包、跑 `verify_bootstrap.py`、全部本輪實查通過才簽章，輸出包壓縮檔、簽過的紀錄與要建的 channel tag；自己不建 tag、不上傳。只用標準函式庫，不部署 | 發布流程改變時 |
-| [tools/install_package.py](tools/install_package.py) | P2 第 3b 片：使用者用的安裝入口。第一次用 `src/kit/release-keys.txt` 的根公鑰、之後沿上一版的 `next_keys` 驗簽，裝進快取並寫專案指標；`--seed` 鋪空專案、`--check` 跑一次寫入檢查。不下載。只用標準函式庫，不部署 | 安裝流程改變時 |
-| [.github/workflows/release.yml](.github/workflows/release.yml) | 本 repo 唯一的 workflow（2026-11-11，Q21）：push `release-request/<channel>` tag 觸發，跑在 macOS、金鑰在要核准的 `release` environment，成功後建 `channel/<channel>/<epoch>-<digest>` tag 與 GitHub Release。不用第三方 action | 發布流程改變時 |
-| [tools/build_package.py](tools/build_package.py) | P2 第一片：由 `src/kit/` 生成正式包資料夾 `dist/package/`（Git 不追蹤）；`--check` 建兩次比 digest、不寫檔。一律 debug，正式版只能經發布步驟（第 3 片）。只用標準函式庫，不部署 | 包格式改變時 |
 | [README.md](README.md) | 標準 README：解決什麼、怎麼用、部署後長什麼樣、跨工具相容性、發布公鑰、參與開發的指標、授權 | 用法或相容性改變 |
 | [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本、跟部署出去的專案不同的地方、這個 repo 是什麼、鐵律 | 多一條開工必守的規則 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 碰到才讀的流程與規則：改部署包的操作細節、同步到已部署專案、副本規則、本 repo 交接快照、指標檔、行末、hook 訊息寫法；2026-11-17 從 AGENTS.md 與 README.md 搬來（v3 Q40） | 流程或碰到才需要的規則改變 |
@@ -43,20 +39,22 @@
 | [docs/history/project-bootstrap-requirements-v3-history.md](docs/history/project-bootstrap-requirements-v3-history.md) | **決策書的歷史紀錄**（2026-11-17，v3 Q42）：修改紀錄、已決的 Q32 起（決策紀錄）、從條文移出的原文。放在熱歷史 `docs/history/`（v3 Q44），碰到才讀，不用先問；`tests/test_trail_repo.py` 讀它的「決策紀錄」。到 v4 時跟決策書一起搬進 `archive/docs/` | 決策書每次修改、每個 Q 決定時 |
 | [project-bootstrap-implementation-plan-v3.md](project-bootstrap-implementation-plan-v3.md) | **現行實施權威**（2026-11-17）：從現況走到 v3 需求的路線、三期的證據與還差什麼、暫緩與另案、非目標。只引用需求 ID，不寫進度（進度在 HANDOFF）。不部署、不同步；`tests/test_trail_repo.py` 讀它的「路線選擇」「分期」「非目標」三節 | 路線、分期或暫緩項目改變時（同一個 commit 在歷史紀錄加一筆） |
 | [docs/history/project-bootstrap-implementation-v3-history.md](docs/history/project-bootstrap-implementation-v3-history.md) | **實施計畫的歷史紀錄**（2026-11-17，v3 Q42）：修改紀錄、從內文移出的原文。放在熱歷史 `docs/history/`，碰到才讀，到 v4 時跟計畫一起搬進 `archive/docs/` | 計畫每次修改時 |
-| [docs/status.json](docs/status.json) | **現況索引**：逐 ID 的實作狀態（2026-11-17 起照 v3 的強度與處置）。2026-11-18 從 `experiments/v2/` 搬來（v3 Q45）。`registry.validate`、`schema_check`、`verify_v2.py` 與 `test_impact`、`test_registry_repo` 讀它；證據路徑可以指向 `archive/v2-barrier/`，`registry.validate` 核對檔案存在 | 某個 ID 的實作或證據改變時 |
+| [docs/status.json](docs/status.json) | **現況索引**：逐 ID 的實作狀態（2026-11-17 起照 v3 的強度與處置）。2026-11-18 從 `experiments/v2/` 搬來（v3 Q45）。2026-11-18 起只寫 v3 的強度、處置與現行證據，不引用冷區（v3 Q46）。`registry.validate`、`schema_check`、`tools/run_tests.py` 與 `test_registry_repo` 讀它；`registry.validate` 核對證據檔存在 | 某個 ID 的實作或證據改變時 |
 | [archive/docs/](archive/docs/README.md) | **封存區**，根目錄冷區 `archive/` 的文件部分（2026-11-17，v3 Q39；2026-11-18 從 `docs/history/` 改名 `docs/archive/`，v3 Q44，同日再搬到這裡，v3 Q45）：`requirements-decision-v2.md` 是決策版本 2 的凍結原件（Q1–Q31 與逐條否決理由只在這裡），由 `git mv` 搬來、逐位元組不改，檔內相對連結因此失效，是已宣告例外。同日稍晚再封存 19 份結案或被取代的需求與計畫類文件，連到根目錄的連結已改成 `../../`；每份一行的說明在 `README.md` 索引。程式與測試不得引用封存區裡任何檔名（`verify_bootstrap.py`「封存原件」守）；文件檢查與行末檢查不讀這裡。**AI 平常不讀，要回溯歷史先經使用者同意**；程式要讀也一樣，同意後登記到 `ARCHIVE_READERS` | 不動。要改內容或讓程式讀它，先經使用者同意 |
 | [experiments/handoff-ab/](experiments/handoff-ab/README.md) | 完整版與極簡版骨架的對照實測（2026-11-13 兩輪、36 次）：極簡版骨架、情境搭建、執行、評分與結果。v3 的依據 E1。實驗用，不部署、不同步；原始資料在 gitignored 的 `dist/` | 加跑或改情境時 |
 | 本檔 | 結構 | 只有結構變動 |
 | [LICENSE](LICENSE) | MIT（2026-09-07 起公開） | 授權改變 |
-| [pyproject.toml](pyproject.toml)、[uv.lock](uv.lock) | **P1 開發骨架**（2026-11-11）：依賴、最低 Python 3.12、pytest 設定，以及鎖檔裡每個套件的授權表；`uv.lock` 鎖版本與 sha256。`[tool.uv] package = false`，打包屬 P2。不部署、不同步；A4 不需要它們 | 加減依賴時兩檔一起改（`uv lock`），新套件同時登記授權 |
-| [src/project_bootstrap/](src/project_bootstrap/__init__.py) | v2 原型程式（2026-11-11 從 `experiments/v2/` 搬來，內容不變）：契約、broker、偵測原型與 `mutants.py`／`mutants.json`。2026-11-14 起受管 worker、VM 探針等執行屏障模組封存在 `archive/v2-barrier/`（v3 Q33）。仍是合成 fixture 原型，不部署；只用標準函式庫，A4 的 `verify_v2.py` 不需要 uv 就能 import | 改原型時；之後的模組分組另做 |
-| [archive/v2-barrier/](archive/v2-barrier/README.md) | v3 Q33 封存的 v2 執行屏障模組、測試與變異組（2026-11-14 從 `src/`、`tests/` 用 `git mv` 搬來，內容不改）。pytest、`verify_v2.py`、A4 都不跑；現況索引把這裡的檔列成證據路徑。屬於冷區（v3 Q45）：**平常不讀，要回溯先經使用者同意**；要重跑照它的 README 在暫存目錄拼回 | 只有要重新研究執行屏障時；不要把它搬回 `src/` 而不先改 Q33 |
+| [pyproject.toml](pyproject.toml)、[uv.lock](uv.lock) | **開發骨架**（2026-11-11）：依賴、最低 Python 3.12、pytest 設定，以及鎖檔裡每個套件的授權表；`uv.lock` 鎖版本與 sha256。`[tool.uv] package = false`，不是可安裝的套件。不部署、不同步；A4 不需要它們 | 加減依賴時兩檔一起改（`uv lock`），新套件同時登記授權 |
+| [src/project_bootstrap/](src/project_bootstrap/__init__.py) | **本 repo 自己的檢查**（2026-11-18 起只留在用的，v3 Q46）：`mdlinks`（死連結）、`trail`／`trail_sources`（規則、決策與路線的軌跡，讀本 repo 真文件）、`surfaces`（Claude Code 與 Codex 的開場與 push 前 hook 結果相同）、`resume`（換機接續）、`capabilities`（能力表，`build_kit.py` 用它生成跨工具表）、`contradictions`（跨文件矛盾）、`registry`／`schema_check`（現況索引）與 `mutants.py`／`mutants.json`（變異測試）。不部署；除了 `DEV_EXTRAS` 列的兩個模組都只用標準函式庫 | 改檢查時，同時更新 `mutants.json` 對應的變異組並實跑 |
+| [archive/v2-barrier/](archive/v2-barrier/README.md) | v3 Q33 封存的 v2 執行屏障模組、測試與變異組（2026-11-14 從 `src/`、`tests/` 用 `git mv` 搬來，內容不改）。不執行，程式與現況索引都不引用（v3 Q46）。屬於冷區：**平常不讀，要回溯先經使用者同意**；要重跑照它的 README 在暫存目錄拼回 | 只有要重新研究執行屏障時；不要把它搬回 `src/` 而不先改 Q33 |
+| `archive/v2-channel/` | v3 Q46 封存的簽章發布通道：13 個模組、`build_package`／`release_package`／`install_package`／`migrate_project` 四支工具、16 支測試、`release.yml` 與 `release-keys.txt`（2026-11-18 用 `git mv` 搬來，內容不改）。origin 上的 `channel/beta/*` tag 不撤回。冷區：**平常不讀，要回溯先經使用者同意** | 不動。要恢復先改決策書第 5 節 |
+| `archive/v2-prototypes/` | v3 Q46 封存的 v2 原型：沒有任何工具使用的 20 個模組與 19 支測試（2026-11-18 用 `git mv` 搬來，內容不改）。部分模組 import `archive/v2-channel/` 的模組。冷區：**平常不讀，要回溯先經使用者同意** | 不動 |
 | `archive/v2-experiments/` | 原 `experiments/v2/README.md`：v2 P0 合成實驗的說明與各階段觀察（程式 2026-11-11 已搬到 `src/`、`tests/`）。2026-11-18 封存到這裡（v3 Q45），連結改成新位置，其餘不改。屬於冷區：**平常不讀，要回溯先經使用者同意** | 不動 |
-| [tests/](tests/test_layout.py) | 全部測試（unittest 寫法，pytest 與 `verify_v2.py` 都跑）：v2 原型的測試加上開發骨架自己的 `test_layout.py`。讀本 repo 真文件的測試叫 `*_repo.py`，不放進 mutation 群組 | 加測試時 |
+| [tests/](tests/test_layout.py) | 上面那些檢查的測試（unittest 寫法，pytest 與 `tools/run_tests.py` 都跑），加上開發骨架的 `test_layout.py` 與驗證器自己的 `test_verifier_execution.py`。讀本 repo 真文件的測試叫 `*_repo.py`，不放進變異組 | 加測試時 |
+| [tools/run_tests.py](tools/run_tests.py) | **測試入口**（2026-11-18 從 `verify_v2.py` 改名，v3 Q46）：核對現況索引與決策書的 ID，跑全套 unittest；要外部套件的測試檔不跑、在報告列出。驗證器每輪背景跑它（「測試套件與現況索引」）。只用標準函式庫，不部署 | 測試的收集方式改變時 |
 | [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不是骨架的一部分、也不會被部署出去 | 部署包多一種失效模式時 |
 | [tools/skill_split_baseline.json](tools/skill_split_baseline.json) | 拆分前單檔 `SKILL.md`（`VERSION` `2026-11-03`）每一行的雜湊，加上 11 行刻意改寫的去處。`verify_bootstrap.py`「skill 拆分」用它確認沒有行被弄丟。不部署、不同步 | 只有刻意改寫或刪掉舊文本的某一行時，並寫明去處 |
 | [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案。`check_docs.py` 的專案設定區塊、兩份 hook 接線裡專案自己加的設定都會原樣保留。2026-11-14 起 `AGENTS.md` 歸 `lines`：只換開始／結束標記之間的共用制度（沒有就插在第一個「## 」前），標記外不動，標記外的舊交接段落列成 MIGRATE 要人工比對。只改檔案，不 commit。檔案清單（`WHOLE`／`WIRING`／`PARTIAL`／`INSTANCE`）2026-11-11 起由 `src/kit/owners.json` 算出 | 骨架多一個要同步的檔時：在 `owners.json` 登記；如果是 `region`／`key`／`lines`／`wiring` 這四種，要先替它寫處理程式並更新 `HANDLED`，否則同步器拒絕啟動 |
-| [tools/migrate_project.py](tools/migrate_project.py) | P2 第 5 片（決策書 Q25）：把舊專案一次搬到包＋指標。預演只讀（不 fetch、不刷新 index），逐專案列要換、要補、要合併與要人工比對的檔；寫入只能單一專案、要 `--owner` 與一次正式發布，只換本 repo 發過的舊版，客製就整個專案不寫（CRLF 當 LF 比，Q26）。重用 `sync_project.py` 的合併與占用檢查。不 commit、不部署 | 遷移規則改變時；真實專案寫入要逐專案授權 |
 | [VERSION](VERSION) | 一行版本號，與部署包開頭的版本行一致（`verify_bootstrap.py` 會擋不一致）。各專案的 `git-freshness.sh` 抓它判斷自己落後沒有 | 跟版本行一起改 |
 | [CHANGELOG.md](CHANGELOG.md) | 部署包的逐版變更紀錄與每一版的理由，新的在上面；2026-11-17 從 `src/kit/kit.md` 開頭逐字搬來，部署包只留目前的版本行。不部署 | 每次跳版：舊的版本行改寫成「前一版」移到最上面 |
 | `.claude/hooks/repo-pre-push.sh` | 本 repo 的 push 前 hook（2026-11-14，v3 F10，使用者決定補裝）：3.11 `pre-push-handoff.sh` 的**手貼逐字副本**，兩份接線的 PreToolUse 都指向它（Claude Code 的 matcher 跟 3.9 一樣是 `Bash\|PowerShell`，Codex 經 `codex-hook.cmd`）。「本 repo push 前 hook」逐位元組比對；不在 `sync_project.py` 的拓撲裡，改了 3.11 要手動重貼。取代 2026-11-10 試行的動作提醒 `repo-action-rules.sh`（同日使用者決定拿掉） | 改 3.11 時重貼 |
@@ -68,7 +66,7 @@
 
 ## 部署包的內部結構
 
-v2 原型不在部署包內；舊說明封存在 `archive/v2-experiments/`（v3 Q45，平常不讀）。來源驗證器的新增檢查「v2 P0 原型回歸（非需求達標）」執行合成契約、索引負向案例、三個預期架構反例、Mac 隔離與子程序上下文替換探針。它明列 `strict_ready=false`，不把實驗成功當成必要需求達標；空／缺項／SKIP／偽稱 ready 的報告有負向測試。
+測試入口 `tools/run_tests.py` 不在部署包內。驗證器的「測試套件與現況索引」一項背景跑它：現況索引要跟決策書的 ID 一致，測試不能為空、失敗或略過；報告的壞形狀有負向測試。
 
 | 節 | 內容 | 誰會讀它 |
 |---|---|---|
@@ -181,7 +179,7 @@ v2 原型不在部署包內；舊說明封存在 `archive/v2-experiments/`（v3 
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
 | 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，clone 後開場 hook 印出 `[facts]`；5 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit |
 | 部署包由來源生成 | `src/kit` 生成結果與 `PROJECT-BOOTSTRAP.md` 逐位元組相同、每個範本剛好用一次、範本集合等於 `EXPECTED`；9 個負向測試（手改部署包、改範本或散文沒重生、多／少範本、指錯、重複、缺結尾換行、範本含收尾圍籬） | 有人手改了部署包，或改了來源沒重生 |
-| P1 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `src/project_bootstrap` 的程式除 `P1_EXTRAS` 列的模組外不 import 鎖檔裡的套件，也不 import 那些模組；import 它們的測試缺套件時 SkipTest；10 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
+| 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `src/project_bootstrap` 的程式除 `DEV_EXTRAS` 列的模組外不 import 鎖檔裡的套件，也不 import 那些模組；import 它們的測試缺套件時 SkipTest；10 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
 > **2026-11-13 驗證項取捨（v3 第 1 期）**。準則：守 v3 仍為必要的需求就留；守已退役或降強度的需求、Antigravity、或「skill 必讀」結構的就改或移除。
@@ -256,8 +254,8 @@ check_docs.py
 - **跨機器「工作中」標記：2026-10-30 先是接受這個缺口，同一天決定多機維護就補上了。** 當初不裝的理由是它需要 `HANDOFF.md` 當載體，而那一份得每輪交棒維護——只為防呆而裝，就是多一份沒人讀、然後開始腐化的文件；那時 single writer 靠人顧。改成多機維護之後這個理由不成立了：`git log` 與 `git fetch` **看不到別台機器未提交的變更**，而開場那個 ✅ 只證明「本機沒落後 origin」，誤接棒就會整批繞過那些變更。所以補上 `HANDOFF.md`（範本 3.3 的*實例*，不是副本，沒有同步義務），並在 `repo-git-check.sh` 加判讀段——**沿用 3.10 的同一個載體與同一個欄位，沒有發明第二種標記**，那會變成「這裡會擋、別處不會擋」的不對稱。當時為減少維護成本而限制更新欄位，卻仍保留完整狀態段落，導致已完成待辦凍結；2026-11-01 已取消此限制，維護義務與事故見 [AGENTS.md](AGENTS.md)「本 repo 的交接快照」。**天花板要講明白**：標記只告訴你「東西在那台機器上」，東西本身仍得回那台 push，這不是實作缺漏。
 - **`pre-push-handoff.sh`：2026-10-30 決定不裝，2026-11-01 恢復交接快照後重新評估仍不裝；2026-11-14 使用者決定補裝**（`repo-pre-push.sh`）。補裝的理由：v3 把 F10 定成「偵測＋阻擋（限 push 前 hook）」，擋的正是「沒寫開工標記就推權威分支」這一種，不再宣稱它驗得出交接內容正確；下面 2026-11-01 那段「攔不住 stale 事故」的觀察仍然成立，只是不再是不裝的理由。以下是當時的評估原文： 原理由是標記之外沒有狀態要寫，推進度時只會逼人編變更或關掉防呆；如今這個前提已取消，不能沿用舊理由。重新評估的限制是：骨架那支 hook 只檢查這批 commit 是否碰過 `HANDOFF.md`，而 A5 的開工標記本來就會碰它；本次三輪 stale 事故正是「檔案都有改、待辦沒改」。因此原樣裝上也攔不住已知故障，還會讓人誤信狀態已被驗證。現階段由 B6 核對整份快照，`verify_bootstrap.py` 檢查版本與已知回歸；不以時間戳或碰過檔案冒充內容正確。若將來有能檢查實質交接的機制再評估。
 - **但有一支自己的 SessionStart hook**（`.claude/hooks/repo-git-check.sh`，2026-10-30 加）：做 git 新鮮度比對、「工作中」判讀（2026-10-30 加）與開工改名提示（2026-11-01 加）；2026-11-14 起改成部署包 3.10 的逐字副本，只印事實、不再判讀或提示（v3 D12）。**2026-11-01 起 Codex 這一面也接上了**（`.codex/hooks.json`，掛同一支腳本、不複製第二份）——在此之前只有 Claude Code 會跑它，而這個 repo 本來就在多工具維護；代價是它跟那六個專案一樣進了「Codex 要各審一次」的清單（信任綁 `hooks.json` 的絕對路徑），2026-11-01 已完成現行 hook 的注入與阻擋驗收，本次桌面 session 亦收到開場輸出；檔頭明寫**不是 3.10 的副本、不要同步**（2026-11-14 起改成 3.10 的手貼逐字副本，見根目錄表與 AGENTS-reasons 的副本規則 7）。在此之前這個 repo 開場完全沒有提醒，A1 的 fetch 全靠使用者記得打「接棒」把全域 skill 載進來。為什麼不直接抄 3.10——`sync_project.py` 的 `discover()` 靠 handoff skill 發現專案，這個 repo 沒有 skill，`--all` 永遠掃不到它，抄過來就會變成「所有專案都同步了、只有來源自己落後」而且毫無跡象的那一份副本。
-- **沒有把驗證交給 CI。**（2026-09-13 隨本檔首版 `7a5d1ec` 寫入「沒有 CI」；日期取自 git 首次出現，當時沒有記錄另外的評估）驗證是一個指令（`python -X utf8 tools/verify_bootstrap.py`），跑它是鐵律第 4 條的義務。2026-11-11 起有一支 workflow（`.github/workflows/release.yml`，決策書 Q21），但它只在有人 push `release-request/<channel>` tag、而且使用者在 `release` environment 核准後才跑，用途是發布正式包；push 與 PR 不會觸發驗證，鐵律第 4 條照舊。
-- `tools/` 保存來源維護入口：`verify_bootstrap.py` 測試部署包及 v2 原型、`sync_project.py` 同步它；2026-11-06 新增 `verify_v2.py` 執行隔離原型。三支都不部署。`src/project_bootstrap/` 的 v2 原型是未部署的候選實作，沒有從部署包移轉任何現行規則權威。
+- **沒有把驗證交給 CI。**（2026-09-13 隨本檔首版 `7a5d1ec` 寫入「沒有 CI」；日期取自 git 首次出現，當時沒有記錄另外的評估）驗證是一個指令（`python -X utf8 tools/verify_bootstrap.py`），跑它是鐵律第 4 條的義務。2026-11-11 到 2026-11-18 有過一支發布用的 workflow（決策書 Q21），只在 push `release-request/<channel>` tag 且使用者核准後才跑，不做驗證；它隨簽章發布通道封存（v3 Q46），現在本 repo 沒有 workflow，鐵律第 4 條照舊。
+- `tools/` 保存來源維護入口：`build_kit.py` 生成部署包、`verify_bootstrap.py` 測試部署包、`sync_project.py` 同步它、`run_tests.py` 跑本 repo 的測試。四支都不部署。
 
 ## 全域約束（誰強制什麼）
 

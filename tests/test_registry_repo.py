@@ -1,8 +1,8 @@
-"""registry and the legacy v2 entry on this repo's real files.
+"""registry and the test-entry report check on this repo's real files.
 
 Kept apart from test_registry so mutation runs, which copy only src/ and tests/,
 never depend on the repo's documents (2026-11-17, v3 Q39). The decision book read
-here is v3: v2 is a frozen archive that no program reads.
+here is v3.
 """
 import copy
 import importlib.util
@@ -31,31 +31,29 @@ class RepoRegistryTests(unittest.TestCase):
         data['requirements'].pop()
         self.assertTrue(validate(data, self.decision, ROOT))
 
-    def test_legacy_entry_rejects_empty_skipped_or_optimistic_report(self):
-        spec = importlib.util.spec_from_file_location('legacy_for_test', ROOT / 'tools/verify_bootstrap.py')
-        legacy = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(legacy)
-        report = {'harness_passed': True, 'strict_ready': False,
-                  'tests': {'run': 1, 'failed': 0, 'errors': 0, 'skipped': 0, 'needs_uv': []},
-                  'archived': 'archive/v2-barrier/（v3 Q33）'}
-        self.assertEqual(legacy.v2_report_problem(report), '')
-        for change in ('empty', 'skip', 'ready', 'archived-missing', 'archived-elsewhere',
-                       'needs-uv-missing'):
+    def test_test_entry_report_rejects_empty_skipped_or_failed_report(self):
+        spec = importlib.util.spec_from_file_location('verifier_for_test', ROOT / 'tools/verify_bootstrap.py')
+        verifier = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(verifier)
+        report = {'passed': True, 'registry_errors': [],
+                  'tests': {'run': 1, 'failed': 0, 'errors': 0, 'skipped': 0, 'needs_uv': []}}
+        self.assertEqual(verifier.tests_report_problem(report), '')
+        for change in ('empty', 'skip', 'failed', 'not-passed', 'registry', 'needs-uv-missing'):
             mutant = copy.deepcopy(report)
             if change == 'empty':
                 mutant['tests']['run'] = 0
             elif change == 'skip':
                 mutant['tests']['skipped'] = 1
-            elif change == 'ready':
-                mutant['strict_ready'] = True
-            elif change == 'archived-missing':
-                mutant.pop('archived')
-            elif change == 'archived-elsewhere':
-                mutant['archived'] = 'somewhere/else'
+            elif change == 'failed':
+                mutant['tests']['failed'] = 1
+            elif change == 'not-passed':
+                mutant['passed'] = False
+            elif change == 'registry':
+                mutant['registry_errors'] = ['F1 缺 scope']
             else:
                 mutant['tests'].pop('needs_uv')
             with self.subTest(change=change):
-                self.assertTrue(legacy.v2_report_problem(mutant))
+                self.assertTrue(verifier.tests_report_problem(mutant))
 
 
 if __name__ == '__main__':

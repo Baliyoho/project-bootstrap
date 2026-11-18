@@ -11,7 +11,18 @@ from project_bootstrap import capabilities as cap
 from project_bootstrap import surfaces
 from project_bootstrap.surfaces import AdapterError
 
-from tests.test_selftest import AG, SETTINGS, write
+# Fixtures moved here from the archived selftest tests on 2026-11-18 (decision v3 Q46).
+SETTINGS = {'hooks': {'SessionStart': [{'hooks': [
+    {'type': 'command', 'command': 'bash "$(git rev-parse --show-cdup).claude/hooks/git-freshness.sh"'}]}]}}
+AG = {'handoff-git-check': {'enabled': True, 'SessionStart': [
+    {'type': 'command', 'command': '../.claude/hooks/ag-wrap.sh git-freshness.sh'}]}}
+
+
+def write(root, relative, text, mode=0o644):
+    path = Path(root) / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding='utf-8')
+    path.chmod(mode)
 
 AG2 = {'handoff-git-check': dict(AG['handoff-git-check'], SessionStart=AG['handoff-git-check']['SessionStart'] + [
     {'type': 'command', 'command': '.\\ag-hook.cmd git-freshness.sh'}])}

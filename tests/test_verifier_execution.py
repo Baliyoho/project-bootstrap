@@ -37,15 +37,14 @@ class VerifierExecutionTests(unittest.TestCase):
         self.assertIsNotNone(children[0].poll())
 
     def test_invalid_or_failed_regression_is_not_success(self):
-        valid = json.dumps({'harness_passed': True, 'strict_ready': False,
+        valid = json.dumps({'passed': True, 'registry_errors': [],
                             'tests': {'run': 1, 'failed': 0, 'errors': 0,
-                                      'skipped': 0, 'needs_uv': []},
-                            'archived': 'archive/v2-barrier/'})
+                                      'skipped': 0, 'needs_uv': []}})
         for code, output, expected in [(0, valid, 'OK'), (7, valid, 'FAIL'),
                                         (0, '{}', 'FAIL'), (0, 'not json', 'FAIL')]:
             with self.subTest(code=code, output=output):
                 with patch.object(verifier, 'results', []), redirect_stdout(io.StringIO()):
-                    verifier.step_v2(subprocess.CompletedProcess([], code, output, ''))
+                    verifier.step_tests(subprocess.CompletedProcess([], code, output, ''))
                     self.assertEqual(verifier.results[-1][0], expected)
 
     def test_quiet_keeps_failures_skips_and_exit_codes(self):

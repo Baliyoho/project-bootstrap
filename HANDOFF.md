@@ -46,7 +46,7 @@
 ## 服務查證與期望快照
 
 - 2026-11-17 macOS Mac mini，`bbb4ef7` 提交前：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，67 項全過，無 skip**；`.venv` 的 pytest 447 項全過；改到的變異群組 `trail_sources`、`contradictions`、`registry`、`gitclaim`、`surfaces` 全擋，`selftest` 1 個既有存活。
-- F22 依 v3 D11 的行數預算判定，`verify_bootstrap.py` 守；`verify_v2` 印的常態入口字元數只是觀測值。
+- F22 依 v3 D11 的行數預算判定，`verify_bootstrap.py` 守。
 - 本份 `HANDOFF.md` 提交前，同指令會再跑一次，結果見交棒回覆。Windows 本棒沒跑；任一平台看到失敗都是回歸。
 
 ## 懸置事項（AI 勿自行處理）

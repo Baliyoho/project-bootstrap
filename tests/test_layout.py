@@ -1,9 +1,9 @@
-"""P1: the development layout agrees with what verify_bootstrap.py reads.
+"""The development layout agrees with what verify_bootstrap.py reads.
 
 verify_bootstrap.py must run on Python 3.8 without uv, so it reads pyproject.toml
 and uv.lock with a small hand-written parser. This test reads both with tomllib
 and checks the two views agree, so the simple parser cannot drift unnoticed.
-It is a unittest case so tools/verify_v2.py (stdlib only, run by A4) runs it too.
+It is a unittest case so tools/run_tests.py (stdlib only, run by A4) runs it too.
 """
 from pathlib import Path
 import sys
@@ -55,11 +55,11 @@ class LayoutTests(unittest.TestCase):
 
     def test_verifier_check_passes_on_this_repo(self):
         sources = {p.relative_to(ROOT).as_posix(): p.read_text(encoding='utf-8')
-                   for folder in verify_bootstrap.P1_STDLIB_ONLY
+                   for folder in verify_bootstrap.DEV_STDLIB_ONLY
                    for p in sorted((ROOT / folder).glob('*.py')) if not p.name.startswith('test_')}
         tests = {p.relative_to(ROOT).as_posix(): p.read_text(encoding='utf-8')
                  for p in sorted((ROOT / 'tests').glob('test_*.py'))}
-        self.assertEqual(verify_bootstrap.p1_layout_problems(
+        self.assertEqual(verify_bootstrap.dev_layout_problems(
             text('pyproject.toml'), text('uv.lock'), sources, tests), [])
 
 

@@ -1,4 +1,4 @@
-"""F20／F46 prototype: Markdown links read by a real parser (P1 slice 4).
+"""F20／F46: Markdown links read by a real parser.
 
 verify_bootstrap.py finds links with a regular expression because A4 must run
 without third-party packages. This module reads the same documents with

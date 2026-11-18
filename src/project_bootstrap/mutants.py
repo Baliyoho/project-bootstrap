@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""F29／F49: rerunnable mutation checks for the v2 guards.
+"""F29／F49: rerunnable mutation checks for this repo's guards.
 
 ``mutants.json`` lists, per group of test modules, guard edits that remove or
 weaken one check. Each mutant is applied to a fresh copy of ``src/`` and ``tests/``
@@ -11,7 +11,7 @@ in a temporary directory, the group's tests run, and the result is:
   updated before it proves anything.
 
 Only an all-killed run exits 0. The working tree is never modified. This is
-slow (one test run per mutant) and therefore not part of verify_v2 by default.
+slow (one test run per mutant) and therefore not part of tools/run_tests.py by default.
 """
 import argparse
 import json
@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def run(spec, source_root=ROOT, python=sys.executable, only=None):
     results = []
-    with tempfile.TemporaryDirectory(prefix='bootstrap-v2-mutants-') as directory:
+    with tempfile.TemporaryDirectory(prefix='bootstrap-mutants-') as directory:
         work = Path(directory)
         for part in ('src', 'tests'):
             shutil.copytree(source_root / part, work / part,

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ResumeRepoTests(unittest.TestCase):
     def test_empty_home_finds_the_procedure_in_the_package(self):
-        with tempfile.TemporaryDirectory(prefix='bootstrap-v2-resume-home-') as home:
+        with tempfile.TemporaryDirectory(prefix='bootstrap-resume-home-') as home:
             # 2026-11-14 (decision v3 D12): the start-of-work section only states facts;
             # it is named for what differs from a deployed project.
             result = check(ROOT, home, heading='跟部署出去的專案不同的地方')
@@ -32,7 +32,7 @@ class ResumeRepoTests(unittest.TestCase):
             import verify_bootstrap
         finally:
             sys.path.remove(str(ROOT / 'tools'))
-        with tempfile.TemporaryDirectory(prefix='bootstrap-v2-resume-gen-') as directory:
+        with tempfile.TemporaryDirectory(prefix='bootstrap-resume-gen-') as directory:
             project, home = Path(directory) / 'project', Path(directory) / 'home'
             home.mkdir()
             verify_bootstrap.extract(project)

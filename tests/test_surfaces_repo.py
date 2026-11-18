@@ -1,6 +1,6 @@
-"""F14 on the real package: the same project state gives the same session-start text on every surface.
+"""F14 on the real kit: the same project state gives the same session-start text on every surface.
 
-A project is seeded from the package built from src/kit, with a local bare
+A project is seeded from the templates in src/kit, with a local bare
 origin. Each case puts the project in one state; every surface then runs its
 own real wiring from its own working directory, and the decoded texts must be
 identical. No tool and no model is involved: this is the wiring and adapter
@@ -9,17 +9,26 @@ layer only.
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
 import unittest
 
-from project_bootstrap import package, surfaces
+from project_bootstrap import surfaces
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools'))
 
-import build_package  # noqa: E402
+import build_kit  # noqa: E402
+
+
+def force_rmtree(path):
+    """rmtree that also removes read-only files (Git marks .git/objects read-only; Windows refuses)."""
+    def retry(func, target, exc):
+        os.chmod(target, stat.S_IWRITE)
+        func(target)
+    shutil.rmtree(path, onexc=retry)
 
 # Antigravity left the kit on 2026-11-13 (decision v3 D8).
 ALL = ('claude-code', 'codex-cli', 'codex-app')
@@ -29,12 +38,9 @@ FREE = '- **工作中**：無（已交棒）\n'
 class Fixture(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        folder, manifest = build_package.build_once()
-        cls.package, cls.files = Path(folder), sorted(manifest['components'])
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(cls.package)
+        # 2026-11-18 (decision v3 Q46): the signed package is archived; the deployed files
+        # are the kit templates themselves, with .sh executable as a project receives them.
+        cls.templates = build_kit.load_source()[1]
 
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
@@ -46,17 +52,18 @@ class Fixture(unittest.TestCase):
         self.git('init', '-q', '--bare', '-b', 'main', str(self.tmp / 'origin.git'), cwd=self.tmp)
         self.work = self.tmp / 'work'
         self.git('clone', '-q', str(self.tmp / 'origin.git'), str(self.work), cwd=self.tmp)
-        for relative in self.files:
+        for relative, text in sorted(self.templates.items()):
             target = self.work / relative
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(self.package / relative, target)
+            target.write_bytes(text.encode('utf-8'))
+            target.chmod(0o755 if relative.endswith('.sh') else 0o644)
         self.handoff(FREE)
         self.git('add', '-A')
         self.git('commit', '-q', '-m', 'seed')
         self.git('push', '-q', '-u', 'origin', 'main')
 
     def tearDown(self):
-        package.force_rmtree(self.tmp)
+        force_rmtree(self.tmp)
 
     def git(self, *args, cwd=None):
         return subprocess.run(['git', *args], cwd=cwd or self.work, env=self.env, check=True,
@@ -205,7 +212,7 @@ class RepoPushTests(Fixture):
 
 
 class RepoProcedureTests(Fixture):
-    """The instruction text and handoff skill each surface reaches, on the real package."""
+    """The instruction text and handoff skill each surface reaches, on the real kit."""
 
     def test_every_surface_reaches_the_same_procedure(self):
         result = surfaces.compare_procedure(self.work, ALL, self.tmp / 'home')

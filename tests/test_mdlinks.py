@@ -1,6 +1,6 @@
 """F20: what a Markdown parser sees that a link regex does not.
 
-Needs markdown-it-py: A4 (verify_v2) leaves this file out and lists it; `uv run pytest` runs it.
+Needs markdown-it-py: A4 (tools/run_tests.py) leaves this file out and lists it; `uv run pytest` runs it.
 """
 import tempfile
 from pathlib import Path

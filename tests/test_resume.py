@@ -16,7 +16,7 @@ def entry(body, heading='## 開工第一件事'):
 
 class ResumeTests(unittest.TestCase):
     def setUp(self):
-        directory = tempfile.TemporaryDirectory(prefix='bootstrap-v2-resume-')
+        directory = tempfile.TemporaryDirectory(prefix='bootstrap-resume-')
         self.addCleanup(directory.cleanup)
         self.base = Path(directory.name)
         self.root = self.base / '第一 機'

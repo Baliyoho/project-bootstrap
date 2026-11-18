@@ -1,4 +1,4 @@
-"""P2 slice 4 (F47): the capability matrix reports per surface and version, never substitutes."""
+"""F47: the capability matrix reports per surface and version, never substitutes."""
 
 import json
 import unittest

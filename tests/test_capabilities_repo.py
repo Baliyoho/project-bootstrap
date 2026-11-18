@@ -1,4 +1,4 @@
-"""P2 slice 4 on this repo: the kit tables are rendered from src/kit/capabilities.json."""
+"""On this repo: the kit tables are rendered from src/kit/capabilities.json."""
 
 import copy
 from pathlib import Path

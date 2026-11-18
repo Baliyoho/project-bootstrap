@@ -79,7 +79,8 @@ zip 是建置產物，不進 Git（dist/ 已在 .gitignore）。要發佈就重�
                   歷史要先經使用者同意並登記）、文件檢查不讀封存區；五種反例都要擋（2026-11-17，v3 Q39；
                   同日封存需求與計畫類舊文件，擋的範圍從 v2 檔名擴大到整個封存區；2026-11-18 v3 Q44
                   封存區從 docs/history/ 改名 docs/archive/，docs/history/ 改放照常檢查的熱歷史；同日 v3 Q45
-                  再搬到根目錄冷區 archive/docs/，機械檢查的範圍仍只有這個資料夾）
+                  再搬到根目錄冷區 archive/docs/，機械檢查的範圍仍只有這個資料夾；同日 v3 Q46 加一條：
+                  程式、測試與設定檔不得出現 archive/ 底下 v2 封存目錄的路徑）
   本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
                   只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
   來源例外可見性——逐項印出已宣告減項（2026-11-14 起剩 handoff skill 與 check_docs.py 兩項），核對來源缺而產物有；漏宣告、來源增項及
@@ -2113,6 +2114,9 @@ ARCHIVE_INDEX = ARCHIVE_DIR + 'README.md'
 # 經使用者同意、為回溯歷史而讀封存原件的程式。加一筆之前先取得使用者同意，並登記在決策書。
 ARCHIVE_READERS = ()
 ARCHIVE_CODE_SUFFIXES = ('.py', '.sh', '.cmd', '.json', '.toml', '.tmpl', '.yml', '.lock')
+# 2026-11-18（v3 Q46）：v2 的程式全部封存在 archive/ 底下以 v2- 開頭的資料夾，程式、測試、設定與
+# 現況索引都不得再指向它們。用拼接寫，因為本檔自己也在掃描範圍內。
+V2_ARCHIVE_PREFIX = 'archive/' + 'v2-'
 
 
 def repo_scanned_files(tracked_files):
@@ -2150,6 +2154,9 @@ def archive_problems(root, tracked_files, blob_of, frozen=None, readers=None):
             if name in text:
                 problems.append('%s 引用封存區的檔（%s）：平常不讀，要回溯歷史先經使用者'
                                 '同意，再登記到 ARCHIVE_READERS' % (rel, name))
+        if V2_ARCHIVE_PREFIX in text:
+            problems.append('%s 指向 v2 的封存程式（%s…）：v2 的程式不再被引用（v3 Q46）'
+                            % (rel, V2_ARCHIVE_PREFIX))
     return problems
 
 
@@ -2307,6 +2314,14 @@ def step_archive(tmp):
         problems.append('程式引用凍結原件以外的封存檔沒被擋')
     if any(c.startswith('tools/index.py ') for c in caught):
         problems.append('封存索引的通用檔名被當成封存檔')
+    # 2026-11-18（v3 Q46）：程式指向 v2 封存目錄要擋，文件提到不算。
+    (root / 'tools/old_v2.py').write_text("OLD = '%sbarrier/x.py'\n" % V2_ARCHIVE_PREFIX, encoding='utf-8')
+    (root / 'docs/v2.md').write_text('舊程式在 `%sbarrier/`\n' % V2_ARCHIVE_PREFIX, encoding='utf-8')
+    caught = archive_problems(root, ['tools/old_v2.py', 'docs/v2.md'], blobs.get, frozen, ())
+    if not any(c.startswith('tools/old_v2.py ') for c in caught):
+        problems.append('程式指向 v2 封存目錄沒被擋')
+    if any(c.startswith('docs/v2.md') for c in caught):
+        problems.append('文件提到 v2 封存目錄被當成程式引用')
     for label, lookup in (('內容改動', {ARCHIVE_DIR + new: 'b' * 40}.get),
                           ('搬走或刪掉', {}.get)):
         if not archive_problems(root, [], lookup, frozen, ()):
@@ -2314,14 +2329,14 @@ def step_archive(tmp):
 
     # 文件檢查略過封存區，但不能連帶略過別處的死連結；2026-11-18（v3 Q44）起熱歷史
     # docs/history/ 是活文件，照常檢查。同日（v3 Q45）封存區搬到 archive/docs/：只略過這個
-    # 資料夾，archive/ 底下其他說明檔（v2-barrier、v2-experiments）照常檢查連結。
+    # 資料夾，archive/ 底下其他資料夾的說明檔照常檢查連結。
     (root / 'docs/history').mkdir(parents=True)
-    (root / 'archive/v2-x').mkdir(parents=True)
+    (root / 'archive/other').mkdir(parents=True)
     (root / 'archive/docs/x.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
-    (root / 'archive/v2-x/README.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
+    (root / 'archive/other/README.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
     (root / 'docs/history/h.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
     (root / 'docs/live.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
-    checked = ['archive/v2-x/README.md', 'docs/history/h.md', 'docs/live.md']
+    checked = ['archive/other/README.md', 'docs/history/h.md', 'docs/live.md']
     scanned = repo_scanned_files(['archive/docs/x.md'] + checked + ['src/kit/kit.md'])
     dead = source_document_problems(root, [p for p in scanned if p.endswith('.md')])[0]
     if (scanned != checked
@@ -2331,8 +2346,8 @@ def step_archive(tmp):
     if problems:
         record('FAIL', '封存原件', '；'.join(problems))
         return False
-    record('OK', '封存原件', '%d 份凍結原件 blob 未變、程式與測試不引用封存區任何檔、文件檢查不讀封存區；'
-           '引用／其他封存檔／改動／搬走／略過外溢五種反例都擋下，已登記讀取者與索引放行'
+    record('OK', '封存原件', '%d 份凍結原件 blob 未變、程式與測試不引用封存區任何檔也不指向 v2 封存目錄、文件檢查不讀封存區；'
+           '引用／其他封存檔／v2 封存目錄／改動／搬走／略過外溢六種反例都擋下，已登記讀取者與索引放行'
            % len(FROZEN_ARCHIVES))
     return True
 
@@ -4734,24 +4749,22 @@ def step_architecture_summary(dest):
            '本 repo 與生成 ARCHITECT 寫明 CLAUDE.md 用 import、表格不再列 GEMINI.md、範本 3.4 那一列寫標準 README 而不寫交接 prompt（認的是範本編號欄，不是全行出現 3.4）；五個負向測試＋一個反向保險')
 
 
-def v2_report_problem(report):
-    """Reject an empty/partial/optimistic report, including a false ready claim.
+def tests_report_problem(report):
+    """Reject an empty, partial or failed test report (tools/run_tests.py --json).
 
-    2026-11-14（v3 Q33）：執行屏障模組、探針與三個同 UID 反例封存到 archive/v2-barrier/，
-    報告不再有 findings 與各探針；改為要求報告明寫封存位置，免得探針靜默消失卻沒人知道。
+    2026-11-18（v3 Q46）：取代 v2_report_problem。v2 原型報告的 strict_ready、封存位置與
+    ssh-keygen 指紋隨 v2 程式封存，只留測試與現況索引本身的判定。
     """
     try:
         tests = report['tests']
-        if report['harness_passed'] is not True or report['strict_ready'] is not False:
-            return 'P0 回歸失敗或不當宣稱 strict ready'
+        if report['passed'] is not True or report['registry_errors']:
+            return '測試或現況索引核對沒過'
         if tests['run'] < 1 or any(tests[key] != 0 for key in ('failed', 'errors', 'skipped')):
             return '測試為空、失敗或有未驗證項'
         if not isinstance(tests.get('needs_uv'), list):
             return '報告沒列出 A4 不跑的測試檔'
-        if 'archive/v2-barrier/' not in str(report['archived']):
-            return '報告沒寫執行屏障探針封存在哪'
     except (KeyError, TypeError):
-        return 'v2 報告缺失或無效'
+        return '測試報告缺失或無效'
     return ''
 
 
@@ -4780,26 +4793,24 @@ def background_command(command, cwd):
             proc.wait()
 
 
-def step_v2(result=None):
-    """P0 regression success is NOT strict-mode or requirement acceptance."""
+def step_tests(result=None):
+    """測試套件與現況索引（2026-11-18，v3 Q46 起取代「v2 P0 原型回歸」）。"""
     if result is None:
-        result = run([sys.executable, '-X', 'utf8', str(ROOT / 'tools/verify_v2.py'), '--json'], cwd=ROOT)
+        result = run([sys.executable, '-X', 'utf8', str(ROOT / 'tools/run_tests.py'), '--json'], cwd=ROOT)
     try:
         report = json.loads(result.stdout)
-        problem = v2_report_problem(report)
+        problem = tests_report_problem(report)
         valid = result.returncode == 0 and not problem
         needs_uv = report['tests'].get('needs_uv', [])
-        detail = problem or ('%s 個契約／索引測試%s；strict_ready=%s；'
-                  '執行屏障模組、探針與同 UID 反例已封存於 archive/v2-barrier/（v3 Q33），不在 A4 執行' % (
-                      report['tests']['run'],
-                      '（另有 %d 個測試檔要外部套件，A4 不跑、要 uv run pytest：%s）' % (
-                          len(needs_uv), '、'.join(needs_uv)) if needs_uv else '',
-                      report['strict_ready']))
+        detail = problem or ('%s 個測試通過、現況索引與決策書一致%s' % (
+            report['tests']['run'],
+            '（另有 %d 個測試檔要外部套件，A4 不跑、要 uv run pytest：%s）' % (
+                len(needs_uv), '、'.join(needs_uv)) if needs_uv else ''))
     except (ValueError, KeyError, TypeError):
-        valid, detail = False, 'v2 報告缺失或無效'
+        valid, detail = False, '測試報告缺失或無效'
     if not valid and result.stderr:
         detail += '\n' + result.stderr[-12000:]
-    record('OK' if valid else 'FAIL', 'v2 P0 原型回歸（非需求達標）', detail)
+    record('OK' if valid else 'FAIL', '測試套件與現況索引', detail)
 
 
 SPLIT_BASELINE = ROOT / 'tools/skill_split_baseline.json'
@@ -5189,10 +5200,10 @@ def step_sync_shared_section(dest, tmp):
 
 
 def run_checks(dest, tmp):
-    # verify_v2 reads the source repo and uses its own temporary fixtures.
+    # run_tests reads the source repo and uses its own temporary fixtures.
     # The other checks mutate only their generated fixtures, so overlap is safe.
     with background_command(
-            [sys.executable, '-X', 'utf8', str(ROOT / 'tools/verify_v2.py'), '--json'], ROOT) as collect:
+            [sys.executable, '-X', 'utf8', str(ROOT / 'tools/run_tests.py'), '--json'], ROOT) as collect:
         _run_checks(dest, tmp, collect)
 
 
@@ -5246,20 +5257,20 @@ def _run_checks(dest, tmp, collect):
     step_sync_mode(dest, tmp)
     step_architecture_summary(dest)
     step_deployment_lifecycle(tmp)
-    step_v2(collect())
-    step_p1_layout()
+    step_tests(collect())
+    step_dev_layout()
     step_kit_source()
 
 
 # 鎖檔裡的套件名 → import 名，名字不一樣的才列
-P1_IMPORT_NAMES = {'attrs': ('attr', 'attrs'), 'markdown-it-py': ('markdown_it',),
+DEV_IMPORT_NAMES = {'attrs': ('attr', 'attrs'), 'markdown-it-py': ('markdown_it',),
                    'pytest': ('pytest', '_pytest'), 'rpds-py': ('rpds',)}
 # A4 會跑到的程式：只能用標準函式庫，沒裝 uv 的機器也要能驗
-P1_STDLIB_ONLY = ('tools', 'src/project_bootstrap')
+DEV_STDLIB_ONLY = ('tools', 'src/project_bootstrap')
 # 2026-11-11 P1 第四片：只有這幾支可以用鎖檔裡的套件。其他程式不能 import 它們（A4 才碰不到），
-# import 它們的測試要以 raise unittest.SkipTest('needs …') 開頭：verify_v2 憑這個標記不跑它們並在報告列出。
+# import 它們的測試要以 raise unittest.SkipTest('needs …') 開頭：run_tests 憑這個標記不跑它們並在報告列出。
 # 要多一支就加在這裡，這是刻意留的關卡。
-P1_EXTRAS = ('src/project_bootstrap/mdlinks.py', 'src/project_bootstrap/schema_check.py')
+DEV_EXTRAS = ('src/project_bootstrap/mdlinks.py', 'src/project_bootstrap/schema_check.py')
 
 
 def p1_section(text, header):
@@ -5291,7 +5302,7 @@ def p1_imports(text):
     return names
 
 
-def p1_layout_problems(pyproject, lock, sources, tests=None, extras=P1_EXTRAS):
+def dev_layout_problems(pyproject, lock, sources, tests=None, extras=DEV_EXTRAS):
     """2026-11-11 P1 第一片：開發骨架的鎖定與 A4 免安裝。
 
     只查：最低版本是 3.12、還不是可安裝的包；pyproject 宣告的每個依賴都在 uv.lock；
@@ -5330,12 +5341,12 @@ def p1_layout_problems(pyproject, lock, sources, tests=None, extras=P1_EXTRAS):
         bad.append('授權表有鎖檔沒有的套件：' + name)
     forbidden = set()
     for name in packages:
-        forbidden.update(P1_IMPORT_NAMES.get(name, (name.replace('-', '_'),)))
+        forbidden.update(DEV_IMPORT_NAMES.get(name, (name.replace('-', '_'),)))
     forbidden.discard('project_bootstrap')
     extra_modules = {path[len('src/'):-len('.py')].replace('/', '.') for path in extras}
     for path in extras:
         if path not in sources:
-            bad.append('P1_EXTRAS 列的模組不存在：' + path)
+            bad.append('DEV_EXTRAS 列的模組不存在：' + path)
     for kind, files in (('程式', sources), ('測試', tests or {})):
         for path, text in sorted(files.items()):
             try:
@@ -5355,23 +5366,23 @@ def p1_layout_problems(pyproject, lock, sources, tests=None, extras=P1_EXTRAS):
     return bad
 
 
-def step_p1_layout():
+def step_dev_layout():
     try:
         pyproject = read_lf(ROOT / 'pyproject.toml')
         lock = read_lf(ROOT / 'uv.lock')
     except OSError as exc:
-        record('FAIL', 'P1 開發骨架', '讀不到 pyproject.toml 或 uv.lock：%s' % exc)
+        record('FAIL', '開發骨架', '讀不到 pyproject.toml 或 uv.lock：%s' % exc)
         return
     sources = {}
-    for folder in P1_STDLIB_ONLY:
+    for folder in DEV_STDLIB_ONLY:
         for path in sorted((ROOT / folder).glob('*.py')):
             if not path.name.startswith('test_'):
                 sources[path.relative_to(ROOT).as_posix()] = read_lf(path)
     tests = {path.relative_to(ROOT).as_posix(): read_lf(path) for path in sorted((ROOT / 'tests').glob('test_*.py'))}
-    bad = p1_layout_problems(pyproject, lock, sources, tests)
+    bad = dev_layout_problems(pyproject, lock, sources, tests)
     cases = []
     if not bad:
-        first = sorted(path for path in sources if path not in P1_EXTRAS)[0]
+        first = sorted(path for path in sources if path not in DEV_EXTRAS)[0]
         skip_test = next(path for path, text in tests.items() if 'project_bootstrap.mdlinks' in text)
 
         def lock_block(name, change):
@@ -5380,31 +5391,31 @@ def step_p1_layout():
             end = len(lock) if end == -1 else end
             return lock[:start] + change(lock[start:end]) + lock[end:]
         cases = [
-            ('依賴沒進鎖檔', p1_layout_problems(pyproject, lock_block('jsonschema', lambda b: ''), sources)),
-            ('鎖檔少 sha256', p1_layout_problems(pyproject, lock_block(
+            ('依賴沒進鎖檔', dev_layout_problems(pyproject, lock_block('jsonschema', lambda b: ''), sources)),
+            ('鎖檔少 sha256', dev_layout_problems(pyproject, lock_block(
                 'attrs', lambda b: b.replace('sha256:', 'md5:')), sources)),
-            ('授權表少一個', p1_layout_problems(pyproject.replace('\npytest = "MIT"\n', '\n', 1), lock, sources)),
-            ('最低版本改 3.11', p1_layout_problems(pyproject.replace('">=3.12"', '">=3.11"', 1), lock, sources)),
-            ('拿掉 package = false', p1_layout_problems(pyproject.replace('package = false', '', 1), lock, sources)),
-            ('驗證器 import jsonschema', p1_layout_problems(pyproject, lock, dict(
+            ('授權表少一個', dev_layout_problems(pyproject.replace('\npytest = "MIT"\n', '\n', 1), lock, sources)),
+            ('最低版本改 3.11', dev_layout_problems(pyproject.replace('">=3.12"', '">=3.11"', 1), lock, sources)),
+            ('拿掉 package = false', dev_layout_problems(pyproject.replace('package = false', '', 1), lock, sources)),
+            ('驗證器 import jsonschema', dev_layout_problems(pyproject, lock, dict(
                 sources, **{first: sources[first] + '\nimport jsonschema\n'}))),
-            ('驗證器 from markdown_it import', p1_layout_problems(pyproject, lock, dict(
+            ('驗證器 from markdown_it import', dev_layout_problems(pyproject, lock, dict(
                 sources, **{first: sources[first] + '\nfrom markdown_it.token import Token\n'}))),
-            ('一般模組 import 用外部套件的模組', p1_layout_problems(pyproject, lock, dict(
+            ('一般模組 import 用外部套件的模組', dev_layout_problems(pyproject, lock, dict(
                 sources, **{first: sources[first] + '\nfrom project_bootstrap import mdlinks\n'}), tests)),
-            ('測試沒有缺套件時 SkipTest', p1_layout_problems(pyproject, lock, sources, dict(
+            ('測試沒有缺套件時 SkipTest', dev_layout_problems(pyproject, lock, sources, dict(
                 tests, **{skip_test: tests[skip_test].replace("raise unittest.SkipTest('needs ", "raise unittest.SkipTest('x ")}))),
-            ('P1_EXTRAS 列了不存在的模組', p1_layout_problems(pyproject, lock, sources, tests,
-                                                         P1_EXTRAS + ('src/project_bootstrap/gone.py',))),
+            ('DEV_EXTRAS 列了不存在的模組', dev_layout_problems(pyproject, lock, sources, tests,
+                                                         DEV_EXTRAS + ('src/project_bootstrap/gone.py',))),
         ]
         for name, problems in cases:
             if not problems:
                 bad.append('負向測試未擋：' + name)
-    record('FAIL' if bad else 'OK', 'P1 開發骨架', '；'.join(bad) if bad else
+    record('FAIL' if bad else 'OK', '開發骨架', '；'.join(bad) if bad else
            'pyproject 依賴都在 uv.lock、%d 個外部套件都有 sha256 與授權、最低 Python 3.12；'
            '%d 支程式除 %d 支指定模組外只用標準函式庫，且不 import 那幾支；import 它們的測試缺套件時 SkipTest；'
            '%d 個負向測試（鎖檔是否最新要另跑 uv lock --check，本項不需要 uv）' % (
-               len(re.findall(r'source = \{ registry = ', lock)), len(sources), len(P1_EXTRAS), len(cases)))
+               len(re.findall(r'source = \{ registry = ', lock)), len(sources), len(DEV_EXTRAS), len(cases)))
 
 
 def kit_source_problems(build_kit, prose, files, kit):

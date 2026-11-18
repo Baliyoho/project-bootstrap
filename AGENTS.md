@@ -1,6 +1,6 @@
 # AGENTS.md — 改這個 repo 之前先讀
 
-> 最後更新：2026-11-18（冷區合併：封存區搬到根目錄 `archive/docs/`，v2 舊說明封存到 `archive/v2-experiments/`，現況索引搬到 `docs/status.json`，需求決策書 v3 Q45）；前次同日（歷史分冷熱兩區：封存區改名 `docs/archive/`，兩份歷史紀錄搬進 `docs/history/`，需求決策書 v3 Q44）；前次同日（加鐵律 7：需求決策書與實施計畫是約束文件，需求決策書 v3 Q43）；前次 2026-11-17（兩份權威文件只留現況，修改經過與已決事項移到成對的歷史紀錄，需求決策書 v3 Q42）；前次同日（實施計畫 v3 成為第二份權威；`docs/history/` 從只放 v2 決策書擴大成整個封存區，平常不讀的規則跟著涵蓋整個資料夾）；前次同日（碰到才需要的規則搬到 [CONTRIBUTING.md](CONTRIBUTING.md)，本檔只留開工必守的規則，需求決策書 v3 Q40）；前次同日（v2 決策書退休、凍結封存，v3 成為唯一需求書，v3 Q39）；更早的修改見 Git 歷史
+> 最後更新：2026-11-18（v2 的程式全部退出 main：「這個 repo 是什麼」的不部署例外改成本 repo 的檢查，拿掉「原型通過」一句，需求決策書 v3 Q46）；前次同日（冷區合併：封存區搬到根目錄 `archive/docs/`，v2 舊說明封存到 `archive/v2-experiments/`，現況索引搬到 `docs/status.json`，需求決策書 v3 Q45）；前次同日（歷史分冷熱兩區：封存區改名 `docs/archive/`，兩份歷史紀錄搬進 `docs/history/`，需求決策書 v3 Q44）；前次同日（加鐵律 7：需求決策書與實施計畫是約束文件，需求決策書 v3 Q43）；前次 2026-11-17（兩份權威文件只留現況，修改經過與已決事項移到成對的歷史紀錄，需求決策書 v3 Q42）；前次同日（實施計畫 v3 成為第二份權威；`docs/history/` 從只放 v2 決策書擴大成整個封存區，平常不讀的規則跟著涵蓋整個資料夾）；前次同日（碰到才需要的規則搬到 [CONTRIBUTING.md](CONTRIBUTING.md)，本檔只留開工必守的規則，需求決策書 v3 Q40）；前次同日（v2 決策書退休、凍結封存，v3 成為唯一需求書，v3 Q39）；更早的修改見 Git 歷史
 > 本檔只放開工必守的規則；改副本、接線、hook 訊息、行末或本 repo 交接快照的規則在 [CONTRIBUTING.md](CONTRIBUTING.md)，碰到才讀。每條的完整原文、理由與事故在 [AGENTS-reasons.md](AGENTS-reasons.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 <!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-17.3 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
@@ -49,7 +49,7 @@
 
 ## 這個 repo 是什麼
 
-AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)（用法見 [README.md](README.md)）；不是知識庫，不存各專案的知識或狀態。唯一需求書是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）。從現況走到需求的路線在[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)。兩份只寫現況，修改經過與已決事項在 `docs/history/` 各自成對的 `-v3-history.md`，改權威文件時同一個 commit 加一筆（v3 Q42）。`docs/history/` 是熱歷史，碰到才讀，不用先問（v3 Q44）。根目錄 `archive/` 是冷區：`archive/docs/` 放封存文件（v2 決策書逐位元組凍結，其餘是結案或被取代的需求、計畫與查核文件，程式不讀），`archive/v2-*/` 放退休的 v2 程式與說明；整個冷區**平常不讀，要回溯歷史先經使用者同意**（v3 Q39、Q45）。逐 ID 的實作狀態在 `docs/status.json`。不部署的例外（測試、v2 原型、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`check_docs.py` 列在 ARCHITECT：那是已宣告的例外，不是空白，改成補裝由使用者決定。原型通過不授權切換程序。[為什麼](AGENTS-reasons.md#what)
+AI 協作專案管理骨架的權威版，唯一產出物是部署包 [PROJECT-BOOTSTRAP.md](PROJECT-BOOTSTRAP.md)（用法見 [README.md](README.md)）；不是知識庫，不存各專案的知識或狀態。唯一需求書是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）。從現況走到需求的路線在[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)。兩份只寫現況，修改經過與已決事項在 `docs/history/` 各自成對的 `-v3-history.md`，改權威文件時同一個 commit 加一筆（v3 Q42）。`docs/history/` 是熱歷史，碰到才讀，不用先問（v3 Q44）。根目錄 `archive/` 是冷區：`archive/docs/` 放封存文件（v2 決策書逐位元組凍結，其餘是結案或被取代的需求、計畫與查核文件，程式不讀），`archive/v2-*/` 放退休的 v2 程式與說明（v3 Q46 起 main 上沒有 v2 的程式）；整個冷區**平常不讀，要回溯歷史先經使用者同意**（v3 Q39、Q45）。逐 ID 的實作狀態在 `docs/status.json`。不部署的例外（本 repo 的檢查與測試、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`check_docs.py` 列在 ARCHITECT：那是已宣告的例外，不是空白，改成補裝由使用者決定。[為什麼](AGENTS-reasons.md#what)
 
 ## 鐵律
 

@@ -1,4 +1,4 @@
-"""M2 prototype: JSON Schema for the v2 status index and the mutation spec (P1 slice 4).
+"""JSON Schema for the status index (docs/status.json) and the mutation spec.
 
 Needs the third-party ``jsonschema`` package (locked in uv.lock), so it is not
 imported by anything A4 runs; ``uv run pytest`` runs its tests. Schema-valid

@@ -5,7 +5,7 @@ verify_bootstrap.py uses a regex; this reads the same files with markdown-it-py
 and must agree that no local link is dead. src/kit/ is skipped for the same
 reason A4 skips it: its text is generated into PROJECT-BOOTSTRAP.md, where
 links to files that exist only after deployment are template content.
-Needs markdown-it-py: A4 (verify_v2) leaves this file out and lists it; `uv run pytest` runs it.
+Needs markdown-it-py: A4 (tools/run_tests.py) leaves this file out and lists it; `uv run pytest` runs it.
 """
 from pathlib import Path
 import subprocess

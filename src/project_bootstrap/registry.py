@@ -43,10 +43,11 @@ def validate(data, decision, root):
         for item in checks:
             if item.get('result') not in STATES or not item.get('scope'):
                 errors.append(f'{row.get("id")} 子項結果／範圍無效')
-            # P0 has no full requirement acceptance. A future promotion must add
-            # independently checked evidence, not just flip the result string.
+            # The index takes no "通過": handoff-ab has no per-ID mapping (plan v3
+            # section 6). A future promotion must add independently checked
+            # evidence, not just flip the result string.
             if item.get('result') == '通過':
-                errors.append(f'{row.get("id")} P0 索引不接受完整通過宣稱')
+                errors.append(f'{row.get("id")} 索引不接受「通過」宣稱')
             for evidence in item.get('evidence', []):
                 path = evidence.get('path', '')
                 if not path or path.startswith('/') or '..' in path.split('/'):
