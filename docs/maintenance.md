@@ -59,23 +59,9 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 - Codex 啟動器也要同步（`sync_project.py --codex-only`）；接線改過要重新審核並驗收實際執行。[為什麼](rationale.md#copy-6)
 - 本 repo 自己的 `HANDOFF.md`、兩支 `repo-*.sh`、`.claude/settings.json`、`.codex/hooks.json` 不在拓撲裡，`sync_project.py` 不碰；其中 `repo-git-check.sh`、`repo-pre-push.sh` 是 3.10、3.11 的手貼副本，改了範本要手動重貼，驗證器比對逐字相同。[為什麼](rationale.md#copy-7)
 
-## 需求與計畫文件的分工
+## 封存結案的文件
 
-每份文件各答一個問題，同一件事只寫在一處；兩份權威文件之間只引用、不重複。[為什麼](rationale.md#doc-roles)
-
-| 文件 | 回答 | 寫什麼 |
-|---|---|---|
-| [需求決策書 v3](../project-bootstrap-requirements-decision-v3.md) | 要什麼 | 需求、強度、驗收、待決事項 |
-| [實施計畫 v3](../project-bootstrap-implementation-plan-v3.md) | 怎麼走過去 | 從現況到需求的路線、分期與取捨；只引用需求 ID，不重述需求內容 |
-| [需求決策書 v3 歷史紀錄](history/project-bootstrap-requirements-v3-history.md) | 決策書怎麼變成這樣 | 修改紀錄、已決的 Q（決策紀錄）、從條文移出的原文 |
-| [實施計畫 v3 歷史紀錄](history/project-bootstrap-implementation-v3-history.md) | 計畫怎麼變成這樣 | 修改紀錄、從內文移出的原文 |
-| [ARCHITECT.md](../ARCHITECT.md) | 現在長怎樣 | 現況與結構 |
-| [HANDOFF.md](../HANDOFF.md) | 做到哪 | 進度與停點 |
-| [AGENTS.md](../AGENTS.md) | 每個 session 一定要守什麼 | 規則，不寫步驟 |
-| 本檔 | 改這個 repo 時怎麼做 | 步驟、指令與坑；提到規則就連回 AGENTS |
-| [理由檔](rationale.md) | 規則為什麼這樣 | 現行理由；被取代的在[歷史紀錄](history/rationale-history.md) |
-
-兩份權威文件只寫現況：改它們時直接改寫條文，只附 Q 編號或日期當出處，同一個 commit 在成對的歷史紀錄「修改紀錄」加一筆；決策書第 8 節的 Q 決定後，完整紀錄搬到歷史紀錄的「決策紀錄」（`tests/test_trail_repo.py` 讀它，查 F7）。歷史紀錄不是封存：放在熱歷史 `docs/history/`，會一直加、程式會讀，碰到才讀、不用先經使用者同意；到 v4 時跟 v3 的兩份權威一起搬進 `archive/docs/`（v3 Q44）。[為什麼](rationale.md#doc-roles)
+文件的分工與權威規則見 [ARCHITECT.md](../ARCHITECT.md)「碰到才讀的文件」與[需求決策書 v3](../project-bootstrap-requirements-decision-v3.md) 第 7 節；這裡只寫封存的做法。[為什麼](rationale.md#doc-roles)
 
 結案或被取代的需求與計畫類文件用 `git mv` 移到 `archive/docs/`，在它的[索引](../archive/docs/README.md)加一行；只把還有效的內容併進兩份權威文件。程式與測試不讀封存區（`verify_bootstrap.py`「封存原件」守）。
 

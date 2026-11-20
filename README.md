@@ -2,8 +2,7 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一支安裝程式**：[bootstrap.py](bootstrap.py)。
 
-> 最後更新：2026-11-18（`PROJECT-BOOTSTRAP.md` 退休，需求決策書 v3 Q50）
-> 這個 repo 唯一的產出物是安裝程式 `bootstrap.py`，由 `src/kit/` 以 `tools/build_kit.py` 生成；部署包的說明與每個範本在 [src/kit/](src/kit/kit.md)。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
+這個 repo 唯一的產出物是安裝程式 `bootstrap.py`，由 `src/kit/` 以 `tools/build_kit.py` 生成；部署包的說明與每個範本在 [src/kit/](src/kit/kit.md)。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
 
 ## 它在解決什麼
 
@@ -62,18 +61,11 @@ python3 bootstrap.py --target <新專案資料夾>
     └─ verify_state.py              一鍵現況查證（骨架，部署後填檢查項）
 ```
 
-## 核心：交接不靠人記，靠四層把漏做的機會壓低
+## 核心：交接不靠人記
 
-| 層 | 檔案 | 什麼時候動 |
-|---|---|---|
-| **觸發** | `hooks/git-freshness.sh` | 每次 session 開始自動 fetch，只印 `[facts]`：時間戳（session 名用的 MM.DD.HH）、落後／領先、origin 的「工作中」。它只給事實，不下判斷（agent 自己推小時會寫出不存在的時刻，而那是靜默的） |
-| **必守條件** | `AGENTS.md` 的共用制度一節 | 每次都適用，而且不必先讀別的檔：同步、「工作中」標記、交棒的定義、session 名稱（2026-11-13 起，需求決策書 v3 第 5 節） |
-| **程序參考** | `skills/handoff/`（七個檔） | **碰到才讀，不是開工的前提**：逐步程序、Git 異常判讀、HANDOFF 模板、每條規則的理由；也可打 `/handoff`（建制走模式 0，見下節） |
-| **AI push 提醒** | `hooks/pre-push-handoff.sh` | 只依字面命令、目前分支與 origin 檢查已提交 HANDOFF 差異；選項／refspec／其他 remote／GUI／script 不保證，純文字可能誤擋；見部署包 3.11 |
+制度寫成文件，agent 不一定會照做，所以交接靠幾層把漏做的機會壓低（不是保證發生）：開場 hook 自動 fetch、只印事實；`AGENTS.md` 的共用制度寫必守條件；`skills/handoff/` 是碰到才讀的程序參考；push 前 hook 在沒寫交接時提醒並阻擋。每一層做什麼、怎麼分工、限制在哪，見部署包說明 [src/kit/kit.md](src/kit/kit.md) 的「交接自動化怎麼運作」。
 
-**分工**：`AGENTS.md` 的共用制度＝必守條件（衝突時以它為準）；`SKILL.md` 與同目錄的模式檔＝怎麼做（指令、判讀表、模板）與理由（`reasons.md`）；專案自己的 override 寫在 `AGENTS.md` 共用制度標記外的鐵律。
-交接協定 `handover-protocol.md` 2026-11-17 起不再部署（需求決策書 v3 Q41）；舊專案留著的那一份是不同步的專案實例，在程序細節上**核心優先序：SKILL.md**，升級時須人工遷移。
-override 只可加嚴或填補專案設定，使用者明確指示仍優先。權威程序只留一份，避免兩份副本各自演化（2026-11-03／複審 R06：人的入口曾保留相反優先序；2026-11-13／v3 第 5 節把「必守」這一層從 skill 移到 `AGENTS.md`，因為把參考檔當成前提，只讀一句話的 session 也得先讀完整份程序）。
+舊專案留著的交接協定 `handover-protocol.md`（2026-11-17 起不再部署，v3 Q41）跟 skill 衝突時，**核心優先序：SKILL.md**，升級時須人工遷移；使用者明確指示仍優先。
 
 ## 完全空白的新專案：模式 0（建制）
 
@@ -112,10 +104,6 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 **Antigravity 2026-11-13 起放棄**（需求決策書 v3 D8）：部署包不再產出它的接線與轉接層，已部署專案裡的舊檔不同步也不刪，清不清由使用者決定。之前的實測紀錄在 git 歷史與 [ARCHITECT.md](ARCHITECT.md)。
 
 三個平面都接得上 hooks，但**都帶條件**：Codex 要專案被信任、而且每個專案各審一次。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的，不是 WSL 那支）；hook 依序試 `python3`、`python`，Windows 的 WindowsApps `python3` 往往是個 PATH 找得到、執行卻失敗的別名（2026-11-16 實測 rc=49），要靠回退到 `python` 才拿得到 `[facts]`。
-
-## 簽章發布通道（已封存）
-
-v2 時代試行過的 CI 簽章發布通道依需求決策書 v3 第 5 節凍結，2026-11-18 整條封存到 `archive/v2-channel/`（v3 Q46），當時的發布公鑰也在那裡；origin 上已發出的 `channel/beta/*` tag 不撤回。現行部署方式（複製 `PROJECT-BOOTSTRAP.md`）不受影響。
 
 ## 參與開發
 

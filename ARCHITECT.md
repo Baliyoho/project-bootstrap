@@ -23,6 +23,20 @@
 | 想知道某條規則為什麼這樣 | [理由檔](docs/rationale.md)；被取代的理由與經過在[理由檔歷史紀錄](docs/history/rationale-history.md)，碰到才讀，不用先問 |
 | 結構問題（有哪些檔、副本在哪） | 本檔；動到結構就跟它同一個 commit 改 |
 
+每份文件各答一個問題，同一件事只寫在一處；兩份權威文件之間只引用、不重複。權威只寫現況、經過放成對歷史紀錄的規則在[需求決策書 v3](project-bootstrap-requirements-decision-v3.md) 第 7 節。[為什麼](docs/rationale.md#doc-roles)
+
+| 文件 | 回答 | 寫什麼 |
+|---|---|---|
+| [需求決策書 v3](project-bootstrap-requirements-decision-v3.md) | 要什麼 | 需求、強度、驗收、待決事項 |
+| [實施計畫 v3](project-bootstrap-implementation-plan-v3.md) | 怎麼走過去 | 從現況到需求的路線、分期與取捨；只引用需求 ID，不重述需求內容 |
+| [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md) | 決策書怎麼變成這樣 | 修改紀錄、已決的 Q（決策紀錄）、從條文移出的原文 |
+| [實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md) | 計畫怎麼變成這樣 | 修改紀錄、從內文移出的原文 |
+| 本檔 | 現在長怎樣 | 現況與結構 |
+| [HANDOFF.md](HANDOFF.md) | 做到哪 | 進度與停點 |
+| [AGENTS.md](AGENTS.md) | 每個 session 一定要守什麼 | 規則，不寫步驟 |
+| [AI 維護手冊](docs/maintenance.md) | 改這個 repo 時怎麼做 | 步驟、指令與坑；提到規則就連回 AGENTS |
+| [理由檔](docs/rationale.md) | 規則為什麼這樣 | 現行理由；被取代的在[歷史紀錄](docs/history/rationale-history.md) |
+
 ## 根目錄
 
 | 路徑 | 是什麼 | 什麼時候動 |
@@ -31,7 +45,7 @@
 | [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包散文，第 3 節每個圍籬區塊裡只有一行 `<!-- kit-file: 部署路徑 -->`；`files/<部署路徑>.tmpl` 是 23 個範本（加 `.tmpl` 讓範本 `.gitignore`／`.gitattributes`／skill／接線不在本 repo 生效）；`owners.json` 是每個範本的歸屬（2026-11-11 起；`sync_project.py` 的檔案清單直接由它算出）；`capabilities.json` 是能力矩陣（2026-11-11，決策書 Q24），「跨工具與跨平台」那兩張表由它生成，`kit.md` 那裡只有一行 `<!-- kit-table: 表名 -->` | 制度要改就改這裡，同一個 commit 重生部署包；新增範本要同時在 `owners.json` 登記歸屬；改跨工具表要改 `capabilities.json`，不改 `kit.md` |
 | [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `bootstrap.py`；`kit_text()` 在記憶體組出部署包全文給驗證器與同步器（2026-11-18 起不再寫成 `PROJECT-BOOTSTRAP.md`，v3 Q50）；`--check` 只比對。只用標準函式庫，不部署 | 生成規則改變時 |
 | [src/project_bootstrap/installer.py](src/project_bootstrap/installer.py) | `bootstrap.py` 的安裝與更新邏輯（原始碼，2026-11-18，v3 Q49）。測試直接 import 它；`update` 呼叫的合併函式在 `sync_project.py` | 安裝行為改變時，同一個 commit 重生 `bootstrap.py` |
-| [README.md](README.md) | 標準 README：解決什麼、怎麼用、部署後長什麼樣、跨工具相容性、發布公鑰、參與開發的指標、授權 | 用法或相容性改變 |
+| [README.md](README.md) | 標準 README：解決什麼、怎麼用、部署後長什麼樣、跨工具相容性、參與開發的指標、授權 | 用法或相容性改變 |
 | [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本、跟部署出去的專案不同的地方、這個 repo 是什麼、鐵律 | 多一條開工必守的規則 |
 | [docs/maintenance.md](docs/maintenance.md) | **AI 維護手冊**（v3 Q48）：改這個 repo 時的做法，包括改部署包的操作細節、同步到已部署專案、副本與接線、本 repo 交接快照、指標檔、行末、hook 訊息寫法與開發注意事項。做到那件事才讀；提到規則就連回 AGENTS，不重述 | 做法或踩到新的坑時 |
 | [docs/rationale.md](docs/rationale.md) | **理由檔**（v3 Q48）：AGENTS 與維護手冊每條規則的現行理由，一兩句關鍵事故，日期或 Q 編號當出處；入口用「為什麼」連結指到它的錨點。不是每輪必讀，不部署、不同步 | 規則或理由改了就改寫那一節，被取代的理由搬到歷史紀錄 |
