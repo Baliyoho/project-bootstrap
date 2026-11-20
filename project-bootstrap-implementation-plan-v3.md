@@ -1,6 +1,6 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-20（`ARCHITECT.md` 改名 `ARCHITECTURE.md`，檔頭與第 1 節的提及跟著改，決策書 Q52）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
+> 最後更新：2026-11-20。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
 > 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECTURE.md](ARCHITECTURE.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](docs/status.json)。
 
 ## 1. 起點

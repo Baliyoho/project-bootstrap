@@ -1,6 +1,6 @@
 # 第二輪：六個較難的情境
 
-> 最後更新：2026-11-13（12 次已跑完，結果見 [RESULTS.md](RESULTS.md) 的第二輪一節；下文是跑之前的設計）
+> 最後更新：2026-11-13。12 次已跑完，結果見 [RESULTS.md](RESULTS.md) 的第二輪一節；下文是跑之前的設計。
 > 第一輪的設計在 [README.md](README.md)，結果在 [RESULTS.md](RESULTS.md)。這一輪沿用同一套搭建、執行、評分程式，用 `HANDOFF_AB_ROUND=2` 切換。
 
 ## 為什麼要第二輪
