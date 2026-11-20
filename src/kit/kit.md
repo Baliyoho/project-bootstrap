@@ -8,7 +8,7 @@
 >
 > 它問完第 1 節的訪談，把第 3 節的每個檔寫進去（已存在的同名檔不覆寫，新內容寫成 `<路徑>.bootstrap-new`），逐檔比對雜湊，再把安裝後要由 agent 做的第一批工作寫進 `HANDOFF.md`。之後在那個資料夾開 Claude Code 或 Codex 說「接棒」即可。已部署的專案升級跑 `python3 bootstrap.py update --target <專案>`（先預演，加 `--write` 才寫入）。
 > 本檔（`src/kit/kit.md`）是部署包的說明，範本全文在 `src/kit/files/`。2026-11-18 起不再生成成 `PROJECT-BOOTSTRAP.md` 提交（需求決策書 v3 Q50）：驗證器與同步器需要全文時，由 `tools/build_kit.py` 在記憶體把兩者組起來；下面的「第 N 節」「3.x」指的就是組出來的全文。不複製進專案。
-> 版本：**2026-11-20.2**（session 名稱拿掉 `※` 待你決定，只留 `㊣` 工作中與 `↗` 已交棒（決策書 v3 Q54，使用者指定）：3.1 共用制度的「session 名稱」改成兩種狀態，停下等決定的回覆不再要求 `session：` 一行；handoff skill 的 `SKILL.md`、`mode-a-stop.md`、`mode-b.md`、`reasons.md` 拿掉 `※` 的規則與它的理由一節，所以七個 skill 檔與共用制度標記跳版。）
+> 版本：**2026-11-20.3**（共用制度的「不可違反的條件」與標記外的「鐵律」合成同一份「規則」清單（決策書 v3 Q56，使用者選定）：共用制度的規則挪到最後一節、標題改成「規則」，專案的規則緊接在結束標記後從 9 接著編號；範本原本的鐵律 1 改寫成規則 9，只補共用規則 6 沒寫到的專案祕密與運行資料。`SKILL.md`、`mode-0.md`、`mode-b.md` 提到鐵律的地方跟著改，所以七個 skill 檔與共用制度標記跳版。同步工具遇到舊專案標記外的「## 鐵律」列 MIGRATE，不改寫。）
 > 更早的版本與每一版的理由在 project-bootstrap repo 的 `CHANGELOG.md`（2026-11-17 起從本檔開頭搬出，逐字不改；部署後用不到）。
 > 萃取自兩個實際運行的專案：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，一個是文本識別系統。兩個都是多模型、多機器協作。
 
@@ -22,7 +22,7 @@
 | **參考** | `.claude/skills/handoff/SKILL.md` | 碰到才讀：異常判讀、交棒步驟、建制、理由。必守的條件在 `AGENTS.md` 的共用制度一節（2026-11-13 起，v3 第 5 節） |
 | **AI push 提醒** | `.claude/hooks/pre-push-handoff.sh`（PreToolUse hook） | 有限字面判讀，缺已提交 HANDOFF 差異時提醒並阻擋；保障範圍見 3.11 |
 
-**分工**：`AGENTS.md` 的共用制度＝必守條件；skill＝**怎麼做**（指令、判讀表、模板）與理由（`reasons.md`）；專案自己的 override 寫在 `AGENTS.md` 共用制度標記外的鐵律，只可加嚴。
+**分工**：`AGENTS.md` 的共用制度＝必守條件；skill＝**怎麼做**（指令、判讀表、模板）與理由（`reasons.md`）；專案自己的 override 寫在 `AGENTS.md` 共用制度結束標記後、接著編號的規則，只可加嚴。
 2026-11-17 起不再部署 `docs/ai-notes/handover-protocol.md`（v3 Q41）；舊專案留著的那一份是不同步的實例，程序細節上以同步的 skill 為準，這樣不同步的舊實例才不會推翻已升級的制度（2026-11-02／F10）。
 
 **還沒有這套制度的資料夾走 skill 的模式 0（建制）**：使用者講一句「幫我把交接機制建起來」，agent 就跑 `bootstrap.py`（2026-11-18 起，決策書 v3 Q49），再處理它寫進 `HANDOFF.md` 的第一批工作，而不是憑印象重刻——憑印象生出來的版本缺的永遠是最貴的那部分（每條規則後面的「為什麼」、hook 的邊界條件），看起來像那套制度，實際擋不住任何事。2026-11-18 以前這一步是讓 agent 照本部署包逐檔照抄；輸出二十幾個檔最貴也最容易抄錯，所以改由程式寫檔。
@@ -68,7 +68,7 @@ Claude Code 從 v2.1.277 起原生讀 `AGENTS.md`，但預設值 `claude-md-or-a
 - **量到的 payload（`0.164.0`／Windows）**：共同欄位 `session_id`、`transcript_path`、`cwd`、`hook_event_name`、`model`、`permission_mode`；`SessionStart` 多一個 `source`（實測值 `startup`），`PreToolUse` 多 `turn_id`、`tool_name`、`tool_use_id`、`tool_input`。指令在 `tool_input.command`，**所以 `pre-push-handoff.sh` 從 stdin 取 `command` 欄位比對 `git push` 的作法在 Codex 上成立**（不必為 payload 形狀另寫一份；2026-11-12 以前是拿整份 stdin 比對）。Windows 上殼層是 pwsh，但 `tool_name` 仍是 `Bash`。
 - **`statusMessage` 在互動 TUI 真的會顯示（2026-11-01 實測，`0.166.0`）**：它接在狀態行後面——畫面上是 `Working (1s • esc to interrupt) · <statusMessage 的字串>`。`codex exec` 不顯示（非互動沒有 UI），這一點 `0.164.0` 與 `0.166.0` 一致。所以這個鍵在骨架的接線裡**不是裝飾**：配上上面那條（純文字 stdout 只進 agent 的 context、不給人看），互動模式下它是**使用者唯一看得到的那行字**。
 - **互動 TUI 的 hook 失敗是吵的，不是靜默的**（同一輪實測）：畫面上出現 `• Hook failed` ＋ `└ hook exited with code 1`。這跟 `codex exec` 的「全程不吭聲」正好相反，所以**驗收要在互動模式做**——非互動模式連失敗都看不到。
-- 🔴 **未解：同一支 hook 在互動 TUI 退出碼 1，而六分鐘前在 `codex exec` 下跑得好好的。** 同一個資料夾、同一份已信任的 `hooks.json`、同一支腳本；exec 那次寫出了 log，TUI 那次一行都沒寫，所以腳本的第一個指令都沒跑到。兩個看起來很有說服力的理由**都被量掉了**：①「`bash` 解析到 WSL」——把同一條啟動鏈（PowerShell → `bash -lc`）拿來獨立跑同一支腳本，exit 0 成功；②「codex 偵測到的殼層不同」——兩次 session rollout 的 `<environment_context>` 都寫 `<shell>powershell</shell>`，**包括成功那次**。照鐵律 3，這裡刻意不補第三個理由。要重開這題，先讓探針印出 hook 自己看到的 `PATH` 與 cwd，再比對兩次。
+- 🔴 **未解：同一支 hook 在互動 TUI 退出碼 1，而六分鐘前在 `codex exec` 下跑得好好的。** 同一個資料夾、同一份已信任的 `hooks.json`、同一支腳本；exec 那次寫出了 log，TUI 那次一行都沒寫，所以腳本的第一個指令都沒跑到。兩個看起來很有說服力的理由**都被量掉了**：①「`bash` 解析到 WSL」——把同一條啟動鏈（PowerShell → `bash -lc`）拿來獨立跑同一支腳本，exit 0 成功；②「codex 偵測到的殼層不同」——兩次 session rollout 的 `<environment_context>` 都寫 `<shell>powershell</shell>`，**包括成功那次**。照規則 11，這裡刻意不補第三個理由。要重開這題，先讓探針印出 hook 自己看到的 `PATH` 與 cwd，再比對兩次。
 - **Windows 的 Codex 接線已補 Git Bash 啟動器（2026-11-01）**：真 repo 上實跑舊接線，互動 TUI 報 exit 1、context 沒收到訊息；同一支腳本經 PATH 的 WSL `bash` 報缺 `/bin/bash`，經 Git Bash 則 exit 0。新接線用 `commandWindows` 指向 3.17 的 `.cmd`，只做管線；另對 stdout 加純文字標頭，避開本版把 `[` 開頭當 JSON 的實測問題。修正後 CLI `0.166.0` 與桌面 App 內附 runtime `0.166.0-alpha.5.1` 的互動測試都收到 `HOOK_PRESENT`（後者是以該 binary 的 TUI 驗收，不冒充 App UI 已驗）。**稍早那組 exec／TUI 探針的差異仍未回溯查明，不能用新案例替它補原因。**
 - 🔴 **「叫 agent 把注入背出來」這個測法在 Codex 上不成立。** 2026-10-31 實測：它回「I can't repeat hidden system or developer instructions」**直接拒絕複述**（Antigravity 那一面可以，見下）。要量注入有沒有到，就讓 hook 自己寫檔，或問一個不必複述的是非題（「只回 YES／NO：你的 context 裡有沒有以 `[git-check]` 開頭的行」）。**拿複述當儀器會得到假陰性，而假陰性長得就跟「hook 沒跑」一模一樣。**
 - **skill 來源看得到，不必猜**：`codex debug prompt-input` 會印一張「Skill roots」表。2026-10-30 實測 0.164.0 列出 `~/.codex/skills`（**官方文件已經不列這個路徑，但實際仍然讀**）**與 repo 的 `.agents/skills`**。官方另外列 `$CWD/../.agents/skills`、`$HOME/.agents/skills`、`/etc/codex/skills`。
@@ -110,7 +110,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 三個限制，寫進來是因為它們決定這件事能不能自動化：
 
 1. **`AI_AGENT` 不是跨廠商慣例**，只是名字看起來像——Codex 一個字都沒有。所以偵測只能寫成逐家允許清單＋`unknown` 落底，而不是讀一個通用欄位。
-2. **量到的是 shell tool 的環境，不是 hook 的環境**，而要判斷的那段邏輯住在 hook 裡。Codex 的 hook 環境沒量到：要過兩道信任（專案信任＋`/hooks` 逐一審核當前雜湊），而繞過它的旗標語意就是「跑沒審過的 hook」。合理的推論是 hook 作為子進程拿到原始 env、shell tool 那層還額外被 `shell_environment_policy` 過濾過，所以 hook 不會看到更少——但**那是推論不是測量**（鐵律 3）。
+2. **量到的是 shell tool 的環境，不是 hook 的環境**，而要判斷的那段邏輯住在 hook 裡。Codex 的 hook 環境沒量到：要過兩道信任（專案信任＋`/hooks` 逐一審核當前雜湊），而繞過它的旗標語意就是「跑沒審過的 hook」。合理的推論是 hook 作為子進程拿到原始 env、shell tool 那層還額外被 `shell_environment_policy` 過濾過，所以 hook 不會看到更少——但**那是推論不是測量**（規則 11）。
 3. **跑的是 `codex exec`（非互動）**，`CODEX_CI=1` 很可能只有非互動才有，不要拿它當判準。像穩定身分標記的是 `CODEX_VERSION` 與 `CODEX_SESSION_ID`，但互動 session 同樣沒量。
 
 🔴 **最重要的坑是反過來的：在一個工具的殼層裡啟動另一個工具，變數會被繼承。** 從 Claude Code 的殼層跑 `codex sandbox cmd /c set`，112 個變數裡 `CLAUDECODE=1` 與 `AI_AGENT=claude-code_…` 整批都在——Codex 的 session 會自稱 Claude Code。而 agent 互相呼叫正是最容易發生這件事的場景，也就是說這個誤判不是邊角案例。
@@ -130,7 +130,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 兩次踩同一種坑：Antigravity 的 hooks（2026-08-05 的事實，2026-10-30 才發現過時）、Codex 桌面 App 的 hooks（2026-08-06 的實測，同樣到 2026-10-30 才發現）。第一次之後加的對策是一句警告——**而警告沒有擋住第二次**。原因很直白：表上一直都有查證日期，但沒有人會因為日期舊就主動重查。
 
-所以 2026-10-30 起改用工具：`verify_bootstrap.py` 的「跨工具表保鮮期」會讀本節開頭那個 `查證日期：`，**超過 90 天就 fail**（鐵律 4 要求 exit 0 才算改完，所以它擋得住）。要暫時跳過是 `BOOTSTRAP_FRESHNESS=off`。重查就是這幾頁：`code.claude.com/docs/en/hooks`、`code.claude.com/docs/en/memory`、`learn.chatgpt.com/docs/hooks`、`learn.chatgpt.com/docs/build-skills`、`antigravity.google/docs/hooks`、`antigravity.google/docs/rules`。⚠️ **Codex 那兩頁 2026-10-31 搬家了**：舊網址 `developers.openai.com/codex/hooks`／`/codex/skills` 回 308，而且 skills 那頁連路徑名都換了（`build-skills`），所以**不能只換網域**。轉址還在，所以舊連結不算壞——但清單的用途是「下一棒照著重查」，指著轉址就等於每次重查都先撞一次牆。
+所以 2026-10-30 起改用工具：`verify_bootstrap.py` 的「跨工具表保鮮期」會讀本節開頭那個 `查證日期：`，**超過 90 天就 fail**（規則 12 要求 exit 0 才算改完，所以它擋得住）。要暫時跳過是 `BOOTSTRAP_FRESHNESS=off`。重查就是這幾頁：`code.claude.com/docs/en/hooks`、`code.claude.com/docs/en/memory`、`learn.chatgpt.com/docs/hooks`、`learn.chatgpt.com/docs/build-skills`、`antigravity.google/docs/hooks`、`antigravity.google/docs/rules`。⚠️ **Codex 那兩頁 2026-10-31 搬家了**：舊網址 `developers.openai.com/codex/hooks`／`/codex/skills` 回 308，而且 skills 那頁連路徑名都換了（`build-skills`），所以**不能只換網域**。轉址還在，所以舊連結不算壞——但清單的用途是「下一棒照著重查」，指著轉址就等於每次重查都先撞一次牆。
 
 為什麼這次不怕變成「bump 一個欄位就能過」（那正是 `pre-push-handoff.sh` 被否決的理由之一）：**頻率差了兩個數量級**。pre-push 是每次推進度都誤報，`off` 會變成反射動作；90 天一次、一年看到四次，反射形不成，而且每一次都伴隨一個真正該做的動作。但天花板要講明白：**這個檢查只能保證有人看過日期，不能保證有人真的重查。** 它買到的是「必須有意識地決定」，不是正確性。
 
@@ -152,7 +152,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 | 文件說 A、實際是 B，AI 照文件做就炸 | **以實況為準**＋`tools/verify_state.py` 一鍵查證＋`tools/check_docs.py` 查死連結／過期網址／缺日期 |
 | 純文件修正被「等功能驗收」擋住，接手者拿到過期文檔集 | **兩類分支**：功能分支需驗收才併；文件／基建分支驗證過就能併 `main` |
 | 連線失敗被誤判成「本機沒有憑證」，寫下錯誤結論 | **SKIPPED 判準**：先排除「設定沒帶到」才能標 SKIPPED；禁止自行挖憑證 |
-| 祕密／運行資料被推上 GitHub | 鐵律＋`.gitignore`＋提交前固定檢查 staged 清單 |
+| 祕密／運行資料被推上 GitHub | 規則＋`.gitignore`＋提交前固定檢查 staged 清單 |
 | 交接品質看 agent 心情：有時漏驗證、有時忘了寫 HANDOFF 就 push | `handoff` skill 把協定變成**可執行程序**（判讀表、指令、停止判準）；SessionStart hook 自動提醒，AI push 提醒檢查已提交 HANDOFF 差異（有限覆蓋，見 3.11） |
 
 **保留「為什麼」**：每條規則後面都有一次實際事故。移植時不要把理由砍掉——理由沒了，下一棒就會覺得規則是多餘的而繞過它。
@@ -177,7 +177,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 | `{{STACK_DIRS}}` | 專案主要程式目錄（寫進 ARCHITECTURE 的結構） | `src/`、`migrations/` |
 | `{{VERIFY_TARGETS}}` | 「一鍵驗證」該查什麼（沒有就先留空） | 健康檢查 API、docker 容器狀態 |
 
-最後一題問：**「這個專案有沒有已知的『絕對不能做』的操作？」**（例：不能直接改資料庫檔、不能在正式環境跑 migration）。它跟 `{{VERIFY_TARGETS}}` 一樣有判斷空間，程式只記下原話：怎麼寫成 AGENTS.md 鐵律（第 4 條之後）、怎麼寫成 `verify_state.py` 的檢查項，列進安裝後 agent 的第一批工作；沒有就先放空著，日後踩到再補。
+最後一題問：**「這個專案有沒有已知的『絕對不能做』的操作？」**（例：不能直接改資料庫檔、不能在正式環境跑 migration）。它跟 `{{VERIFY_TARGETS}}` 一樣有判斷空間，程式只記下原話：怎麼寫成 AGENTS.md 的規則（接在第 11 條之後）、怎麼寫成 `verify_state.py` 的檢查項，列進安裝後 agent 的第一批工作；沒有就先放空著，日後踩到再補。
 
 ---
 
@@ -186,7 +186,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ```text
 {{GH_REPO}}/
 ├─ README.md                        ← 專案介紹：是什麼、為什麼做、怎麼連、怎麼跑
-├─ AGENTS.md                        ← AI 開工時自動讀：共用制度一節（≤40 行）＋專案鐵律
+├─ AGENTS.md                        ← AI 開工時自動讀：共用制度一節（≤40 行）＋專案接著編號的規則
 ├─ CLAUDE.md                        ← 指標，指向 AGENTS.md
 ├─ HANDOFF.md                       ← 當下工作狀態（≤80 行，不累積歷史）
 ├─ ARCHITECTURE.md                     ← 專案結構的唯一權威（只有結構變動才改）
@@ -222,7 +222,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ### 3.1 `AGENTS.md`
 
-> **2026-11-13 起（v3 D11、D12）**：開始與結束標記之間是共用制度，由部署包管理，≤ 40 行；專案只能在標記外面加自己的鐵律（連線資料 2026-11-17 起在 README，v3 Q40），全檔 ≤ 100 行。共用制度只寫目標、模型不會自己知道的事與不可違反的條件，不寫逐步程序；開始標記裡的 `source:` 版本給開場 hook 比對上游用。
+> **2026-11-13 起（v3 D11、D12）**：開始與結束標記之間是共用制度，由部署包管理，≤ 40 行；專案只能在結束標記後接著編號加自己的規則（連線資料 2026-11-17 起在 README，v3 Q40），全檔 ≤ 100 行。共用制度只寫目標、模型不會自己知道的事、session 名稱與規則 1–8，規則放在最後一節，專案的規則才能緊接著從 9 編號（v3 Q56）；不寫逐步程序；開始標記裡的 `source:` 版本給開場 hook 比對上游用。
 
 ````markdown
 <!-- kit-file: AGENTS.md -->
@@ -261,7 +261,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 ### 3.6（2026-11-17 移除）
 
-原本是 `docs/ai-notes/handover-protocol.md`（交接協定：規則、理由與專案 override）。需求決策書 v3 Q41 把它移出部署包：它大半在重述 handoff skill 與 `AGENTS.md` 共用制度，v3 第 5 節的目標形狀也沒有它。只有它才有的分支模型搬進 skill `mode-b.md` 的 B1，「漏交棒的補救」的理由搬進 `reasons.md`，「verify_state 一律跑」寫進 `mode-a-stop.md` 的 A4；專案自己的 override 改寫在 `AGENTS.md` 共用制度標記外的鐵律。編號保留，免得舊紀錄裡的「3.6」指到別的東西。已部署專案裡的那一份不會被同步工具改寫或刪掉（同步時列 MIGRATE），裡面若有專案 override，搬進 `AGENTS.md` 之後刪不刪由使用者決定。
+原本是 `docs/ai-notes/handover-protocol.md`（交接協定：規則、理由與專案 override）。需求決策書 v3 Q41 把它移出部署包：它大半在重述 handoff skill 與 `AGENTS.md` 共用制度，v3 第 5 節的目標形狀也沒有它。只有它才有的分支模型搬進 skill `mode-b.md` 的 B1，「漏交棒的補救」的理由搬進 `reasons.md`，「verify_state 一律跑」寫進 `mode-a-stop.md` 的 A4；專案自己的 override 改寫在 `AGENTS.md` 共用制度結束標記後、接著編號的規則。編號保留，免得舊紀錄裡的「3.6」指到別的東西。已部署專案裡的那一份不會被同步工具改寫或刪掉（同步時列 MIGRATE），裡面若有專案 override，搬進 `AGENTS.md` 之後刪不刪由使用者決定。
 
 ### 3.7 `docs/ai-notes/roadmap.md`
 
@@ -328,7 +328,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 
 > Codex 的接線見 3.17——它掛的是**同樣這兩個 `.sh`**，不要複製第二份腳本進 `.codex/`。兩份各自演化就會出現「Claude 端會擋、Codex 端不會擋」的不對稱。
 
-> 🔴 **腳本路徑前面那個 `$(git rev-parse --show-cdup)` 不是裝飾，拿掉就只有「從 repo 根目錄開的 session」才有防護。** hook 的 `command` 以 **session 的 cwd** 執行（Claude Code 的 handler「runs in the current directory」；Codex 官方文件同樣明寫，並直接建議改從 Git root 解析 repo hook），而人會從子目錄開 session——`cd tools && claude`。那時候 `bash .claude/hooks/git-freshness.sh` 是 **exit 127、No such file**，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**：落後的本機、別台機器的「工作中」標記、骨架落後提醒三件事同時無聲消失。`--show-cdup` 回傳的是**到 repo 根目錄的相對路徑**（根目錄是空字串、子目錄是 `../`），所以修掉這個洞之後接線裡**仍然沒有任何絕對路徑**，鐵律 5 原封不動；不在 git repo 裡時它是空字串，行為退回跟舊版一樣（多一行 git 的 fatal 到 stderr，刻意不消音——這套骨架的失效一向是太安靜而不是太吵）。2026-11-02 在 `tools/` 下重現 exit 127，修完在 root／`tools/`／`docs/ai-notes` 三處都正常；`verify_bootstrap.py` 的「接線 cwd 定位」把這三處、Windows 啟動鏈與兩個負向測試（舊形式、混合斜線）一起釘住（F05）。
+> 🔴 **腳本路徑前面那個 `$(git rev-parse --show-cdup)` 不是裝飾，拿掉就只有「從 repo 根目錄開的 session」才有防護。** hook 的 `command` 以 **session 的 cwd** 執行（Claude Code 的 handler「runs in the current directory」；Codex 官方文件同樣明寫，並直接建議改從 Git root 解析 repo hook），而人會從子目錄開 session——`cd tools && claude`。那時候 `bash .claude/hooks/git-freshness.sh` 是 **exit 127、No such file**，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣**：落後的本機、別台機器的「工作中」標記、骨架落後提醒三件事同時無聲消失。`--show-cdup` 回傳的是**到 repo 根目錄的相對路徑**（根目錄是空字串、子目錄是 `../`），所以修掉這個洞之後接線裡**仍然沒有任何絕對路徑**，規則 13 原封不動；不在 git repo 裡時它是空字串，行為退回跟舊版一樣（多一行 git 的 fatal 到 stderr，刻意不消音——這套骨架的失效一向是太安靜而不是太吵）。2026-11-02 在 `tools/` 下重現 exit 127，修完在 root／`tools/`／`docs/ai-notes` 三處都正常；`verify_bootstrap.py` 的「接線 cwd 定位」把這三處、Windows 啟動鏈與兩個負向測試（舊形式、混合斜線）一起釘住（F05）。
 
 ### 3.10 `.claude/hooks/git-freshness.sh`
 
@@ -477,7 +477,7 @@ description: Pointer to the authoritative copy in .claude/skills/. <一句話說
 
 **改到 skill 或 hook 時**：權威版在本部署包 → 改這裡 → 覆蓋各專案 `.claude/skills/handoff/` 整個目錄（七個檔一起，與選用的全域副本）→ 檔頭 `source:` 標記跳版。專案那一端用 `python3 bootstrap.py update --target <專案>`：只換 core 與 adapter 擁有的部分（`owners.json`），專案自己的內容不動。
 
-標記的格式是 **`v<日期>`，同一天改第二次起在日期後面加序號**（`v2026-10-24.2`、`.3`），當天第一次不加。序號算的是**當天第幾個帶 `source:` 標記的改動**，不是單一檔案的、也不是當天第幾次碰部署包——只改敘述而沒有任何標記動過的那幾次不算。標記寫的本來就是「這份副本來自部署包的哪一版」。⚠️ **它跟本檔開頭的「版本」行不保證同號**：那一行與 `VERSION` 只跟著 handoff skill 目錄走（鐵律 1；2026-11-10 起 skill 是 3.8 的六個檔，之前是單檔 `SKILL.md`），所以當天後續沒動到 skill 目錄的改動會讓標記序號**超前**版本行——2026-11-02 就是這樣，標記到 `.2` 而版本行仍是裸的 `2026-11-02`。舊版這裡寫「算的是部署包當天的第幾次修改（跟版本行同一個號）」，兩個斷言都不成立，而 `AGENTS.md` 鐵律 2 寫的是另一種算法——同一條規則兩個家、兩種說法（2026-11-02／F15 一起修）。2026-10-24 那天這份 skill 改了三次，三次的標記卻都是 `v2026-10-24`——副本明明落後，標記顯示一樣新，於是把「舊版 session 名稱少一個全形空格」誤判成同步漏掉，白查一輪。日期粒度只能證明「不早於那一天」，證明不了最新。
+標記的格式是 **`v<日期>`，同一天改第二次起在日期後面加序號**（`v2026-10-24.2`、`.3`），當天第一次不加。序號算的是**當天第幾個帶 `source:` 標記的改動**，不是單一檔案的、也不是當天第幾次碰部署包——只改敘述而沒有任何標記動過的那幾次不算。標記寫的本來就是「這份副本來自部署包的哪一版」。⚠️ **它跟本檔開頭的「版本」行不保證同號**：那一行與 `VERSION` 只跟著 handoff skill 目錄走（規則 9；2026-11-10 起 skill 是 3.8 的六個檔，之前是單檔 `SKILL.md`），所以當天後續沒動到 skill 目錄的改動會讓標記序號**超前**版本行——2026-11-02 就是這樣，標記到 `.2` 而版本行仍是裸的 `2026-11-02`。舊版這裡寫「算的是部署包當天的第幾次修改（跟版本行同一個號）」，兩個斷言都不成立，而 `AGENTS.md` 規則 10 寫的是另一種算法——同一條規則兩個家、兩種說法（2026-11-02／F15 一起修）。2026-10-24 那天這份 skill 改了三次，三次的標記卻都是 `v2026-10-24`——副本明明落後，標記顯示一樣新，於是把「舊版 session 名稱少一個全形空格」誤判成同步漏掉，白查一輪。日期粒度只能證明「不早於那一天」，證明不了最新。
 
 沒改內容的檔案不要跟著跳版——謊報一次「副本落後」之後，這個標記就沒人再信。
 
@@ -485,7 +485,7 @@ description: Pointer to the authoritative copy in .claude/skills/. <一句話說
 
 | 你剛剛得到什麼 | 寫進 |
 |---|---|
-| 一條「以後都要這樣做」的規則、一次踩坑 | `AGENTS.md` 鐵律（重大）或 `docs/ai-notes/<主題>.md`（細節），**附絕對日期** |
+| 一條「以後都要這樣做」的規則、一次踩坑 | `AGENTS.md` 的規則（重大，接著編號）或 `docs/ai-notes/<主題>.md`（細節），**附絕對日期** |
 | 某個操作的可重複步驟（做過兩次以上） | `.claude/skills/<slug>/SKILL.md` |
 | 「東西搬家了」「多了一個元件」「權威版換位置了」 | `ARCHITECTURE.md`，**跟該變動同一個 commit** |
 | 「還有哪些事沒做」「這件事被否決了」 | `docs/ai-notes/roadmap.md` |

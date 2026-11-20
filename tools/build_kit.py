@@ -60,10 +60,10 @@ SHARED = (
     'SKILL_DIR', 'SKILL_ENTRY', 'SKILL_PARTS', 'WHOLE', 'SURGICAL', 'SETTINGS_START', 'SETTINGS_END',
     'WIRING', 'OWNED_SCRIPTS', 'CODEX_WIRING', 'CODEX_LAUNCHER', 'PARTIAL', 'INSTANCE',
     'BUSY_FIELD', 'GITIGNORE_LINES', 'CLAUDE_IMPORT', 'SHARED_START', 'SHARED_END',
-    'LEGACY_HANDOFF_HEADINGS',
+    'LEGACY_HANDOFF_HEADINGS', 'LEGACY_RULES_HEADING',
     'split_settings', 'merge_check_docs', 'known_hook_commands', 'handler_scripts', 'scripts_in',
     'merge_group', 'merge_wiring', 'ensure_busy_field', 'ensure_gitignore', 'ensure_claude_import',
-    'shared_block', 'merge_shared_section', 'legacy_handoff_sections', 'Plan', 'apply_plan',
+    'shared_block', 'merge_shared_section', 'legacy_rule_sections', 'legacy_handoff_sections', 'Plan', 'apply_plan',
     'sync_wiring', 'sync_shared_section', 'sync',
 )
 SUFFIX = '.tmpl'

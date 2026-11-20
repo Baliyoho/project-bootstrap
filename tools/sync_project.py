@@ -138,6 +138,9 @@ CLAUDE_IMPORT = '@AGENTS.md'
 SHARED_START = '<!-- 共用制度開始'
 SHARED_END = '<!-- 共用制度結束 -->'
 LEGACY_HANDOFF_HEADINGS = ('## 開工第一件事', '## 跨模型／跨機器協作規範')
+# 2026-11-20（v3 Q56）：專案規則改成接在共用規則 8 之後、從 9 接著編號；舊專案標記外的「## 鐵律」
+# 是專案自己的內容，同步不改寫，只提示人工搬。
+LEGACY_RULES_HEADING = '## 鐵律'
 
 # 有專屬處理程式的檔：owners.json 跟這裡對不上就是有檔沒人處理，或處理程式指向不存在的檔。
 HANDLED = {'region': {SURGICAL}, 'key': set(),
@@ -420,6 +423,13 @@ def merge_shared_section(authority, current):
     return '\n'.join(lines), '補上共用制度（插在第一個「## 」標題前）', None
 
 
+def legacy_rule_sections(text):
+    """共用制度以外、還沒搬成接續編號的「## 鐵律」段落標題（v3 Q56）。"""
+    span = shared_block(text)
+    outside = text if span is None else text[:span[0]] + text[span[1]:]
+    return [l.strip() for l in outside.split('\n') if l.startswith(LEGACY_RULES_HEADING)]
+
+
 def legacy_handoff_sections(text):
     """共用制度以外、舊版部署包留下的交接段落標題。"""
     span = shared_block(text)
@@ -521,6 +531,11 @@ def sync_shared_section(project, gen, plan):
     if legacy:
         plan.msgs.append('  MIGRATE AGENTS.md：標記外還有舊交接段落 %s，可能跟共用制度重疊或矛盾；'
                          '同步不刪，要人工比對' % '、'.join('「%s」' % h for h in legacy))
+    rules = legacy_rule_sections(new if new is not None else cur)
+    if rules:
+        plan.msgs.append('  MIGRATE AGENTS.md：標記外還有 %s；專案規則改成緊接在共用制度結束標記後、'
+                         '從 9 接著編號（v3 Q56），同步不改寫，要人工搬並跟共用規則去重'
+                         % '、'.join('「%s」' % h for h in rules))
 
 
 def sync(project, gen, codex_only=False):
@@ -536,7 +551,7 @@ def sync(project, gen, codex_only=False):
         # 2026-11-17（v3 Q41）起不再部署這一份；已部署的舊實例不改寫也不刪，只提示人工遷移。
         if protocol is not None:
             plan.msgs.append('  MIGRATE docs/ai-notes/handover-protocol.md：已不在部署包（v3 Q41），不改寫也不刪；'
-                             '專案 override 搬進 AGENTS.md 鐵律後由使用者決定刪不刪，程序細節以新 skill 核心為準')
+                             '專案 override 搬進 AGENTS.md 的規則後由使用者決定刪不刪，程序細節以新 skill 核心為準')
         # 2026-11-17：本專案明確不支援 Gemini，部署包不再產出 GEMINI.md；已部署的那一份是
         # 專案自己的檔（原本就是 seed），不改寫也不刪，只提示。
         if (project / 'GEMINI.md').exists():

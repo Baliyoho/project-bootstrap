@@ -3,13 +3,13 @@ name: handoff
 description: 交接制度的參考檔（碰到才讀，不是必讀）：接棒時 git 狀態不正常（落後、領先、分岔、fetch 失敗、來源不明的未提交變更、別人的「工作中」標記）怎麼判讀與處理；交棒時 HANDOFF.md 怎麼覆寫、怎麼安全提交與 push；中途同步；在還沒有這套制度的資料夾裡把骨架建起來（模式 0 建制）；每條規則的理由與事故。規則本身在專案 AGENTS.md 的共用制度一節，衝突時以那裡為準。Triggers on 接手、接棒、交棒、收工、換機器、同步進度、建制、導入這套制度、建立交接機制、幫我建 HANDOFF、新專案骨架、handoff、hand off、resume work、bootstrap project、set up handoff。
 ---
 
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-20.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-20.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 交接與同步程序（參考檔入口）
 
 > **2026-11-13 起（需求決策書 v3 第 5 節）這個目錄是碰到才讀的參考，不是制度成立的前提。** 必守的條件在專案 `AGENTS.md` 的共用制度一節；本目錄的步驟與它衝突時以 `AGENTS.md` 為準，使用者明確指示仍優先。
 >
-> 在程序細節上，**核心優先序：SKILL.md**（含同目錄的模式檔）優先於專案實例。專案自己的 override 寫在 `AGENTS.md` 共用制度標記外的鐵律，只可加嚴；舊專案留著的 `docs/ai-notes/handover-protocol.md`（2026-11-17 起不再部署，v3 Q41）是不同步的專案實例，升級時須人工遷移。不得在單一專案就地修改共用 skill，回部署包修正再同步。模式 0 的權威是 `PROJECT-BOOTSTRAP.md` 部署包。
+> 在程序細節上，**核心優先序：SKILL.md**（含同目錄的模式檔）優先於專案實例。專案自己的 override 寫在 `AGENTS.md` 共用制度結束標記後、接著編號的規則，只可加嚴；舊專案留著的 `docs/ai-notes/handover-protocol.md`（2026-11-17 起不再部署，v3 Q41）是不同步的專案實例，升級時須人工遷移。不得在單一專案就地修改共用 skill，回部署包修正再同步。模式 0 的權威是 `PROJECT-BOOTSTRAP.md` 部署包。
 
 ## 適用判斷（先做這一步）
 

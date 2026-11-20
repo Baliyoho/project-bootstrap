@@ -240,7 +240,7 @@ REPO_CONFIG = {
         'docs': ['README.md', 'AGENTS.md', 'ARCHITECTURE.md', KIT_DOC],
         'required_in': ['AGENTS.md', KIT_DOC],
     }, {
-        # Iron rule 1: only a real SKILL.md change bumps VERSION and the version line.
+        # AGENTS rule 9 (iron rule 1 before v3 Q56): only a real SKILL.md change bumps VERSION and the version line.
         'id': 'version-follows-skill',
         'canonical': 'skill-only',
         'variants': {

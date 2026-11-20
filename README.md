@@ -16,7 +16,7 @@
 | 文件說 A、實際是 B，AI 照文件做就炸 | 以實況為準＋`verify_state.py`＋`check_docs.py` |
 | 純文件修正被「等功能驗收」擋住，接手者拿到過期文檔集 | 兩類分支：功能分支需驗收；文件／基建分支驗證過即可併 |
 | 連線失敗被誤判成「本機沒有憑證」，寫下錯誤結論 | SKIPPED 判準：先排除設定沒帶到；禁止自行挖憑證 |
-| 祕密／運行資料被推上 GitHub | 鐵律＋`.gitignore`＋提交前固定檢查 staged 清單 |
+| 祕密／運行資料被推上 GitHub | 規則＋`.gitignore`＋提交前固定檢查 staged 清單 |
 | 交接品質看 agent 心情：漏驗證、忘了寫 HANDOFF 就 push | `handoff` skill＋pre-push hook |
 
 ## 怎麼用
@@ -41,7 +41,7 @@ python3 bootstrap.py --target <新專案資料夾>
 ```text
 專案/
 ├─ README.md                        專案介紹：是什麼、為什麼做、怎麼連、怎麼跑
-├─ AGENTS.md                        AI 開工時自動讀（標記之間是部署包管理的共用制度；其餘是專案鐵律）＝唯一權威
+├─ AGENTS.md                        AI 開工時自動讀（標記之間是部署包管理的共用制度；其餘是專案接著編號的規則）＝唯一權威
 ├─ CLAUDE.md                        指標，用 @AGENTS.md import
 ├─ HANDOFF.md                       當下工作狀態（≤80 行、覆寫不累積）
 ├─ ARCHITECTURE.md                     專案結構的唯一權威（只有結構變動才改）

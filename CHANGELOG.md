@@ -3,6 +3,8 @@
 > 最後更新：2026-11-20
 > 新的在上面。目前版本與它的說明在 [src/kit/kit.md](src/kit/kit.md) 開頭的「版本」行（2026-11-18 以前在生成的 `PROJECT-BOOTSTRAP.md`，v3 Q50）；發布新一版時，把舊的版本行改寫成「前一版」移到本檔最上面。每一版都寫做了什麼與為什麼，不刪舊事故。
 
+> 前一版 **2026-11-20.2**（session 名稱拿掉 `※` 待你決定，只留 `㊣` 工作中與 `↗` 已交棒（決策書 v3 Q54，使用者指定）：3.1 共用制度的「session 名稱」改成兩種狀態，停下等決定的回覆不再要求 `session：` 一行；handoff skill 的 `SKILL.md`、`mode-a-stop.md`、`mode-b.md`、`reasons.md` 拿掉 `※` 的規則與它的理由一節，所以七個 skill 檔與共用制度標記跳版。）
+
 > 2026-11-20.2 拿掉的 `※` 原本的理由（寫在 `reasons.md`「停下來問人時為什麼要改名」）：session 停下來等回答時，側欄只看到「工作中」，使用者不會知道它卡在等他，這種等待很容易一整天沒人發現。使用者 2026-11-20 指定拿掉，沒有另外說明原因（決策書 v3 Q54）。
 
 > 前一版 **2026-11-20**（結構文件 `ARCHITECT.md` 改名為業界慣例的 `ARCHITECTURE.md`（決策書 v3 Q52）：範本、`owners.json`、AGENTS／README／HANDOFF 範本與 `check_docs.py` 的 `DATED_DIRS` 跟著改；handoff skill 的 `mode-0.md`、`mode-a-stop.md`、`mode-b.md` 提到它的地方改名，所以七個 skill 檔與共用制度標記跳版。已部署專案的 `ARCHITECT.md` 歸專案所有，同步器不改名。）
