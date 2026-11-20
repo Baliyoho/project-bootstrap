@@ -45,7 +45,7 @@
 | 路徑 | 是什麼 |
 |---|---|
 | [README.md](README.md) | 標準 README：解決什麼、怎麼用、部署後長什麼樣、跨工具相容性、參與開發、授權 |
-| [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本、跟部署出去的專案不同的地方、這個 repo 是什麼、鐵律 |
+| [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本、跟部署出去的專案不同的地方、鐵律（各附會擋／擋不到）、碰到才讀的索引表 |
 | [CLAUDE.md](CLAUDE.md) | Claude Code 用 `@AGENTS.md` import |
 | [HANDOFF.md](HANDOFF.md) | **當下交接快照與跨機器工作標記**：範本 3.3 的實例，不是副本；≤80 行、覆寫不累積 |
 | 本檔 | 結構 |

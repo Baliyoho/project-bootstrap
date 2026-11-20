@@ -42,7 +42,7 @@
 | 改名寫進回報模板 | A5／B9 各有必填 `session：` 與無改名工具時的回報選項，附負向測試 | 改名漏做卻在 repo 內沒有任何跡象 |
 | 續聊狀態與計數 | `AGENTS.md` 共用制度有「`↗` 時收到新訊息先改回 `㊣`」（2026-11-13 起取代 skill 與指標 description 的觸發詞，skill 不再必讀；2026-11-20 起沒有 `※`，v3 Q54）；skill 參考檔保留時間與計數、只讀不寫 Git、改檔重跑 A、成功交棒才累加；附 17 個負向測試 | 已交棒後續聊沒恢復工作中，或計數被重算 |
 | 本 repo 交接狀態 | 必要欄位與章節、≤80 行、骨架版本符合 VERSION、禁止這次已知過期待辦與只改兩欄的入口規則；附負向測試 | 標記清了卻保留已完成待辦，下一棒被迫從聊天重建現況；不保證任意待辦的語意正確，仍需 B6 人工核對 |
-| 規則理由連結 | AGENTS.md 與 `docs/maintenance.md` 每節至少一個、鐵律／副本規則／hook 訊息每條各一個指向 `docs/rationale.md` 的連結（從各自的位置算相對路徑），連結的段落存在且非空；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
+| 規則理由連結 | AGENTS.md 與 `docs/maintenance.md` 每節至少一個、鐵律／副本規則／hook 訊息每條各一個指向 `docs/rationale.md` 的連結（從各自的位置算相對路徑），連結的段落存在且非空；只有表格列的「碰到才讀」索引節免連結，夾帶規則句就照一般章節要求（2026-11-20）；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
 | 來源例外可見性（F46 部分） | 每輪印出已宣告減項（2026-11-14 起剩 handoff skill、check_docs.py 兩項；pre-push 補裝了）；確認來源缺、產物有，並對漏宣告／來源增項／產物缺項跑負向變異 | 三項減項再次從驗證輸出中靜默消失；這只驗可見性，未完成來源／產物全部同組情境 |
 | 來源／產物交接快照同組情境（F46 部分） | 同一組 11 種合成快照在來源檢查與部署後 `check_docs.py` 各跑一次：有效、整份缺失、占用欄缺失／重複、章節缺失、超行數、機器／工具欄正反例均須一致；來源檢查遇整份缺失須明確報錯 | 來源少了整份 `HANDOFF.md` 時只拋例外，或產物與來源對相同缺陷給出矛盾結論；實際接手流程仍待驗 |
 | 來源／產物文件同組情境（F46 部分） | 同一份合成文件在來源文件檢查與部署後 `check_docs.py` 各跑一次：20 種正反例涵蓋根目錄及巢狀文件的缺檔、死連結、程式碼、角括號加 title、片段、日期及佔位符；沿用來源實際檢查函式 | 同樣的文件缺陷在來源與產物給出不同結論；其他文件項仍待驗 |
@@ -1412,6 +1412,10 @@ def reason_link_re(target):
 
 REASON_LINK = reason_link_re(REASON_FILE)
 REASON_ITEM_SECTIONS = ('鐵律', '副本規則', '改兩支 hook 的訊息時')
+# 2026-11-20：AGENTS 的寫作規範（協作系統原則草稿第 4 節）把「碰到才讀」的索引放在最後一節，
+# 寫成「什麼時候 → 讀哪份」的表。索引不是規則，不要求理由連結；但這一節只能有表格列，
+# 夾帶一句規則就照一般章節要求理由連結，免得規則躲進索引逃掉鐵律 3。
+REASON_INDEX_SECTIONS = ('碰到才讀',)
 REASON_MIN_BODY = 40
 CONTRIB_FILE = 'docs/maintenance.md'
 CONTRIB_REASON = 'rationale.md'
@@ -1471,7 +1475,9 @@ def reason_link_problems(agents, reasons, link=REASON_LINK):
         title = title.strip()
         found = link.findall(body)
         used.update(found)
-        if not found:
+        index_only = (any(title.startswith(name) for name in REASON_INDEX_SECTIONS)
+                      and all(not l.strip() or l.lstrip().startswith('|') for l in body.split('\n')))
+        if not found and not index_only:
             problems.append('章節沒有理由連結：' + title)
         if not any(title.startswith(name) for name in REASON_ITEM_SECTIONS):
             continue
@@ -1495,6 +1501,16 @@ def reason_link_problems(agents, reasons, link=REASON_LINK):
         elif len(bodies[anchor]) < REASON_MIN_BODY:
             problems.append('理由段落是空的或過短：#' + anchor)
     return problems
+
+
+def append_to_section(text, title, line):
+    """在 `## <title>` 那一節的最後加一行；那一節不必是全檔最後一節（2026-11-20，索引節放在它後面）。"""
+    start = text.find('\n## ' + title)
+    if start < 0:
+        return text
+    nxt = text.find('\n## ', start + 1)
+    end = len(text) if nxt < 0 else nxt
+    return text[:end].rstrip('\n') + '\n' + line + '\n' + text[end:]
 
 
 def step_reason_links():
@@ -1538,7 +1554,9 @@ def step_reason_links():
                 count=1, flags=re.S)),
         ('錨點重複', agents, reasons + '\n' + anchor + '\n\n## 重複\n' + '字' * REASON_MIN_BODY),
         ('整節沒有理由連結', agents + '\n## 新的一節\n\n只有規則，沒有理由。\n', reasons),
-        ('新增規則沒有理由', agents.rstrip('\n') + '\n7. **新規則。**\n', reasons),
+        ('新增規則沒有理由', append_to_section(agents, '鐵律', '8. 新規則。'), reasons),
+        ('索引節夾帶規則', agents + '\n## 碰到才讀\n\n| 什麼時候 | 讀哪份 |\n|---|---|\n\n不要改 X。\n',
+         reasons),
     )
     contrib_cases = () if not contributing else (
         ('維護手冊副本規則拿掉理由連結',
