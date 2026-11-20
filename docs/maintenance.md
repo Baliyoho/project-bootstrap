@@ -7,7 +7,7 @@
 
 規則見 [AGENTS.md](../AGENTS.md) 的鐵律 1、4 與「跟部署出去的專案不同的地方」；這裡只寫操作細節。[為什麼](rationale.md#rule-1)
 
-- 動到結構（根目錄增刪檔案、部署包增刪一節範本、驗證項增減、副本拓撲改變）就更新 [ARCHITECTURE.md](../ARCHITECTURE.md)，跟該變動同一個 commit，並更新它檔頭的「最後更新」；增刪範本時同步 `EXPECTED` 與它的 3.x 對照表。
+- 動到結構（根目錄增刪檔案、部署包增刪一節範本、驗證項增減、副本拓撲改變）就更新 [ARCHITECTURE.md](../ARCHITECTURE.md)，跟該變動同一個 commit，並更新它檔頭的「最後更新」；增刪範本時同步 `EXPECTED`。
 - 新增範本：在 `src/kit/owners.json` 登記歸屬；歸 `region`／`key`／`lines`／`wiring` 四種的，要先在 `sync_project.py` 寫處理程式並更新 `HANDLED`，否則同步器拒絕啟動。改跨工具表改 `src/kit/capabilities.json`，不改 `kit.md`。
 - 部署包跳版時 `VERSION` 跟版本行一起改；`src/kit/kit.md` 開頭只留新的「版本」行；舊的那一行改寫成「前一版」，移到 [CHANGELOG.md](../CHANGELOG.md) 最上面。不跳版的修改也在 CHANGELOG 最上面記一條。
 - 驗證印 `skip` 的項目沒有被驗到，回報時照實寫；印「提醒」的項目不影響結束碼，但要轉告使用者。
