@@ -1,12 +1,13 @@
 # project-bootstrap 需求決策書 v3 歷史紀錄
 
-> 最後更新：2026-11-18（登記並決定 Q51：決策紀錄可以標「被取代」與「部分被取代」）；更早的修改見下面的修改紀錄
+> 最後更新：2026-11-20（登記並決定 Q52：`ARCHITECT.md` 改名 `ARCHITECTURE.md` 並拆分內容）；更早的修改見下面的修改紀錄
 > 回答「決策書怎麼變成現在這樣」。現在要什麼只看決策書；這裡是它的修改紀錄、已決的 Q 與從條文移出的經過。決策書每改一次就在這裡加一筆，到 v4 時跟 v3 決策書一起搬進封存區 `archive/docs/`（Q44、Q45）。碰到才讀，不在常態入口，讀它不用先經使用者同意。v2 時代的 Q1–Q31 不在這裡，在封存的 v2 原件。2026-11-18 以前的紀錄裡寫的 `docs/history/` 是當時的封存區，現在在 `archive/docs/`（Q44 先改名 `docs/archive/`，同日 Q45 再搬到根目錄冷區）。
 
 ## 1. 修改紀錄
 
 新的在上。每筆寫日期、改了哪裡、牽涉的 ID 或 Q、出處。
 
+- 2026-11-20：第 5 節之後「清單看 ARCHITECT」改成 ARCHITECTURE；第 8 節的下一個編號改成 Q53（Q52，使用者在聊天中選「拆分加改名一起做」）。
 - 2026-11-18：第 8 節加一句：已決的 Q 被後來的 Q 取代時，在決策紀錄的舊條目標「被取代」或「部分被取代」；下一個編號改成 Q52（Q51）。
 - 2026-11-18：第 5 節「部署方式」加兩條：唯一產出物是 `bootstrap.py`、部署包說明是 `src/kit/kit.md`；已部署專案照舊用 `sync_project.py` 升級。第 8 節的下一個編號改成 Q51（Q50）。
 - 2026-11-18：D7 從「一個包」改成安裝程式；F17、F18 的處置寫進 `bootstrap.py`；第 5 節加「部署方式」；第 8 節的下一個編號改成 Q50（Q49）。
@@ -136,6 +137,14 @@ Q37、Q38 是 2026-11-16 登記並決定的，當時的「最後更新」沒有�
   - 未選 (b) 改寫狀態欄：要改動已決紀錄的原文，也表達不了只改一部分（出處：同上）
   - 未選 (c) 不做：同起因（出處：同上）
   - 結果：Q32 標「被取代：Q39」，Q40、Q42、Q44、Q46 標「部分被取代」（Q48、Q44、Q45、Q47）。`trail_sources.questions_from_book` 把「被取代」讀成 superseded 並替後來那筆補上 `supersedes`，「部分被取代」維持 accepted、列進 `amended_by`；沒寫編號就當成沒有後繼者。`trail.check_decisions` 加兩項：`amended_by` 指到不存在的 Q 報 `amended-by-unknown`，後繼者的日期比被取代者早報 `successor-older`。`tests/test_trail.py`、`tests/test_trail_sources.py` 各加一個測試，變異組加 6 個；`test_trail_repo` 讀本節照常全過
+
+- **Q52**（2026-11-20 登記）：結構文件 `ARCHITECT.md` 要不要改名成業界慣例的 `ARCHITECTURE.md`，並把混在裡面的內容拆到各自的家？起因是文件體系討論的共識草稿（`collaboration-system-principles-draft.md`）：原則 2「做法和名稱能照業界慣例就照」與原則 3「每個事實只有一個家」；本 repo 的 `ARCHITECT.md` 有 271 行，混了文件地圖、根目錄表（每列夾著日期、經過與理由）、部署包內部、抽取規則、驗證器檢查表、副本拓撲、例外宣告，維護手冊另有一張重複的文件分工表。AI 在聊天中提出拆分表與改名的牽連範圍（部署包範本 3.5、handoff skill 三個檔要跳版、本書與計畫的提及、已部署專案）。選項：(a) 只在本 repo 拆分、不改名；(b) 拆分加改名；(c) 不動。影響 F46（宣告的位置不變）、部署包範本 3.5、handoff skill、`check_docs.py` 範本、本 repo 的 ARCHITECTURE／AGENTS／README／維護手冊、`verify_bootstrap.py`、`contradictions.py`、`trail_sources.py`；不新增或改變需求 ID。狀態：已決（2026-11-20，使用者在聊天中選 (b)）。
+  - 採用理由：使用者原話「拆分加改名一起做」；`ARCHITECTURE.md` 是 matklad 2021 年那篇文章起被許多專案沿用的慣例名稱，放鳥瞰圖、程式碼地圖與看程式碼看不出來的不變式（出處：2026-11-20 聊天）
+  - 未選 (a) 只拆不改名：名稱留著自創的 `ARCHITECT`，違反原則 2；使用者選了 (b)（出處：同上）
+  - 未選 (c) 不動：同起因（出處：同上）
+  - 暫緩 已部署專案的改名：`ARCHITECT.md` 在 `owners.json` 歸專案（seed），`sync_project.py` 不改名；專案裡的 `check_docs.py` 的 `DATED_DIRS` 在專案設定區，同步時原樣保留。同步後 skill 會寫 `ARCHITECTURE.md`、專案裡仍是 `ARCHITECT.md`，要不要讓同步器改名、或由各專案自己 `git mv`，待使用者決定（出處：2026-11-20 本 session 盤點）
+  - 暫緩 驗證器檢查表與 F46 例外宣告搬家：檢查表 59 列，驗證器檔頭的清單只涵蓋其中 22 項，搬走前要先合成一份；F46 宣告由 `verify_bootstrap.py`「來源例外」與 `trail_sources` 直接讀 ARCHITECTURE，搬到本書要改這兩支的讀取位置（出處：同上）
+  - 結果：`git mv` 成 `ARCHITECTURE.md` 與範本 `ARCHITECTURE.md.tmpl`；`owners.json`、AGENTS／README／HANDOFF 範本、`check_docs.py` 範本的 `DATED_DIRS`、`kit.md`、`installer.py`、`contradictions.py`、`trail_sources.py`、`sync_project.py`、`verify_bootstrap.py` 與測試改名。handoff skill 的 `mode-0.md`、`mode-a-stop.md`、`mode-b.md` 改名，部署包跳 `2026-11-20`；`skill_split_baseline.json` 記兩行改寫。拆分：維護手冊的文件分工表併進 ARCHITECTURE「碰到才讀的文件」（同日稍早）；抽取規則搬到維護手冊「改部署包的流程」；「改本檔的時機」併進維護手冊同一節；根目錄表每列只留是什麼與什麼時候動。歷史檔與冷區 `archive/v2-experiments/README.md`（使用者 2026-11-20 同意）裡指向舊檔名的連結改成純文字
 
 ## 3. 從條文移出的經過
 

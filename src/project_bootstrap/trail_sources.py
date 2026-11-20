@@ -14,7 +14,7 @@ records out of them so ``trail`` can check them:
 - ``roadmap_from_plan``: the plan's phase table (the ``分期`` section, found by
   name; rows ``第 N 期``) gives the milestones; their status comes from the
   caller, because the plan holds no progress;
-- ``absences_from_architect``: each bullet of ARCHITECT's "deliberately
+- ``absences_from_architect``: each bullet of ARCHITECTURE's "deliberately
   absent" section whose bold lead says something is not installed is an
   accepted decision; the rest of the bullet is its rationale and the last
   date in the bold lead (else the first in the bullet) its date. A bullet
@@ -111,7 +111,7 @@ def absences_from_architect(text):
         decisions.append({'id': f'architect-absent-{len(decisions) + 1}',
                           'title': lead.strip(), 'status': 'accepted',
                           'date': days[-1] if days else '',
-                          'baseline': 'ARCHITECT「這個 repo 刻意沒有的東西」',
+                          'baseline': 'ARCHITECTURE「這個 repo 刻意沒有的東西」',
                           'rationale': rest.strip()})
     return decisions
 

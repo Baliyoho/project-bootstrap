@@ -21,7 +21,7 @@
     ".gitignore": {"owner": "project", "update": "lines"},
     "CLAUDE.md": {"owner": "project", "update": "lines"},
     "AGENTS.md": {"owner": "project", "update": "lines"},
-    "ARCHITECT.md": {"owner": "project", "update": "seed"},
+    "ARCHITECTURE.md": {"owner": "project", "update": "seed"},
     "README.md": {"owner": "project", "update": "seed"},
     "docs/ai-notes/roadmap.md": {"owner": "project", "update": "seed"},
     "tools/verify_state.py": {"owner": "project", "update": "seed"},

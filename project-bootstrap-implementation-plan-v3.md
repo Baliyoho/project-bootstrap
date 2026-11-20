@@ -1,11 +1,11 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-18（第 3 節安裝程式一段：`PROJECT-BOOTSTRAP.md` 已刪，已部署專案照舊用 `sync_project.py`，決策書 Q50）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
-> 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECT.md](ARCHITECT.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](docs/status.json)。
+> 最後更新：2026-11-20（`ARCHITECT.md` 改名 `ARCHITECTURE.md`，檔頭與第 1 節的提及跟著改，決策書 Q52）。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
+> 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECTURE.md](ARCHITECTURE.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](docs/status.json)。
 
 ## 1. 起點
 
-- 部署包的入口、hook 與參考檔是 v3 第 5 節的形狀（v3 Q34、Q40、Q41），不含 `GEMINI.md`（本專案明確不支援 Gemini）；第 5 節沒列的 `ARCHITECT.md`、`docs/ai-notes/roadmap.md` 與兩支檢查腳本則可歸在第 5 節的「參考檔」「檢查腳本」兩列。版本與檔案清單看 [VERSION](VERSION) 與 ARCHITECT。
+- 部署包的入口、hook 與參考檔是 v3 第 5 節的形狀（v3 Q34、Q40、Q41），不含 `GEMINI.md`（本專案明確不支援 Gemini）；第 5 節沒列的 `ARCHITECTURE.md`、`docs/ai-notes/roadmap.md` 與兩支檢查腳本則可歸在第 5 節的「參考檔」「檢查腳本」兩列。版本與檔案清單看 [VERSION](VERSION) 與 ARCHITECTURE。
 - main 上沒有 v2 的程式（v3 Q46）。執行屏障類模組封存在 `archive/v2-barrier/`（v3 Q33），簽章發布通道封存在 `archive/v2-channel/`（已發出的 tag 不撤回），其餘 v2 原型封存在 `archive/v2-prototypes/`。還在用的檢查與工具都是 v3 的，測試入口是 `tools/run_tests.py`。
 - 驗收依據是 handoff-ab（v3 第 2 節 E1、第 6 節），結果在 [experiments/handoff-ab/](experiments/handoff-ab/README.md)。
 

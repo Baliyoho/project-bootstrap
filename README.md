@@ -2,7 +2,7 @@
 
 把「跨 session、跨模型、跨機器協作」需要的制度，打包成**一支安裝程式**：[bootstrap.py](bootstrap.py)。
 
-這個 repo 唯一的產出物是安裝程式 `bootstrap.py`，由 `src/kit/` 以 `tools/build_kit.py` 生成；部署包的說明與每個範本在 [src/kit/](src/kit/kit.md)。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECT.md](ARCHITECT.md)。
+這個 repo 唯一的產出物是安裝程式 `bootstrap.py`，由 `src/kit/` 以 `tools/build_kit.py` 生成；部署包的說明與每個範本在 [src/kit/](src/kit/kit.md)。其他檔案是它的來源、說明、指標或測試，退休的 v2 程式封存在 `archive/`；結構見 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ## 它在解決什麼
 
@@ -44,7 +44,7 @@ python3 bootstrap.py --target <新專案資料夾>
 ├─ AGENTS.md                        AI 開工時自動讀（標記之間是部署包管理的共用制度；其餘是專案鐵律）＝唯一權威
 ├─ CLAUDE.md                        指標，用 @AGENTS.md import
 ├─ HANDOFF.md                       當下工作狀態（≤80 行、覆寫不累積）
-├─ ARCHITECT.md                     專案結構的唯一權威（只有結構變動才改）
+├─ ARCHITECTURE.md                     專案結構的唯一權威（只有結構變動才改）
 ├─ .bootstrap/answers.json          訪談答案（安裝程式寫、update 用；不含祕密）
 ├─ .claude/                         Claude Code
 │   ├─ settings.json                hook 設定
@@ -101,7 +101,7 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 **Codex 要分 CLI 與桌面 App**：CLI 有 hooks 且與 Claude Code 同格式，兩邊掛**同樣那兩個 `.sh`**、不各留一份；桌面 App 也有 hooks（2026-10-30 重查：App `26.506` 起有 in-app 信任審核，與 CLI 共用 `~/.codex`；舊版這裡寫「沒有」是 2026-08-06 的實測，已過期），全域 skill 一樣放 `~/.codex/skills/handoff/`。
 
-**Antigravity 2026-11-13 起放棄**（需求決策書 v3 D8）：部署包不再產出它的接線與轉接層，已部署專案裡的舊檔不同步也不刪，清不清由使用者決定。之前的實測紀錄在 git 歷史與 [ARCHITECT.md](ARCHITECT.md)。
+**Antigravity 2026-11-13 起放棄**（需求決策書 v3 D8）：部署包不再產出它的接線與轉接層，已部署專案裡的舊檔不同步也不刪，清不清由使用者決定。之前的實測紀錄在 git 歷史與 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 三個平面都接得上 hooks，但**都帶條件**：Codex 要專案被信任、而且每個專案各審一次。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的，不是 WSL 那支）；hook 依序試 `python3`、`python`，Windows 的 WindowsApps `python3` 往往是個 PATH 找得到、執行卻失敗的別名（2026-11-16 實測 rc=49），要靠回退到 `python` 才拿得到 `[facts]`。
 

@@ -77,7 +77,7 @@ class InstallerTests(unittest.TestCase):
         self.assertIn('- **工作中**：無（已交棒）', handoff)
         self.assertIn('21:05', handoff)
         todo = handoff.split('## 未完成', 1)[1].split('\n## ', 1)[0]
-        for needle in ('ARCHITECT.md', 'verify_state.py', 'ONELINER', '不能直接改正式資料庫', 'GitHub repo'):
+        for needle in ('ARCHITECTURE.md', 'verify_state.py', 'ONELINER', '不能直接改正式資料庫', 'GitHub repo'):
             self.assertIn(needle, todo)
 
     def test_written_bytes_follow_gitattributes(self):

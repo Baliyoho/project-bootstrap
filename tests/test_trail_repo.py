@@ -51,7 +51,7 @@ class RepoTrailTests(unittest.TestCase):
 
     def test_architect_declared_absences_each_have_reason_and_date(self):
         # 2026-11-10 first run: the CI bullet had no date; the git first-appearance date was added.
-        decisions = absences_from_architect(read('ARCHITECT.md'))
+        decisions = absences_from_architect(read('ARCHITECTURE.md'))
         self.assertGreaterEqual(len(decisions), 3)
         self.assertEqual(check_decisions(decisions)[0], [])
 

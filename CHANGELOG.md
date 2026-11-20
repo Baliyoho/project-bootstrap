@@ -1,8 +1,9 @@
 # 部署包變更紀錄
 
-> 最後更新：2026-11-18（2026-11-18.3：zsh 的三種寫法上移到 `env.md`；同日稍早「版本」行的位置改成 `src/kit/kit.md`：`PROJECT-BOOTSTRAP.md` 退休，決策書 v3 Q50）
+> 最後更新：2026-11-20（2026-11-20：`ARCHITECT.md` 改名為 `ARCHITECTURE.md`，決策書 v3 Q52）
 > 新的在上面。目前版本與它的說明在 [src/kit/kit.md](src/kit/kit.md) 開頭的「版本」行（2026-11-18 以前在生成的 `PROJECT-BOOTSTRAP.md`，v3 Q50）；發布新一版時，把舊的版本行改寫成「前一版」移到本檔最上面。每一版都寫做了什麼與為什麼，不刪舊事故。
 
+> 前一版 **2026-11-18.3**（zsh 跟 bash 不同的三種寫法（管線結束碼用 `${pipestatus[1]}`、`echo =====` 被當成檔名展開、未加引號的 `$變數` 不拆字）從本 repo 的維護手冊上移到 handoff skill 的 `env.md`「macOS」一節，因為部署出去的專案在 macOS 上一樣會踩到。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-18.2**（`PROJECT-BOOTSTRAP.md` 退休（決策書 v3 Q50）：不再生成與提交，部署包說明就是 `src/kit/kit.md`。`mode-0.md` 0-6 開頭那句「3.x 指 `PROJECT-BOOTSTRAP.md`」改指 `src/kit/kit.md`，所以 skill 七個檔跳版。已部署的專案照舊用 `sync_project.py` 升級。）
 > 前一版 **2026-11-18**（建制改成「安裝程式寫檔＋安裝後由 agent 接手」（決策書 v3 Q49）：對外的安裝途徑從本檔改成單一檔 `bootstrap.py`，拿掉 AI 照抄這條路。handoff skill 的 `mode-0.md` 改成跑安裝程式、再處理第一批工作，原本第 5 節的遠端與工具驗收清單逐字搬進它的 0-6；`reasons.md` 的模式 0 權威與兩條反例跟著改，規則對照表換成新的小節名。`HANDOFF.md` 範本改成安裝後的狀態（還沒 commit、還沒有 GitHub repo）。第 1、2、4、5 節改寫：訪談由程式問、部署樹多一個 `.bootstrap/answers.json`、本機驗收與首次發布及遠端驗收都改指 `mode-0.md`。）
 > 前一版 **2026-11-17.3**（本專案明確不支援 Gemini：不再產出 `GEMINI.md`，3.2 只剩 `CLAUDE.md`；部署樹、HANDOFF 範本的部署清單、ARCHITECT 範本的指標列、跨工具環境變數表與跨模型的說法都拿掉 Gemini。handoff skill 兩處跟著改：`mode-a-stop.md` 的工具名慣用寫法只列 `Claude Code`／`Codex CLI`，`reasons.md` 的「任何模型」與「沒有改名能力的工具」不再提 Gemini。已部署專案裡的 `GEMINI.md` 是專案自己的檔，同步時不改寫也不刪，只列 MIGRATE，刪不刪由使用者決定。）

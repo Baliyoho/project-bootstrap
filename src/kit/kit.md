@@ -8,7 +8,7 @@
 >
 > 它問完第 1 節的訪談，把第 3 節的每個檔寫進去（已存在的同名檔不覆寫，新內容寫成 `<路徑>.bootstrap-new`），逐檔比對雜湊，再把安裝後要由 agent 做的第一批工作寫進 `HANDOFF.md`。之後在那個資料夾開 Claude Code 或 Codex 說「接棒」即可。已部署的專案升級跑 `python3 bootstrap.py update --target <專案>`（先預演，加 `--write` 才寫入）。
 > 本檔（`src/kit/kit.md`）是部署包的說明，範本全文在 `src/kit/files/`。2026-11-18 起不再生成成 `PROJECT-BOOTSTRAP.md` 提交（需求決策書 v3 Q50）：驗證器與同步器需要全文時，由 `tools/build_kit.py` 在記憶體把兩者組起來；下面的「第 N 節」「3.x」指的就是組出來的全文。不複製進專案。
-> 版本：**2026-11-18.3**（zsh 跟 bash 不同的三種寫法（管線結束碼用 `${pipestatus[1]}`、`echo =====` 被當成檔名展開、未加引號的 `$變數` 不拆字）從本 repo 的維護手冊上移到 handoff skill 的 `env.md`「macOS」一節，因為部署出去的專案在 macOS 上一樣會踩到。七個 skill 檔與共用制度標記同版。）
+> 版本：**2026-11-20**（結構文件 `ARCHITECT.md` 改名為業界慣例的 `ARCHITECTURE.md`（決策書 v3 Q52）：範本、`owners.json`、AGENTS／README／HANDOFF 範本與 `check_docs.py` 的 `DATED_DIRS` 跟著改；handoff skill 的 `mode-0.md`、`mode-a-stop.md`、`mode-b.md` 提到它的地方改名，所以七個 skill 檔與共用制度標記跳版。已部署專案的 `ARCHITECT.md` 歸專案所有，同步器不改名。）
 > 更早的版本與每一版的理由在 project-bootstrap repo 的 `CHANGELOG.md`（2026-11-17 起從本檔開頭搬出，逐字不改；部署後用不到）。
 > 萃取自兩個實際運行的專案：一個是表單資料庫＋NAS＋custom widget 的案件審核工作流，一個是文本識別系統。兩個都是多模型、多機器協作。
 
@@ -174,7 +174,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 | `{{TODAY}}` | 部署當天日期（絕對日期，YYYY-MM-DD） | 2026-07-26 |
 | `{{SECRETS}}` | 絕不進 Git 的憑證檔 | `.env`、`*.pem` |
 | `{{RUNTIME_DIRS}}` | 絕不進 Git 的運行／資料目錄 | `data/`、`backups/`、`uploads/` |
-| `{{STACK_DIRS}}` | 專案主要程式目錄（寫進 ARCHITECT 的結構） | `src/`、`migrations/` |
+| `{{STACK_DIRS}}` | 專案主要程式目錄（寫進 ARCHITECTURE 的結構） | `src/`、`migrations/` |
 | `{{VERIFY_TARGETS}}` | 「一鍵驗證」該查什麼（沒有就先留空） | 健康檢查 API、docker 容器狀態 |
 
 最後一題問：**「這個專案有沒有已知的『絕對不能做』的操作？」**（例：不能直接改資料庫檔、不能在正式環境跑 migration）。它跟 `{{VERIFY_TARGETS}}` 一樣有判斷空間，程式只記下原話：怎麼寫成 AGENTS.md 鐵律（第 4 條之後）、怎麼寫成 `verify_state.py` 的檢查項，列進安裝後 agent 的第一批工作；沒有就先放空著，日後踩到再補。
@@ -189,7 +189,7 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 ├─ AGENTS.md                        ← AI 開工時自動讀：共用制度一節（≤40 行）＋專案鐵律
 ├─ CLAUDE.md                        ← 指標，指向 AGENTS.md
 ├─ HANDOFF.md                       ← 當下工作狀態（≤80 行，不累積歷史）
-├─ ARCHITECT.md                     ← 專案結構的唯一權威（只有結構變動才改）
+├─ ARCHITECTURE.md                     ← 專案結構的唯一權威（只有結構變動才改）
 ├─ .bootstrap/answers.json          ← 訪談答案（安裝程式寫，update 用；不含祕密）
 ├─ .gitignore
 ├─ .gitattributes
@@ -250,13 +250,13 @@ Claude Code 與 Codex 都有 `SessionEnd`，Codex 的還會在**閒置 30 分鐘
 <!-- kit-file: README.md -->
 ````
 
-### 3.5 `ARCHITECT.md`（結構的唯一權威）
+### 3.5 `ARCHITECTURE.md`（結構的唯一權威）
 
 > **為什麼要有這一份**：結構問題（「這個東西放哪」「哪一份是權威版」「資料從哪進來」）本來散在 README 的檔案結構、AGENTS.md 的知識庫地圖與每個人腦袋裡，於是每一棒都要重新拼一次，拼錯了就照著不存在的路徑動手。
 > 它與 `HANDOFF.md` 是**故意相反的節奏**：HANDOFF 每次交棒都覆寫，本檔只有結構真的變了才動——一份會頻繁改的結構圖，接手者遲早不會再相信它。
 
 ````markdown
-<!-- kit-file: ARCHITECT.md -->
+<!-- kit-file: ARCHITECTURE.md -->
 ````
 
 ### 3.6（2026-11-17 移除）
@@ -487,12 +487,12 @@ description: Pointer to the authoritative copy in .claude/skills/. <一句話說
 |---|---|
 | 一條「以後都要這樣做」的規則、一次踩坑 | `AGENTS.md` 鐵律（重大）或 `docs/ai-notes/<主題>.md`（細節），**附絕對日期** |
 | 某個操作的可重複步驟（做過兩次以上） | `.claude/skills/<slug>/SKILL.md` |
-| 「東西搬家了」「多了一個元件」「權威版換位置了」 | `ARCHITECT.md`，**跟該變動同一個 commit** |
+| 「東西搬家了」「多了一個元件」「權威版換位置了」 | `ARCHITECTURE.md`，**跟該變動同一個 commit** |
 | 「還有哪些事沒做」「這件事被否決了」 | `docs/ai-notes/roadmap.md` |
 | 「現在做到哪、下一步」 | `HANDOFF.md`（覆寫，不累積） |
 | 專案的目的、網址、連線資料、怎麼跑起來 | `README.md` |
 
-**開新的 ai-notes 檔案時**：回頭在 `ARCHITECT.md` 補上一列，否則沒人會找到它。
+**開新的 ai-notes 檔案時**：回頭在 `ARCHITECTURE.md` 補上一列，否則沒人會找到它。
 
 **已知的腐化模式與對策**：
 
@@ -500,7 +500,7 @@ description: Pointer to the authoritative copy in .claude/skills/. <一句話說
 |---|---|
 | HANDOFF 超過 80 行 | 把持久內容搬進 ai-notes，只留當下狀態 |
 | 同一件事在兩份文件都寫了 | 留一份權威版，另一份改成指標並說明為什麼（避免下一棒又複製回去） |
-| `ARCHITECT.md` 開始出現「正在做 X」「預計改成 Y」 | 那是 HANDOFF 與 roadmap 的內容，搬走；本檔只寫現在的結構 |
+| `ARCHITECTURE.md` 開始出現「正在做 X」「預計改成 Y」 | 那是 HANDOFF 與 roadmap 的內容，搬走；本檔只寫現在的結構 |
 | 文件寫「共 N 份」「目前 12 個」 | `check_docs.py` 會提醒；改成不寫數字 |
 | 換了網址／改了名稱 | 把舊值加進 `check_docs.py` 的 `STALE_PATTERNS`，讓工具替你抓殘留 |
 | 兩台機器同時動 main | 恢復 single writer；分岔了就先整合，**禁止 force push** |

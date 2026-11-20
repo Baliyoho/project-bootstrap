@@ -3,7 +3,7 @@
 > 最後更新：2026-11-18（`PROJECT-BOOTSTRAP.md` 退休，唯一產出物是 `bootstrap.py`，部署包說明在 `src/kit/kit.md`，需求決策書 v3 Q50）
 > 本檔只放規則：每個 session 一定要守、不能做的事，不寫步驟。改部署包、同步副本、改接線或 hook 訊息、寫本 repo 交接快照的做法在 [AI 維護手冊](docs/maintenance.md)，做到那件事才讀。每條的現行理由在[理由檔](docs/rationale.md)，被取代的理由在它的[歷史紀錄](docs/history/rationale-history.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
-<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-18.3 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
+<!-- 共用制度開始 source: PROJECT-BOOTSTRAP.md v2026-11-20 — 到下方的結束標記為止由部署包管理；專案只能加嚴或填空，要改回部署包改再同步 -->
 ## 目標
 
 這個專案由不同的 session、模型、機器輪流做。你要讓下一棒不必問任何人，就能從 origin 拿到最新成果、知道現況，而且不會跟別人互相覆寫。怎麼做到由你判斷。
@@ -43,13 +43,13 @@
 - 驗證入口是 `python3 -X utf8 tools/verify_bootstrap.py`（不是 `verify_state.py`），exit 0 才算改完；提交前先逐檔 stage，再加 `--staged` 跑。可加 `--quiet` 只印摘要與失敗，檢查集合與結束碼不變。
 - 沒有 `check_docs.py`。開場 hook `.claude/hooks/repo-git-check.sh` 與 push 前 hook `.claude/hooks/repo-pre-push.sh` 是部署包 3.10、3.11 的逐字副本；要重查開場事實就重跑前者。
 - 沒有專案層的 handoff skill。要看參考程序就讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`）；這台機器沒有就讀本 repo 的範本 [src/kit/files/.claude/skills/handoff/](src/kit/files/.claude/skills/handoff/SKILL.md.tmpl)，不要搬檔或憑記憶重刻。
-- 改部署包的操作細節、同步到已部署專案的用法與其他做法在 [AI 維護手冊](docs/maintenance.md)；其他文件碰到那件事才讀，對照表在 [ARCHITECT.md](ARCHITECT.md) 的「碰到才讀的文件」。
+- 改部署包的操作細節、同步到已部署專案的用法與其他做法在 [AI 維護手冊](docs/maintenance.md)；其他文件碰到那件事才讀，對照表在 [ARCHITECTURE.md](ARCHITECTURE.md) 的「碰到才讀的文件」。
 
 這些寫在這裡而不只放 hook，是因為有些工具不跑 hook。[為什麼](docs/rationale.md#start)
 
 ## 這個 repo 是什麼
 
-AI 協作專案管理骨架的權威版，唯一產出物是安裝程式 [bootstrap.py](bootstrap.py)（用法見 [README.md](README.md)，v3 Q49）；部署包說明與範本在 [src/kit/](src/kit/kit.md)，不再生成成 `PROJECT-BOOTSTRAP.md`（v3 Q50）；不是知識庫，不存各專案的知識或狀態。唯一需求書是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）。從現況走到需求的路線在[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)。兩份只寫現況，修改經過與已決事項在 `docs/history/` 各自成對的 `-v3-history.md`，改權威文件時同一個 commit 加一筆（v3 Q42）。`docs/history/` 是熱歷史，碰到才讀，不用先問（v3 Q44）。根目錄 `archive/` 是冷區：`archive/docs/` 放封存文件（v2 決策書逐位元組凍結，其餘是結案或被取代的需求、計畫與查核文件，程式不讀），`archive/v2-*/` 放退休的 v2 程式與說明（v3 Q46 起 main 上沒有 v2 的程式）；整個冷區**平常不讀，要回溯歷史先經使用者同意**（v3 Q39、Q45）。逐 ID 的實作狀態在 `docs/status.json`。不部署的例外（本 repo 的檢查與測試、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`check_docs.py` 列在 ARCHITECT：那是已宣告的例外，不是空白，改成補裝由使用者決定。[為什麼](docs/rationale.md#what)
+AI 協作專案管理骨架的權威版，唯一產出物是安裝程式 [bootstrap.py](bootstrap.py)（用法見 [README.md](README.md)，v3 Q49）；部署包說明與範本在 [src/kit/](src/kit/kit.md)，不再生成成 `PROJECT-BOOTSTRAP.md`（v3 Q50）；不是知識庫，不存各專案的知識或狀態。唯一需求書是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)（51 個穩定需求 ID，編號沿用 v2）。從現況走到需求的路線在[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)。兩份只寫現況，修改經過與已決事項在 `docs/history/` 各自成對的 `-v3-history.md`，改權威文件時同一個 commit 加一筆（v3 Q42）。`docs/history/` 是熱歷史，碰到才讀，不用先問（v3 Q44）。根目錄 `archive/` 是冷區：`archive/docs/` 放封存文件（v2 決策書逐位元組凍結，其餘是結案或被取代的需求、計畫與查核文件，程式不讀），`archive/v2-*/` 放退休的 v2 程式與說明（v3 Q46 起 main 上沒有 v2 的程式）；整個冷區**平常不讀，要回溯歷史先經使用者同意**（v3 Q39、Q45）。逐 ID 的實作狀態在 `docs/status.json`。不部署的例外（本 repo 的檢查與測試、開發骨架、`HANDOFF.md`）與刻意沒有的 handoff skill、`check_docs.py` 列在 ARCHITECTURE：那是已宣告的例外，不是空白，改成補裝由使用者決定。[為什麼](docs/rationale.md#what)
 
 ## 鐵律
 

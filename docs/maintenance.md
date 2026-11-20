@@ -7,9 +7,23 @@
 
 規則見 [AGENTS.md](../AGENTS.md) 的鐵律 1、4 與「跟部署出去的專案不同的地方」；這裡只寫操作細節。[為什麼](rationale.md#rule-1)
 
-- 動到結構（增刪檔案、部署包增刪一節範本、驗證項增減）就更新 [ARCHITECT.md](../ARCHITECT.md)，跟該變動同一個 commit。
+- 動到結構（根目錄增刪檔案、部署包增刪一節範本、驗證項增減、副本拓撲改變）就更新 [ARCHITECTURE.md](../ARCHITECTURE.md)，跟該變動同一個 commit，並更新它檔頭的「最後更新」；增刪範本時同步 `EXPECTED` 與它的 3.x 對照表。
 - 部署包跳版時，`src/kit/kit.md` 開頭只留新的「版本」行；舊的那一行改寫成「前一版」，移到 [CHANGELOG.md](../CHANGELOG.md) 最上面。不跳版的修改也在 CHANGELOG 最上面記一條。
 - 全套驗證在 macOS 約 35 秒，在原生 Windows 約 3–4 分鐘，超過指令工具預設的 120 秒上限，逾時不等於失敗。Windows 上 `python3` 是 WindowsApps 別名，要用 `python`。[為什麼](rationale.md#rule-4)
+
+### 部署包怎麼變成檔案（改範本前先讀）
+
+2026-11-11 起範本的權威在 `src/kit/files/<部署路徑>.tmpl`，`tools/build_kit.py` 把它們放回 `kit.md` 的圍籬區塊生成部署包；下面的規則講的是生成後的部署包，`build_kit.py` 拆分與重建用的是同一套讀法。
+
+`verify_bootstrap.py` 的 `extract()` 就是「照著部署包生檔案」的機器版，規則只有四條：
+
+1. **`### 3.x` 標題行裡的反引號路徑＝產出的檔名。** 改標題就是改檔名——3.2 的標題有兩個路徑，所以一節產兩檔。
+2. **一節裡的 fence 依序對應標題上的檔名**；fence 比檔名少就全部沿用第一個（多數節是一檔一區塊）。fence 前的散文是給人看的說明，不會進檔案。
+3. **標題行沒有路徑就不產檔**（3.21 是慣例說明）。
+
+第 2 條在 2026-10-30 從「只取第一個 fence，第二個檔的標題再由腳本替換」改成現在這樣：當時 3.2 一節產兩個內容不同的檔（2026-11-17 起只剩 `CLAUDE.md`）。把其中一份合成在腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
+
+所以：**新增一份範本＝在 `kit.md` 新增一節（區塊裡放 `<!-- kit-file: 路徑 -->`）＋新增 `src/kit/files/<路徑>.tmpl`＋把檔名加進 `EXPECTED`，再重生部署包**。只做前者，驗證會 FAIL 說「多出」；只做後者會 FAIL 說「缺少」。
 
 ## 同步到已部署的專案
 
@@ -23,7 +37,7 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 `--all`／inventory 僅供批次預演；`--write` 必須指定單一專案與 owner，空閒標記不能寫入。同步後留在該專案完成 B7 最終檔案檢查、B8 發布與清標記；若要中途安全點則走 C，保留占用。這修正了舊工具「正常 A5 writer 被拒絕、陳舊空閒 checkout 卻能寫」的矛盾。
 
-副本存在哪些地方見 [ARCHITECT.md](../ARCHITECT.md) 的副本拓撲；改 skill 的規則見 [AGENTS.md](../AGENTS.md) 鐵律 1、2。
+副本存在哪些地方見 [ARCHITECTURE.md](../ARCHITECTURE.md) 的副本拓撲；改 skill 的規則見 [AGENTS.md](../AGENTS.md) 鐵律 1、2。
 
 ## 改安裝程式
 
@@ -49,7 +63,7 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 ## 副本規則
 
-拓撲在 [ARCHITECT.md](../ARCHITECT.md)。動副本或接線之前，先讀對應理由段落的完整原文。
+拓撲在 [ARCHITECTURE.md](../ARCHITECTURE.md)。動副本或接線之前，先讀對應理由段落的完整原文。
 
 - 改完部署包，所有副本一起覆蓋，含選用的兩個全域 `skills/handoff/`。[為什麼](rationale.md#copy-1)
 - Codex 與 Claude Code 掛同樣兩個 `.sh`，不在 `.codex/` 複製第二份；Windows 的 `codex-hook.cmd` 只做管線。[為什麼](rationale.md#copy-2)
@@ -61,7 +75,7 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 ## 封存結案的文件
 
-文件的分工與權威規則見 [ARCHITECT.md](../ARCHITECT.md)「碰到才讀的文件」與[需求決策書 v3](../project-bootstrap-requirements-decision-v3.md) 第 7 節；這裡只寫封存的做法。[為什麼](rationale.md#doc-roles)
+文件的分工與權威規則見 [ARCHITECTURE.md](../ARCHITECTURE.md)「碰到才讀的文件」與[需求決策書 v3](../project-bootstrap-requirements-decision-v3.md) 第 7 節；這裡只寫封存的做法。[為什麼](rationale.md#doc-roles)
 
 結案或被取代的需求與計畫類文件用 `git mv` 移到 `archive/docs/`，在它的[索引](../archive/docs/README.md)加一行；只把還有效的內容併進兩份權威文件。程式與測試不讀封存區（`verify_bootstrap.py`「封存原件」守）。
 

@@ -1,4 +1,4 @@
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-18.3 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-20 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -50,8 +50,8 @@ python3 bootstrap.py --target <專案資料夾>
 安裝程式把「工作中」設成 `無（已交棒）`，第一批工作寫在 `HANDOFF.md`，所以下一棒照平常接棒（模式 A）就會接手。逐項做：
 
 - **合併 `*.bootstrap-new`**：原檔是專案的，新內容是骨架的。比對兩份，把骨架的部分合進原檔：`AGENTS.md` 把共用制度那一段（開始到結束標記）整段放進原檔、標記外的專案內容不動；`.gitignore` 只補缺的行；`.claude/settings.json` 只補骨架那兩支 hook 的接線，專案自己的設定原樣保留。合完刪掉 `.bootstrap-new`。拿不準的停下來問使用者。
-- **補寫需要理解專案的檔**：`ARCHITECT.md` 的「專案本體」、`README.md`、`docs/ai-notes/roadmap.md`。
-  `ARCHITECT.md` 的「專案本體」這時候通常還是空的，**照實寫「尚未有程式碼」**——不要先畫一個想像中的架構，那會被下一棒當成既成事實去對齊。
+- **補寫需要理解專案的檔**：`ARCHITECTURE.md` 的「專案本體」、`README.md`、`docs/ai-notes/roadmap.md`。
+  `ARCHITECTURE.md` 的「專案本體」這時候通常還是空的，**照實寫「尚未有程式碼」**——不要先畫一個想像中的架構，那會被下一棒當成既成事實去對齊。
 - **填 `tools/verify_state.py` 的檢查項**，依訪談的「一鍵驗證該查什麼」；沒有答案就先問使用者。
 - **回答留空的題目**：問使用者，答案寫回 `.bootstrap/answers.json`，檔案裡的 `<部署後填>` 換成實際值。訪談說的「絕對不能做」寫成 `AGENTS.md` 共用制度標記外的鐵律，附理由與日期。
 - **建 GitHub repo 與首次推送**：照 0-5、0-6。
@@ -78,7 +78,7 @@ python3 -X utf8 tools/check_docs.py
 python3 -X utf8 tools/verify_state.py
 ```
 
-（Windows 上沒有 `python3` 就用 `python`。）文件必須 exit 0；服務 FAIL／ERROR 不得當通過，SKIP／NOT_CONFIGURED 明列原因與待配置事項。`SKILL.md` 前三行必須是 frontmatter，壞掉 skill 就不會被載入，整套自動化靜默失效。核對 `ARCHITECT.md` 與 `HANDOFF.md` 是實況。
+（Windows 上沒有 `python3` 就用 `python`。）文件必須 exit 0；服務 FAIL／ERROR 不得當通過，SKIP／NOT_CONFIGURED 明列原因與待配置事項。`SKILL.md` 前三行必須是 frontmatter，壞掉 skill 就不會被載入，整套自動化靜默失效。核對 `ARCHITECTURE.md` 與 `HANDOFF.md` 是實況。
 
 這些本機驗收全部完成才建立第一個 commit：
 
@@ -107,7 +107,7 @@ gh repo create <owner>/<repo> --private --source=. --remote=origin --push
 - [ ] **共用制度版本提示**：`printf 2099-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要多印一行「共用制度落後」。快取裡放的是**上游最新版**，所以要餵一個比本機**新**的值。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）；同目錄有 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 五個檔，六個檔檔頭的 `source:` 版本相同（少一個，入口就會指向不存在的檔）
 - [ ] **`CLAUDE.md` 只有 `@AGENTS.md` 這一行 import**，不是「去讀 AGENTS.md」那種句子——有 `CLAUDE.md` 時 Claude Code 不會自己讀 `AGENTS.md`，而用文字請它去讀不保證它真的開那個檔（理由見開頭「跨工具與跨平台」）。開一個 session 問它「`AGENTS.md` 的鐵律第 1 條是什麼」，答得出來才算接上
-- [ ] `ARCHITECT.md` 存在且有「最後更新」標頭（`check_docs.py` 會擋），「專案本體」那節寫的是**實況**——還沒有程式碼就照實寫，不要先畫一個想像中的架構
+- [ ] `ARCHITECTURE.md` 存在且有「最後更新」標頭（`check_docs.py` 會擋），「專案本體」那節寫的是**實況**——還沒有程式碼就照實寫，不要先畫一個想像中的架構
 - [ ] 在 Claude Code 打 `/handoff` 看得到這個 skill
 - [ ] pre-push hook 會放行無關指令：`echo '{"tool_input":{"command":"git status"}}' | bash .claude/hooks/pre-push-handoff.sh; echo $?` → `0`
 - [ ] `git log --stat -1` 確認第一個 commit **沒有**含憑證或運行資料

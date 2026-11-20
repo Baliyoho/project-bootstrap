@@ -1,6 +1,6 @@
 # project-bootstrap 需求決策書 v3
 
-> 最後更新：2026-11-18（登記並決定 Q51：第 8 節加「被取代」的標法，下一個編號改成 Q52）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
+> 最後更新：2026-11-20（登記並決定 Q52：結構文件 `ARCHITECT.md` 改名 `ARCHITECTURE.md`，第 5 節後的清單出處跟著改；下一個編號改成 Q53）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
 > 決策版本：3。2026-11-13 起是現行需求權威，也是**唯一需求書**（Q39）：v2 決策書凍結封存在 `archive/docs/requirements-decision-v2.md`，逐位元組不改，不被任何程式讀取。
 > 需求編號沿用 v2 的 51 個穩定 ID，不重編；退役的 ID 保留編號與理由。v2 的 Q1–Q31 與逐條理由只在封存的 v2 原件裡（[歷史原件](archive/docs/project-bootstrap-requirements-history.md)沒有收），本檔不複製；平常不讀，要回溯歷史先經使用者同意（Q39）。
 
@@ -169,7 +169,7 @@ D9、D12、D13 一起讀：**資訊進入口，強制進 hook，執行屏障交�
 
 ## 5. 部署出去的目標形狀
 
-這是需求的推論，不是實作完成的宣告。現行部署包有 20 個檔，不含交接協定（Q41）與 `GEMINI.md`（使用者指示本專案明確不支援 Gemini）；清單看 ARCHITECT。
+這是需求的推論，不是實作完成的宣告。現行部署包有 20 個檔，不含交接協定（Q41）與 `GEMINI.md`（使用者指示本專案明確不支援 Gemini）；清單看 ARCHITECTURE。
 
 部署方式（Q49）：對外的安裝途徑是單一檔 `bootstrap.py`，不再讓 AI 讀部署包照抄。
 
@@ -225,7 +225,7 @@ v2 的程式不留在 main（Q46）。執行屏障類模組（`launcher`、`supe
 
 ## 8. 待決事項
 
-要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。已決的 Q 被後來的 Q 撤銷或改掉一部分時，在舊的那筆標「被取代」或「部分被取代」並寫明是哪一個 Q（Q51）。編號接續，下一個是 Q52。
+要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。已決的 Q 被後來的 Q 撤銷或改掉一部分時，在舊的那筆標「被取代」或「部分被取代」並寫明是哪一個 Q（Q51）。編號接續，下一個是 Q53。
 
 目前沒有待決事項。
 

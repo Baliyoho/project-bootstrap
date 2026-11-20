@@ -249,7 +249,7 @@ def target_problems(target):
 
 def first_tasks(conflicts, blanks, answers):
     """安裝後 agent 的第一批工作，照決策書 v3 Q49 的順序。"""
-    tasks = ['補寫 `ARCHITECT.md` 的「專案本體」、`README.md` 與 `docs/ai-notes/roadmap.md`，照實寫；'
+    tasks = ['補寫 `ARCHITECTURE.md` 的「專案本體」、`README.md` 與 `docs/ai-notes/roadmap.md`，照實寫；'
              '還沒有程式碼就寫「尚未有程式碼」。']
     hint = answers.get('VERIFY_TARGETS', '').strip()
     tasks.append('填 `tools/verify_state.py` 要查證的項目（%s）。'

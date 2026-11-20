@@ -117,7 +117,7 @@ CODEX_LAUNCHER = '.claude/hooks/codex-hook.cmd'
 
 # 只補單一欄位／單一行，其餘歸專案自己。
 PARTIAL = by_update(UPDATES, 'lines')
-# 刻意不同步：部署後就歸專案自己，內容會長成專案的樣子（副本拓撲見 ARCHITECT.md）。
+# 刻意不同步：部署後就歸專案自己，內容會長成專案的樣子（副本拓撲見 ARCHITECTURE.md）。
 # 這份清單唯一的用途是讓 verify_bootstrap 的「同步清單涵蓋骨架」對得起來——新增一份範本
 # 卻忘了歸類，會在那裡 FAIL，而不是安靜地沒人同步（那正是 WIRING 兩個檔踩過的坑）。
 INSTANCE = by_update(UPDATES, 'seed')

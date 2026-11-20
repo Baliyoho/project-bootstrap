@@ -15,7 +15,7 @@
 2026-11-18（決策書 v3 Q49）起對外的安裝途徑是 bootstrap.py，解壓即用的 zip（`--zip`）
 跟 AI 照抄一起拿掉：zip 裡的檔還帶著佔位符，要 AI 照第 1 節換掉，就是 Q49 要取代的那條路。
 
-檢查項（順序即執行順序；增減時同步 ARCHITECT.md「verify_bootstrap.py 守的東西」那張表。
+檢查項（順序即執行順序；增減時同步 ARCHITECTURE.md「verify_bootstrap.py 守的東西」那張表。
 這裡刻意不寫「做 N 件事」——數字會自己過期，2026-09-13 就漏算過一項）：
   重生骨架     ——把第 3 節每個範本抽成實體檔案，比對 EXPECTED 清單有沒有缺漏
   填佔位符     ——模擬一次真實部署，填完不該再有殘留
@@ -24,9 +24,9 @@
                   漏一個名字就是那個洞永遠不會被檢查到，而且沒有任何跡象
   佔位符檢查   ——故意種一個佔位符回去，check_docs 必須 exit 2（否則 check_docs 的
                   佔位符檢查本身是壞的）
-  日期標頭     ——拿掉 ARCHITECT.md 的「最後更新」，check_docs 必須 exit 2（2026-09-07 加
-                  ARCHITECT.md 時補的）。守的是 check_docs 的 DATED_DIRS 有沒有真的涵蓋
-                  ARCHITECT.md：漏掉不會有任何跡象，結構圖就會安靜地變成沒有日期、
+  日期標頭     ——拿掉 ARCHITECTURE.md 的「最後更新」，check_docs 必須 exit 2（2026-09-07 加
+                  ARCHITECTURE.md 時補的）。守的是 check_docs 的 DATED_DIRS 有沒有真的涵蓋
+                  ARCHITECTURE.md：漏掉不會有任何跡象，結構圖就會安靜地變成沒有日期、
                   沒人分得出是哪一天的事實
   真實部署形狀 ——把部署包與一個非 ASCII 檔名放回骨架裡再跑 check_docs，必須仍 exit 0
                   （2026-08-05 使用者回報實際部署踩到問題後補的）。這兩件事單獨看都不起眼，
@@ -173,7 +173,7 @@ def kit_text():
 
 # 第 3 節應該產出的檔案。少一份就是有人刪了範本卻沒發現；多一份就把它加進來。
 EXPECTED = {
-    'AGENTS.md', 'ARCHITECT.md', 'CLAUDE.md', 'HANDOFF.md', 'README.md',
+    'AGENTS.md', 'ARCHITECTURE.md', 'CLAUDE.md', 'HANDOFF.md', 'README.md',
     'docs/ai-notes/roadmap.md',
     '.claude/skills/handoff/SKILL.md', '.claude/skills/handoff/mode-a.md',
     '.claude/skills/handoff/mode-a-stop.md', '.claude/skills/handoff/mode-b.md',
@@ -608,13 +608,13 @@ def step_placeholder_guard(dest):
 
 
 def step_date_guard(dest):
-    """拿掉 ARCHITECT.md 的日期標頭，check_docs 必須擋下。
+    """拿掉 ARCHITECTURE.md 的日期標頭，check_docs 必須擋下。
 
-    ARCHITECT.md 是被拿來「找檔案」的文件，沒有日期就無法判斷這份結構圖是哪一天的事實，
+    ARCHITECTURE.md 是被拿來「找檔案」的文件，沒有日期就無法判斷這份結構圖是哪一天的事實，
     而過期的結構圖比沒有更糟。它靠 check_docs 的 DATED_DIRS 把關——但那份清單漏掉一個
     名字不會有任何跡象（少一項檢查而已，照樣 exit 0），所以在這裡對一次。
     """
-    target = dest / 'ARCHITECT.md'
+    target = dest / 'ARCHITECTURE.md'
     original = target.read_text(encoding='utf-8')
     stripped = '\n'.join(
         ln for ln in original.split('\n') if '最後更新' not in ln)
@@ -623,12 +623,12 @@ def step_date_guard(dest):
             fh.write(stripped)
         git(['add', '-A'], dest)
         r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-        if r.returncode != 2 or 'ARCHITECT.md' not in r.stdout:
+        if r.returncode != 2 or 'ARCHITECTURE.md' not in r.stdout:
             record('FAIL', '日期標頭（負向測試）',
-                   f'期望 exit 2 並指出 ARCHITECT.md，實得 exit {r.returncode}'
-                   '——檢查 check_docs.py 的 DATED_DIRS 有沒有含 ARCHITECT.md')
+                   f'期望 exit 2 並指出 ARCHITECTURE.md，實得 exit {r.returncode}'
+                   '——檢查 check_docs.py 的 DATED_DIRS 有沒有含 ARCHITECTURE.md')
             return False
-        record('OK', '日期標頭（負向測試）', 'ARCHITECT.md 缺「最後更新」確實被擋下（exit 2）')
+        record('OK', '日期標頭（負向測試）', 'ARCHITECTURE.md 缺「最後更新」確實被擋下（exit 2）')
         return True
     finally:
         with open(target, 'w', encoding='utf-8', newline='') as fh:
@@ -1287,7 +1287,7 @@ def step_repo_handoff():
     text = handoff.read_text(encoding='utf-8') if handoff.is_file() else None
     version = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
     problems = repo_handoff_problems(text, version)
-    for name in ('AGENTS.md', 'docs/maintenance.md', 'ARCHITECT.md', 'README.md',
+    for name in ('AGENTS.md', 'docs/maintenance.md', 'ARCHITECTURE.md', 'README.md',
                  '.claude/hooks/repo-git-check.sh'):
         problems.extend(name + '：' + p for p in
                         repo_handoff_rule_problems((ROOT / name).read_text(encoding='utf-8')))
@@ -1530,7 +1530,7 @@ def source_exception_problems(architecture, source, generated):
 
 
 def step_source_exceptions(dest, tmp):
-    architecture = (ROOT / 'ARCHITECT.md').read_text(encoding='utf-8')
+    architecture = (ROOT / 'ARCHITECTURE.md').read_text(encoding='utf-8')
     problems = source_exception_problems(architecture, ROOT, dest)
     with tempfile.TemporaryDirectory(prefix='source-exception-', dir=str(tmp)) as name:
         source, generated = pathlib.Path(name) / 'source', pathlib.Path(name) / 'generated'
@@ -1623,7 +1623,7 @@ def step_document_parity(dest, tmp):
     source = tmp / 'source-doc-fixture'
     source.mkdir()
     write_lf(source / 'README.md', '# fixture\n')
-    control = '# ARCHITECT\n\n> 最後更新：2026-11-08\n\n[x](README.md)\n'
+    control = '# ARCHITECTURE\n\n> 最後更新：2026-11-08\n\n[x](README.md)\n'
     cases = (
         ('有效連結與日期', control, True),
         ('整份文件缺失', None, False),
@@ -1658,7 +1658,7 @@ def step_document_parity(dest, tmp):
         ('已知佔位符殘留', nested_control + '\n' + '{{' + 'GH_OWNER' + '}}' + '\n', False),
         ('非部署佔位符保留', nested_control + '\n{{PROJECT_LOCAL_VALUE}}\n', True),
     )
-    target = dest / 'ARCHITECT.md'
+    target = dest / 'ARCHITECTURE.md'
     original = target.read_text(encoding='utf-8')
     nested_target = dest / nested_rel
     nested_original = nested_target.read_text(encoding='utf-8')
@@ -1668,14 +1668,14 @@ def step_document_parity(dest, tmp):
     try:
         for name, body, expected in cases:
             if body is None:
-                (source / 'ARCHITECT.md').unlink()
+                (source / 'ARCHITECTURE.md').unlink()
                 target.unlink()
-                git(['rm', '-q', '--', 'ARCHITECT.md'], dest)
+                git(['rm', '-q', '--', 'ARCHITECTURE.md'], dest)
             else:
-                write_lf(source / 'ARCHITECT.md', body)
+                write_lf(source / 'ARCHITECTURE.md', body)
                 write_lf(target, body)
-                git(['add', '--', 'ARCHITECT.md'], dest)
-            dead, undated, missing, holes = source_document_problems(source, ['ARCHITECT.md'])
+                git(['add', '--', 'ARCHITECTURE.md'], dest)
+            dead, undated, missing, holes = source_document_problems(source, ['ARCHITECTURE.md'])
             source_ok = not dead and not undated and not missing and not holes
             result = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
             product_ok = result.returncode == 0
@@ -1684,7 +1684,7 @@ def step_document_parity(dest, tmp):
                 problems.append('%s：來源=%s、產物=exit %s（預期 %s）' % (
                     name, source_ok, result.returncode, expected))
         write_lf(target, original)
-        git(['add', '--', 'ARCHITECT.md'], dest)
+        git(['add', '--', 'ARCHITECTURE.md'], dest)
         for name, body, expected in nested_cases:
             if body is None:
                 source_nested.unlink()
@@ -1706,7 +1706,7 @@ def step_document_parity(dest, tmp):
                     name, source_ok, result.returncode, expected))
     finally:
         write_lf(target, original)
-        git(['add', '--', 'ARCHITECT.md'], dest)
+        git(['add', '--', 'ARCHITECTURE.md'], dest)
         nested_target.parent.mkdir(parents=True, exist_ok=True)
         write_lf(nested_target, nested_original)
         git(['add', '--', nested_rel], dest)
@@ -1806,7 +1806,7 @@ def template_link(target):
     """部署包裡指向「部署後才存在的檔」的連結不是死連結——那是範本內容，真正該檢查它的
     地方是重生出來的骨架（step_check_docs 就在那裡跑 check_docs.py）。判準用 EXPECTED
     本身而不是「整個 PROJECT-BOOTSTRAP.md 跳過」：這樣它指向本 repo 檔案的連結
-    （README.md、ARCHITECT.md…）改檔名時照樣會被抓到。`<slug>` 那種示意路徑也跳過。"""
+    （README.md、ARCHITECTURE.md…）改檔名時照樣會被抓到。`<slug>` 那種示意路徑也跳過。"""
     if '<' in target:
         return True
     while target.startswith('../'):
@@ -1868,7 +1868,7 @@ def source_document_problems(root, mds, link_ok_paths=()):
             if not (base / target).exists():
                 dead.append('%s → %s' % (rel, raw))
     undated = [rel for rel in mds
-               if (rel in ('AGENTS.md', 'ARCHITECT.md') or rel.startswith('docs/ai-notes/'))
+               if (rel in ('AGENTS.md', 'ARCHITECTURE.md') or rel.startswith('docs/ai-notes/'))
                and (root / rel).is_file() and '最後更新' not in
                '\n'.join((root / rel).read_text(encoding='utf-8').split('\n')[:8])]
     return dead, undated, missing, holes
@@ -2005,7 +2005,7 @@ def handoff_flow_case(kind, dest, tmp, bash):
         needle = 'origin/${branch}:HANDOFF.md'
     else:
         writer.mkdir()
-        for rel in ('AGENTS.md', 'ARCHITECT.md', 'HANDOFF.md', 'README.md',
+        for rel in ('AGENTS.md', 'ARCHITECTURE.md', 'HANDOFF.md', 'README.md',
                     '.claude/hooks/repo-git-check.sh'):
             target = writer / rel
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -2260,7 +2260,7 @@ def step_self():
     handoff skill 發現專案，這裡刻意沒有）。所以改成在這支腳本多一項：同一個指令、同一份
     報告，沒有第二個會腐化的家。
 
-    2026-10-30 加。在此之前 AGENTS／ARCHITECT／README 之間的相對連結從來沒有被檢查過；
+    2026-10-30 加。在此之前 AGENTS／ARCHITECTURE／README 之間的相對連結從來沒有被檢查過；
     當天手掃是乾淨的，但那是一次快照，不是防護——死連結會在改檔名的那一次無聲出現。
     settings.json 一起查，是因為它壞掉的後果是 SessionStart hook 靜默不執行：那正是
     「看起來有防護、實際上沒有」的那一類失效，而且沒有任何徵兆。
@@ -3328,8 +3328,8 @@ def stale_tool_prose_problems(text):
 def step_tool_prose(dest):
     documents = (
         ('部署包正文', kit_text()),
-        ('本 repo ARCHITECT', (ROOT / 'ARCHITECT.md').read_text(encoding='utf-8')),
-        ('重生 ARCHITECT', (dest / 'ARCHITECT.md').read_text(encoding='utf-8')),
+        ('本 repo ARCHITECTURE', (ROOT / 'ARCHITECTURE.md').read_text(encoding='utf-8')),
+        ('重生 ARCHITECTURE', (dest / 'ARCHITECTURE.md').read_text(encoding='utf-8')),
         ('重生 handoff skill', skill_text(dest)),
     )
     problems = [f'{name}：{problem}' for name, text in documents
@@ -4658,7 +4658,7 @@ def step_architecture_summary(dest):
                                       for line in prompts):
                     bad.append('README 範本摘要與現行分工分岔')
         return bad
-    docs = {'repo': read_lf(ROOT / 'ARCHITECT.md'), 'generated': read_lf(dest / 'ARCHITECT.md')}
+    docs = {'repo': read_lf(ROOT / 'ARCHITECTURE.md'), 'generated': read_lf(dest / 'ARCHITECTURE.md')}
     bad = problems(docs)
     for name in docs:
         mutant = dict(docs)
@@ -4677,11 +4677,11 @@ def step_architecture_summary(dest):
     mutant = dict(docs)
     mutant['repo'] = docs['repo'].replace('| 3.4 | `README.md`', '| 3.4x | `README.md`')
     if '| 3.4x |' not in mutant['repo']:
-        bad.append('反向保險失效：ARCHITECT 沒有「| 3.4 | `README.md`」那一列')
+        bad.append('反向保險失效：ARCHITECTURE 沒有「| 3.4 | `README.md`」那一列')
     elif [p for p in problems(mutant) if 'README' in p] != ['README 範本摘要與現行分工分岔']:
         bad.append('反向保險失效：缺了範本 3.4 那一列時沒有被判出來')
     record('FAIL' if bad else 'OK', '結構摘要一致性', '；'.join(bad) if bad else
-           '本 repo 與生成 ARCHITECT 寫明 CLAUDE.md 用 import、表格不再列 GEMINI.md、範本 3.4 那一列寫標準 README 而不寫交接 prompt（認的是範本編號欄，不是全行出現 3.4）；五個負向測試＋一個反向保險')
+           '本 repo 與生成 ARCHITECTURE 寫明 CLAUDE.md 用 import、表格不再列 GEMINI.md、範本 3.4 那一列寫標準 README 而不寫交接 prompt（認的是範本編號欄，不是全行出現 3.4）；五個負向測試＋一個反向保險')
 
 
 def tests_report_problem(report):
@@ -4752,7 +4752,7 @@ SPLIT_BASELINE = ROOT / 'tools/skill_split_baseline.json'
 # 入口必須自己帶著的句子：停止條件與禁令。2026-11-13（v3 第 5 節）起 skill 是碰到才讀的參考，
 # 「模型沒去讀模式檔時的最後一道」改成每個 session 都載入的 AGENTS.md 共用制度（SHARED_MUST）；
 # 原本在這裡的六句（A2.5 占用、A1–A4 不改檔、找不到模式檔就停、每則新訊息看 session 狀態、
-# 續聊改檔前重走 A1–A5、`session：` 一行）移到那裡守，取捨記在 ARCHITECT 的驗證項表。
+# 續聊改檔前重走 A1–A5、`session：` 一行）移到那裡守，取捨記在 ARCHITECTURE 的驗證項表。
 ENTRY_MUST = (
     '不要憑空建立交接檔案', '`reset --hard`', '`push --force`', '自行 `stash`',
     '接棒時 ahead-only', 'fetch 失敗',

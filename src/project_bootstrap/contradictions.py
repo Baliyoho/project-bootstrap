@@ -214,7 +214,7 @@ REPO_CONFIG = {
             'other': [r'(?<!\d)(?!51)\d{2} ?(個穩定需求 ?ID|條需求|個需求|項需求)'],
         },
         # 2026-11-17（v3 Q39）：v2 封存、不再被程式讀取，需求數的權威改看 v3。
-        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', 'HANDOFF.md',
+        'docs': ['README.md', 'AGENTS.md', 'ARCHITECTURE.md', 'HANDOFF.md',
                  'project-bootstrap-requirements-decision-v3.md',
                  'project-bootstrap-implementation-plan-v3.md'],
         'required_in': ['AGENTS.md', 'project-bootstrap-requirements-decision-v3.md'],
@@ -237,7 +237,7 @@ REPO_CONFIG = {
             'same': [r'序號[^。\n「」（）]{0,12}(跟|與)[^。\n「」（）]{0,10}版本」?行'
                      r'[^。\n「」（）]{0,4}(?<!不保證)同(一個)?號'],
         },
-        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', KIT_DOC],
+        'docs': ['README.md', 'AGENTS.md', 'ARCHITECTURE.md', KIT_DOC],
         'required_in': ['AGENTS.md', KIT_DOC],
     }, {
         # Iron rule 1: only a real SKILL.md change bumps VERSION and the version line.
@@ -254,7 +254,7 @@ REPO_CONFIG = {
                            r'[^。\n「」（）]{0,8}(就|都)要?跳 ?`?VERSION(?!`?」)',
                            r'(?<!「)`?VERSION`? ?跟著 ?`?source'],
         },
-        'docs': ['README.md', 'AGENTS.md', 'ARCHITECT.md', KIT_DOC],
+        'docs': ['README.md', 'AGENTS.md', 'ARCHITECTURE.md', KIT_DOC],
         'required_in': ['AGENTS.md', KIT_DOC],
     }],
     # 2026-11-16（v3 Q37 的連帶）：登記處改指 v3 第 8 節。v3 Q32 (b) 讓兩本並存時
@@ -264,10 +264,10 @@ REPO_CONFIG = {
                  'heading': r'(^| > )8\. 待決事項$'},
     'pending_sections': [{'doc': 'HANDOFF.md', 'heading': r'懸置事項'}],
     # Dated log lines and the decisions record state what was true then.
-    'history': [{'doc': 'ARCHITECT.md', 'line': r'^> (最後更新：)?\d{4}-\d{2}-\d{2}'}],
+    'history': [{'doc': 'ARCHITECTURE.md', 'line': r'^> (最後更新：)?\d{4}-\d{2}-\d{2}'}],
     'scan_fences': [KIT_DOC],
 }
-REPO_DOCS = ('README.md', 'AGENTS.md', 'ARCHITECT.md', KIT_DOC, 'HANDOFF.md',
+REPO_DOCS = ('README.md', 'AGENTS.md', 'ARCHITECTURE.md', KIT_DOC, 'HANDOFF.md',
              # 唯一需求書，也是待決登記處（2026-11-16；2026-11-17 v3 Q39 起 v2 封存不讀）。
              'project-bootstrap-requirements-decision-v3.md',
              # 2026-11-17：實施權威改成實施計畫 v3，舊實現規劃封存不讀。
