@@ -1,82 +1,89 @@
 # ARCHITECTURE — 這個 repo 的結構
 
-> 最後更新：2026-11-18（驗證器加「全域 handoff skill 跟部署包同版」，只提醒不擋；同日稍早 `PROJECT-BOOTSTRAP.md` 退休：不再生成與提交，部署包全文只在驗證與同步時於記憶體組出，需求決策書 v3 Q50）
-> 本檔回答「現在長怎樣」。進度看 [HANDOFF.md](HANDOFF.md)，部署包的逐版變更看 [CHANGELOG.md](CHANGELOG.md)，更早的結構變更經過看 Git 歷史；2026-11-17 前的逐次紀錄封存在 `archive/docs/architect-log.md`（冷區，回溯先經使用者同意）。
+> 最後更新：2026-11-20
+> 本檔回答「現在長怎樣」：鳥瞰、檔案地圖、看程式碼看不出來的副本關係，以及刻意沒有的東西。規則在 [AGENTS.md](AGENTS.md)，做法在 [AI 維護手冊](docs/maintenance.md)，理由在[理由檔](docs/rationale.md)，進度在 [HANDOFF.md](HANDOFF.md)。結構怎麼變成這樣看 Git 歷史；2026-11-17 前的逐次紀錄封存在 `archive/docs/architect-log.md`（冷區，回溯先經使用者同意）。
 
 ## 一句話
 
-產出物是安裝程式 [bootstrap.py](bootstrap.py)——一個只用標準函式庫、內嵌所有範本的單一檔，新專案跑它就寫出整套制度。它由 `src/kit/` 生成（2026-11-18 起，需求決策書 v3 Q49）；部署包的說明與範本就在 `src/kit/`，舊的生成檔 `PROJECT-BOOTSTRAP.md` 同日退休（Q50）。
-其餘每個檔案都是它的**說明、指標或測試**，沒有第二個產出物（例外是 `HANDOFF.md`，它是範本 3.3 的*實例*，承載當下交接快照與「工作中」標記）。
+唯一的產出物是安裝程式 [bootstrap.py](bootstrap.py)：只用標準函式庫、內嵌所有範本的單一檔，新專案跑它就寫出整套制度。它由 [src/kit/](src/kit/kit.md) 生成，部署包的說明與範本都在那裡。其餘每個檔案都是它的來源、說明、指標或測試；例外是 `HANDOFF.md`，它是範本 3.3 的實例，放本 repo 的交接快照與「工作中」標記。
 
 ## 碰到才讀的文件
 
-下列文件都不是每輪必讀，碰到那件事才讀（2026-11-11 F22 第二輪從 AGENTS.md 原樣搬來）。
+`AGENTS.md` 與 `HANDOFF.md` 每個 session 開工都讀；其他文件碰到那件事才讀。
 
-| 要做的事 | 先讀 |
+| 想做的事或想知道的事 | 先讀 |
 |---|---|
-| 討論需求、驗收、待決事項或替代工具 | [需求決策書 v3](project-bootstrap-requirements-decision-v3.md)：2026-11-13 起的現行需求權威（D1–D15、51 個穩定需求 ID，編號沿用 v2）；新的待決登記在它的第 8 節，已決的 Q 與修改經過在[它的歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。2026-11-17 起它是唯一需求書；v2 決策書凍結封存在 `archive/docs/`，**平常不讀，要回溯歷史先經使用者同意**。決策定稿不等於實作完成 |
-| 查某個需求 ID 做到哪 | [現況索引](docs/status.json)（2026-11-17 起照 v3 的強度與處置）；HANDOFF 只留停點與行動 |
-| 規劃路線、分期或暫緩項目 | [實施計畫 v3](project-bootstrap-implementation-plan-v3.md)：從現況走到 v3 需求的路線與取捨，只引用需求 ID |
-| 回溯已封存的查核、計畫或需求討論 | [封存索引](archive/docs/README.md)；**平常不讀，要回溯歷史先經使用者同意** |
-| 改本 repo 自己的檢查 | 程式在 `src/project_bootstrap/`、測試在 `tests/`，入口是 `tools/run_tests.py`；v2 的程式與說明都封存在 `archive/v2-*/`，**平常不讀，要回溯先經使用者同意**（v3 Q46） |
-| 改部署包、同步副本、改 hook 訊息、寫本 repo 交接快照 | [AI 維護手冊](docs/maintenance.md) |
-| 想知道某條規則為什麼這樣 | [理由檔](docs/rationale.md)；被取代的理由與經過在[理由檔歷史紀錄](docs/history/rationale-history.md)，碰到才讀，不用先問 |
-| 結構問題（有哪些檔、副本在哪） | 本檔；動到結構就跟它同一個 commit 改 |
+| 需求、驗收、待決事項或替代工具 | [需求決策書 v3](project-bootstrap-requirements-decision-v3.md)：唯一需求書，新的待決登記在第 8 節 |
+| 某個需求 ID 做到哪 | [現況索引](docs/status.json) |
+| 路線、分期或暫緩項目 | [實施計畫 v3](project-bootstrap-implementation-plan-v3.md) |
+| 決策書或計畫怎麼變成現在這樣、已決的 Q | [決策書歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)、[計畫歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)；熱歷史，碰到就讀，不用先問 |
+| 改部署包、同步副本、改安裝程式、改 hook 訊息、寫本 repo 交接快照 | [AI 維護手冊](docs/maintenance.md) |
+| 某條規則為什麼這樣 | [理由檔](docs/rationale.md)；被取代的理由在[理由檔歷史紀錄](docs/history/rationale-history.md) |
+| 改本 repo 自己的檢查 | 程式在 `src/project_bootstrap/`、測試在 `tests/`，入口 `tools/run_tests.py`；部署包的檢查是 `tools/verify_bootstrap.py` |
+| 部署包每一版改了什麼 | [CHANGELOG.md](CHANGELOG.md) |
+| 有哪些檔、副本在哪 | 本檔的檔案地圖與副本拓撲 |
+| 回溯已封存的東西 | [封存索引](archive/docs/README.md)；**平常不讀，要回溯先經使用者同意** |
 
-每份文件各答一個問題，同一件事只寫在一處；兩份權威文件之間只引用、不重複。權威只寫現況、經過放成對歷史紀錄的規則在[需求決策書 v3](project-bootstrap-requirements-decision-v3.md) 第 7 節。[為什麼](docs/rationale.md#doc-roles)
+## 檔案地圖
 
-| 文件 | 回答 | 寫什麼 |
-|---|---|---|
-| [需求決策書 v3](project-bootstrap-requirements-decision-v3.md) | 要什麼 | 需求、強度、驗收、待決事項 |
-| [實施計畫 v3](project-bootstrap-implementation-plan-v3.md) | 怎麼走過去 | 從現況到需求的路線、分期與取捨；只引用需求 ID，不重述需求內容 |
-| [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md) | 決策書怎麼變成這樣 | 修改紀錄、已決的 Q（決策紀錄）、從條文移出的原文 |
-| [實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md) | 計畫怎麼變成這樣 | 修改紀錄、從內文移出的原文 |
-| 本檔 | 現在長怎樣 | 現況與結構 |
-| [HANDOFF.md](HANDOFF.md) | 做到哪 | 進度與停點 |
-| [AGENTS.md](AGENTS.md) | 每個 session 一定要守什麼 | 規則，不寫步驟 |
-| [AI 維護手冊](docs/maintenance.md) | 改這個 repo 時怎麼做 | 步驟、指令與坑；提到規則就連回 AGENTS |
-| [理由檔](docs/rationale.md) | 規則為什麼這樣 | 現行理由；被取代的在[歷史紀錄](docs/history/rationale-history.md) |
+每一列只寫它是什麼；什麼時候改、怎麼改在 [AI 維護手冊](docs/maintenance.md)。
 
-## 根目錄
+### 產物與制度來源
 
-每一列只寫它是什麼、什麼時候動；為什麼這樣在[理由檔](docs/rationale.md)，怎麼變成這樣在 Git 歷史與 `docs/history/`。
+| 路徑 | 是什麼 |
+|---|---|
+| [bootstrap.py](bootstrap.py) | **安裝程式**，唯一產出物：訪談、寫檔（同名檔不覆寫，寫成 `.bootstrap-new`）、逐檔雜湊、`git init`、寫 HANDOFF 的第一批工作；`update` 依 `owners.json` 只換骨架的部分。內嵌全部範本與 `sync_project.py` 的合併函式，由 `tools/build_kit.py` 生成 |
+| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包說明，節號與範本的對照在它的第 2、3 節；`files/<部署路徑>.tmpl` 是範本；`owners.json` 是每個範本的歸屬，`sync_project.py` 的檔案清單由它算出；`capabilities.json` 是能力矩陣，「跨工具與跨平台」兩張表由它生成 |
+| [src/project_bootstrap/installer.py](src/project_bootstrap/installer.py) | 安裝程式的安裝與更新邏輯原始碼；測試直接 import 它 |
+| [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `bootstrap.py`；`kit_text()` 在記憶體組出部署包全文給驗證器與同步器；`--check` 只比對 |
+| [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案，保留專案自己的設定；`AGENTS.md` 只換共用制度標記之間。只改檔案，不 commit |
+| [VERSION](VERSION) | 一行版本號，等於部署包的版本行；各專案的開場 hook 抓它判斷自己落後沒有 |
+| [CHANGELOG.md](CHANGELOG.md) | 部署包的逐版變更與每一版的理由，新的在上面 |
 
-| 路徑 | 是什麼 | 什麼時候動 |
-|---|---|---|
-| [bootstrap.py](bootstrap.py) | **安裝程式**，唯一產出物：訪談、寫檔（同名檔不覆寫，寫成 `.bootstrap-new`）、逐檔雜湊、`git init`、寫 HANDOFF 的第一批工作；`update` 依 `owners.json` 只換骨架的部分。內嵌全部範本與 `sync_project.py` 的合併函式 | 不手改；改 `src/kit/`、`installer.py` 或 `sync_project.py` 後跑 `tools/build_kit.py`（鐵律 1） |
-| [src/kit/](src/kit/kit.md) | **制度的權威來源**：`kit.md` 是部署包說明；`files/<部署路徑>.tmpl` 是範本；`owners.json` 是每個範本的歸屬，`sync_project.py` 的檔案清單由它算出；`capabilities.json` 是能力矩陣，「跨工具與跨平台」兩張表由它生成 | 制度要改就改這裡，同一個 commit 重生；新增範本同時在 `owners.json` 登記；改跨工具表改 `capabilities.json` |
-| [tools/build_kit.py](tools/build_kit.py) | 由 `src/kit/` 生成 `bootstrap.py`；`kit_text()` 在記憶體組出部署包全文給驗證器與同步器；`--check` 只比對 | 生成規則改變時 |
-| [src/project_bootstrap/installer.py](src/project_bootstrap/installer.py) | `bootstrap.py` 的安裝與更新邏輯原始碼；測試直接 import 它 | 安裝行為改變時，同一個 commit 重生 `bootstrap.py` |
-| [README.md](README.md) | 標準 README：解決什麼、怎麼用、部署後長什麼樣、跨工具相容性、參與開發、授權 | 用法或相容性改變 |
-| [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本、跟部署出去的專案不同的地方、這個 repo 是什麼、鐵律 | 多一條開工必守的規則 |
-| [CLAUDE.md](CLAUDE.md) | Claude Code 用 `@AGENTS.md` import | 幾乎不動 |
-| [HANDOFF.md](HANDOFF.md) | **當下交接快照與跨機器工作標記**。範本 3.3 的實例，不是副本，不用 `sync_project.py` 同步；≤80 行、覆寫不累積 | 開工寫標記；交棒時整份覆寫 |
-| [docs/maintenance.md](docs/maintenance.md) | **AI 維護手冊**：改這個 repo 時的步驟、指令與坑，做到那件事才讀 | 做法改變或踩到新的坑 |
-| [docs/rationale.md](docs/rationale.md) | **理由檔**：AGENTS 與維護手冊每條規則的現行理由，入口用「為什麼」連結指到它的錨點 | 規則或理由改了就改寫那一節，被取代的理由搬到歷史紀錄 |
-| [docs/history/rationale-history.md](docs/history/rationale-history.md) | 理由檔的歷史紀錄：被取代的理由與拆分前的原文。熱歷史，碰到才讀 | 理由檔有理由被取代時 |
-| [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md) | **現行需求權威**：適用範圍、依據、需求的處置與強度、目標部署形狀、驗收、待決事項登記處。只寫現況，不寫實作狀態 | 需求決策改變時（同一個 commit 在歷史紀錄加一筆） |
-| [docs/history/project-bootstrap-requirements-v3-history.md](docs/history/project-bootstrap-requirements-v3-history.md) | 決策書的歷史紀錄：修改紀錄、已決的 Q、從條文移出的原文。熱歷史；`tests/test_trail_repo.py` 讀它的「決策紀錄」 | 決策書每次修改、每個 Q 決定時 |
-| [project-bootstrap-implementation-plan-v3.md](project-bootstrap-implementation-plan-v3.md) | **現行實施權威**：路線、分期、暫緩與另案、非目標；只引用需求 ID。`tests/test_trail_repo.py` 讀它的「路線選擇」「分期」「非目標」 | 路線、分期或暫緩項目改變時（同一個 commit 在歷史紀錄加一筆） |
-| [docs/history/project-bootstrap-implementation-v3-history.md](docs/history/project-bootstrap-implementation-v3-history.md) | 實施計畫的歷史紀錄。熱歷史 | 計畫每次修改時 |
-| [collaboration-system-principles-draft.md](collaboration-system-principles-draft.md) | **協作系統的前提、效用與設計原則（共識草稿）**：性質未定，還不是約束文件；最終要跟需求決策書與實施計畫整合成一份新文件 | 討論有新共識時；整合成新文件時移除 |
-| [docs/status.json](docs/status.json) | **現況索引**：逐 ID 的實作狀態與現行證據。`registry.validate`、`schema_check`、`tools/run_tests.py` 與 `test_registry_repo` 讀它 | 某個 ID 的實作或證據改變時 |
-| [archive/docs/](archive/docs/README.md) | **封存區**（冷區）：v2 決策書的凍結原件，與結案或被取代的需求、計畫、查核文件；每份一行說明在 `README.md`。程式與測試不得引用（「封存原件」守）。**AI 平常不讀，要回溯歷史先經使用者同意** | 不動 |
-| [experiments/handoff-ab/](experiments/handoff-ab/README.md) | 完整版與極簡版骨架的對照實測，v3 的依據 E1。不部署、不同步；原始資料在 gitignored 的 `dist/` | 加跑或改情境時 |
-| 本檔 | 結構 | 只有結構變動 |
-| [LICENSE](LICENSE) | MIT | 授權改變 |
-| [pyproject.toml](pyproject.toml)、[uv.lock](uv.lock) | **開發骨架**：依賴、最低 Python 3.12、pytest 設定與每個套件的授權；不是可安裝的套件，不部署 | 加減依賴時兩檔一起改（`uv lock`），新套件同時登記授權 |
-| [src/project_bootstrap/](src/project_bootstrap/__init__.py) | **本 repo 自己的檢查**：`mdlinks`、`trail`／`trail_sources`、`surfaces`、`resume`、`capabilities`、`contradictions`、`registry`／`schema_check` 與 `mutants.py`／`mutants.json`（變異測試）。不部署 | 改檢查時，同時更新 `mutants.json` 對應的變異組並實跑 |
-| [archive/v2-barrier/](archive/v2-barrier/README.md)、`archive/v2-channel/`、`archive/v2-prototypes/`、`archive/v2-experiments/` | 退休的 v2 程式、簽章發布通道、原型與實驗說明（冷區）。不執行，程式與現況索引都不引用。**平常不讀，要回溯先經使用者同意** | 不動 |
-| [tests/](tests/test_layout.py) | 上面那些檢查的測試，加上開發骨架與驗證器自己的測試。讀本 repo 真文件的測試叫 `*_repo.py`，不放進變異組 | 加測試時 |
-| [tools/run_tests.py](tools/run_tests.py) | **測試入口**：核對現況索引與決策書的 ID，跑全套 unittest；驗證器每輪背景跑它 | 測試的收集方式改變時 |
-| [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，不部署 | 部署包多一種失效模式時 |
-| [tools/skill_split_baseline.json](tools/skill_split_baseline.json) | 拆分前單檔 `SKILL.md` 每一行的雜湊，加上刻意改寫的行與去處；「skill 拆分」用它確認沒有行被弄丟 | 刻意改寫或刪掉舊文本的某一行時，寫明去處 |
-| [tools/sync_project.py](tools/sync_project.py) | **部署包的發佈工具**：把最新內容推到已部署的專案，保留專案自己的設定；`AGENTS.md` 只換共用制度標記之間。只改檔案，不 commit | 骨架多一個要同步的檔時：在 `owners.json` 登記，`region`／`key`／`lines`／`wiring` 四種要先寫處理程式並更新 `HANDLED` |
-| [VERSION](VERSION) | 一行版本號，與部署包的版本行一致（驗證器擋不一致）；各專案的開場 hook 抓它判斷自己落後沒有 | 跟版本行一起改 |
-| [CHANGELOG.md](CHANGELOG.md) | 部署包的逐版變更紀錄與每一版的理由，新的在上面。不部署 | 每次跳版 |
-| `.claude/hooks/repo-pre-push.sh` | 本 repo 的 push 前 hook：3.11 `pre-push-handoff.sh` 的**手貼逐字副本**，兩份接線都指向它 | 改 3.11 時重貼 |
-| `.claude/settings.json`＋`.codex/hooks.json`＋`.claude/hooks/repo-git-check.sh` | 本 repo 自己的開場檢查。兩份接線掛同一支 `repo-git-check.sh`，它是 3.10 `git-freshness.sh` 的**手貼逐字副本**；三個檔都不在 `sync_project.py` 的拓撲裡 | 改 3.10 時重貼 |
-| `.gitignore`、`.gitattributes` | `dist/`、`.venv/` 不進 Git；全檔強制 `eol=lf` | 幾乎不動 |
+### 文件
+
+| 路徑 | 是什麼 |
+|---|---|
+| [README.md](README.md) | 標準 README：解決什麼、怎麼用、部署後長什麼樣、跨工具相容性、參與開發、授權 |
+| [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本、跟部署出去的專案不同的地方、這個 repo 是什麼、鐵律 |
+| [CLAUDE.md](CLAUDE.md) | Claude Code 用 `@AGENTS.md` import |
+| [HANDOFF.md](HANDOFF.md) | **當下交接快照與跨機器工作標記**：範本 3.3 的實例，不是副本；≤80 行、覆寫不累積 |
+| 本檔 | 結構 |
+| [docs/maintenance.md](docs/maintenance.md) | **AI 維護手冊**：改這個 repo 時的步驟、指令與坑 |
+| [docs/rationale.md](docs/rationale.md)、[docs/history/rationale-history.md](docs/history/rationale-history.md) | **理由檔**：AGENTS 與維護手冊每條規則的現行理由；它的歷史紀錄放被取代的理由與拆分前的原文 |
+| [project-bootstrap-requirements-decision-v3.md](project-bootstrap-requirements-decision-v3.md)、[docs/history/project-bootstrap-requirements-v3-history.md](docs/history/project-bootstrap-requirements-v3-history.md) | **現行需求權威**與它的歷史紀錄（修改紀錄、已決的 Q）。`tests/test_trail_repo.py` 讀歷史紀錄的「決策紀錄」 |
+| [project-bootstrap-implementation-plan-v3.md](project-bootstrap-implementation-plan-v3.md)、[docs/history/project-bootstrap-implementation-v3-history.md](docs/history/project-bootstrap-implementation-v3-history.md) | **現行實施權威**與它的歷史紀錄。`tests/test_trail_repo.py` 讀計畫的「路線選擇」「分期」「非目標」 |
+| [collaboration-system-principles-draft.md](collaboration-system-principles-draft.md) | 協作系統的前提、效用與設計原則（共識草稿）：還不是約束文件，最終要跟決策書與計畫整合成一份新文件 |
+| [docs/status.json](docs/status.json) | **現況索引**：逐 ID 的實作狀態與現行證據。`registry.validate`、`schema_check`、`tools/run_tests.py` 與 `test_registry_repo` 讀它 |
+| [experiments/handoff-ab/](experiments/handoff-ab/README.md) | 完整版與極簡版骨架的對照實測，v3 的依據 E1；原始資料在 gitignored 的 `dist/` |
+| [LICENSE](LICENSE) | MIT |
+
+### 檢查與測試
+
+| 路徑 | 是什麼 |
+|---|---|
+| [tools/verify_bootstrap.py](tools/verify_bootstrap.py) | **部署包的測試**，也守本 repo 的文件與接線 |
+| [tools/skill_split_baseline.json](tools/skill_split_baseline.json) | 拆分前單檔 `SKILL.md` 每一行的雜湊，加上刻意改寫的行與去處；「skill 拆分」用它確認沒有行被弄丟 |
+| [tools/run_tests.py](tools/run_tests.py) | **測試入口**：核對現況索引與決策書的 ID，跑全套 unittest；驗證器每輪背景跑它 |
+| [src/project_bootstrap/](src/project_bootstrap/__init__.py) | **本 repo 自己的檢查**：`mdlinks`、`trail`／`trail_sources`、`surfaces`、`resume`、`capabilities`、`contradictions`、`registry`／`schema_check` 與 `mutants.py`／`mutants.json`（變異測試） |
+| [tests/](tests/test_layout.py) | 上面那些檢查的測試，加上開發骨架與驗證器自己的測試；讀本 repo 真文件的叫 `*_repo.py`，不放進變異組 |
+| [pyproject.toml](pyproject.toml)、[uv.lock](uv.lock) | **開發骨架**：依賴、最低 Python 3.12、pytest 設定與每個套件的授權；不是可安裝的套件 |
+
+### 本 repo 自己的接線
+
+| 路徑 | 是什麼 |
+|---|---|
+| `.claude/settings.json`、`.codex/hooks.json` | 本 repo 的開場與 push 前接線，兩份都掛下面兩支腳本；不是部署包 3.9／3.17 的副本（見副本拓撲） |
+| `.claude/hooks/repo-git-check.sh` | 開場 hook，3.10 `git-freshness.sh` 的手貼逐字副本 |
+| `.claude/hooks/repo-pre-push.sh` | push 前 hook，3.11 `pre-push-handoff.sh` 的手貼逐字副本 |
+| `.gitignore`、`.gitattributes` | `dist/`、`.venv/` 不進 Git；全檔強制 `eol=lf` |
+
+### 冷區
+
+| 路徑 | 是什麼 |
+|---|---|
+| [archive/docs/](archive/docs/README.md) | **封存區**：v2 決策書的凍結原件，與結案或被取代的需求、計畫、查核文件；每份一行說明在它的 `README.md`。程式與測試不得引用。**AI 平常不讀，要回溯先經使用者同意** |
+| [archive/v2-barrier/](archive/v2-barrier/README.md)、`archive/v2-channel/`、`archive/v2-prototypes/`、`archive/v2-experiments/` | 退休的 v2 程式、簽章發布通道、原型與實驗說明。不執行，程式與現況索引都不引用。**平常不讀，要回溯先經使用者同意** |
 
 ## 部署包的內部結構
 
@@ -189,50 +196,50 @@
 
 **exit 0 才算改完**（鐵律第 4 條）。印出 `skip` 的項目沒有被驗證，回報時要照實寫；印「提醒」的項目不影響結束碼，但要轉告使用者。
 
-## 副本拓撲（同一份東西存在於多個地方的，只有這些）
+## 副本拓撲
+
+同一份內容存在於多個地方的，只有下面這些。改權威的那一份，其餘照箭頭覆蓋；規則見 [AGENTS.md](AGENTS.md) 鐵律 1、2 與維護手冊「副本規則」。
 
 ```text
-handoff skill 目錄（2026-11-10 起六個檔，2026-11-16.4 起七個，同版本、整個目錄一起覆蓋）
-  部署包 3.8（權威）
+handoff skill 目錄（七個檔，同版本，整個目錄一起覆蓋）
+  src/kit/files/.claude/skills/handoff/（權威，部署包 3.8）
+    ├─→ bootstrap.py（內嵌）
     └─→ 各專案 .claude/skills/handoff/
-          ├─→ （選用）~/.claude/skills/handoff/   ← 模式 0 建制真正會被載入的地方
-          ├─→ （選用）~/.codex/skills/handoff/    ← Codex CLI 與桌面 App（2026-10-30 實測
-          │                                          CLI 0.164.0 仍讀這個路徑，雖然官方
-          │                                          文件已經不列它）
-          └─→ .agents/skills/handoff/SKILL.md     ← 只放指標，不複製內容。Codex 把它當
-                                                     專案層 skill 來源（Antigravity 2026-11-13
-                                                     移出部署包），description 與權威版相同
-                                                     （那是它被發現的唯一依據）
+          ├─→ （選用）~/.claude/skills/handoff/   ← 模式 0 建制真正載入的地方；本 repo 沒有專案層 skill，也讀這份
+          ├─→ （選用）~/.codex/skills/handoff/    ← Codex CLI 與桌面 App
+          └─→ .agents/skills/handoff/SKILL.md     ← 只放指標，不複製內容；description 與權威版相同
+
+AGENTS.md 共用制度（開始與結束標記之間）
+  src/kit/files/AGENTS.md.tmpl（權威，部署包 3.1）
+    ├─→ 本 repo AGENTS.md          ← 手貼，驗證器逐字比對
+    └─→ 各專案 AGENTS.md           ← sync_project.py 只換標記之間
 
 兩支 hook .sh
   部署包 3.10／3.11（權威）
-    └─→ 各專案 .claude/hooks/*.sh   ← 只有這一份腳本
-          ├─← .claude/settings.json 指向它
-          └─← .codex/hooks.json 指向同樣那兩個（不複製第二份）
+    ├─→ 各專案 .claude/hooks/*.sh  ← 只有這一份腳本，兩份接線都指向它
+    └─→ 本 repo repo-git-check.sh、repo-pre-push.sh  ← 手貼，驗證器逐位元組比對
 
 check_docs.py
-  部署包 3.14（權威，「專案設定」區塊除外——那塊本來就該依專案調）
+  部署包 3.14（權威，「專案設定」區塊除外）
     └─→ 各專案 tools/check_docs.py
 
-兩份 hook 接線（JSON；Antigravity 那份 2026-11-13 移出部署包，已部署的不同步、不刪除）
-  部署包 3.9／3.17（權威，只管「指向骨架那幾個 .sh」的那幾組；
-                        專案自己加的 permissions／env／額外 hook 原樣保留）
+兩份 hook 接線（JSON）
+  部署包 3.9／3.17（權威，只管指向骨架腳本的那幾組；專案自己加的設定原樣保留）
     ├─→ 各專案 .claude/settings.json
     └─→ 各專案 .codex/hooks.json
+
+其餘範本與同步器的合併函式
+  src/kit/files/*.tmpl、tools/sync_project.py
+    └─→ bootstrap.py               ← build_kit.py 生成，驗證器逐位元組比對
+
+版本
+  VERSION ＝ src/kit/kit.md 的「版本」行      ← 驗證器擋不一致
+  七個 skill 檔與 AGENTS 共用制度開始標記的 source: 版本相同，等於 VERSION
 ```
 
-**本 repo 自己的兩份接線（`.claude/settings.json`、`.codex/hooks.json`）不在上面這張圖裡。**
-它們跟 3.9／3.17 路徑同名、形狀也幾乎一樣，但掛的是這個 repo 自己那支 `repo-git-check.sh`——
-所以是**同名而非同源**，沒有同步義務，也不跳 `source:` 版本。（那支 hook 本身 2026-11-14 起是 3.10 的手貼逐字副本，
-由「本 repo 開場 hook」逐位元組比對，不靠 `sync_project.py`。）而「路徑同名」本身就是風險：
-`sync_project.py` 的 `WIRING` 清單認的是路徑，手打一次 `sync_project.py <本 repo>` 就會把它們
-改成指向這裡不存在的 `git-freshness.sh`。2026-11-01 起那支腳本直接拒絕本 repo（`--all` 本來就
-掃不到它），`verify_bootstrap.py` 的「sync 拒絕本 repo」與「本 repo 兩份接線」兩項各守一端。
+**本 repo 的兩份接線不是副本**：路徑跟 3.9／3.17 同名，掛的卻是本 repo 自己的兩支腳本，沒有同步義務。路徑同名的風險由 `sync_project.py` 拒絕本 repo 擋下。[為什麼](docs/rationale.md#copy-7)
 
-**JSON 沒辦法放 `source:` 標記**，所以上面那兩份接線在落後偵測裡是隱形的——它們唯一的守門人是 `sync_project.py` 的 `WIRING` 清單加上 `verify_bootstrap.py` 的「同步清單涵蓋骨架」。2026-10-30 把它們補進拓撲，是因為 2026-09-13 給 3.9 補的 `Bash|PowerShell` matcher 一直沒發下去：三個專案停在舊的 `Bash`，而那台機器的主 shell 正是 PowerShell，pre-push 防呆於是在那些專案等於沒裝，一個半月沒有任何徵兆。
-
-每份副本檔頭有 `<!-- source: PROJECT-BOOTSTRAP.md v日期 -->`，**改內容就要跳版**，否則沒人分得出哪份落後（鐵律第 2 條）。同一天改第二次起要在日期後面加序號（`v2026-10-24.2`）——日期粒度只能證明「不早於那一天」，2026-10-24 就因此誤判過一次。
-沒改內容的檔案不要跟著跳版——謊報「副本落後」之後，這個標記就沒人再信。
+**JSON 放不了 `source:` 標記**：兩份接線在落後偵測裡看不見，靠 `sync_project.py` 的 `WIRING` 清單與驗證器「同步清單涵蓋骨架」守。[為什麼](docs/rationale.md#copy-1)
 
 ## 這個 repo 刻意沒有的東西
 
@@ -246,19 +253,8 @@ check_docs.py
 >
 > 要撤銷這條宣告（改成補裝），是改使用者的決定，不是改措辭。
 
-- **沒有 handoff skill、沒有 `check_docs.py`（2026-11-06 使用者宣告為例外）**：它是制度的**來源**，不是交接中的工作專案；把骨架這兩份套到自己身上，會出現「權威版與它的副本互相同步」的迴圈。跨 session 現況看 `HANDOFF.md`，歷史與版本證據看 `git log` 與各檔的 `source:` 標記；接棒程序讀全域副本 `~/.claude/skills/handoff/`。
-- **但有 `HANDOFF.md` 與跨機器「工作中」標記**：多機維護時 `git fetch` 看不到別台機器未提交的變更，所以沿用範本 3.3 的載體與 3.10 讀的同一個欄位，不發明第二種標記。標記只告訴你「東西在那台機器上」，東西本身仍得回那台 push，這不是實作缺漏。維護做法見 [AI 維護手冊](docs/maintenance.md)「本 repo 的交接快照」。
-- **push 前 hook：2026-10-30 決定不裝，2026-11-14 使用者決定補裝**（`repo-pre-push.sh`，3.11 的逐字副本）：v3 F10 是唯一要「阻擋」的需求，擋的是沒寫開工標記就推權威分支；它不驗交接內容是否正確，內容由 B6 核對整份快照。
-- **有自己的 SessionStart hook**（`repo-git-check.sh`，3.10 的逐字副本，只印 `[facts]`），Claude Code 與 Codex 兩份接線掛同一支。不經 `sync_project.py` 同步：它靠 handoff skill 發現專案，`--all` 掃不到本 repo，指定路徑時也會拒絕。
-- 上面四條的現行理由在[理由檔](docs/rationale.md#what)，決定經過與當時的評估原文在[理由檔歷史紀錄](docs/history/rationale-history.md)的「#what」那組。
-- **沒有把驗證交給 CI。**（2026-09-13 隨本檔首版 `7a5d1ec` 寫入「沒有 CI」；日期取自 git 首次出現，當時沒有記錄另外的評估）驗證是一個指令（`python -X utf8 tools/verify_bootstrap.py`），跑它是鐵律第 4 條的義務。2026-11-11 到 2026-11-18 有過一支發布用的 workflow（決策書 Q21），只在 push `release-request/<channel>` tag 且使用者核准後才跑，不做驗證；它隨簽章發布通道封存（v3 Q46），現在本 repo 沒有 workflow，鐵律第 4 條照舊。
-- `tools/` 保存來源維護入口：`build_kit.py` 生成部署包與 `bootstrap.py`、`verify_bootstrap.py` 測試部署包、`sync_project.py` 同步它、`run_tests.py` 跑本 repo 的測試。四支都不部署。
-
-## 全域約束（誰強制什麼）
-
-| 約束 | 由誰強制 | 理由與做法 |
-|---|---|---|
-| 全檔 LF | `.gitattributes` 的 `eol=lf`＋`verify_bootstrap.py` 的行末檢查 | [AI 維護手冊行末那節](docs/maintenance.md) |
-| 不寫單位名／內部代號／本機絕對路徑 | 人（提交前擋）＋骨架端的跨平台防呆檢查 | [AGENTS.md 鐵律第 6 條](AGENTS.md) |
-| 只放通用制度與 `{{佔位符}}` | `verify_bootstrap.py` 的佔位符清單比對 | [AGENTS.md 鐵律第 5 條](AGENTS.md) |
-| 副本改內容就跳 `source:` 版本 | 人 | [AGENTS.md 鐵律第 2 條](AGENTS.md) |
+- **沒有 handoff skill、沒有 `check_docs.py`（2026-11-06 使用者宣告為例外）**：它是制度的來源，把這兩份套到自己身上，會出現權威版與副本互相同步的迴圈；接棒程序讀全域副本，`.md` 的檢查由 `verify_bootstrap.py` 做。[為什麼](docs/rationale.md#what)
+- **但有 `HANDOFF.md` 與跨機器「工作中」標記（2026-10-30 起）**：多機維護時 `git fetch` 看不到別台機器未提交的變更，所以沿用範本 3.3 的載體與同一個欄位，不發明第二種標記。[為什麼](docs/rationale.md#what)
+- **push 前 hook 原本不裝，2026-11-14 使用者決定補裝**：F10 擋的是沒寫開工標記就推權威分支，來源少這一層就比產物少一層保護。[為什麼](docs/rationale.md#what)
+- **有自己的開場 hook（2026-11-14 起是 3.10 的逐字副本）**：只印 `[facts]`，不經 `sync_project.py` 同步。[為什麼](docs/rationale.md#copy-7)
+- **沒有 CI（2026-09-13 起）**：驗證是一個指令，跑它是鐵律 4 的義務；現在本 repo 沒有任何 workflow。[為什麼](docs/rationale.md#rule-4)

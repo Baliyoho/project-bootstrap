@@ -1,6 +1,6 @@
 # AI 維護手冊
 
-> 最後更新：2026-11-18（zsh 的三種寫法移到部署包 `env.md`；加「改安裝程式」，拿掉 `--zip` 的做法，v3 Q49）
+> 最後更新：2026-11-20
 > 這個 repo 由維護者與 AI session 維護。本檔是改這個 repo 時的做法：步驟、指令與踩過的坑，做到那件事才讀。規則在 [AGENTS.md](../AGENTS.md)，每個 session 開場自動載入；本檔提到規則時連回去，不重述。每條的現行理由在[理由檔](rationale.md)，被取代的理由與經過在[理由檔歷史紀錄](history/rationale-history.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 改部署包的流程
@@ -8,7 +8,9 @@
 規則見 [AGENTS.md](../AGENTS.md) 的鐵律 1、4 與「跟部署出去的專案不同的地方」；這裡只寫操作細節。[為什麼](rationale.md#rule-1)
 
 - 動到結構（根目錄增刪檔案、部署包增刪一節範本、驗證項增減、副本拓撲改變）就更新 [ARCHITECTURE.md](../ARCHITECTURE.md)，跟該變動同一個 commit，並更新它檔頭的「最後更新」；增刪範本時同步 `EXPECTED` 與它的 3.x 對照表。
-- 部署包跳版時，`src/kit/kit.md` 開頭只留新的「版本」行；舊的那一行改寫成「前一版」，移到 [CHANGELOG.md](../CHANGELOG.md) 最上面。不跳版的修改也在 CHANGELOG 最上面記一條。
+- 新增範本：在 `src/kit/owners.json` 登記歸屬；歸 `region`／`key`／`lines`／`wiring` 四種的，要先在 `sync_project.py` 寫處理程式並更新 `HANDLED`，否則同步器拒絕啟動。改跨工具表改 `src/kit/capabilities.json`，不改 `kit.md`。
+- 部署包跳版時 `VERSION` 跟版本行一起改；`src/kit/kit.md` 開頭只留新的「版本」行；舊的那一行改寫成「前一版」，移到 [CHANGELOG.md](../CHANGELOG.md) 最上面。不跳版的修改也在 CHANGELOG 最上面記一條。
+- 驗證印 `skip` 的項目沒有被驗到，回報時照實寫；印「提醒」的項目不影響結束碼，但要轉告使用者。
 - 全套驗證在 macOS 約 35 秒，在原生 Windows 約 3–4 分鐘，超過指令工具預設的 120 秒上限，逾時不等於失敗。Windows 上 `python3` 是 WindowsApps 別名，要用 `python`。[為什麼](rationale.md#rule-4)
 
 ### 部署包怎麼變成檔案（改範本前先讀）
@@ -59,6 +61,9 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 - 提交指令要用 `&&` 綁住 verify 的結束碼。macOS 上 zsh 跟 bash 不同的三種寫法（管線結束碼、`echo =====`、未加引號的 `$變數`）2026-11-18 起寫在部署包 handoff skill 的 `env.md`「macOS」一節，本 repo 讀全域那份或 `src/kit/files/.claude/skills/handoff/env.md.tmpl`。
 - 新增或改規則：每個 session 都要守的寫進 `AGENTS.md`，只有做那件事時才用得到的做法寫進本檔對應的一節；兩邊的「為什麼」都連到[理由檔](rationale.md)的錨點。理由改了就改寫理由檔那一節，舊理由加到[理由檔歷史紀錄](history/rationale-history.md)同一個錨點那組的最後（鐵律 3）。
 - 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。改了檢查模組就用 `mutants.py --only` 實跑對應的變異組。
+- 改 `src/project_bootstrap/` 的檢查時，同時更新 `mutants.json` 對應的變異組並實跑。
+- 刻意改寫或刪掉 handoff skill 拆分前的舊行時，在 `tools/skill_split_baseline.json` 的已改寫清單記一筆，寫明去處。
+- 加減依賴時 `pyproject.toml` 與 `uv.lock` 一起改（`uv lock`），新套件同時登記授權。
 - 僅合成暫存 fixture；原檔、票據、金鑰與合成 Git object 不進本 repo。
 
 ## 副本規則
