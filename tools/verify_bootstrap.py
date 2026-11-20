@@ -1595,7 +1595,8 @@ def source_exception_problems(architecture, source, generated):
 
 
 def step_source_exceptions(dest, tmp):
-    architecture = (ROOT / 'ARCHITECTURE.md').read_text(encoding='utf-8')
+    # 2026-11-20（v3 Q53）：宣告從 ARCHITECTURE 搬到決策書第 4 節 F46 底下。
+    architecture = (ROOT / 'project-bootstrap-requirements-decision-v3.md').read_text(encoding='utf-8')
     problems = source_exception_problems(architecture, ROOT, dest)
     with tempfile.TemporaryDirectory(prefix='source-exception-', dir=str(tmp)) as name:
         source, generated = pathlib.Path(name) / 'source', pathlib.Path(name) / 'generated'

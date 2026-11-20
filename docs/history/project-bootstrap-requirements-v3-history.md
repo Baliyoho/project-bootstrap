@@ -1,12 +1,13 @@
 # project-bootstrap 需求決策書 v3 歷史紀錄
 
-> 最後更新：2026-11-20（登記並決定 Q52：`ARCHITECT.md` 改名 `ARCHITECTURE.md` 並拆分內容）；更早的修改見下面的修改紀錄
+> 最後更新：2026-11-20（登記並決定 Q53：F46 的正式例外宣告搬進決策書）；更早的修改見下面的修改紀錄
 > 回答「決策書怎麼變成現在這樣」。現在要什麼只看決策書；這裡是它的修改紀錄、已決的 Q 與從條文移出的經過。決策書每改一次就在這裡加一筆，到 v4 時跟 v3 決策書一起搬進封存區 `archive/docs/`（Q44、Q45）。碰到才讀，不在常態入口，讀它不用先經使用者同意。v2 時代的 Q1–Q31 不在這裡，在封存的 v2 原件。2026-11-18 以前的紀錄裡寫的 `docs/history/` 是當時的封存區，現在在 `archive/docs/`（Q44 先改名 `docs/archive/`，同日 Q45 再搬到根目錄冷區）。
 
 ## 1. 修改紀錄
 
 新的在上。每筆寫日期、改了哪裡、牽涉的 ID 或 Q、出處。
 
+- 2026-11-20：第 4 節 F46 底下加「本 repo 對 F46 的正式例外」，宣告從 ARCHITECTURE 搬來；第 8 節的下一個編號改成 Q54（Q53，使用者在聊天中選「照方案全做」）。
 - 2026-11-20：第 5 節之後「清單看 ARCHITECT」改成 ARCHITECTURE；第 8 節的下一個編號改成 Q53（Q52，使用者在聊天中選「拆分加改名一起做」）。
 - 2026-11-18：第 8 節加一句：已決的 Q 被後來的 Q 取代時，在決策紀錄的舊條目標「被取代」或「部分被取代」；下一個編號改成 Q52（Q51）。
 - 2026-11-18：第 5 節「部署方式」加兩條：唯一產出物是 `bootstrap.py`、部署包說明是 `src/kit/kit.md`；已部署專案照舊用 `sync_project.py` 升級。第 8 節的下一個編號改成 Q51（Q50）。
@@ -145,6 +146,12 @@ Q37、Q38 是 2026-11-16 登記並決定的，當時的「最後更新」沒有�
   - 暫緩 已部署專案的改名：`ARCHITECT.md` 在 `owners.json` 歸專案（seed），`sync_project.py` 不改名；專案裡的 `check_docs.py` 的 `DATED_DIRS` 在專案設定區，同步時原樣保留。同步後 skill 會寫 `ARCHITECTURE.md`、專案裡仍是 `ARCHITECT.md`，要不要讓同步器改名、或由各專案自己 `git mv`，待使用者決定（出處：2026-11-20 本 session 盤點）
   - 暫緩 驗證器檢查表與 F46 例外宣告搬家：檢查表 59 列，驗證器檔頭的清單只涵蓋其中 22 項，搬走前要先合成一份；F46 宣告由 `verify_bootstrap.py`「來源例外」與 `trail_sources` 直接讀 ARCHITECTURE，搬到本書要改這兩支的讀取位置（出處：同上）
   - 結果：`git mv` 成 `ARCHITECTURE.md` 與範本 `ARCHITECTURE.md.tmpl`；`owners.json`、AGENTS／README／HANDOFF 範本、`check_docs.py` 範本的 `DATED_DIRS`、`kit.md`、`installer.py`、`contradictions.py`、`trail_sources.py`、`sync_project.py`、`verify_bootstrap.py` 與測試改名。handoff skill 的 `mode-0.md`、`mode-a-stop.md`、`mode-b.md` 改名，部署包跳 `2026-11-20`；`skill_split_baseline.json` 記兩行改寫。拆分：維護手冊的文件分工表併進 ARCHITECTURE「碰到才讀的文件」（同日稍早）；抽取規則搬到維護手冊「改部署包的流程」；「改本檔的時機」併進維護手冊同一節；根目錄表每列只留是什麼與什麼時候動。歷史檔與冷區 `archive/v2-experiments/README.md`（使用者 2026-11-20 同意）裡指向舊檔名的連結改成純文字
+
+- **Q53**（2026-11-20 登記）：本 repo 對 F46 的正式例外宣告要不要從 ARCHITECTURE 搬進本書？起因是 ARCHITECTURE 整改（Q52 的續作）：那段宣告混了三樣東西：使用者的決定（D4、F34）、F46 的實作狀態（「仍未整項通過」與當時的驗證範圍）、理由。照共識草稿原則 1、3，決定的家是本書，狀態的家是現況索引，理由的家是理由檔 #what；ARCHITECTURE 只留「刻意沒有什麼」的結構事實。AI 在聊天中提出逐段整改方案，F46 宣告搬家是第 3 批。選項：(a) 搬到本書第 4 節 F46 底下，`verify_bootstrap.py`「來源例外可見性」改讀本書；(b) 留在 ARCHITECTURE；(c) 搬到理由檔。影響 F34、F46、D4。狀態：已決（2026-11-20，使用者在聊天中選「照方案全做」，AI 依此選 (a)）。
+  - 採用理由：使用者原話「照方案全做」；宣告是使用者的決定，本書第 3 節 D4 與第 4 節 F34、F46 都在這裡，放在 F46 底下讀的人一眼看到需求與它的例外（出處：2026-11-20 聊天）
+  - 未選 (b) 留在 ARCHITECTURE：結構文件會繼續混著決定與狀態，違反一份文件只講一件事（出處：同上）
+  - 未選 (c) 理由檔：理由檔只寫為什麼，宣告本身是決定，不是理由（出處：同上）
+  - 結果：本書第 4 節 F46 底下加「本 repo 對 F46 的正式例外」，`> **宣告的內容**：` 那段的格式不變；宣告當時的驗證範圍與「仍未整項通過」不搬，狀態看現況索引；ARCHITECTURE 留一句指過來。`verify_bootstrap.py` 的 `step_source_exceptions` 改讀本書，三類負向變異照跑
 
 ## 3. 從條文移出的經過
 

@@ -1,6 +1,6 @@
 # project-bootstrap 需求決策書 v3
 
-> 最後更新：2026-11-20（登記並決定 Q52：結構文件 `ARCHITECT.md` 改名 `ARCHITECTURE.md`，第 5 節後的清單出處跟著改；下一個編號改成 Q53）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
+> 最後更新：2026-11-20（登記並決定 Q53：本 repo 對 F46 的正式例外宣告從 ARCHITECTURE 搬到第 4 節 F46 底下；下一個編號改成 Q54）。歷次修改、已決的 Q 與從條文移出的經過在 [需求決策書 v3 歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)。
 > 決策版本：3。2026-11-13 起是現行需求權威，也是**唯一需求書**（Q39）：v2 決策書凍結封存在 `archive/docs/requirements-decision-v2.md`，逐位元組不改，不被任何程式讀取。
 > 需求編號沿用 v2 的 51 個穩定 ID，不重編；退役的 ID 保留編號與理由。v2 的 Q1–Q31 與逐條理由只在封存的 v2 原件裡（[歷史原件](archive/docs/project-bootstrap-requirements-history.md)沒有收），本檔不複製；平常不讀，要回溯歷史先經使用者同意（Q39）。
 
@@ -150,6 +150,12 @@ D9、D12、D13 一起讀：**資訊進入口，強制進 hook，執行屏障交�
 | F39 | 發現已經就地改了制度的專案 | — | 退役。一次性盤點已做過 |
 | F46 | 制度來源自身的保護不低於它發出去的產物 | 偵測 | 保留 |
 
+**本 repo 對 F46 的正式例外**（D4 的使用者宣告、F34 的看得見；使用者 2026-11-06 決定，2026-11-14 撤銷 pre-push 一項，Q53 從 ARCHITECTURE 搬來）：
+
+> **宣告的內容**：這個 repo 刻意不裝 **handoff skill**、**`check_docs.py`** 兩項。替代保障：接棒程序讀全域副本 `~/.claude/skills/handoff/`（沒有時讀 `src/kit/files/.claude/skills/handoff/`）、`.md` 的死連結與日期標頭由 `verify_bootstrap.py` 顧、交接快照由 B6 逐項核對。`verify_bootstrap.py`「來源例外可見性」每輪印出這兩項。
+>
+> 宣告不等於 F46 已達成，實作狀態看[現況索引](docs/status.json)。要撤銷這條宣告（改成補裝），是改使用者的決定，不是改措辭。理由在[理由檔](docs/rationale.md#what)。
+
 ### 八、便宜
 
 | ID | 功能 | v3 強度 | 處置與理由 |
@@ -225,7 +231,7 @@ v2 的程式不留在 main（Q46）。執行屏障類模組（`launcher`、`supe
 
 ## 8. 待決事項
 
-要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。已決的 Q 被後來的 Q 撤銷或改掉一部分時，在舊的那筆標「被取代」或「部分被取代」並寫明是哪一個 Q（Q51）。編號接續，下一個是 Q53。
+要使用者決定的事登記在這裡，格式照[歷史紀錄](docs/history/project-bootstrap-requirements-v3-history.md)第 2 節：編號、登記日期、起因、選項、影響的 ID、狀態。決定之後，完整紀錄搬到歷史紀錄的「決策紀錄」，這裡刪掉，條文改成現況並附 Q 編號（Q42）。已決的 Q 被後來的 Q 撤銷或改掉一部分時，在舊的那筆標「被取代」或「部分被取代」並寫明是哪一個 Q（Q51）。編號接續，下一個是 Q54。
 
 目前沒有待決事項。
 
