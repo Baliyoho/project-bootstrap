@@ -1,7 +1,11 @@
 # 部署包變更紀錄
 
-> 最後更新：2026-11-20（2026-11-20：`ARCHITECT.md` 改名為 `ARCHITECTURE.md`，決策書 v3 Q52）
+> 最後更新：2026-11-20
 > 新的在上面。目前版本與它的說明在 [src/kit/kit.md](src/kit/kit.md) 開頭的「版本」行（2026-11-18 以前在生成的 `PROJECT-BOOTSTRAP.md`，v3 Q50）；發布新一版時，把舊的版本行改寫成「前一版」移到本檔最上面。每一版都寫做了什麼與為什麼，不刪舊事故。
+
+> 2026-11-20.2 拿掉的 `※` 原本的理由（寫在 `reasons.md`「停下來問人時為什麼要改名」）：session 停下來等回答時，側欄只看到「工作中」，使用者不會知道它卡在等他，這種等待很容易一整天沒人發現。使用者 2026-11-20 指定拿掉，沒有另外說明原因（決策書 v3 Q54）。
+
+> 前一版 **2026-11-20**（結構文件 `ARCHITECT.md` 改名為業界慣例的 `ARCHITECTURE.md`（決策書 v3 Q52）：範本、`owners.json`、AGENTS／README／HANDOFF 範本與 `check_docs.py` 的 `DATED_DIRS` 跟著改；handoff skill 的 `mode-0.md`、`mode-a-stop.md`、`mode-b.md` 提到它的地方改名，所以七個 skill 檔與共用制度標記跳版。已部署專案的 `ARCHITECT.md` 歸專案所有，同步器不改名。）
 
 > 前一版 **2026-11-18.3**（zsh 跟 bash 不同的三種寫法（管線結束碼用 `${pipestatus[1]}`、`echo =====` 被當成檔名展開、未加引號的 `$變數` 不拆字）從本 repo 的維護手冊上移到 handoff skill 的 `env.md`「macOS」一節，因為部署出去的專案在 macOS 上一樣會踩到。七個 skill 檔與共用制度標記同版。）
 > 前一版 **2026-11-18.2**（`PROJECT-BOOTSTRAP.md` 退休（決策書 v3 Q50）：不再生成與提交，部署包說明就是 `src/kit/kit.md`。`mode-0.md` 0-6 開頭那句「3.x 指 `PROJECT-BOOTSTRAP.md`」改指 `src/kit/kit.md`，所以 skill 七個檔跳版。已部署的專案照舊用 `sync_project.py` 升級。）
