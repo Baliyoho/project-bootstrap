@@ -14,9 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 class ResumeRepoTests(unittest.TestCase):
     def test_empty_home_finds_the_procedure_in_the_package(self):
         with tempfile.TemporaryDirectory(prefix='bootstrap-resume-home-') as home:
-            # 2026-11-14 (decision v3 D12): the start-of-work section only states facts;
-            # it is named for what differs from a deployed project.
-            result = check(ROOT, home, heading='跟部署出去的專案不同的地方')
+            # 2026-11-21 (decision v3 Q58): what differs from a deployed project is now
+            # written as this repo's own rules ("本 repo 沒有 X，改用 Y").
+            result = check(ROOT, home, heading='專用規則')
         self.assertEqual((result['result'], result['reasons'], result['missing']),
                          ('通過', [], []))
         # 2026-11-18 (decision v3 Q50): the fallback is the skill template in src/kit, not the retired package.
@@ -38,8 +38,8 @@ class ResumeRepoTests(unittest.TestCase):
             home.mkdir()
             verify_bootstrap.extract(project)
             # 2026-11-13 (decision v3 D12): the generated AGENTS.md has no start-of-work
-            # section; the shared rules link the reference procedure from this one.
-            heading = "你不會自己知道的事"
+            # section; since 2026-11-21 (v3 Q58) a shared rule links the reference procedure.
+            heading = "共用規則"
             result = check(project, home, heading=heading)
             self.assertEqual((result['result'], result['reasons'], result['missing']),
                              ('通過', [], []))

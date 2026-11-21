@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """驗證 PROJECT-BOOTSTRAP.md 這份部署包本身還能不能用（本 repo 唯一的驗證腳本）。
 
-為什麼有這支：AGENTS.md 規則第 12 條要求「改完部署包要重生一次骨架驗證」，但在 2026-08-05
-之前那是一段要人照著手刻的敘述——每一棒都得重刻一次，於是實務上常常跳過。把它固化成一個
+為什麼有這支：「改完部署包要重生一次骨架驗證」（現在是 AGENTS.md 專用規則 9）在 2026-08-05
+之前是一段要人照著手刻的敘述——每一棒都得重刻一次，於是實務上常常跳過。把它固化成一個
 指令，驗證才會真的發生。這支腳本是部署包的測試；本 repo 自己的交接快照與開場 hook
 也由它檢查，不另部署一份 check_docs.py。
 
@@ -42,7 +42,8 @@
 | 改名寫進回報模板 | A5／B9 各有必填 `session：` 與無改名工具時的回報選項，附負向測試 | 改名漏做卻在 repo 內沒有任何跡象 |
 | 續聊狀態與計數 | `AGENTS.md` 共用制度有「`↗` 時收到新訊息先改回 `㊣`」（2026-11-13 起取代 skill 與指標 description 的觸發詞，skill 不再必讀；2026-11-20 起沒有 `※`，v3 Q54）；skill 參考檔保留時間與計數、只讀不寫 Git、改檔重跑 A、成功交棒才累加；附 17 個負向測試 | 已交棒後續聊沒恢復工作中，或計數被重算 |
 | 本 repo 交接狀態 | 必要欄位與章節、≤80 行、骨架版本符合 VERSION、禁止這次已知過期待辦與只改兩欄的入口規則；附負向測試 | 標記清了卻保留已完成待辦，下一棒被迫從聊天重建現況；不保證任意待辦的語意正確，仍需 B6 人工核對 |
-| 規則理由連結 | AGENTS.md 與 `docs/maintenance.md` 每節至少一個、規則／副本規則／hook 訊息每條各一個指向 `docs/rationale.md` 的連結（從各自的位置算相對路徑），連結的段落存在且非空；只有表格列的「碰到才讀」索引節免連結，夾帶規則句就照一般章節要求（2026-11-20）；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
+| 規則理由連結 | AGENTS.md 與 `docs/maintenance.md` 每節至少一個、專用規則／副本規則／hook 訊息每條各一個指向 `docs/rationale.md` 的連結（從各自的位置算相對路徑），連結的段落存在且非空；只有表格列的「碰到才讀」索引節免連結，夾帶規則句就照一般章節要求（2026-11-20）；AGENTS 照「## 大段／### 節」切，只放小節的大段標題不算一節（v3 Q58）；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
+| 規則引用有前綴 | 現行文件、範本與程式註解引用 AGENTS 的規則編號時寫「共用規則 N」或「專用規則 N」（「副本規則 N」是維護手冊自己的清單，放行）；`CHANGELOG.md`、`docs/history/`、`archive/`、`experiments/` 是經過，不查；3 個負向測試（2026-11-21，v3 Q58） | 共用與專用分開編號後，沒有前綴的「規則 N」分不出指哪一份，舊編號也會躲在裡面不被發現 |
 | 來源例外可見性（F46 部分） | 每輪印出已宣告減項（2026-11-14 起剩 handoff skill、check_docs.py 兩項；pre-push 補裝了）；確認來源缺、產物有，並對漏宣告／來源增項／產物缺項跑負向變異 | 三項減項再次從驗證輸出中靜默消失；這只驗可見性，未完成來源／產物全部同組情境 |
 | 來源／產物交接快照同組情境（F46 部分） | 同一組 11 種合成快照在來源檢查與部署後 `check_docs.py` 各跑一次：有效、整份缺失、占用欄缺失／重複、章節缺失、超行數、機器／工具欄正反例均須一致；來源檢查遇整份缺失須明確報錯 | 來源少了整份 `HANDOFF.md` 時只拋例外，或產物與來源對相同缺陷給出矛盾結論；實際接手流程仍待驗 |
 | 來源／產物文件同組情境（F46 部分） | 同一份合成文件在來源文件檢查與部署後 `check_docs.py` 各跑一次：20 種正反例涵蓋根目錄及巢狀文件的缺檔、死連結、程式碼、角括號加 title、片段、日期及佔位符；沿用來源實際檢查函式 | 同樣的文件缺陷在來源與產物給出不同結論；其他文件項仍待驗 |
@@ -64,14 +65,14 @@
 | verify_state 失敗訊號 | 命令非零退出、HTTP 500、連不上、200 但回應內容不對都要讓結束碼非零；缺憑證是 SKIP，`--strict` 才非零、`OPTIONAL` 放行；未填仍回 0；祕密要遮罩。十個情境全部實跑 | 舊版每一種情況都 return 0，畫面印著 `rc7` 而下游拿 exit 0 當服務驗收（2026-11-02／F04） |
 | 交接快照檢查 | `HANDOFF.md` 不見了、超過 80 行、缺必要章節或欄位重複都要 exit 2；`--docs-only` 要真的關得掉；程式碼範例、帶 title 與角括號連結不得誤報，但真的死連結仍要抓到 | 第 6 項只在 HANDOFF 出現在輸入清單時才驗，整份刪掉反而回報乾淨；而連結誤報會教人「這支腳本的 FAIL 可以無視」（2026-11-02／F08） |
 | Python 版本下限 | 兩支維護工具檔頭的 `MIN_PY` 存在、會擋、兩邊同號；README 範本寫出部署後工具的下限；四支 `.py` 都沒有用到高於下限的 API（掃描前把註解與字串塗白） | 3.13-only 的 API 在舊版 python 上是執行到那一行才炸成 TypeError，不會說「版本太舊」。下限是靜態擔保、不是實測：沒有舊版可跑，要實測得先有 CI（2026-11-02／F14） |
-| 已修正的主張沒復活 | 能力表 ✅ 的工具不得被散文說成沒有 skill、交接 prompt 不得有自己的 A／B 編號且要寫出模式、`verify_state` 不得以憑證為前提、版本序號只有一種定義、可攜層不得寫成「到哪都成立」；附九個負向測試 | 事實在部署包被改對，範本、操作卡與入口文件裡的舊說法照樣部署出去。綁結構不綁禁句，「」裡的引用不算主張（規則 11 要留為什麼）；守不了一整段敘述的準確度（2026-11-02／F15） |
+| 已修正的主張沒復活 | 能力表 ✅ 的工具不得被散文說成沒有 skill、交接 prompt 不得有自己的 A／B 編號且要寫出模式、`verify_state` 不得以憑證為前提、版本序號只有一種定義、可攜層不得寫成「到哪都成立」；附九個負向測試 | 事實在部署包被改對，範本、操作卡與入口文件裡的舊說法照樣部署出去。綁結構不綁禁句，「」裡的引用不算主張（專用規則 8 要留為什麼）；守不了一整段敘述的準確度（2026-11-02／F15） |
 | 協作狀態契約／Git 異常提示 | 六狀態與步驟契約、21 個負向測試，含 R07 先 stage 再驗證。Git 異常：部署 hook 實跑領先／分岔／fetch 失敗要照實報出、不得建議 rebase，`AGENTS.md` 共用制度要有停止條件；本 repo hook 照舊要求停止；2 個負向測試 | 程序順序矛盾或工具提示教人自行 rebase |
 | 核心與實例優先序 | skill／README 宣告一致、override 範圍明確、部署包不再產出交接協定（v3 Q41）、7 個負向測試；同步對舊實例列版本與 MIGRATE，不改寫 | 不同步的舊協定會推翻新程序（F10） |
 | 接力協調邊界 | A2.5／A5 明列協調訊號非鎖、SHA 比對與禁止自動奪權，4 個文字負向測試（協定 2026-11-17 移出部署包） | 不宣稱並行互斥；原子 claim 留待另案（F12） |
 | skill 拆分 | 七個 skill 檔齊全、同版本、都在 `WHOLE`；入口＋`mode-a.md` ≤6,000 字元；入口 12 條、`mode-a.md` 12 條必備句；拆分前每一行逐字留存或列入已改寫清單（13 行） | 入口指向不存在的檔、同步只寫一半、濃縮時丟了停止條件或理由。不證明模型會去讀模式檔 |
-| AGENTS.md 共用制度 | 開始／結束標記成對、29 條必備條件（v3 第 5 節；每條共用規則至少一條）、共用 ≤40 行、全檔 ≤100 行（v3 D11）、開始標記的版本等於 `VERSION`；33 個負向測試（2026-11-13 新增） | 每個 session 都載入的那一層缺了條件、長過預算，或版本提示失準。只證明文字在，不證明模型照做 |
+| AGENTS.md 共用制度 | 開始／結束標記成對、35 條必備條件（v3 第 5 節；每條共用規則至少一條，三個 ### 節與 ## 大段標題都在，v3 Q58）、共用 ≤40 行、全檔 ≤100 行（v3 D11）、開始標記的版本等於 `VERSION`；39 個負向測試（2026-11-13 新增） | 每個 session 都載入的那一層缺了條件、長過預算，或版本提示失準。只證明文字在，不證明模型照做 |
 | 同步補齊模式檔 | 只有單檔的舊專案會補上五個新檔、入口最後寫、不認得的檔列為 EXTRA；1 個負向測試 | 同步後新入口指向不存在的模式檔 |
-| 同步共用制度 | `AGENTS.md` 沒有共用制度就插在第一個「## 」前、舊版整段換掉、標記外不動、已是權威版不寫、壞標記 FAIL 不寫、舊交接段落與「## 鐵律」列 MIGRATE（v3 Q56）、先於 skill 入口寫；2 個負向測試 | 新 skill 指向舊專案 `AGENTS.md` 裡不存在的共用制度（2026-11-14 加，v3 Q34 前置） |
+| 同步共用制度 | `AGENTS.md` 沒有共用制度就插在第一個「## 」前、舊版整段換掉、標記外不動、已是權威版不寫、壞標記 FAIL 不寫、舊交接段落、「## 鐵律」與接在結束標記後的編號清單列 MIGRATE、新版「### 專用規則」不列（v3 Q58）、先於 skill 入口寫；2 個負向測試 | 新 skill 指向舊專案 `AGENTS.md` 裡不存在的共用制度（2026-11-14 加，v3 Q34 前置） |
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
 | 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，clone 後開場 hook 印出 `[facts]`；`mode-0.md` 0-5 的驗收、提交、發布順序與不整批 `git add`（2026-11-18 起，v3 Q49）；6 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit |
 | 安裝程式由來源生成 | `bootstrap.py` 與 `src/kit`、`installer.py`、`sync_project.py` 的生成結果逐位元組相同；5 個負向測試（手改、改範本／installer／合併函式沒重生、少一個共用函式）。安裝、衝突、更新、CRLF 與兩支 hook 由 `tests/test_bootstrap_repo.py` 在暫存資料夾實跑 | 手改了安裝程式，或改了來源沒重生（2026-11-18，v3 Q49） |
@@ -1399,7 +1400,7 @@ def step_repo_handoff():
 
 
 # 2026-11-10／F22：AGENTS.md 的事故與理由搬到 AGENTS-reasons.md，入口只留規則。
-# 搬走之後「保留每條規則的為什麼」（規則 12）不能只靠自律：規則沒有理由連結、
+# 搬走之後「保留每條規則的為什麼」（專用規則 8）不能只靠自律：規則沒有理由連結、
 # 連結指不到段落、或段落是空的，都要被擋下來。
 # 2026-11-18（v3 Q48）：理由檔搬成 docs/rationale.md、CONTRIBUTING.md 搬成 docs/maintenance.md。
 # 連結從各自的位置算相對路徑：AGENTS.md 寫 docs/rationale.md#x，維護手冊寫 rationale.md#x。
@@ -1411,10 +1412,12 @@ def reason_link_re(target):
 
 
 REASON_LINK = reason_link_re(REASON_FILE)
-REASON_ITEM_SECTIONS = ('規則', '副本規則', '改兩支 hook 的訊息時')
+# 2026-11-21（v3 Q58）：AGENTS 分成共用與專用兩大段，規則各自編號；共用規則在標記之間、塗白不查，
+# 要逐條連理由的是「### 專用規則」。
+REASON_ITEM_SECTIONS = ('專用規則', '副本規則', '改兩支 hook 的訊息時')
 # 2026-11-20：AGENTS 的寫作規範（協作系統原則草稿第 4 節）把「碰到才讀」的索引放在最後一節，
 # 寫成「什麼時候 → 讀哪份」的表。索引不是規則，不要求理由連結；但這一節只能有表格列，
-# 夾帶一句規則就照一般章節要求理由連結，免得規則躲進索引逃掉規則 12。
+# 夾帶一句規則就照一般章節要求理由連結，免得規則躲進索引逃掉專用規則 8。
 REASON_INDEX_SECTIONS = ('碰到才讀',)
 REASON_MIN_BODY = 40
 CONTRIB_FILE = 'docs/maintenance.md'
@@ -1427,17 +1430,15 @@ def blank_shared_copy(text):
     它連到部署後才存在的 skill 路徑、章節也沒有本 repo 的理由連結，這兩項檢查跳過它，
     改由 shared_copy_problems 要求它跟部署包逐字相同。行數保留，錯誤行號才對得上。
 
-    2026-11-20（v3 Q56）：共用制度最後一節是「## 規則」，本 repo 的規則緊接在結束標記後接著編號，
-    所以那一節的標題留著不塗白，標記後的規則才算在它底下、照樣要每條有理由連結。"""
+    2026-11-21（v3 Q58）：共用規則與專用規則分開編號，專用規則在結束標記後自己的「### 專用規則」，
+    不再接在共用規則底下，所以標記之間整段塗白（取代 Q56 留最後一個標題的做法）。"""
     if text.count(SHARED_START) != 1 or text.count(SHARED_END) != 1:
         return text
     a = text.rfind('\n', 0, text.index(SHARED_START)) + 1
     b = text.index(SHARED_END) + len(SHARED_END)
     if b <= a:
         return text
-    lines = text[a:b].split('\n')
-    last = max((k for k, l in enumerate(lines) if l.startswith('## ')), default=None)
-    return text[:a] + '\n'.join(l if k == last else '' for k, l in enumerate(lines)) + text[b:]
+    return text[:a] + '\n' * text[a:b].count('\n') + text[b:]
 
 
 def shared_copy_problems(agents, template):
@@ -1458,8 +1459,12 @@ def shared_copy_problems(agents, template):
     return []
 
 
-def reason_link_problems(agents, reasons, link=REASON_LINK):
-    """agents／reasons：兩份文件的全文 → 問題清單。link：從規則檔的位置連到理由檔的連結樣式。"""
+def reason_link_problems(agents, reasons, link=REASON_LINK, depth=3, need=('專用規則',)):
+    """agents／reasons：兩份文件的全文 → 問題清單。link：從規則檔的位置連到理由檔的連結樣式。
+
+    depth：切到第幾級標題。AGENTS 是「## 大段／### 節」（v3 Q58），切到 ###；只放小節、
+    自己沒有內文的大段標題是容器，不算一節。維護手冊的 ### 是同一節裡的細目，傳 2。
+    need：一定要有的規則節。拿掉「### 專用規則」標題，規則就混進別節、不再逐條查理由。"""
     problems = []
     agents = blank_shared_copy(agents)
     bodies = {}
@@ -1472,12 +1477,18 @@ def reason_link_problems(agents, reasons, link=REASON_LINK):
     if not bodies:
         problems.append('理由檔沒有任何錨點')
     used = set()
-    sections = re.split(r'(?m)^## ', agents)[1:]
-    if not sections:
+    heads = list(re.finditer(r'(?m)^(#{2,%d}) (.*)$' % depth, agents))
+    if not heads:
         problems.append('AGENTS.md 沒有任何章節')
-    for section in sections:
-        title, _, body = section.partition('\n')
-        title = title.strip()
+    titles = [m.group(2).strip() for m in heads]
+    for name in need:
+        if not any(title.startswith(name) for title in titles):
+            problems.append('找不到「%s」一節' % name)
+    for k, m in enumerate(heads):
+        title = titles[k]
+        body = agents[m.end():heads[k + 1].start() if k + 1 < len(heads) else len(agents)]
+        if not body.strip() and k + 1 < len(heads) and len(heads[k + 1].group(1)) > len(m.group(1)):
+            continue
         found = link.findall(body)
         used.update(found)
         index_only = (any(title.startswith(name) for name in REASON_INDEX_SECTIONS)
@@ -1508,13 +1519,14 @@ def reason_link_problems(agents, reasons, link=REASON_LINK):
     return problems
 
 
-def append_to_section(text, title, line):
-    """在 `## <title>` 那一節的最後加一行；那一節不必是全檔最後一節（2026-11-20，索引節放在它後面）。"""
-    start = text.find('\n## ' + title)
+def append_to_section(text, heading, line):
+    """在 heading（含 `## `／`### `）那一節的最後加一行；那一節不必是全檔最後一節
+    （2026-11-20，索引節放在它後面）。下一個任何層級的標題就是節尾（v3 Q58）。"""
+    start = text.find('\n' + heading + '\n')
     if start < 0:
         return text
-    nxt = text.find('\n## ', start + 1)
-    end = len(text) if nxt < 0 else nxt
+    nxt = re.search(r'(?m)^#{1,6} ', text[start + len(heading) + 2:])
+    end = len(text) if nxt is None else start + len(heading) + 2 + nxt.start() - 1
     return text[:end].rstrip('\n') + '\n' + line + '\n' + text[end:]
 
 
@@ -1532,11 +1544,11 @@ def step_reason_links():
         problems.append(CONTRIB_FILE + ' 不存在')
     else:
         problems.extend(CONTRIB_FILE + '：' + p for p in
-                        reason_link_problems(contributing, reasons, CONTRIB_LINK))
+                        reason_link_problems(contributing, reasons, CONTRIB_LINK, depth=2, need=()))
     template = read_lf(ROOT / 'src/kit/files/AGENTS.md.tmpl')
     problems.extend(shared_copy_problems(agents, template))
     copy_cases = (
-        ('共用制度副本被改一個字', agents.replace('## 規則', '## 規矩', 1)),
+        ('共用制度副本被改一個字', agents.replace('### 共用規則', '### 共用規矩', 1)),
         ('共用制度副本被拿掉', agents.replace(SHARED_END, '', 1)),
     )
     for name, mutated in copy_cases:
@@ -1546,7 +1558,7 @@ def step_reason_links():
             problems.append('負向測試未擋住：' + name)
     if reason_link_problems(agents.replace(SHARED_END, '', 1), reasons) == reason_link_problems(agents, reasons):
         problems.append('負向測試未擋住：副本標記壞掉時理由連結檢查仍跳過那幾節')
-    first = REASON_LINK.search(agents.split('\n## 規則', 1)[-1])
+    first = REASON_LINK.search(agents.split('\n### 專用規則', 1)[-1])
     rule = '](%s#%s)' % (REASON_FILE, first.group(1)) if first else None
     anchor = '<a id="%s"></a>' % first.group(1) if first else None
     cases = () if not first else (
@@ -1559,9 +1571,13 @@ def step_reason_links():
                 count=1, flags=re.S)),
         ('錨點重複', agents, reasons + '\n' + anchor + '\n\n## 重複\n' + '字' * REASON_MIN_BODY),
         ('整節沒有理由連結', agents + '\n## 新的一節\n\n只有規則，沒有理由。\n', reasons),
-        ('新增規則沒有理由', append_to_section(agents, '規則', '99. 新規則。'), reasons),
-        ('索引節夾帶規則', agents + '\n## 碰到才讀\n\n| 什麼時候 | 讀哪份 |\n|---|---|\n\n不要改 X。\n',
+        ('新增規則沒有理由', append_to_section(agents, '### 專用規則', '99. 新規則。'), reasons),
+        ('索引節夾帶規則', agents + '\n### 碰到才讀\n\n| 什麼時候 | 讀哪份 |\n|---|---|\n\n不要改 X。\n',
          reasons),
+        # v3 Q58：空的大段標題只有後面接小節時才算容器；沒有小節的空標題照樣要理由連結。
+        ('空的大段標題後面沒有小節', agents + '\n## 空的大段\n\n## 另一個大段\n\n內文。[為什麼](%s#%s)\n'
+         % (REASON_FILE, first.group(1)), reasons),
+        ('專用規則寫回共用規則底下', agents.replace('\n### 專用規則\n', '\n', 1), reasons),
     )
     contrib_cases = () if not contributing else (
         ('維護手冊副本規則拿掉理由連結',
@@ -1574,7 +1590,7 @@ def step_reason_links():
     for name, mutated in contrib_cases:
         if mutated == contributing:
             problems.append('負向測試沒有改到內容：' + name)
-        elif not reason_link_problems(mutated, reasons, CONTRIB_LINK):
+        elif not reason_link_problems(mutated, reasons, CONTRIB_LINK, depth=2, need=()):
             problems.append('負向測試未擋住：' + name)
     if not first:
         problems.append('規則一節找不到任何理由連結，負向測試無從建立')
@@ -1587,11 +1603,51 @@ def step_reason_links():
         record('FAIL', title, '；'.join(problems))
         return False
     record('OK', title,
-           'AGENTS.md、docs/maintenance.md 每節與規則／副本規則／hook 訊息每條都連到 %s 的非空段落；%d 個負向測試通過'
+           'AGENTS.md、docs/maintenance.md 每節與專用規則／副本規則／hook 訊息每條都連到 %s 的非空段落；%d 個負向測試通過'
            '；共用制度副本與部署包逐字相同（3 個負向測試）'
            '（只查連結與段落存在，不判斷理由寫得對不對）' % (REASON_FILE, len(cases) + len(contrib_cases)))
     return True
 
+
+
+# 2026-11-21（v3 Q58）：共用規則與專用規則各自從 1 編號。沒有前綴的「規則 N」分不出指哪一份，
+# 舊的接續編號也會躲在裡面不被發現。「副本規則 N」是維護手冊自己的清單，放行。
+# 經過類的檔寫的是當時的編號，不查：變更紀錄、熱歷史、冷區、實驗紀錄；bootstrap.py 是生成物。
+BARE_RULE_REF = re.compile(r'(?<!共用)(?<!專用)(?<!副本)規則 ?[0-9]+|規則第 ?[0-9]+ ?條')
+BARE_RULE_SKIP = ('CHANGELOG.md', 'docs/history/', 'archive/', 'experiments/', 'bootstrap.py')
+BARE_RULE_SUFFIXES = ('.md', '.py', '.tmpl', '.json', '.sh')
+
+
+def bare_rule_refs(text):
+    """text 裡沒有前綴的規則編號引用。"""
+    return [m.group(0) for m in BARE_RULE_REF.finditer(text)]
+
+
+def step_rule_refs():
+    title = '規則引用有前綴'
+    tracked = [p for p in run(['git', 'ls-files', '-z'], cwd=ROOT).stdout.split('\0') if p]
+    hits, scanned = [], 0
+    for rel in tracked:
+        if rel.startswith(BARE_RULE_SKIP) or not rel.endswith(BARE_RULE_SUFFIXES):
+            continue
+        path = ROOT / rel
+        if not path.is_file():
+            continue
+        scanned += 1
+        for n, line in enumerate(read_lf(path).split('\n'), 1):
+            hits.extend('%s:%d「%s」' % (rel, n, ref) for ref in bare_rule_refs(line))
+    # 樣本在執行時拼出來，本檔自己也在掃描範圍內。
+    must_flag = ('見規則' + ' 9', '見規則' + '9', '規則第' + ' 12 條')
+    must_pass = ('共用規則 3', '專用規則 8', '副本規則 7', '規則 N', '每條規則')
+    bad = ['負向測試未擋：' + s for s in must_flag if not bare_rule_refs(s)]
+    bad += ['誤擋：' + s for s in must_pass if bare_rule_refs(s)]
+    if hits or bad:
+        record('FAIL', title, '；'.join(bad + ['沒有前綴的規則編號 %d 處：%s' % (len(hits), '、'.join(hits[:8]))]
+                                        if hits else bad))
+        return False
+    record('OK', title, '%d 個現行檔沒有不帶「共用／專用」前綴的規則編號；%d 個負向測試、%d 個放行樣本'
+           % (scanned, len(must_flag), len(must_pass)))
+    return True
 
 SOURCE_EXCEPTIONS = (
     ('handoff skill', '.claude/skills/handoff/SKILL.md'),
@@ -3469,7 +3525,7 @@ def code_only(text):
     為什麼非去不可：這一項掃的是「有沒有用到比下限新的 API」，而那些 API 的名字在
     **解釋為什麼不要用它**的註解與 docstring 裡一定會出現——`read_lf` 的 docstring 就
     寫著 `Path.read_text(..., newline='')`。掃全檔會把說明判成用法，於是正確的修法反而
-    FAIL，而那種假陽性會逼下一棒把理由刪掉，正好砍掉規則 12 要保的東西。
+    FAIL，而那種假陽性會逼下一棒把理由刪掉，正好砍掉專用規則 8 要保的東西。
     """
     lines = text.split('\n')
     try:
@@ -3516,7 +3572,7 @@ def step_python_floor(dest):
     這台機器只有 3.13，沒有舊版可測；要把它變成實測，得先有 CI（查核報告第 6 節）。
     部署後那兩支**刻意不加 `MIN_PY` 守門**：`tools/check_docs.py` 是 `sync_project.py` 的
     同步對象，動它就得跳 `source:` 標記、再把六個專案同步一輪，而 `VERSION` 不跟著動
-    （規則 11），於是落後偵測不會替你講——為了一個「本來就跑得動」的版本宣告製造一筆無聲的
+    （專用規則 7），於是落後偵測不會替你講——為了一個「本來就跑得動」的版本宣告製造一筆無聲的
     同步債並不划算。它們的保障是這一項的靜態掃描。
     """
     maint = {}
@@ -3591,7 +3647,7 @@ CLAIM_QUOTE = re.compile(r'「[^」]*」')
 def claim_text(line):
     """把「」裡的內容拿掉之後的那一行——引用不算主張。
 
-    規則 12 要求保留每條規則的「為什麼」，而「為什麼」幾乎一定要引用被改掉的舊說法
+    專用規則 8 要求保留每條規則的「為什麼」，而「為什麼」幾乎一定要引用被改掉的舊說法
     （「舊版寫『有憑證就跑』」）。不區分引用與主張的話，守門人就會逼下一棒把理由刪掉，
     正好砍掉這份骨架最值錢的那一半。2026-11-02 加這一項的當下就被自己的修正文字誤判。
     """
@@ -3679,7 +3735,7 @@ def step_claims(dest):
     """已修正的主張不得在範本、操作卡與入口文件裡復活。
 
     2026-11-02 加（查核報告 F15）。那份報告點名五處：README 範本說「其他工具沒有 skill
-    機制」（能力表 2026-10-30 就改成 ✅）、第 6 節的版本序號算法跟 `AGENTS.md` 規則 11 不同、
+    機制」（能力表 2026-10-30 就改成 ✅）、第 6 節的版本序號算法跟 `AGENTS.md` 當時的版本規則不同、
     協定與接棒 prompt 把 `verify_state` 寫成「有憑證才跑」（漏掉不需要憑證的本機／公開
     檢查）、README 的 prompt A／B 跟 skill 的 A／B 正好相反、以及「可攜層到哪都成立」
     「三層自動發生」這兩句過度保證。
@@ -3689,7 +3745,7 @@ def step_claims(dest):
     同一條規則的單一定義、`舊版` 引用之外不得出現的舊算法。
 
     天花板：它守的是**可機械判定的那一面**（表格的格子、字母對應、關鍵定義是否單一），
-    守不了一段敘述整體的準確度；而「舊版 …」這個例外是故意的——規則 12 要求保留為什麼，
+    守不了一段敘述整體的準確度；而「舊版 …」這個例外是故意的——專用規則 8 要求保留為什麼，
     所以引用舊說法的那些行必須放行。
     """
     docs = {
@@ -4220,7 +4276,7 @@ def step_flow_contract(dest, tmp):
     # 2026-11-14 起本 repo 的 repo-git-check.sh 是 3.10 的逐字副本（「本 repo 開場 hook」逐位元組比對），不重跑。
     scripts = [('部署 hook', read_lf(dest / '.claude/hooks/git-freshness.sh'))]
     issues = []
-    # 2026-11-13（v3 D12）：部署出去的 hook 只報事實，「停下來」寫在 AGENTS.md 共用制度的規則 3；
+    # 2026-11-13（v3 D12）：部署出去的 hook 只報事實，「停下來」寫在 AGENTS.md 的共用規則 3；
     # 不准建議 rebase。
     facts_marks = {'ahead-only': '落後 origin/main 0 個 commit、領先 1 個',
                    'diverged': '落後 origin/main 1 個 commit、領先 1 個',
@@ -4835,9 +4891,13 @@ ENTRY_MUST = (
 )
 # AGENTS.md 共用制度（開始與結束標記之間）必須有的條件，v3 第 5 節。
 # 2026-11-21（v3 Q57）：共用規則去重成 7 條，每條至少一句在這裡，整條被刪會被擋。
+# 2026-11-21（v3 Q58）：分成「## 共用制度」底下三個 ### 節；skill 位置改寫成共用規則 8（附觸發條件），
+# session 命名併成共用規則 9。標題也列進來，結構被改掉會被擋。
 SHARED_MUST = (
+    '## 共用制度', '### 協作目標', '### 環境事實', '### 共用規則',
     '本機的檔案可能是舊的', '唯一的訊號是 origin 上 `HANDOFF.md` 的「工作中」那一行',
-    '`[facts]`', '.claude/skills/handoff/',
+    '`[facts]`', '開場 `[facts]` 有不正常的值，或使用者要求交棒時', '.claude/skills/handoff/',
+    'session 命名：工具能改名才做',
     '要先推成你自己', '推不上去就不算', '只讀、只回答問題的 session 不寫',
     '「待續分支」寫了分支名，就在那條分支上做', '`main` 上的測試要一直是過的',
     '不改檔、不推送，停下來告訴使用者', 'origin 上的「工作中」是別人，或確認不了是不是你',
@@ -5180,7 +5240,7 @@ def step_sync_shared_section(dest, tmp):
     if 'MIGRATE AGENTS.md' not in msgs or '跨模型／跨機器協作規範' not in msgs:
         bad.append('標記外的舊交接段落沒有列成 MIGRATE')
 
-    old_block = block.replace('## 目標', '## 舊目標', 1)
+    old_block = block.replace('### 協作目標', '### 舊目標', 1)
     _, writes, _, _ = run(project('stale', head + old_block + '\n\n' + body))
     if writes.get('AGENTS.md') != head + block + '\n\n' + body:
         bad.append('舊版共用制度沒有整段換成權威版，或動到標記外')
@@ -5189,17 +5249,25 @@ def step_sync_shared_section(dest, tmp):
     if 'AGENTS.md' in writes:
         bad.append('已是權威版還是寫了 AGENTS.md')
 
-    # 2026-11-20（v3 Q56）：專案規則改成緊接在共用規則之後；舊專案標記外的「## 鐵律」要列 MIGRATE、不改寫。
+    # 2026-11-21（v3 Q58）：專案規則放在「## 專案專用」的「### 專用規則」、從 1 編號；舊專案標記外的
+    # 「## 鐵律」與 Q56 版接在結束標記後的編號清單都要列 MIGRATE、不改寫，新版的專用規則不列。
     legacy_rules = head + block + '\n\n## 鐵律（違反會造成實際損害）\n\n1. 舊規則。\n'
-    _, writes, _, msgs = run(project('legacy-rules', legacy_rules))
-    if '## 鐵律' not in msgs or 'v3 Q56' not in msgs:
-        bad.append('標記外的「## 鐵律」沒有列成 MIGRATE（v3 Q56）')
-    if 'AGENTS.md' in writes:
-        bad.append('標記外有「## 鐵律」時改寫了 AGENTS.md')
+    continued = head + block + '\n8. 舊的接續編號規則。\n'
+    current = head + block + '\n\n## 專案專用\n\n### 專用規則\n\n1. 新規則。\n'
+    for name, text, label in (('legacy-rules', legacy_rules, '## 鐵律'),
+                              ('continued-rules', continued, '結束標記後接著共用規則編號的清單')):
+        _, writes, _, msgs = run(project(name, text))
+        if label not in msgs or 'v3 Q58' not in msgs:
+            bad.append('標記外的「%s」沒有列成 MIGRATE（v3 Q58）' % label)
+        if 'AGENTS.md' in writes:
+            bad.append('標記外有「%s」時改寫了 AGENTS.md' % label)
+    _, _, _, msgs = run(project('current-rules', current))
+    if 'v3 Q58' in msgs:
+        bad.append('新版的「### 專用規則」被誤列成 MIGRATE')
     with patch.object(syncer, 'legacy_rule_sections', lambda text: []):
         _, _, _, msgs = run(project('legacy-rules-neg', legacy_rules))
-    if 'v3 Q56' in msgs:
-        bad.append('負向測試未重現：拿掉「## 鐵律」偵測後仍列了 MIGRATE')
+    if 'v3 Q58' in msgs:
+        bad.append('負向測試未重現：拿掉舊規則偵測後仍列了 MIGRATE')
 
     broken = {
         '只有開始標記': head + block.replace(SHARED_END, '') + body,
@@ -5218,7 +5286,8 @@ def step_sync_shared_section(dest, tmp):
         bad.append('負向測試未重現：拿掉共用制度同步後仍寫了 AGENTS.md')
     record('FAIL' if bad else 'OK', '同步共用制度', '；'.join(bad) if bad else
            '沒有就插在第一個「## 」前、舊版整段換掉、標記外不動、已是權威版不寫、'
-           '3 種壞標記 FAIL 不寫、舊交接段落與「## 鐵律」列 MIGRATE、AGENTS.md 先於 skill 入口；2 個負向測試')
+           '3 種壞標記 FAIL 不寫、舊交接段落、「## 鐵律」與接續編號清單列 MIGRATE、新版專用規則不列、'
+           'AGENTS.md 先於 skill 入口；2 個負向測試')
 
 
 def run_checks(dest, tmp):
@@ -5255,6 +5324,7 @@ def _run_checks(dest, tmp, collect):
     step_version_names(tmp)
     step_repo_handoff()
     step_reason_links()
+    step_rule_refs()
     if seen:
         step_source_exceptions(dest, tmp)
         step_repo_pre_push(dest, tmp)

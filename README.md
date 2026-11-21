@@ -41,7 +41,7 @@ python3 bootstrap.py --target <新專案資料夾>
 ```text
 專案/
 ├─ README.md                        專案介紹：是什麼、為什麼做、怎麼連、怎麼跑
-├─ AGENTS.md                        AI 開工時自動讀（標記之間是部署包管理的共用制度；其餘是專案接著編號的規則）＝唯一權威
+├─ AGENTS.md                        AI 開工時自動讀（標記之間是部署包管理的共用制度；標記後是專案專用的規則與碰到才讀）＝唯一權威
 ├─ CLAUDE.md                        指標，用 @AGENTS.md import
 ├─ HANDOFF.md                       當下工作狀態（≤80 行、覆寫不累積）
 ├─ ARCHITECTURE.md                     專案結構的唯一權威（只有結構變動才改）

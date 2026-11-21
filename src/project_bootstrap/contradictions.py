@@ -241,7 +241,7 @@ REPO_CONFIG = {
         'docs': ['README.md', 'AGENTS.md', 'ARCHITECTURE.md', KIT_DOC],
         'required_in': ['AGENTS.md', KIT_DOC],
     }, {
-        # AGENTS rule 11: only a real change to the shared block or the handoff skill directory
+        # AGENTS 專用規則 7: only a real change to the shared block or the handoff skill directory
         # bumps VERSION and the version line. 2026-11-21 (v3 Q57): the opening hook compares the
         # shared block's marker, so the older "skill only" wording became a stale claim.
         'id': 'version-follows-skill',

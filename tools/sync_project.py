@@ -138,8 +138,9 @@ CLAUDE_IMPORT = '@AGENTS.md'
 SHARED_START = '<!-- 共用制度開始'
 SHARED_END = '<!-- 共用制度結束 -->'
 LEGACY_HANDOFF_HEADINGS = ('## 開工第一件事', '## 跨模型／跨機器協作規範')
-# 2026-11-20（v3 Q56）：專案規則改成緊接在共用制度結束標記後、接著共用規則編號；舊專案標記外的「## 鐵律」
-# 是專案自己的內容，同步不改寫，只提示人工搬。
+# 2026-11-21（v3 Q58，取代 Q56 的接續編號）：專案規則放在結束標記後「## 專案專用」的「### 專用規則」，
+# 從 1 自己編號。舊專案標記外的「## 鐵律」、或 Q56 版緊接在結束標記後的編號清單，是專案自己的內容，
+# 同步不改寫，只提示人工搬。
 LEGACY_RULES_HEADING = '## 鐵律'
 
 # 有專屬處理程式的檔：owners.json 跟這裡對不上就是有檔沒人處理，或處理程式指向不存在的檔。
@@ -424,10 +425,16 @@ def merge_shared_section(authority, current):
 
 
 def legacy_rule_sections(text):
-    """共用制度以外、還沒搬成接續編號的「## 鐵律」段落標題（v3 Q56）。"""
+    """共用制度以外、還沒搬進「### 專用規則」的舊規則（v3 Q58）：「## 鐵律」段落標題，
+    以及 Q56 版緊接在結束標記後、接著共用規則編號的清單。"""
     span = shared_block(text)
     outside = text if span is None else text[:span[0]] + text[span[1]:]
-    return [l.strip() for l in outside.split('\n') if l.startswith(LEGACY_RULES_HEADING)]
+    found = [l.strip() for l in outside.split('\n') if l.startswith(LEGACY_RULES_HEADING)]
+    if span is not None:
+        after = text[span[1]:].lstrip('\n')
+        if after[:1].isdigit() and after.split('\n', 1)[0].split('. ', 1)[0].isdigit():
+            found.append('結束標記後接著共用規則編號的清單')
+    return found
 
 
 def legacy_handoff_sections(text):
@@ -533,8 +540,8 @@ def sync_shared_section(project, gen, plan):
                          '同步不刪，要人工比對' % '、'.join('「%s」' % h for h in legacy))
     rules = legacy_rule_sections(new if new is not None else cur)
     if rules:
-        plan.msgs.append('  MIGRATE AGENTS.md：標記外還有 %s；專案規則改成緊接在共用制度結束標記後、'
-                         '接著共用規則的編號（v3 Q56），同步不改寫，要人工搬並跟共用規則去重'
+        plan.msgs.append('  MIGRATE AGENTS.md：標記外還有 %s；專案自己的規則改放在結束標記後'
+                         '「## 專案專用」的「### 專用規則」、從 1 編號（v3 Q58），同步不改寫，要人工搬並跟共用規則去重'
                          % '、'.join('「%s」' % h for h in rules))
 
 

@@ -20,7 +20,7 @@
       "label": "自動載入程序檔",
       "strict": false,
       "impact": "參考程序（逐步程序、異常判讀、理由）不會自己出現；必守條件在 AGENTS.md 的共用制度，不受影響",
-      "alternative": "碰到異常或交棒時，照 AGENTS.md 共用制度「你不會自己知道的事」寫的路徑開 handoff 參考檔"
+      "alternative": "碰到異常或交棒時，照 AGENTS.md 共用規則 8 開 handoff 參考檔"
     },
     "hooks": {
       "label": "Hooks",

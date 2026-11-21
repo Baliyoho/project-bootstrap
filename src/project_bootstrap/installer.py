@@ -264,7 +264,7 @@ def first_tasks(conflicts, blanks, answers):
                      % ('、'.join(asks + ([] if forbidden else ['FORBIDDEN_OPS（絕對不能做的操作）'])) ,
                         ANSWERS_FILE, PENDING))
     if forbidden:
-        tasks.append('把訪談說的「絕對不能做」寫成 `AGENTS.md` 共用制度結束標記後接著編號的規則，附理由與日期：「%s」。' % forbidden)
+        tasks.append('把訪談說的「絕對不能做」寫成 `AGENTS.md` 的專用規則（接著專用規則的編號），附理由與日期：「%s」。' % forbidden)
     tasks.append('建 GitHub repo（owner／repo 名與 public／private 先問使用者確認）、照 mode-0 的 0-5 '
                  '本機驗收後首次推送，再跑 0-6 的遠端與工具驗收並回報。')
     return tasks

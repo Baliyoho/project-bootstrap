@@ -1,4 +1,4 @@
-<!-- source: PROJECT-BOOTSTRAP.md v2026-11-21 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
+<!-- source: PROJECT-BOOTSTRAP.md v2026-11-21.2 — 權威版在部署包，改這裡之前先改部署包再同步各專案與全域副本 -->
 
 # 模式 0：建制
 
@@ -53,7 +53,7 @@ python3 bootstrap.py --target <專案資料夾>
 - **補寫需要理解專案的檔**：`ARCHITECTURE.md` 的「專案本體」、`README.md`、`docs/ai-notes/roadmap.md`。
   `ARCHITECTURE.md` 的「專案本體」這時候通常還是空的，**照實寫「尚未有程式碼」**——不要先畫一個想像中的架構，那會被下一棒當成既成事實去對齊。
 - **填 `tools/verify_state.py` 的檢查項**，依訪談的「一鍵驗證該查什麼」；沒有答案就先問使用者。
-- **回答留空的題目**：問使用者，答案寫回 `.bootstrap/answers.json`，檔案裡的 `<部署後填>` 換成實際值。訪談說的「絕對不能做」寫成 `AGENTS.md` 共用制度結束標記後接著編號的規則，附理由與日期。
+- **回答留空的題目**：問使用者，答案寫回 `.bootstrap/answers.json`，檔案裡的 `<部署後填>` 換成實際值。訪談說的「絕對不能做」寫成 `AGENTS.md` 的專用規則（接著專用規則的編號），附理由與日期。
 - **建 GitHub repo 與首次推送**：照 0-5、0-6。
 
 ### 0-5 本機驗收後才首次發布
@@ -106,7 +106,7 @@ gh repo create <owner>/<repo> --private --source=. --remote=origin --push
 - [ ] **工作中標記看得見**：把 `HANDOFF.md` 的「工作中」改成 `` `假機器名` ／ `Claude Code` ``，commit、push，再跑 `bash .claude/hooks/git-freshness.sh` → 第三行要印出那個值的原文；改回「無（已交棒）」、commit、push 後再跑 → 要印回 `無（已交棒）`。**驗完記得改回來**
 - [ ] **共用制度版本提示**：`printf 2099-01-01 > .claude/.bootstrap-version && bash .claude/hooks/git-freshness.sh` → 要多印一行「共用制度落後」。快取裡放的是**上游最新版**，所以要餵一個比本機**新**的值。**驗完刪掉那個快取檔**（`rm .claude/.bootstrap-version`），否則 12 小時內都會拿到假答案
 - [ ] `.claude/skills/handoff/SKILL.md` 存在，前三行是 `---` / `name: handoff` / `description: ...`（frontmatter 壞掉 skill 就不會被載入）；同目錄有 `mode-a.md`、`mode-a-stop.md`、`mode-b.md`、`mode-0.md`、`reasons.md` 五個檔，六個檔檔頭的 `source:` 版本相同（少一個，入口就會指向不存在的檔）
-- [ ] **`CLAUDE.md` 只有 `@AGENTS.md` 這一行 import**，不是「去讀 AGENTS.md」那種句子——有 `CLAUDE.md` 時 Claude Code 不會自己讀 `AGENTS.md`，而用文字請它去讀不保證它真的開那個檔（理由見開頭「跨工具與跨平台」）。開一個 session 問它「`AGENTS.md` 的規則第 1 條是什麼」，答得出來才算接上
+- [ ] **`CLAUDE.md` 只有 `@AGENTS.md` 這一行 import**，不是「去讀 AGENTS.md」那種句子——有 `CLAUDE.md` 時 Claude Code 不會自己讀 `AGENTS.md`，而用文字請它去讀不保證它真的開那個檔（理由見開頭「跨工具與跨平台」）。開一個 session 問它「`AGENTS.md` 的共用規則 1 是什麼」，答得出來才算接上
 - [ ] `ARCHITECTURE.md` 存在且有「最後更新」標頭（`check_docs.py` 會擋），「專案本體」那節寫的是**實況**——還沒有程式碼就照實寫，不要先畫一個想像中的架構
 - [ ] 在 Claude Code 打 `/handoff` 看得到這個 skill
 - [ ] pre-push hook 會放行無關指令：`echo '{"tool_input":{"command":"git status"}}' | bash .claude/hooks/pre-push-handoff.sh; echo $?` → `0`
