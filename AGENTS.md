@@ -33,36 +33,25 @@
 
 ## 專案專用
 
-上面兩個標記之間是部署包共用制度的逐字副本，不要就地改：改 `src/kit/files/AGENTS.md.tmpl` 後手動重貼，驗證器比對逐字相同；裡面的 skill 連結是部署後的路徑，本 repo 怎麼讀 skill 見專用規則 2。專用規則是本 repo 加的，每條後面寫哪個檢查會擋、哪些擋不到，擋不到的要自己守。別處引用規則一律寫「共用規則 N」或「專用規則 N」，驗證器擋沒有前綴的寫法。[為什麼](docs/rationale.md#shared)
+上面兩個標記之間是部署包共用制度的副本；下面是本 repo 加的規則，驗證器擋不到、要自己守的部分寫在各條底下。[為什麼](docs/rationale.md#shared)
 
 ### 專用規則
 
 1. 本 repo 沒有部署出去的開場 hook `git-freshness.sh`，改用 `.claude/hooks/repo-git-check.sh`：要重查開場事實就重跑它。
-    - 會擋：驗證器擋 `repo-git-check.sh` 跟部署包的開場 hook 不同，或兩份接線沒指向它。
     - 擋不到：照部署專案的習慣去跑不存在的 `git-freshness.sh`。[為什麼](docs/rationale.md#start)
-2. 本 repo 沒有專案層 handoff skill 與 `check_docs.py`，要補裝由使用者決定。共用規則 8 要讀的 skill 改讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`），這台機器沒有就讀 [src/kit/files/.claude/skills/handoff/](src/kit/files/.claude/skills/handoff/SKILL.md.tmpl)，不要搬檔或憑記憶重刻。
-    - 會擋：測試擋 `src/kit` 那份 skill 範本找不到（用空的家目錄模擬乾淨機器）。
+2. 本 repo 沒有專案層 handoff skill 與 `check_docs.py`，要補裝由使用者決定。共用規則 8 的 skill 連結是部署後的路徑；本 repo 改讀全域 `~/.claude/skills/handoff/`（Codex 是 `~/.codex/skills/handoff/`），這台機器沒有就讀 [src/kit/files/.claude/skills/handoff/](src/kit/files/.claude/skills/handoff/SKILL.md.tmpl)，不要搬檔或憑記憶重刻。
     - 擋不到：全域副本比部署包舊（驗證器只印提醒）、憑記憶重刻程序。[為什麼](docs/rationale.md#what)
-3. 唯一需求書是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)，路線在[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)，兩份是本 repo 的約束文件。要偏離先改它們；改要有使用者在聊天中的決定，並在 `docs/history/` 成對的歷史紀錄同一個 commit 記一筆，AI 只能提案。兩份都沒寫到的事照常做，會新增或改變需求就先問；跟本檔衝突時停下來回報。
-    - 會擋：驗證器擋決策紀錄缺採用理由或沒選的選項。
+3. 唯一需求書是[需求決策書 v3](project-bootstrap-requirements-decision-v3.md)，路線在[實施計畫 v3](project-bootstrap-implementation-plan-v3.md)，兩份是本 repo 的約束文件。要偏離先改它們：要有使用者在聊天中的決定，並在 `docs/history/` 成對的歷史紀錄同一個 commit 記一筆，AI 只能提案。會新增或改變需求就先問；跟本檔衝突時停下來回報。
     - 擋不到：改了兩份約束文件卻沒記歷史。[為什麼](docs/rationale.md#rule-7)
 4. 根目錄 `archive/` 是冷區：平常不讀，要回溯先經使用者同意。
-    - 會擋：驗證器擋程式、測試與設定檔引用 `archive/` 裡的檔（登記過的讀取者除外）。
     - 擋不到：AI 自己開檔讀封存區。[為什麼](docs/rationale.md#doc-roles)
 5. 這是公開 repo（MIT）：不寫客戶／單位名稱、內部代號、本機絕對路徑。部署包會發到每個專案，只放通用制度與佔位符，不放專案專屬內容（網址、docId、憑證檔名、業務規則）。
-    - 會擋：驗證器擋部署包裡的本機絕對路徑。
     - 擋不到：部署包內容是不是專案專屬；本 repo 自己文件裡的絕對路徑、名稱與代號。提交前自己看 staged 內容。[為什麼](docs/rationale.md#rule-6)
-6. 部署包的權威是 `src/kit/`。改 `src/kit/` 的來源、`src/project_bootstrap/installer.py` 或 `tools/sync_project.py` 的合併函式後，跑 `python3 -X utf8 tools/build_kit.py` 重生 `bootstrap.py`，來源與產物同一個 commit。不要手改 `bootstrap.py`，不要把 `PROJECT-BOOTSTRAP.md` 放回來，不要在單一專案就地改 skill 或 hook；覆蓋到專案用 `tools/sync_project.py`。
-    - 會擋：驗證器擋手改或沒重生的 `bootstrap.py`、放回來的 `PROJECT-BOOTSTRAP.md`。
-    - 擋不到：其他專案裡就地改的 skill 或 hook。[為什麼](docs/rationale.md#rule-1)
-7. 共用制度或 `.claude/skills/handoff/` 的內容改了才跳 `VERSION`，跳版時共用制度與 skill 目錄每個檔的 `source:` 標記一起換成新版本；改 hook 只更新它自己的 `source:` 標記。標記寫改動當天的日期，同一天第二次起加 `.2`、`.3`；序號算的是當天第幾個帶 `source:` 標記的改動，所以 hook 的標記跟 `VERSION` 不保證同號。
-    - 會擋：驗證器擋共用制度或 skill 檔的標記跟 `VERSION` 不同。
+6. 部署包的權威是 `src/kit/`。本檔共用制度標記之間是 `src/kit/files/AGENTS.md.tmpl` 的逐字副本，改範本後手動重貼，不要就地改。改 `src/kit/` 的來源、`src/project_bootstrap/installer.py` 或 `tools/sync_project.py` 的合併函式後，跑 `python3 -X utf8 tools/build_kit.py` 重生 `bootstrap.py`，來源與產物同一個 commit；不要手改 `bootstrap.py`，不要把 `PROJECT-BOOTSTRAP.md` 放回來。[為什麼](docs/rationale.md#rule-1)
+7. 共用制度或 `.claude/skills/handoff/` 的內容改了才跳 `VERSION`，共用制度與 skill 各檔的 `source:` 標記一起換成新版本；hook 的標記跟 `VERSION` 不保證同號。標記寫法見[維護手冊](docs/maintenance.md)。
     - 擋不到：內容改了卻沒跳版或沒更新標記。[為什麼](docs/rationale.md#rule-2)
-8. 每條規則的「為什麼」可以搬到理由檔，不能刪。
-    - 會擋：驗證器擋規則沒有理由連結、連結指不到段落、段落是空的。
-    - 擋不到：理由本身寫錯或過期。[為什麼](docs/rationale.md#rule-3)
-9. 驗證入口是 `python3 -X utf8 tools/verify_bootstrap.py`，不是部署出去的 `verify_state.py`。改完跑它，exit 0 才算改完（有項目印 `skip` 時是 1）；提交前加 `--staged` 再跑一次。
-    - 會擋：`--staged` 遇到未暫存或未追蹤的檔回 exit 2。
+8. 別處引用規則一律寫「共用規則 N」或「專用規則 N」。[為什麼](docs/rationale.md#shared)
+9. 驗證入口是 `python3 -X utf8 tools/verify_bootstrap.py`，不是部署出去的 `verify_state.py`。改完跑它，exit 0 才算改完（有項目印 `skip` 時是 1）；提交前加 `--staged` 再跑一次，它遇到未暫存或未追蹤的檔回 exit 2。
     - 擋不到：忘了跑。[為什麼](docs/rationale.md#rule-4)
 
 ### 碰到才讀

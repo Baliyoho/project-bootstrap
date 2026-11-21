@@ -1144,7 +1144,7 @@ def step_repo_handoff():
     return True
 
 
-# 規則的理由在理由檔，入口只留連結；「保留每條規則的為什麼」（專用規則 8）不能只靠自律：
+# 規則的理由在理由檔，入口只留連結；「保留每條規則的為什麼」（維護手冊「新增或改規則」）不能只靠自律：
 # 規則沒有理由連結、連結指不到段落、或段落是空的，都要擋。連結從各自的位置算相對路徑：
 # AGENTS.md 寫 docs/rationale.md#x，維護手冊寫 rationale.md#x。
 REASON_FILE = 'docs/rationale.md'
@@ -1159,7 +1159,7 @@ REASON_LINK = reason_link_re(REASON_FILE)
 # 要逐條連理由的是「### 專用規則」。
 REASON_ITEM_SECTIONS = ('專用規則', '副本規則', '改兩支 hook 的訊息時')
 # 「碰到才讀」是「什麼時候 → 讀哪份」的索引表（原則草稿第 4 節），不要求理由連結；但這一節只能有表格列，
-# 夾帶一句規則就照一般章節要求理由連結，免得規則躲進索引逃掉專用規則 8。
+# 夾帶一句規則就照一般章節要求理由連結，免得規則躲進索引逃掉理由連結。
 REASON_INDEX_SECTIONS = ('碰到才讀',)
 REASON_MIN_BODY = 40
 CONTRIB_FILE = 'docs/maintenance.md'
@@ -3139,10 +3139,12 @@ def claim_problems(docs):
     if '**一律跑**' not in docs['dep_skill']:
         problems.append('handoff skill 的一鍵驗證沒有寫「一律跑」')
 
-    # ④ 版本序號只有一種算法，而且要講明它跟版本行不保證同號。
-    for name in ('kit', 'agents'):
+    # ④ 版本序號只有一種算法，而且要講明它跟版本行不保證同號。算法的細節是步驟，
+    #    本 repo 寫在維護手冊；AGENTS 只留「不保證同號」那一句（原則草稿第 4 節）。
+    for name in ('kit', 'maintenance'):
         if CLAIM_SERIAL not in docs[name]:
             problems.append('%s 沒有把序號規則寫成「%s」' % (name, CLAIM_SERIAL))
+    for name in ('kit', 'agents'):
         if '不保證同號' not in docs[name]:
             problems.append('%s 沒有講明序號跟版本行不保證同號' % name)
     for name in sorted(docs):
@@ -3174,6 +3176,7 @@ def step_claims(dest):
         'kit': kit_text(),
         'readme': read_lf(ROOT / 'README.md'),
         'agents': read_lf(ROOT / 'AGENTS.md'),
+        'maintenance': read_lf(ROOT / CONTRIB_FILE),
         'dep_readme': read_lf(dest / 'README.md'),
         'dep_skill': skill_text(dest),
     }
@@ -3195,7 +3198,7 @@ def step_claims(dest):
         ('verify_state 又變成有憑證才跑', 'dep_skill',
          lambda t: t.replace('**一律跑**，不是「有憑證才跑」', '`verify_state` 有憑證才跑')),
         ('skill 不寫一律跑', 'dep_skill', lambda t: t.replace('**一律跑**', '跑')),
-        ('序號算法退回舊版', 'agents',
+        ('序號算法退回舊版', 'maintenance',
          lambda t: t.replace(CLAIM_SERIAL, CLAIM_STALE_SERIAL)),
         ('不再講明跟版本行同不同號', 'kit', lambda t: t.replace('不保證同號', '一樣')),
         ('可攜層又寫成到哪都成立', 'kit',
