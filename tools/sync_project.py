@@ -360,6 +360,21 @@ def ensure_busy_field(text):
     return '\n'.join(lines)
 
 
+def ensure_progress_heading(text):
+    """「## 已完成」改名「## 目前進度」，標題後面的註記保留，內容不動。已經是新名就不動。
+
+    部署包的 check_docs.py 要求「目前進度」；不改名，已部署專案一同步就被擋。
+    內容等該專案下次交棒時照 B6 整份重寫。
+    """
+    lines = text.split('\n')
+    old = [k for k, l in enumerate(lines) if l.startswith('## 已完成')]
+    if not old:
+        return None
+    for k in old:
+        lines[k] = '## 目前進度' + lines[k][len('## 已完成'):]
+    return '\n'.join(lines)
+
+
 def ensure_gitignore(text):
     missing = [l for l in GITIGNORE_LINES if l not in text.split('\n')]
     if not missing:
@@ -615,12 +630,18 @@ def sync(project, gen, codex_only=False):
         plan.skip('HANDOFF.md', '不存在')
     else:
         new = ensure_busy_field(cur)
-        if new is not None:
-            plan.update(h, 'HANDOFF.md', new, '補上「工作中」欄位')
-        elif '**工作中**' in cur:
-            plan.ok('HANDOFF.md（「工作中」欄位已在）')
-        else:
+        if new is None and '**工作中**' not in cur:
             plan.fail('HANDOFF.md', '找不到「待續分支」或「## Git 狀態」，無法插入欄位')
+        else:
+            notes = [] if new is None else ['補上「工作中」欄位']
+            renamed = ensure_progress_heading(cur if new is None else new)
+            if renamed is not None:
+                new = renamed
+                notes.append('「## 已完成」改名「## 目前進度」')
+            if notes:
+                plan.update(h, 'HANDOFF.md', new, '、'.join(notes))
+            else:
+                plan.ok('HANDOFF.md（「工作中」欄位與「目前進度」章節已在）')
 
     gi = project / '.gitignore'
     cur = read(gi)

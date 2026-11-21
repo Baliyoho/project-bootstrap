@@ -44,7 +44,7 @@
 | 部署後接手流程情境 | 在部署出去的專案上用本機 bare origin 實跑：遠端占用→陳舊接手阻擋→釋出→A2.5／A5 SHA 變更→本機開工→任務推送→交棒；把 hook 改讀本機快照的負向變異要重現錯誤放行。本 repo 的 hook 是逐字副本，不重跑 | hook 讀錯快照，別台機器的「工作中」被當成已交棒；hook 只提醒，模型遵循未驗 |
 | 本 repo 開場 hook | `repo-git-check.sh` 跟部署包 3.10 逐位元組相同；多一行與檔案不存在兩個負向測試 | 改了 3.10 卻沒重貼，本 repo 開場印的跟共用制度說的不一樣，或退回會下指示的判讀版 |
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
-| 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（F02、F03） |
+| 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）；HANDOFF 的「## 已完成」改名「## 目前進度」。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（F02、F03） |
 | 同步升級 mode | 替換前複製既存 mode；複製失敗保留原檔；新依賴仍可建立；移除複製的負向變異必須失敗。POSIX 另驗 0755／0640、開場 hook 直接執行、Git 無 mode diff | 新 inode 預設權限會讓更新後的 POSIX hook 無法執行；Windows 通過不代表 POSIX 實測 |
 | 結構摘要一致性 | 本 repo 與生成 ARCHITECTURE 寫明 `CLAUDE.md` 用 import；兩個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
 | 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
@@ -1049,7 +1049,7 @@ def step_session_resume(dest):
     return True
 
 
-REPO_HANDOFF_HEADINGS = ('任務目標', 'Git 狀態', '已完成', '未完成／下一步',
+REPO_HANDOFF_HEADINGS = ('任務目標', 'Git 狀態', '目前進度', '未完成／下一步',
                          '地雷與注意事項', '服務查證與期望快照', '懸置事項（AI 勿自行處理）')
 REPO_HANDOFF_STALE = (
     r'Codex\s*接線從來沒真的跑過',
@@ -2745,6 +2745,15 @@ def step_sync_safety(tmp):
              'cmd /d /c "$((git rev-parse --show-cdup) -replace \'/\',\'\\\').claude\\hooks\\codex-hook.cmd" pre-push-handoff.sh; exit $LASTEXITCODE'}):
         bad.append('只有 commandWindows 的 handler 沒被認成骨架的')
 
+    # ⑥ HANDOFF 舊節名「## 已完成」改名「## 目前進度」：註記保留、內文不動、新名不動
+    for before, after in (
+        ('## 已完成\n\n- 已完成的事\n', '## 目前進度\n\n- 已完成的事\n'),
+        ('## 已完成（2026-11-01）\n- x\n', '## 目前進度（2026-11-01）\n- x\n'),
+        ('## 目前進度\n\n- 已完成\n', None),
+    ):
+        if sp.ensure_progress_heading(before) != after:
+            bad.append('「## 已完成」改名結果不對：%r' % before[:24])
+
     # ── F03：拿一個最小假專案跑真的 CLI
     proj = tmp / 'sync-safety' / 'proj'
     (proj / '.claude' / 'skills' / 'handoff').mkdir(parents=True)
@@ -2801,8 +2810,8 @@ def step_sync_safety(tmp):
         return False
     record('OK', '同步安全',
            'handler 層所有權：同組自訂 hook 保留、matcher 衝突與重複／異常分組拒絕、'
-           'commandWindows 認得出來；R01／R02 命令所有權與缺省 matcher 組合、兩個負向變異通過；preflight：壞 JSON 零寫入、失敗非零退出、'
-           '修好後照樣同步得動')
+           'commandWindows 認得出來；R01／R02 命令所有權與缺省 matcher 組合、兩個負向變異通過；HANDOFF「## 已完成」改名「## 目前進度」；'
+           'preflight：壞 JSON 零寫入、失敗非零退出、修好後照樣同步得動')
     return True
 
 
@@ -3421,8 +3430,8 @@ def step_snapshot_guard(dest):
                        % r.returncode)
 
         # 章節重複＝往下疊成日誌（B6 禁止）。2026-11-02 在真專案上量到一份有兩個
-        # 「## 已完成（日期）」——所以比對開頭、罰重複，而不是罰標題的措辭。
-        write_lf(handoff, original + '\n## 已完成（更早）\n\n- 舊的\n')
+        # 同名章節（標題後面加日期）——所以比對開頭、罰重複，而不是罰標題的措辭。
+        write_lf(handoff, original + '\n## 目前進度（更早）\n\n- 舊的\n')
         r = check()
         if r.returncode != 2 or '不要往下疊' not in r.stdout:
             bad.append('章節重複沒被擋下（exit %d）' % r.returncode)

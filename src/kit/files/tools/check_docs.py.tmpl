@@ -79,7 +79,7 @@ PLACEHOLDER_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)
 # 標記之外，`sync_project.py` 升級本檔時會跟著覆蓋。要改就改部署包。
 HANDOFF_FILE = 'HANDOFF.md'
 HANDOFF_FIELDS = ('交接時間', '交棒者', '待續分支', '工作中')
-HANDOFF_SECTIONS = ('任務目標', 'Git 狀態', '已完成', '未完成／下一步',
+HANDOFF_SECTIONS = ('任務目標', 'Git 狀態', '目前進度', '未完成／下一步',
                     '地雷與注意事項', '服務查證與期望快照', '懸置事項（AI 勿自行處理）')
 HANDOFF_MAX_LINES = 80
 
@@ -289,10 +289,10 @@ def check_snapshot(files):
             bad.append('%s 的「%s」欄位要有且只有一列、而且非空（讀到 %d 列）'
                        % (HANDOFF_FILE, label, len(hits)))
     for heading in HANDOFF_SECTIONS:
-        # 比對**開頭**而不是整行：標題後面加註記（`## 已完成（2026-11-01）`）無害，
+        # 比對**開頭**而不是整行：標題後面加註記（`## 目前進度（2026-11-01）`）無害，
         # 真正的病是同一節出現兩次——那就是 B6 禁止的「往下疊成日誌」。2026-11-02 在
         # 六個專案上實跑時量到：整行相等會把加了日期後綴的那一份判成「缺章節」，
-        # 訊息指著錯的方向，而同一份檔案真的有兩個「已完成」。
+        # 訊息指著錯的方向，而同一份檔案真的有兩個同名章節。
         hits = re.findall(r'^## ' + re.escape(heading), text, re.M)
         if len(hits) == 0:
             bad.append('%s 缺少章節「## %s」（B6 的覆寫模板有這一節）'
