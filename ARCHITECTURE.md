@@ -1,6 +1,6 @@
 # ARCHITECTURE — 這個 repo 的結構
 
-> 最後更新：2026-11-20
+> 最後更新：2026-11-21
 > 本檔回答「現在長怎樣」：鳥瞰、檔案地圖、看程式碼看不出來的副本關係，以及刻意沒有的東西。規則在 [AGENTS.md](AGENTS.md)，做法在 [AI 維護手冊](docs/maintenance.md)，理由在[理由檔](docs/rationale.md)，進度在 [HANDOFF.md](HANDOFF.md)。結構怎麼變成這樣看 Git 歷史；2026-11-17 前的逐次紀錄封存在 `archive/docs/architect-log.md`（冷區，回溯先經使用者同意）。
 
 ## 一句話
@@ -45,7 +45,7 @@
 | 路徑 | 是什麼 |
 |---|---|
 | [README.md](README.md) | 標準 README：解決什麼、怎麼用、部署後長什麼樣、跨工具相容性、參與開發、授權 |
-| [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本（規則 1–8）、本 repo 接著編號的規則 9–15（各附會擋／擋不到）、跟部署出去的專案不同的地方、碰到才讀的索引表 |
+| [AGENTS.md](AGENTS.md) | AI 開工時自動讀：共用制度副本（規則 1–7）、本 repo 接著編號的規則 8–13（各附會擋／擋不到）、跟部署出去的專案不同的地方、碰到才讀的索引表 |
 | [CLAUDE.md](CLAUDE.md) | Claude Code 用 `@AGENTS.md` import |
 | [HANDOFF.md](HANDOFF.md) | **當下交接快照與跨機器工作標記**：範本 3.3 的實例，不是副本；≤80 行、覆寫不累積 |
 | 本檔 | 結構 |
@@ -87,7 +87,7 @@
 
 ## 副本拓撲
 
-同一份內容存在於多個地方的，只有下面這些。改權威的那一份，其餘照箭頭覆蓋；規則見 [AGENTS.md](AGENTS.md) 規則 9、10 與維護手冊「副本規則」。
+同一份內容存在於多個地方的，只有下面這些。改權威的那一份，其餘照箭頭覆蓋；規則見 [AGENTS.md](AGENTS.md) 規則 10、11 與維護手冊「副本規則」。
 
 ```text
 handoff skill 目錄（七個檔，同版本，整個目錄一起覆蓋）
@@ -138,4 +138,4 @@ check_docs.py
 - **但有 `HANDOFF.md` 與跨機器「工作中」標記（2026-10-30 起）**：多機維護時 `git fetch` 看不到別台機器未提交的變更，所以沿用範本 3.3 的載體與同一個欄位，不發明第二種標記。[為什麼](docs/rationale.md#what)
 - **push 前 hook 原本不裝，2026-11-14 使用者決定補裝**：F10 擋的是沒寫開工標記就推權威分支，來源少這一層就比產物少一層保護。[為什麼](docs/rationale.md#what)
 - **有自己的開場 hook（2026-11-14 起是 3.10 的逐字副本）**：只印 `[facts]`，不經 `sync_project.py` 同步。[為什麼](docs/rationale.md#copy-7)
-- **沒有 CI（2026-09-13 起）**：驗證是一個指令，跑它是規則 12 的義務；現在本 repo 沒有任何 workflow。[為什麼](docs/rationale.md#rule-4)
+- **沒有 CI（2026-09-13 起）**：驗證是一個指令，跑它是規則 13 的義務；現在本 repo 沒有任何 workflow。[為什麼](docs/rationale.md#rule-4)

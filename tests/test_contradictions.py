@@ -173,7 +173,7 @@ class ContradictionTests(unittest.TestCase):
     def test_version_rule_flags_claims_but_not_negations_or_quotes(self):
         rule = next(r for r in REPO_CONFIG['rules'] if r['id'] == 'version-follows-skill')
         config = {'rules': [dict(rule, required_in=[], docs=None)]}
-        base = '# P\n\n版本行與 `VERSION` 只跟著 `SKILL.md` 走。\n'
+        base = '# P\n\n版本行與 `VERSION` 只跟著共用制度與 handoff skill 目錄走。\n'
         # The canonical wording alone counts as present, not as an absent rule.
         present = check({'P.md': base}, {'rules': [dict(rule, docs=None, required_in=['P.md'])]})
         self.assertEqual((present['findings'], present['unknown']), ([], []))
@@ -184,8 +184,10 @@ class ContradictionTests(unittest.TestCase):
             with self.subTest(line=line):
                 result = check({'P.md': base + line + '\n'}, config)
                 self.assertEqual(result['findings'], [])
+        # 2026-11-21 (v3 Q57): leaving the shared block out is now the stale claim.
         for line in ('改到範本就要跳 VERSION。', '動了 hook 都要跳 `VERSION`。',
-                     '`VERSION` 跟著 `source:` 標記走。'):
+                     '`VERSION` 跟著 `source:` 標記走。', '版本行與 `VERSION` 只跟著 `SKILL.md` 走。',
+                     '`VERSION` 只跟著 handoff skill 目錄走。'):
             with self.subTest(line=line):
                 result = check({'P.md': base + line + '\n'}, config)
                 self.assertIn('reverse-rule', codes(result))

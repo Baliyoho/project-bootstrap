@@ -1,6 +1,6 @@
 # project-bootstrap 實施計畫 v3
 
-> 最後更新：2026-11-20。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
+> 最後更新：2026-11-21。歷次修改與從內文移出的經過在[實施計畫 v3 歷史紀錄](docs/history/project-bootstrap-implementation-v3-history.md)。
 > 回答「從現況怎麼走到 v3 的需求」：路線、分期、取捨與暫緩的事。需求、強度、驗收與待決事項只在決策書，本檔只引用它的 ID 與節號，不重述。現況看 [ARCHITECTURE.md](ARCHITECTURE.md)，進度看 [HANDOFF.md](HANDOFF.md)，逐 ID 的實作狀態看[現況索引](docs/status.json)。
 
 ## 1. 起點
@@ -40,7 +40,7 @@
 | 項目 | 牽涉的 ID | 狀態與條件 |
 |---|---|---|
 | 原子 claim，以及兩個 clone／同一工作樹的並行實驗 | F12、F25；D1 | 另案，未排期（2026-11-02 使用者選擇只完成協調邊界）。跟 D1「訊號不是鎖」有張力（v3 Q35）；要重開先在決策書第 8 節登記待決 |
-| 驗證分層與沿用結果：局部修改只跑相關測試、同機器同內容沿用結果、A4 快速模式不跑全套測試（`tools/run_tests.py`） | F22、F24 | 待排（2026-11-17 使用者確認還要）。提交前仍跑全套，exit 0 才算完成（AGENTS 規則 12） |
+| 驗證分層與沿用結果：局部修改只跑相關測試、同機器同內容沿用結果、A4 快速模式不跑全套測試（`tools/run_tests.py`） | F22、F24 | 待排（2026-11-17 使用者確認還要）。提交前仍跑全套，exit 0 才算完成（AGENTS 的驗證規則） |
 
 ## 5. 非目標
 

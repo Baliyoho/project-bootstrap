@@ -217,7 +217,8 @@ REPO_CONFIG = {
         'docs': ['README.md', 'AGENTS.md', 'ARCHITECTURE.md', 'HANDOFF.md',
                  'project-bootstrap-requirements-decision-v3.md',
                  'project-bootstrap-implementation-plan-v3.md'],
-        'required_in': ['AGENTS.md', 'project-bootstrap-requirements-decision-v3.md'],
+        # 2026-11-21（v3 Q57）：AGENTS 不再重述需求數，只有決策書必須寫；其他文件寫錯照樣抓。
+        'required_in': ['project-bootstrap-requirements-decision-v3.md'],
     }, {
         # 2026-11-02／F12: the busy marker coordinates; it is not a mutual-exclusion lock.
         'id': 'busy-marker-not-lock',
@@ -240,13 +241,17 @@ REPO_CONFIG = {
         'docs': ['README.md', 'AGENTS.md', 'ARCHITECTURE.md', KIT_DOC],
         'required_in': ['AGENTS.md', KIT_DOC],
     }, {
-        # AGENTS rule 9 (iron rule 1 before v3 Q56): only a real SKILL.md change bumps VERSION and the version line.
+        # AGENTS rule 11: only a real change to the shared block or the handoff skill directory
+        # bumps VERSION and the version line. 2026-11-21 (v3 Q57): the opening hook compares the
+        # shared block's marker, so the older "skill only" wording became a stale claim.
         'id': 'version-follows-skill',
-        'canonical': 'skill-only',
+        'canonical': 'shared-and-skill',
         'variants': {
+            'shared-and-skill': [r'共用制度或 ?`?\.claude/skills/handoff/`? ?的內容改了才跳 ?`?VERSION',
+                                 r'VERSION`? ?只跟著 ?共用制度與 ?handoff skill 目錄'],
             'skill-only': [r'VERSION`? ?只跟著 ?`?SKILL\.md',
                            r'SKILL\.md`? ?真的改了內容才跳 ?`?VERSION',
-                           # 2026-11-10: the skill became a directory of six files; same rule, new subject.
+                           # 2026-11-10: the skill became a directory of six files; same claim, new subject.
                            r'VERSION`? ?只跟著 ?handoff skill 目錄',
                            r'handoff/` 目錄裡的檔[^。\n]{0,40}真的改了內容才跳 ?`?VERSION'],
             # One clause again; "不跟著動" and quoted old wording stay out.

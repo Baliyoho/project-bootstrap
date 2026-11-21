@@ -138,7 +138,7 @@ CLAUDE_IMPORT = '@AGENTS.md'
 SHARED_START = '<!-- 共用制度開始'
 SHARED_END = '<!-- 共用制度結束 -->'
 LEGACY_HANDOFF_HEADINGS = ('## 開工第一件事', '## 跨模型／跨機器協作規範')
-# 2026-11-20（v3 Q56）：專案規則改成接在共用規則 8 之後、從 9 接著編號；舊專案標記外的「## 鐵律」
+# 2026-11-20（v3 Q56）：專案規則改成緊接在共用制度結束標記後、接著共用規則編號；舊專案標記外的「## 鐵律」
 # 是專案自己的內容，同步不改寫，只提示人工搬。
 LEGACY_RULES_HEADING = '## 鐵律'
 
@@ -534,7 +534,7 @@ def sync_shared_section(project, gen, plan):
     rules = legacy_rule_sections(new if new is not None else cur)
     if rules:
         plan.msgs.append('  MIGRATE AGENTS.md：標記外還有 %s；專案規則改成緊接在共用制度結束標記後、'
-                         '從 9 接著編號（v3 Q56），同步不改寫，要人工搬並跟共用規則去重'
+                         '接著共用規則的編號（v3 Q56），同步不改寫，要人工搬並跟共用規則去重'
                          % '、'.join('「%s」' % h for h in rules))
 
 

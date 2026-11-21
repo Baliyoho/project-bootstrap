@@ -1,6 +1,6 @@
 # 協作系統：前提、效用與設計原則（草稿）
 
-> 本檔是維護者與 AI 討論後得出的共識草稿，性質還沒定，**還不是約束文件**：它不約束本 repo，要偏離需求或計畫仍照 [AGENTS.md](AGENTS.md) 規則 15。最終要跟[需求決策書 v3](project-bootstrap-requirements-decision-v3.md) 和[實施計畫 v3](project-bootstrap-implementation-plan-v3.md) 整合成一份新文件，新文件的名稱也還沒定。
+> 本檔是維護者與 AI 討論後得出的共識草稿，性質還沒定，**還不是約束文件**：它不約束本 repo，要偏離需求或計畫仍照 [AGENTS.md](AGENTS.md) 規則 8。最終要跟[需求決策書 v3](project-bootstrap-requirements-decision-v3.md) 和[實施計畫 v3](project-bootstrap-implementation-plan-v3.md) 整合成一份新文件，新文件的名稱也還沒定。
 
 ## 1. 前提：repo 的用途變了
 

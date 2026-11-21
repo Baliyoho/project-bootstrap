@@ -1,16 +1,16 @@
 # AI 維護手冊
 
-> 最後更新：2026-11-20
+> 最後更新：2026-11-21
 > 這個 repo 由維護者與 AI session 維護。本檔是改這個 repo 時的做法：步驟、指令與踩過的坑，做到那件事才讀。規則在 [AGENTS.md](../AGENTS.md)，每個 session 開場自動載入；本檔提到規則時連回去，不重述。每條的現行理由在[理由檔](rationale.md)，被取代的理由與經過在[理由檔歷史紀錄](history/rationale-history.md)。**要改、質疑或想繞過某條規則之前，先讀它的理由。**
 
 ## 改部署包的流程
 
-規則見 [AGENTS.md](../AGENTS.md) 的規則 9、12 與「跟部署出去的專案不同的地方」；這裡只寫操作細節。[為什麼](rationale.md#rule-1)
+規則見 [AGENTS.md](../AGENTS.md) 的規則 10、11、13；這裡只寫操作細節。[為什麼](rationale.md#rule-1)
 
 - 動到結構（根目錄增刪檔案、部署包增刪一節範本、驗證項增減、副本拓撲改變）就更新 [ARCHITECTURE.md](../ARCHITECTURE.md)，跟該變動同一個 commit，並更新它檔頭的「最後更新」；增刪範本時同步 `EXPECTED`。
 - 新增範本：在 `src/kit/owners.json` 登記歸屬；歸 `region`／`key`／`lines`／`wiring` 四種的，要先在 `sync_project.py` 寫處理程式並更新 `HANDLED`，否則同步器拒絕啟動。改跨工具表改 `src/kit/capabilities.json`，不改 `kit.md`。
 - 部署包跳版時 `VERSION` 跟版本行一起改；`src/kit/kit.md` 開頭只留新的「版本」行；舊的那一行改寫成「前一版」，移到 [CHANGELOG.md](../CHANGELOG.md) 最上面。不跳版的修改也在 CHANGELOG 最上面記一條。
-- 驗證印 `skip` 的項目沒有被驗到，回報時照實寫；印「提醒」的項目不影響結束碼，但要轉告使用者。
+- 驗證印「提醒」的項目不影響結束碼，但要轉告使用者。加 `--quiet` 只隱藏成功的明細，FAIL、`skip`、提醒與結束碼照常。
 - 全套驗證在 macOS 約 35 秒，在原生 Windows 約 3–4 分鐘，超過指令工具預設的 120 秒上限，逾時不等於失敗。Windows 上 `python3` 是 WindowsApps 別名，要用 `python`。[為什麼](rationale.md#rule-4)
 
 ### 部署包怎麼變成檔案（改範本前先讀）
@@ -39,11 +39,11 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 `--all`／inventory 僅供批次預演；`--write` 必須指定單一專案與 owner，空閒標記不能寫入。同步後留在該專案完成 B7 最終檔案檢查、B8 發布與清標記；若要中途安全點則走 C，保留占用。這修正了舊工具「正常 A5 writer 被拒絕、陳舊空閒 checkout 卻能寫」的矛盾。
 
-副本存在哪些地方見 [ARCHITECTURE.md](../ARCHITECTURE.md) 的副本拓撲；改 skill 的規則見 [AGENTS.md](../AGENTS.md) 規則 9、10。
+副本存在哪些地方見 [ARCHITECTURE.md](../ARCHITECTURE.md) 的副本拓撲；改 skill 的規則見 [AGENTS.md](../AGENTS.md) 規則 10、11。
 
 ## 改安裝程式
 
-規則見 [AGENTS.md](../AGENTS.md) 的規則 9；這裡只寫操作細節。[為什麼](rationale.md#rule-1)
+規則見 [AGENTS.md](../AGENTS.md) 的規則 10；這裡只寫操作細節。[為什麼](rationale.md#rule-1)
 
 - `bootstrap.py` 是產物：安裝與更新邏輯在 `src/project_bootstrap/installer.py`，範本與 `owners.json` 在 `src/kit/`，`update` 用的合併函式是 `tools/sync_project.py` 裡 `build_kit.SHARED` 列的那些，原樣搬進去。改任何一邊都跑 `python3 -X utf8 tools/build_kit.py`，同一個 commit 提交。
 - 新增一個要搬進 `bootstrap.py` 的同步函式，名字要加進 `build_kit.SHARED`；少了會在重生時報 `sync_project.py has no …`。
@@ -54,12 +54,12 @@ Codex 的 Windows 接線與 Git Bash 啟動器可用 `python -X utf8 tools/sync_
 
 改這個 repo 時容易踩的地方，碰到對應的檔才需要讀。[為什麼](rationale.md#dev-notes)
 
-- 改 handoff skill 的做法（規則見 [AGENTS.md](../AGENTS.md) 規則 9、10）：改 `src/kit/files/.claude/skills/handoff/*.tmpl`，AGENTS 範本的共用制度標記跟 skill 同版本，本 repo `AGENTS.md` 的共用制度副本要重貼。改到逐字搬來的行，「skill 拆分」會擋：要嘛還原，要嘛在 `tools/skill_split_baseline.json` 的 `rewritten` 寫明去處。改了模式檔的段落標題，「skill 規則對照表」會擋，要一起改 `reasons.md` 對照表。改完要重新覆蓋這台的兩個全域目錄。
+- 改 handoff skill 的做法（規則見 [AGENTS.md](../AGENTS.md) 規則 10、11）：改 `src/kit/files/.claude/skills/handoff/*.tmpl`，AGENTS 範本的共用制度標記跟 skill 同版本，本 repo `AGENTS.md` 的共用制度副本要重貼。改到逐字搬來的行，「skill 拆分」會擋：要嘛還原，要嘛在 `tools/skill_split_baseline.json` 的 `rewritten` 寫明去處。改了模式檔的段落標題，「skill 規則對照表」會擋，要一起改 `reasons.md` 對照表。改完要重新覆蓋這台的兩個全域目錄。
 - v2 的程式全部封存在 `archive/v2-*/`（v3 Q33、Q46），不執行、不維護；main 上的程式、測試與現況索引不能引用它們（`verify_bootstrap.py`「封存原件」擋）。要重新研究照各自的 README 在暫存目錄拼回。
 - 換版（v3 Q47）：新版決策書成為權威時，`AGENTS.md` 改連新版，驗證器的「版本更替」就開始擋舊版本名稱。現行區裡檔名、資料夾名或程式識別字帶舊版本號的東西，逐一刪除、`git mv` 到 `archive/`，或改成新版本的名稱，同時更新讀它們的程式與文件。舊版的權威文件與它的熱歷史照決策書第 7 節搬進 `archive/docs/`。
 - `test_contradictions_repo` 與 `test_trail_repo` 讀本 repo 真文件。HANDOFF 的「下一步」與懸置裡**不要把已有裁定的 Q 編號跟等待決定的字樣寫在一起**；懸置每條要引用決策書 v3 第 8 節的 `Q` 編號（或 `- 無。`）。v3 第 3 節 D 表每列要有「決定」與「理由」；第 8 節已決項目底下子項格式是「採用理由／未選 (x) 名稱：／暫緩 名稱：」，選項名不能省，省了就報 `alternative-incomplete`（2026-11-17 封存 v2 時在 v3 踩到）。這兩個解析器與需求清單的解析器都按節名找節、不看節號（2026-11-17 起），改節名會讓它們讀不到東西，測試會失敗。
 - 提交指令要用 `&&` 綁住 verify 的結束碼。macOS 上 zsh 跟 bash 不同的三種寫法（管線結束碼、`echo =====`、未加引號的 `$變數`）2026-11-18 起寫在部署包 handoff skill 的 `env.md`「macOS」一節，本 repo 讀全域那份或 `src/kit/files/.claude/skills/handoff/env.md.tmpl`。
-- 新增或改規則：每個 session 都要守的寫進 `AGENTS.md`，只有做那件事時才用得到的做法寫進本檔對應的一節；兩邊的「為什麼」都連到[理由檔](rationale.md)的錨點。理由改了就改寫理由檔那一節，舊理由加到[理由檔歷史紀錄](history/rationale-history.md)同一個錨點那組的最後（規則 11）。
+- 新增或改規則：每個 session 都要守的寫進 `AGENTS.md`，只有做那件事時才用得到的做法寫進本檔對應的一節；兩邊的「為什麼」都連到[理由檔](rationale.md)的錨點。理由改了就改寫理由檔那一節，舊理由加到[理由檔歷史紀錄](history/rationale-history.md)同一個錨點那組的最後（規則 12）。
 - 讀 `tools/` 的測試不能放進 mutation 群組，所以拆成 `*_repo.py`。`mutants.py --only` 要給測試模組名（`tests.test_x`）。從 repo 根目錄跑模組要 `PYTHONPATH=src`；測試裡用 `-c` 起、要 import 本套件的子程序，`cwd` 要給 `src`。改了檢查模組就用 `mutants.py --only` 實跑對應的變異組。
 - 改 `src/project_bootstrap/` 的檢查時，同時更新 `mutants.json` 對應的變異組並實跑。
 - 刻意改寫或刪掉 handoff skill 拆分前的舊行時，在 `tools/skill_split_baseline.json` 的已改寫清單記一筆，寫明去處。
