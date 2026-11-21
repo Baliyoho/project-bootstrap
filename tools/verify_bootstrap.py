@@ -48,7 +48,6 @@
 | 結構摘要一致性 | 本 repo 與生成 ARCHITECTURE 寫明 `CLAUDE.md` 用 import、表格不再列 Gemini 的指標檔；四個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
 | 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
 | 跨工具表保鮮期 | 「跨工具與跨平台」那節的「查證日期」不得超過 90 天（`BOOTSTRAP_FRESHNESS=off` 可跳過） | 對外部工具能力的斷言在無聲中過期。這一項只保證有人看過日期，**不保證有人真的重查**——買到的是「必須有意識地決定」。會做成 fail 而不是警告，是因為上一次的對策就是一句警告，而警告沒擋住第二次（Antigravity 的 hooks、Codex 桌面 App 的 hooks，兩次同一種錯） |
-| README 跨工具表一致性 | README 那張跨工具表與部署包那一張：同名列的判定符號一致、README 沒有孤兒版本號、有指回部署包的指標（附四種分岔的負向測試） | README 是**人的入口**，而保鮮期只守部署包那一份——事實在部署包被重查改對，README 留在舊事實上，沒有任何徵兆。2026-11-01 加這一項的當下就抓到一處已經發生的分岔（「自動載入程序檔」×「Codex CLI」）。不給 README 自己一個「查證日期」是因為那是同一個事實的第二個時鐘 |
 | 跨工具過期敘述 | 部署包正文、本 repo 結構說明、重生的結構範本與 handoff skill，不得復活 CLI／2.0 測試狀態、Antigravity 接線、skill 入口與 IDE 追查決定的已知舊斷言；附回歸負向測試與範圍測試 | 同一份文件的表改對了，散文卻仍教下一棒照舊事實行動。只檢查已知回歸，不做通用語意判讀、不代替外部查證；表頭的歷史變更記錄與 IDE 未解結果仍保留 |
 | Codex Windows 接線 | `commandWindows` 經 Git Bash 啟動器，兩個事件與本 repo 都指向原本那支 `.sh`；三個負向測試 | 真部署的已信任 hook 曾選到 WSL 而 exit 1 |
 | Codex Windows 結束碼 | 實跑 PowerShell → cmd → Git Bash；保留 exit 2，拿掉明確 exit 時必須重現 exit 1 | 只測原生 cmd 會把工具仍放行的版本誤報成功；此項只在 Windows 執行 |
@@ -3038,7 +3037,6 @@ def step_table_freshness():
 
 
 TOOL_VERDICTS = '✅❌⬜🟡'
-VER_TOKEN = r'`v?(\d+\.\d+(?:\.\d+)*)`'
 
 
 def tool_section(text):
@@ -3073,75 +3071,6 @@ def tool_matrix(section):
             rows[row[0]] = [c[:1] if c[:1] in TOOL_VERDICTS else '?' for c in row[1:]]
         return tuple(cells[1:]), rows
     return (), {}
-
-
-def compare_tool_tables(readme, kit):
-    """README 那張跨工具表不得跟部署包那一張分岔。回傳問題清單（空＝一致）。"""
-    problems = []
-    rsec, ksec = tool_section(readme), tool_section(kit)
-    if not rsec or not ksec:
-        problems.append('找不到「## 跨工具與跨平台」那一節（%s）'
-                        % ('README' if not rsec else '部署包'))
-        return problems
-    rcols, rrows = tool_matrix(rsec)
-    kcols, krows = tool_matrix(ksec)
-    if not rrows or not krows:
-        problems.append('抓不到能力矩陣，表頭要是空的第一欄＋至少三個工具名（%s）'
-                        % ('README' if not rrows else '部署包'))
-        return problems
-    if rcols != kcols:
-        problems.append('欄位不一樣：README %s ／ 部署包 %s' % (list(rcols), list(kcols)))
-        return problems
-    shared = [lab for lab in rrows if lab in krows]
-    if not shared:
-        problems.append('兩張表沒有同名的列，無從比對——列名改過就要兩邊一起改')
-    for lab in shared:
-        for col, rv, kv in zip(rcols, rrows[lab], krows[lab]):
-            if rv != kv:
-                problems.append('「%s」×「%s」：README %s ／ 部署包 %s' % (lab, col, rv, kv))
-    orphan = sorted(set(re.findall(VER_TOKEN, rsec)) - set(re.findall(VER_TOKEN, ksec)))
-    if orphan:
-        problems.append('README 寫了部署包那節已經沒有的版本號：%s' % '、'.join(orphan))
-    if '部署包' not in rsec:
-        problems.append('README 那節沒有指回部署包——它是轉述，必須留指標')
-    return problems
-
-
-def step_readme_table():
-    """README 的跨工具表是部署包那一張的轉述，兩邊的判定符號要一致。
-
-    保鮮期只讀部署包那一份，README 會無聲停在舊事實上（2026-11-01 加的當下就抓到一處）。
-    只比對同名的列、判定符號、README 的版本號與指回部署包的指標，守不了格子裡的散文。
-    """
-    readme = (ROOT / 'README.md').read_text(encoding='utf-8')
-    problems = compare_tool_tables(readme, kit_text())
-    if problems:
-        record('FAIL', 'README 跨工具表一致性', '；'.join(problems))
-        return False
-
-    # 負向測試：比對器自己要擋得住四種分岔。一個永遠回「一致」的比對器，跟沒有這項檢查
-    # 在畫面上一模一樣——這整支腳本的存在理由就是不接受那種東西。
-    base = ('## 跨工具與跨平台\n\n細節見部署包。\n\n'
-            '| | Claude Code | Codex CLI | Codex 桌面 App |\n'
-            '|---|---|---|---|\n'
-            '| Hooks | ✅ a | ✅ b `1.2.3` | ✅ c |\n')
-    cases = (
-        ('判定符號翻掉', base.replace('| Hooks | ✅ a | ✅ b', '| Hooks | ✅ a | ⬜ b')),
-        ('版本號成孤兒', base.replace('`1.2.3`', '`9.9.9`')),
-        ('欄位長出一個', base.replace('| Codex 桌面 App |\n', '| Codex 桌面 App | 新工具 |\n')),
-        ('指標被抽掉', base.replace('細節見部署包。', '細節見別處。')),
-    )
-    missed = [name for name, mutated in cases if not compare_tool_tables(mutated, base)]
-    if missed or compare_tool_tables(base, base):
-        record('FAIL', 'README 跨工具表一致性',
-               '負向測試沒排到：%s' % ('、'.join(missed) or '兩份相同卻被判成分岔'))
-        return False
-
-    _, rrows = tool_matrix(tool_section(readme))
-    record('OK', 'README 跨工具表一致性',
-           '%d 個同名列的判定符號與部署包一致、沒有孤兒版本號、指標在；'
-           '負向測試四種分岔都擋得住' % len(rrows))
-    return True
 
 
 # 只守已知回歸，不把所有「未解」「沒觸發」都擋掉，也不掃表頭的歷史變更記錄。
@@ -3763,7 +3692,6 @@ def step_misc(dest, work=None):
         record('OK', 'VERSION 檔', '與部署包版本行一致（%s）' % kit_ver.group(1).strip())
 
     step_table_freshness()
-    step_readme_table()
     step_tool_prose(dest)
     step_python_floor(dest)
     step_claims(dest)

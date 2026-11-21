@@ -91,19 +91,9 @@ Codex 桌面 App 放 `~/.codex/skills/handoff/`，同樣那七個檔（2026-11-1
 
 ## 跨工具與跨平台
 
-正確性放在**可攜層**（`AGENTS.md` 開頭那段＋純 Markdown 的程序檔），下面三個平面都原生讀得到；hooks 只是讓人不必記得，不是制度成立的前提。**「讀得到」不等於「照做」**：這張表量的是載入，不是遵循（2026-11-02／F15；遵循那一種唯一的量測是 2026-11-01 的六個收尾 session，git 全對、兩個漏改 session 名稱）。
+支援 Claude Code、Codex CLI 與 Codex 桌面 App。制度的正確性靠每個工具都會讀的 `AGENTS.md` 與純 Markdown 的程序檔；hooks 只是讓人不必記得，不是制度成立的前提，而且「讀得到」不等於「照做」。hooks 都帶條件：Codex 要先信任專案、每個專案各審一次，條件不成立時整層靜默跳過；hook 需要 bash（Windows 用 Git for Windows 附的那支，不是 WSL）。
 
-| | Claude Code | Codex CLI | Codex 桌面 App |
-|---|---|---|---|
-| 讀 `AGENTS.md` | ✅ 經 `CLAUDE.md` 指標 | ✅ 原生 | ✅ 原生 |
-| 自動載入程序檔 | ✅ `.claude/skills/`、`/handoff` | ✅ `~/.codex/skills/` ＋ repo 的 `.agents/skills/`（2026-10-30 實測） | ✅ 同 CLI |
-| Hooks | ✅ `.claude/settings.json` | ✅ `<repo>/.codex/hooks.json`，同格式同語意；要專案被信任＋**每個專案各審一次**（信任綁絕對路徑；互動模式開場會自己問） | ✅ 有（App `26.506` 起，Settings 裡審核） |
-
-**Codex 要分 CLI 與桌面 App**：CLI 有 hooks 且與 Claude Code 同格式，兩邊掛**同樣那兩個 `.sh`**、不各留一份；桌面 App 也有 hooks（2026-10-30 重查：App `26.506` 起有 in-app 信任審核，與 CLI 共用 `~/.codex`；舊版這裡寫「沒有」是 2026-08-06 的實測，已過期），全域 skill 一樣放 `~/.codex/skills/handoff/`。
-
-**Antigravity 2026-11-13 起放棄**（需求決策書 v3 D8）：部署包不再產出它的接線與轉接層，已部署專案裡的舊檔不同步也不刪，清不清由使用者決定。之前的實測紀錄在 git 歷史與 [ARCHITECTURE.md](ARCHITECTURE.md)。
-
-三個平面都接得上 hooks，但**都帶條件**：Codex 要專案被信任、而且每個專案各審一次。條件不成立時整層是**靜默**跳過的（2026-10-30 在未信任的資料夾實測，stderr 一個字都沒有），所以正確性押在可攜層、不押在 hook 上。共同前提：hook 需要 bash（macOS 內建，Windows 用 Git for Windows 附的，不是 WSL 那支）；hook 依序試 `python3`、`python`，Windows 的 WindowsApps `python3` 往往是個 PATH 找得到、執行卻失敗的別名（2026-11-16 實測 rc=49），要靠回退到 `python` 才拿得到 `[facts]`。
+各工具的能力表、實測條件與查證日期在部署包 [src/kit/kit.md](src/kit/kit.md) 的「跨工具與跨平台」。
 
 ## 參與開發
 
