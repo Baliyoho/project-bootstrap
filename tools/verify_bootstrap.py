@@ -25,7 +25,7 @@
 | 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 那一份後照原文印出（v3 D12）：別台機器、主題含「無」原文完整、已交棒、欄位重複說有幾列、欄位不存在明講讀不到、工具環境變數不改變輸出；拿掉印出那一行的負向測試 | 下一棒看不到誰握著分支（F4 偵測） |
 | `VERSION` 檔 | 與部署包版本行一致 | 落後偵測會說謊，落後的專案以為自己最新 |
 | 版本落後偵測 | 共用制度版本取自 `AGENTS.md` 開始標記；餵**比本機新**的版本要講落後、餵**比本機舊**的要說「比上游新」、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後（F18 提示） |
-| 本 repo 自己的文件 | 本 repo 的 `.md` 無死連結、`AGENTS.md`／`ARCHITECTURE.md` 有日期標頭，受管非 Markdown 檔無已知部署佔位符；`src/kit/` 另有規則，`archive/docs/` 封存區不讀（v3 Q39） | 改檔名或搬段落留下死連結，或把未填的部署欄位帶進公開來源。部署包裡指向「部署後才存在的檔」的連結不算，判準是 `EXPECTED`，所以它指向本 repo 檔案的連結照樣會被抓 |
+| 本 repo 自己的文件 | 用部署後 `check_docs.py` 的同一份函式、換上本 repo 的設定查：`.md` 無死連結、`AGENTS.md`／`ARCHITECTURE.md`／`docs/ai-notes/` 有日期標頭、受管檔無已知部署佔位符；`src/kit/`、`bootstrap.py` 另有規則，`archive/docs/` 封存區不讀（v3 Q39）；`AGENTS.md` 的共用制度連到部署後的路徑，讀檔時塗白 | 改檔名或搬段落留下死連結，或把未填的部署欄位帶進公開來源。本 repo 不裝副本卻跑同一份程式，F46 的「保護不低於產物」在文件這一面是構造上成立 |
 | 封存原件 | `archive/docs/` 的 v2 決策書 Git blob 不變（只看 index 記的 blob，不開檔）；程式、測試與設定檔不出現它的路徑（`ARCHIVE_READERS` 登記的除外，登記前要使用者同意）；文件檢查不讀封存區但不外溢。引用、改內容、搬走、略過外溢四種反例都要擋，已登記讀取者放行（v3 Q39） | 有程式又開始讀 v2，或封存原件被改、被搬走 |
 | 版本更替 | 現行版本取 AGENTS 連到的決策書（檔名的版本號要跟「決策版本」行相同）；`archive/` 以外的檔名、資料夾名與程式識別字不得帶比它舊的版本號，程式不得引用 `archive/` 底下的版本封存資料夾。文件內文的對照與歷史說明、`v2.1.277` 這種工具版本號不算；本檔自己的反例在執行時拼出版本號，換版後不會擋到自己。版本來源 3 種、檔名／識別字／封存引用 4 種反例（v3 Q47） | 新版成為權威後，舊版本名稱的檔案或程式還留在現行區；也就是 v2 的程式留在 main 那種情形（v3 Q46） |
 | 本 repo push 前 hook | `repo-pre-push.sh` 跟部署包 3.11 逐位元組相同；兩份接線的 PreToolUse 都指向它；接線守門 7 個負向測試（沒接、指向別支、matcher 退回 `Bash`、接回 PostToolUse、SessionStart 指錯、腳本不存在）（v3 F10） | 改了 3.11 卻沒重貼，或接線被改掉，本 repo 推 `main` 時沒寫開工標記也不會被擋 |
@@ -36,11 +36,12 @@
 | 本 repo 交接狀態 | 必要欄位與章節、≤80 行、骨架版本符合 VERSION、禁止這次已知過期待辦與只改兩欄的入口規則；附負向測試 | 標記清了卻保留已完成待辦，下一棒被迫從聊天重建現況；不保證任意待辦的語意正確，仍需 B6 人工核對 |
 | 規則理由連結 | AGENTS.md 與 `docs/maintenance.md` 每節至少一個、專用規則／副本規則／hook 訊息每條各一個指向 `docs/rationale.md` 的連結（從各自的位置算相對路徑），連結的段落存在且非空；只有表格列的「碰到才讀」索引節免連結，夾帶規則句就照一般章節要求；AGENTS 照「## 大段／### 節」切，只放小節的大段標題不算一節（v3 Q58）；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
 | 規則引用有前綴 | 現行文件、範本與程式註解引用 AGENTS 的規則編號時寫「共用規則 N」或「專用規則 N」（「副本規則 N」是維護手冊自己的清單，放行）；`CHANGELOG.md`、`docs/history/`、`archive/`、`experiments/` 是經過，不查；3 個負向測試（v3 Q58） | 共用與專用分開編號後，沒有前綴的「規則 N」分不出指哪一份，舊編號也會躲在裡面不被發現 |
-| 來源例外可見性（F46 部分） | 每輪印出已宣告減項（handoff skill、check_docs.py 兩項）；確認來源缺、產物有，並對漏宣告／來源增項／產物缺項跑負向變異 | 三項減項再次從驗證輸出中靜默消失；這只驗可見性，未完成來源／產物全部同組情境 |
+| 來源例外可見性（F46 部分） | 每輪印出已宣告減項（handoff skill、check_docs.py 兩項）；確認來源缺、產物有，並對漏宣告／來源增項／產物缺項跑負向變異 | 減項從驗證輸出中靜默消失；這只驗可見性 |
 | 來源／產物交接快照同組情境（F46 部分） | 同一組 13 種合成快照在來源檢查與部署後 `check_docs.py` 各跑一次：有效、整份缺失、占用欄缺失／重複、章節缺失、超行數、機器／工具欄正反例、主題含「無」、已交棒前後有空白均須一致；來源檢查遇整份缺失須明確報錯 | 來源少了整份 `HANDOFF.md` 時只拋例外，或產物與來源對相同缺陷給出矛盾結論；實際接手流程仍待驗 |
-| 來源／產物文件同組情境（F46 部分） | 同一份合成文件在來源文件檢查與部署後 `check_docs.py` 各跑一次：20 種正反例涵蓋根目錄及巢狀文件的缺檔、死連結、程式碼、角括號加 title、片段、日期（含 `ARCHITECTURE.md`）及佔位符；沿用來源實際檢查函式 | 同樣的文件缺陷在來源與產物給出不同結論；其他文件項仍待驗 |
-| 來源／產物文件設定同組情境（F46 部分） | 9 種合成設定情境對照非 Markdown 已知佔位符、未知樣板、專案自訂過期字串、同列歷史文字與連結／佔位符／過期字串路徑豁免；來源端同時掃自己受管的非 Markdown 檔 | 來源非 Markdown 檔殘留部署欄位，或來源與產物對相同設定給出不同結果；任意專案設定與跨工具遵循仍待驗 |
+| 部署後文件檢查情境 | 部署後 `check_docs.py` 跑 20 種正反例：根目錄及巢狀文件的缺檔、死連結、程式碼、角括號加 title、片段、日期（含 `ARCHITECTURE.md`）及佔位符；本 repo 用同一份函式查自己，所以同時守來源 | 部署後的文件檢查漏擋或誤報；本 repo 的文件檢查也跟著壞 |
+| 部署後文件設定情境 | 9 種專案設定情境：非 Markdown 已知佔位符、未知樣板、專案自訂過期字串、同列歷史文字與連結／佔位符／過期字串路徑豁免 | 專案改了「專案設定」區塊後檢查失準；任意專案設定與跨工具遵循仍待驗 |
 | 來源提交候選一致性（F46 部分） | 來源 `verify_bootstrap.py --staged` 拒絕未暫存或未追蹤檔；完整／部分 stage 與產物 `check_docs.py --staged` 跑同組 fixture，並對來源未追蹤檔作負向測試 | 用未提交的工作樹內容證明另一份 staged 內容；只驗提交候選形狀，不代表實際接手流程已驗收 |
+| 部署後接手流程情境 | 在部署出去的專案上用本機 bare origin 實跑：遠端占用→陳舊接手阻擋→釋出→A2.5／A5 SHA 變更→本機開工→任務推送→交棒；把 hook 改讀本機快照的負向變異要重現錯誤放行。本 repo 的 hook 是逐字副本，不重跑 | hook 讀錯快照，別台機器的「工作中」被當成已交棒；hook 只提醒，模型遵循未驗 |
 | 本 repo 開場 hook | `repo-git-check.sh` 跟部署包 3.10 逐位元組相同；多一行與檔案不存在兩個負向測試 | 改了 3.10 卻沒重貼，本 repo 開場印的跟共用制度說的不一樣，或退回會下指示的判讀版 |
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
 | 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（F02、F03） |
@@ -90,6 +91,8 @@ import shutil
 import subprocess
 import sys
 import http.server
+import importlib.machinery
+import importlib.util
 import tempfile
 import threading
 from contextlib import contextmanager, redirect_stdout, redirect_stderr
@@ -1065,32 +1068,26 @@ def repo_handoff_rule_problems(text):
 
 
 def repo_handoff_problems(text, version):
-    """2026-11-01：舊快照凍結三輪但全數驗證通過；這裡只查已知回歸，不聲稱理解所有待辦。"""
+    """本 repo 的交接快照：部署後 check_docs.py 的快照與「工作中」檢查（同一份函式，F46），
+    加上本 repo 才有的：骨架版本要等於 VERSION、章節不能是空的、已知已完成的待辦不得復活。
+
+    2026-11-01：舊快照凍結三輪但全數驗證通過；後兩項只查已知回歸，不聲稱理解所有待辦。
+    """
     if text is None:
         return ['HANDOFF.md 不存在']
-    problems = repo_handoff_rule_problems(text)
-    if len(text.splitlines()) > 80:
-        problems.append('HANDOFF 超過 80 行')
-    for label in ('交接時間', '交棒者', '待續分支', '工作中', '骨架版本'):
-        matches = re.findall(r'^- \*\*' + re.escape(label) + r'\*\*：(.+)$', text, re.M)
-        if len(matches) != 1 or not matches[0].strip():
-            problems.append(label + ' 必須有且只有一個非空欄位')
-        elif label == '骨架版本' and matches[0].strip() != '`' + version + '`':
-            problems.append('HANDOFF 骨架版本與 VERSION 不一致')
-        elif label == '工作中':
-            # 來源也須拒絕產物 check_docs 會拒絕的壞標記；僅有非空字串
-            # 不能證明機器／工具身分可供 A2.5 判讀（F46、R08）。
-            value = matches[0].split('，', 1)[0].strip(' \t\u3000`').strip()
-            if value != '無（已交棒）':
-                fields = [field.strip(' \t\u3000`').strip() for field in value.split('／')]
-                if not fields[0]:
-                    problems.append('工作中標記缺機器欄')
-                elif len(fields) < 2 or not fields[1] or '｜' in fields[1]:
-                    problems.append('工作中標記缺工具欄')
+    checker = product_checker()
+    with tempfile.TemporaryDirectory() as raw, pushd(raw):
+        write_lf(pathlib.Path('HANDOFF.md'), text)
+        files = [pathlib.Path('HANDOFF.md')]
+        problems = checker.check_snapshot(files) + checker.check_busy_field(files)[1]
+    problems += repo_handoff_rule_problems(text)
+    matches = re.findall(r'^- \*\*骨架版本\*\*：(.+)$', text, re.M)
+    if len(matches) != 1 or matches[0].strip() != '`' + version + '`':
+        problems.append('HANDOFF 骨架版本要有且只有一列，而且等於 VERSION')
     for heading in REPO_HANDOFF_HEADINGS:
-        matches = re.findall(r'^## ' + re.escape(heading) + r'\n(.*?)(?=^## |\Z)', text, re.M | re.S)
-        if len(matches) != 1 or not matches[0].strip():
-            problems.append('缺少或重複交接章節：' + heading)
+        body = re.findall(r'^## ' + re.escape(heading) + r'\n(.*?)(?=^## |\Z)', text, re.M | re.S)
+        if len(body) == 1 and not body[0].strip():
+            problems.append('交接章節是空的：' + heading)
     flat = re.sub(r'\s+', ' ', text.replace('`', '').replace('**', ''))
     problems.extend('已完成待辦復活：' + p for p in REPO_HANDOFF_STALE if re.search(p, flat))
     return problems
@@ -1511,11 +1508,11 @@ def step_handoff_parity(dest):
            '%d 種同組情境，含缺檔、結構與機器／工具欄正反例；兩端判定一致' % len(cases))
 
 
-def step_document_parity(dest, tmp):
-    """Apply identical link/date fixtures to source check and generated checker."""
-    source = tmp / 'source-doc-fixture'
-    source.mkdir()
-    write_lf(source / 'README.md', '# fixture\n')
+def step_product_documents(dest):
+    """部署後 check_docs.py 的連結、日期與佔位符情境。
+
+    本 repo 用同一份函式查自己（repo_document_problems），所以這些情境同時守住產物與來源（F46）。
+    """
     control = '# ARCHITECTURE\n\n> 最後更新：2026-11-08\n\n[x](README.md)\n'
     cases = (
         ('有效連結與日期', control, True),
@@ -1555,75 +1552,53 @@ def step_document_parity(dest, tmp):
     original = target.read_text(encoding='utf-8')
     nested_target = dest / nested_rel
     nested_original = nested_target.read_text(encoding='utf-8')
-    source_nested = source / nested_rel
-    source_nested.parent.mkdir(parents=True, exist_ok=True)
     problems = []
     try:
         for name, body, expected in cases:
             if body is None:
-                (source / 'ARCHITECTURE.md').unlink()
                 target.unlink()
                 git(['rm', '-q', '--', 'ARCHITECTURE.md'], dest)
             else:
-                write_lf(source / 'ARCHITECTURE.md', body)
                 write_lf(target, body)
                 git(['add', '--', 'ARCHITECTURE.md'], dest)
-            dead, undated, missing, holes = source_document_problems(source, ['ARCHITECTURE.md'])
-            source_ok = not dead and not undated and not missing and not holes
             result = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-            product_ok = result.returncode == 0
-            if source_ok != expected or product_ok != expected or \
-                    result.returncode != (0 if expected else 2):
-                problems.append('%s：來源=%s、產物=exit %s（預期 %s）' % (
-                    name, source_ok, result.returncode, expected))
+            if result.returncode != (0 if expected else 2):
+                problems.append('%s：exit %s（預期 %s）' % (name, result.returncode, expected))
         write_lf(target, original)
         git(['add', '--', 'ARCHITECTURE.md'], dest)
         for name, body, expected in nested_cases:
             if body is None:
-                source_nested.unlink()
                 nested_target.unlink()
                 git(['rm', '-q', '--', nested_rel], dest)
             else:
-                write_lf(source_nested, body)
-                # git rm 會把變空的目錄一起刪掉（2026-11-17 起 docs/ai-notes/ 只剩這一份）。
+                # git rm 會把變空的目錄一起刪掉（docs/ai-notes/ 只有這一份）。
                 nested_target.parent.mkdir(parents=True, exist_ok=True)
                 write_lf(nested_target, body)
                 git(['add', '--', nested_rel], dest)
-            dead, undated, missing, holes = source_document_problems(source, [nested_rel])
-            source_ok = not dead and not undated and not missing and not holes
             result = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-            product_ok = result.returncode == 0
-            if source_ok != expected or product_ok != expected or \
-                    result.returncode != (0 if expected else 2):
-                problems.append('%s：來源=%s、產物=exit %s（預期 %s）' % (
-                    name, source_ok, result.returncode, expected))
+            if result.returncode != (0 if expected else 2):
+                problems.append('%s：exit %s（預期 %s）' % (name, result.returncode, expected))
     finally:
         write_lf(target, original)
         git(['add', '--', 'ARCHITECTURE.md'], dest)
         nested_target.parent.mkdir(parents=True, exist_ok=True)
         write_lf(nested_target, nested_original)
         git(['add', '--', nested_rel], dest)
-    record('FAIL' if problems else 'OK', '來源／產物文件同組情境（F46 部分）',
+    record('FAIL' if problems else 'OK', '部署後文件檢查情境',
            '；'.join(problems) if problems else
-           '%d 種同組情境，含巢狀文件日期、佔位符、圍欄、角括號與 title、片段；兩端判定一致'
+           '%d 種情境，含巢狀文件日期、佔位符、圍欄、角括號與 title、片段；本 repo 用同一份函式（F46）'
            % (len(cases) + len(nested_cases)))
 
 
-def step_document_policy_parity(dest, tmp):
-    """Compare configured stale strings and non-Markdown placeholders on both sides."""
-    source = tmp / 'source-policy-fixture'
-    source.mkdir()
+def step_product_document_policy(dest):
+    """部署後 check_docs.py 的專案設定：過期字串、非 Markdown 佔位符、連結與佔位符豁免。"""
     checker = dest / 'tools/check_docs.py'
     original_checker = checker.read_text(encoding='utf-8')
     readme = dest / 'README.md'
     original_readme = readme.read_text(encoding='utf-8')
     fixture_rel = 'tools/fixture.py'
     fixture = dest / fixture_rel
-    source_fixture = source / fixture_rel
-    source_fixture.parent.mkdir(parents=True)
-    source_readme = source / 'README.md'
     token = '{{' + 'GH_OWNER' + '}}'
-    patterns = (('retired.example', '合成舊網域'),)
     cases = (
         ('設定後的有效文件', 'value = "ok"\n', '# fixture\n', False, False, False, True, ''),
         ('非 Markdown 已知佔位符', 'value = "' + token + '"\n',
@@ -1648,8 +1623,6 @@ def step_document_policy_parity(dest, tmp):
         for name, py_body, md_body, stale_exempt, hole_exempt, link_exempt, expected, channel in cases:
             write_lf(fixture, py_body)
             write_lf(readme, md_body)
-            write_lf(source_fixture, py_body)
-            write_lf(source_readme, md_body)
             git(['add', '--', fixture_rel, 'README.md'], dest)
             configured = original_checker.replace(
                 "STALE_PATTERNS = [\n    # ('localhost:8080', '已遷到正式網域，文件不該再出現本機位址'),\n]",
@@ -1669,136 +1642,22 @@ def step_document_policy_parity(dest, tmp):
                     "LINK_OK_PATHS = ('PROJECT-BOOTSTRAP.md',)",
                     "LINK_OK_PATHS = ('PROJECT-BOOTSTRAP.md', 'README.md')")
             write_lf(checker, configured)
-            source_findings = source_repo_document_problems(
-                source, ['README.md', fixture_rel], stale_patterns=patterns,
-                stale_ok_paths=('README.md',) if stale_exempt else (),
-                placeholder_ok_paths=(('PROJECT-BOOTSTRAP.md', fixture_rel)
-                                      if hole_exempt else ('PROJECT-BOOTSTRAP.md',)),
-                link_ok_paths=('README.md',) if link_exempt else ())
-            source_ok = not any(source_findings)
             result = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-            product_ok = result.returncode == 0
-            if (source_ok != expected or product_ok != expected or
-                    result.returncode != (0 if expected else 2) or
+            if (result.returncode != (0 if expected else 2) or
                     (channel and channel not in result.stdout)):
-                problems.append('%s：來源=%s、產物=exit %s（預期 %s／%s）' % (
-                    name, source_ok, result.returncode, expected, channel))
+                problems.append('%s：exit %s（預期 %s／%s）' % (
+                    name, result.returncode, expected, channel))
     finally:
         write_lf(checker, original_checker)
         write_lf(readme, original_readme)
         git(['add', '--', 'README.md'], dest)
         if fixture.exists():
             git(['rm', '-qf', '--', fixture_rel], dest)
-    record('FAIL' if problems else 'OK', '來源／產物文件設定同組情境（F46 部分）',
+    record('FAIL' if problems else 'OK', '部署後文件設定情境',
            '；'.join(problems) if problems else
-           '%d 種同組情境，含非 Markdown 佔位符、自訂過期字串、死連結與豁免；兩端判定一致'
-           % len(cases))
+           '%d 種情境，含非 Markdown 佔位符、自訂過期字串、死連結與豁免' % len(cases))
 
 
-def source_document_problems(root, mds, link_ok_paths=()):
-    """Same source document check used by the live repo and F46 fixtures.
-
-    The deployment package intentionally retains interview placeholders. Other
-    source documents must not accidentally carry one into a published commit.
-    """
-    missing = [rel for rel in mds if not (root / rel).is_file()]
-    dead, holes = [], []
-    for rel in mds:
-        if rel in missing:
-            continue
-        base = (root / rel).parent
-        if rel != 'PROJECT-BOOTSTRAP.md':
-            for match in PLACEHOLDER_RE.finditer((root / rel).read_text(encoding='utf-8')):
-                if match.group(1) in ANSWERS:
-                    holes.append('%s → %s' % (rel, match.group(0)))
-        # 來源部署包的範本位於圍欄內，仍須檢查；其他文件的圍欄是範例，
-        # 與產物 check_docs 一樣略過。F46 同組反例同時驗圍欄後的真死連結。
-        lines, fence = [], None
-        doc = (root / rel).read_text(encoding='utf-8')
-        if rel == 'AGENTS.md':
-            doc = blank_shared_copy(doc)
-        for line in doc.split('\n'):
-            marker = re.match(r'^\s*(```+|~~~+)', line)
-            if rel != 'PROJECT-BOOTSTRAP.md':
-                if fence is not None:
-                    lines.append('')
-                    if marker and line.strip().startswith(fence):
-                        fence = None
-                    continue
-                if marker:
-                    fence = marker.group(1)
-                    lines.append('')
-                    continue
-            lines.append(re.sub(r'`[^`]*`', '', line))
-        body = '\n'.join(lines)
-        if any(rel == p or rel.startswith(p) for p in link_ok_paths):
-            continue
-        for raw in re.findall(r'\]\(([^)]+)\)', body):
-            # title 先於角括號移除；反過來會把合法的 (<path> "title")
-            # 當成不存在的字面檔名。這也是產物 R09 的修正邊界。
-            link = re.sub(r'\s+["\'][^"\']*["\']\s*$', '', raw.strip()).strip()
-            if link.startswith('<') and link.endswith('>'):
-                link = link[1:-1].strip()
-            if link.startswith(('http://', 'https://', 'mailto:', '#')):
-                continue
-            target = link.split('#')[0]
-            if not target:
-                continue
-            if not (base / target).exists():
-                dead.append('%s → %s' % (rel, raw))
-    undated = [rel for rel in mds
-               if (rel in ('AGENTS.md', 'ARCHITECTURE.md') or rel.startswith('docs/ai-notes/'))
-               and (root / rel).is_file() and '最後更新' not in
-               '\n'.join((root / rel).read_text(encoding='utf-8').split('\n')[:8])]
-    return dead, undated, missing, holes
-
-
-SOURCE_PLACEHOLDER_SUFFIXES = ('.md', '.py', '.sh', '.json')
-SOURCE_PLACEHOLDER_FILES = ('.gitignore', '.gitattributes')
-SOURCE_STALE_OK = ('已停用', '已退役', '歷史', '勿再啟動', '~~')
-
-
-def source_policy_problems(root, files, stale_patterns=(), stale_ok_paths=(),
-                           placeholder_ok_paths=('PROJECT-BOOTSTRAP.md',)):
-    """Check the source's publishable files with the product's document policy shape.
-
-    The source has no project-specific stale patterns. Synthetic parity cases pass
-    a configured pattern explicitly, just as a deployed project's checker does.
-    """
-    stale, holes = [], []
-    for rel in files:
-        path = root / rel
-        if not path.is_file():
-            continue
-        body = path.read_text(encoding='utf-8')
-        if rel.endswith('.md') and not any(
-                rel == p or rel.startswith(p) for p in stale_ok_paths):
-            for n, line in enumerate(body.split('\n'), 1):
-                for pattern, why in stale_patterns:
-                    if pattern in line and not any(ok in line for ok in SOURCE_STALE_OK):
-                        stale.append('%s:%d → %s（%s）' % (rel, n, pattern, why))
-        if (rel.endswith(SOURCE_PLACEHOLDER_SUFFIXES) or
-                rel in SOURCE_PLACEHOLDER_FILES) and not any(
-                rel == p or rel.startswith(p) for p in placeholder_ok_paths):
-            for n, line in enumerate(body.split('\n'), 1):
-                for match in PLACEHOLDER_RE.finditer(line):
-                    if match.group(1) in ANSWERS:
-                        holes.append('%s:%d → %s' % (rel, n, match.group(0)))
-    return stale, holes
-
-
-def source_repo_document_problems(root, tracked_files, stale_patterns=(),
-                                  stale_ok_paths=(),
-                                  placeholder_ok_paths=('PROJECT-BOOTSTRAP.md',),
-                                  link_ok_paths=()):
-    """One source entry point for the live repo and synthetic policy cases."""
-    mds = [p for p in tracked_files if p.endswith('.md')]
-    nonmds = [p for p in tracked_files if not p.endswith('.md')]
-    dead, undated, missing, holes = source_document_problems(root, mds, link_ok_paths)
-    stale, _ = source_policy_problems(root, mds, stale_patterns, stale_ok_paths,
-                                      placeholder_ok_paths)
-    _, extra_holes = source_policy_problems(root, nonmds, (), (), placeholder_ok_paths)
-    return dead, undated, missing, stale, holes + extra_holes
 
 
 def source_staged_problems(root):
@@ -1870,29 +1729,19 @@ def step_source_staged_parity(dest, tmp):
            '完整 stage 通過、部分 stage 兩端拒絕、來源另拒未追蹤檔；未驗實際接手流程')
 
 
-def handoff_flow_case(kind, dest, tmp, bash):
-    """以本機 bare origin 真正推送開工／交棒，再由另一個 checkout 接棒。"""
-    home = tmp / ('flow-' + kind)
+def handoff_flow_case(dest, tmp, bash):
+    """以本機 bare origin 真正推送開工／交棒，再由另一個 checkout 接棒。
+
+    跑部署出去的專案；本 repo 的開場 hook 跟它逐位元組相同（「本 repo 開場 hook」守），不重跑。
+    hook 照原文印「工作中」（v3 D12），判讀交給模型。
+    """
+    home = tmp / 'flow-product'
     origin, writer, reader = home / 'origin.git', home / 'writer', home / 'reader'
     home.mkdir()
-    initial = dest if kind == 'product' else ROOT
-    if kind == 'product':
-        shutil.copytree(initial, writer, ignore=shutil.ignore_patterns('.git'))
-        hook_rel = '.claude/hooks/git-freshness.sh'
-        # 部署出去的 hook 照原文印「工作中」（v3 D12），判讀交給模型。
-        free_mark, foreign_mark = '- **工作中**：無（已交棒）', '- **工作中**：`other-box`'
-        needle = 'origin/${branch}:HANDOFF.md'
-    else:
-        writer.mkdir()
-        for rel in ('AGENTS.md', 'ARCHITECTURE.md', 'HANDOFF.md', 'README.md',
-                    '.claude/hooks/repo-git-check.sh'):
-            target = writer / rel
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(initial / rel, target)
-        hook_rel = '.claude/hooks/repo-git-check.sh'
-        # 本 repo 的開場 hook 是 3.10 的逐字副本，印法跟部署出去的一樣。
-        free_mark, foreign_mark = '- **工作中**：無（已交棒）', '- **工作中**：`other-box`'
-        needle = 'origin/${branch}:HANDOFF.md'
+    shutil.copytree(dest, writer, ignore=shutil.ignore_patterns('.git'))
+    hook_rel = '.claude/hooks/git-freshness.sh'
+    free_mark, foreign_mark = '- **工作中**：無（已交棒）', '- **工作中**：`other-box`'
+    needle = 'origin/${branch}:HANDOFF.md'
 
     handoff = writer / 'HANDOFF.md'
     busy_line = next(line for line in read_lf(handoff).splitlines()
@@ -1986,21 +1835,20 @@ def handoff_flow_case(kind, dest, tmp, bash):
         raise AssertionError('交棒後 reader 未乾淨對齊 origin')
 
 
-def step_handoff_flow_parity(dest, tmp):
-    """F46 部分：來源與產物共跑實際 Git 接力，不把 hook 提醒算作程序執行。"""
+def step_product_handoff_flow(dest, tmp):
+    """實際 Git 接力：不把 hook 提醒算作程序執行。"""
+    title = '部署後接手流程情境'
     bash = find_bash()
     if not bash:
-        record('SKIP', '來源／產物接手流程同組情境（F46 部分）', '缺可用 bash')
+        record('SKIP', title, '缺可用 bash')
         return
-    problems = []
-    for kind in ('source', 'product'):
-        try:
-            handoff_flow_case(kind, dest, tmp, bash)
-        except (AssertionError, OSError, StopIteration) as exc:
-            problems.append('%s：%s' % (kind, exc))
-    record('FAIL' if problems else 'OK', '來源／產物接手流程同組情境（F46 部分）',
-           '；'.join(problems) if problems else
-           '兩端各走遠端占用→陳舊接手阻擋→釋出→A2.5/A5 SHA 變更→本機開工→任務推送→交棒；本機快照錯誤放行變異均重現。hook 只提醒，模型遵循未驗')
+    try:
+        handoff_flow_case(dest, tmp, bash)
+    except (AssertionError, OSError, StopIteration) as exc:
+        record('FAIL', title, str(exc))
+        return
+    record('OK', title, '遠端占用→陳舊接手阻擋→釋出→A2.5/A5 SHA 變更→本機開工→任務推送→交棒；'
+           '本機快照錯誤放行變異重現。本 repo 的 hook 是逐字副本，不重跑；hook 只提醒，模型遵循未驗')
 
 
 REPO_START_HOOK = '.claude/hooks/repo-git-check.sh'
@@ -2033,13 +1881,64 @@ BOOK_LINK = re.compile(r'唯一需求書是\[[^\]]*\]\((project-bootstrap-requir
 BOOK_VERSION = re.compile(r'^> 決策版本：([0-9]+)。', re.M)
 
 
+REPO_SKIP = ('src/kit/', ARCHIVE_DIR, 'bootstrap.py')
+PRODUCT_CHECKER = ROOT / 'src/kit/files/tools/check_docs.py.tmpl'
+
+
 def repo_scanned_files(tracked_files):
     """本 repo 文件檢查要讀的檔：src/kit/ 另有規則，封存區不讀（v3 Q39）。
 
     bootstrap.py 是 src/kit 的生成結果、刻意保留佔位符，由「安裝程式由來源生成」守，這裡不再查。
     """
-    return [p for p in tracked_files
-            if not p.startswith('src/kit/') and not p.startswith(ARCHIVE_DIR) and p != 'bootstrap.py']
+    return [p for p in tracked_files if not any(p == s or p.startswith(s) for s in REPO_SKIP)]
+
+
+def product_checker(path=PRODUCT_CHECKER):
+    """載入部署後的 check_docs.py，換上本 repo 的設定（F46）。
+
+    範本沒有佔位符，原文就是部署出去的那支。本 repo 不裝副本，改在這裡用同一份程式查自己，
+    跟部署專案改檔頭「專案設定」區塊是同一種做法；保護因此不會低於產物。
+    """
+    loader = importlib.machinery.SourceFileLoader('check_docs_product', str(path))
+    module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
+    loader.exec_module(module)
+    module.DATED_DIRS = ('AGENTS.md', 'ARCHITECTURE.md', 'docs/ai-notes/')
+    module.LINK_OK_PATHS = module.PLACEHOLDER_OK_PATHS = REPO_SKIP
+    return module
+
+
+class SharedBlanked(type(pathlib.Path())):
+    """讀檔時把 AGENTS.md 的共用制度塗白：那一段連到部署後才存在的 skill 路徑。"""
+
+    def read_text(self, *args, **kwargs):
+        return blank_shared_copy(super().read_text(*args, **kwargs))
+
+
+@contextmanager
+def pushd(folder):
+    """check_docs.py 用相對路徑讀檔、在 cwd 跑 git，所以要在受查的 repo 裡呼叫。"""
+    old = os.getcwd()
+    os.chdir(folder)
+    try:
+        yield
+    finally:
+        os.chdir(old)
+
+
+def repo_document_problems(root, checker=None):
+    """本 repo 的文件檢查，用部署後 check_docs.py 的同一份函式。回傳 (缺檔, 死連結, 缺日期, 殘留佔位符)。"""
+    checker = checker or product_checker()
+    with pushd(root):
+        def keep(path):
+            return repo_scanned_files([path.as_posix()]) != []
+        mds = [path for path in checker.tracked_md() if keep(path)]
+        missing = [path.as_posix() for path in mds if not path.is_file()]
+        mds = [SharedBlanked(path) if path.as_posix() == 'AGENTS.md' else path
+               for path in mds if path.is_file()]
+        others = [path for path in checker.tracked(*checker.PLACEHOLDER_GLOBS)
+                  if keep(path) and path.is_file()]
+        return (missing, checker.check_links(mds)[1], checker.check_dates(mds),
+                checker.check_placeholders(others))
 
 
 def archive_problems(root, tracked_files, blob_of, frozen=None, readers=None):
@@ -2131,8 +2030,9 @@ def repo_wiring_problems(root):
 def step_self():
     """本 repo 自己的 .md 與設定檔：死連結、日期標頭、殘留佔位符、接線合法。
 
-    本 repo 刻意不裝 `check_docs.py`（裝了就成了要同步的副本），所以由這一項代替。
-    settings.json 壞掉的後果是 SessionStart hook 靜默不執行，所以一起查。
+    本 repo 刻意不裝 `check_docs.py`（裝了就成了要同步的副本），改用部署後那支的同一份函式
+    換上本 repo 的設定來查（repo_document_problems）。settings.json 壞掉的後果是 SessionStart
+    hook 靜默不執行，所以一起查。
     """
     ok = True
     tracked_files = [p for p in run(['git', 'ls-files', '-z'], cwd=ROOT).stdout.split('\0') if p]
@@ -2140,8 +2040,8 @@ def step_self():
     # 封存區不讀（v3 Q39、Q45）：v2 原件逐位元組凍結，檔內相對連結失效是已宣告例外。
     tracked_files = repo_scanned_files(tracked_files)
     mds = [p for p in tracked_files if p.endswith('.md')]
-    dead, undated, missing, stale, holes = source_repo_document_problems(ROOT, tracked_files)
-    if dead or undated or missing or stale or holes:
+    missing, dead, undated, holes = repo_document_problems(ROOT)
+    if dead or undated or missing or holes:
         detail = []
         if missing:
             detail.append('缺檔：%s' % '、'.join(missing[:5]))
@@ -2149,8 +2049,6 @@ def step_self():
             detail.append('死連結 %d 處：%s' % (len(dead), '、'.join(dead[:5])))
         if undated:
             detail.append('缺「最後更新」：%s' % '、'.join(undated))
-        if stale:
-            detail.append('過期字串：%s' % '、'.join(stale[:5]))
         if holes:
             detail.append('殘留部署佔位符：%s' % '、'.join(holes[:5]))
         record('FAIL', '本 repo 自己的文件', '；'.join(detail))
@@ -2158,7 +2056,7 @@ def step_self():
     else:
         record('OK', '本 repo 自己的文件',
                '%d 個 .md 無死連結、受管非 Markdown 無殘留部署佔位符，日期標頭齊備'
-               % len(mds))
+               '（用部署後 check_docs.py 的同一份函式）' % len(mds))
 
     problems, present = repo_wiring_problems(ROOT)
     if problems:
@@ -2231,7 +2129,8 @@ def step_archive(tmp):
     (root / 'docs/live.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
     checked = ['archive/other/README.md', 'docs/history/h.md', 'docs/live.md']
     scanned = repo_scanned_files(['archive/docs/x.md'] + checked + ['src/kit/kit.md'])
-    dead = source_document_problems(root, [p for p in scanned if p.endswith('.md')])[0]
+    with pushd(root):
+        dead = product_checker().check_links([pathlib.Path(p) for p in scanned if p.endswith('.md')])[1]
     if (scanned != checked
             or not all(any(d.startswith(p) for d in dead) for p in checked)):
         problems.append('封存區的略過蓋到別處：掃描 %s、死連結 %s' % (scanned, dead))
@@ -4798,10 +4697,10 @@ def _run_checks(dest, tmp, collect):
         step_source_exceptions(dest, tmp)
         step_repo_pre_push(dest, tmp)
         step_handoff_parity(dest)
-        step_document_parity(dest, tmp)
-        step_document_policy_parity(dest, tmp)
+        step_product_documents(dest)
+        step_product_document_policy(dest)
         step_source_staged_parity(dest, tmp)
-        step_handoff_flow_parity(dest, tmp)
+        step_product_handoff_flow(dest, tmp)
     step_sync_coverage(dest)
     step_sync_self_guard()
     step_sync_safety(tmp)
