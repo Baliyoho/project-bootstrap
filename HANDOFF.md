@@ -1,6 +1,6 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-21 15:54（+08）
+- **交接時間**：2026-11-21 15:57（+08）
 - **交棒者**：Claude Code（桌面 App）／Mac mini（依原則草稿精簡 AGENTS 與 HANDOFF）
 
 ## 任務目標
@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無。
-- **工作中**：`Mac mini` ／ `Claude Code` ／ `㊣　11.21.15｜待指派｜工作中｜交棒0次`，2026-11-21 15:36 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-21.3`
 - 本機能力：Mac mini；`git push` 可用；`.venv` 可跑外部套件測試（`.venv/bin/python -m pytest tests`）。`/usr/bin/python3` 是 3.9.6，低於全 repo 下限 3.12，要用另裝的 `python3`（3.15.2）。
 
@@ -36,7 +36,7 @@
 ## 服務查證與期望快照
 
 - 2026-11-21 macOS Mac mini：`python3 -X utf8 tools/verify_bootstrap.py --staged` → exit 0，65 項全過（全域 skill 不同版只印提醒）；`.venv/bin/python -m pytest -q` → 170 passed。
-- `src/project_bootstrap/` 沒改，沒跑變異測試；handoff-ab 沒跑。同步工具的「## 已完成」改名只有函式層的負向測試，沒有對已部署專案實跑。
+- `src/project_bootstrap/` 沒改，沒跑變異測試；handoff-ab 沒跑。驗證器「已修正的主張沒復活」的序號算法檢查改查維護手冊，負向測試照跑通過。同步工具的「## 已完成」改名只有函式層的負向測試，沒有對已部署專案實跑。
 - Windows 與已部署專案沒跑；任一平台看到失敗都是回歸。
 
 ## 懸置事項（AI 勿自行處理）
