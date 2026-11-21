@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""驗證 PROJECT-BOOTSTRAP.md 這份部署包本身還能不能用（本 repo 唯一的驗證腳本）。
+"""驗證部署包（src/kit 與生成的 bootstrap.py）本身還能不能用，本 repo 唯一的驗證腳本。
 
-為什麼有這支：「改完部署包要重生一次骨架驗證」（現在是 AGENTS.md 專用規則 9）在 2026-08-05
-之前是一段要人照著手刻的敘述——每一棒都得重刻一次，於是實務上常常跳過。把它固化成一個
-指令，驗證才會真的發生。這支腳本是部署包的測試；本 repo 自己的交接快照與開場 hook
-也由它檢查，不另部署一份 check_docs.py。
+改完部署包要重生一次骨架來驗；以前那是一段要人手刻的敘述，常被跳過，所以固化成一個指令
+（AGENTS.md 專用規則 9）。本 repo 自己的交接快照、開場 hook 與文件也由它檢查，不另裝 check_docs.py。
 
 用法（在本 repo 根目錄執行）：
   python -X utf8 tools/verify_bootstrap.py
   python -X utf8 tools/verify_bootstrap.py --staged  # B7：驗提交候選與工作樹一致
   python -X utf8 tools/verify_bootstrap.py --keep   # 保留產生的骨架供人工檢查
 
-2026-11-18（決策書 v3 Q49）起對外的安裝途徑是 bootstrap.py，解壓即用的 zip（`--zip`）
-跟 AI 照抄一起拿掉：zip 裡的檔還帶著佔位符，要 AI 照第 1 節換掉，就是 Q49 要取代的那條路。
-
 檢查項一覽（守什麼、失敗代表什麼；這是唯一的一份清單，增減檢查項時改這裡。
-2026-11-13 第 1 期對驗證項的取捨在 docs/history/rationale-history.md 的「#rule-4」那組）：
+驗證項的取捨經過在 docs/history/rationale-history.md 的「#rule-4」那組）：
 
 | 檢查 | 守什麼 | 失敗代表 |
 |---|---|---|
@@ -24,34 +19,31 @@
 | 填佔位符 | 模擬部署後不該有殘留 | 範本用了訪談表沒有的佔位符 |
 | `check_docs` | 在填好的骨架跑要 exit 0 | 範本裡有死連結或缺日期標頭 |
 | 佔位符清單 | `PLACEHOLDER_NAMES` 涵蓋範本真正用到的名字 | 有個洞永遠不會被檢查到，而且沒有跡象 |
-| 佔位符檢查（負向） | 種一個佔位符回去必須被擋下 | 第 5 項檢查本身壞了 |
-| 日期標頭（負向） | 拿掉 `ARCHITECTURE.md` 的「最後更新」必須被擋下 | `check_docs` 的 `DATED_DIRS` 漏了它 |
-| 工作中欄位格式（負向） | 四種壞格式（舊格式沒工具欄、主題含「無」、欄位重複、機器欄空白）都要 exit 2，正常的已交棒值不誤擋。2026-11-02 從「工具欄（負向測試）」擴大 | `check_docs` 用子字串判「已交棒」，正常任務名稱就能跳過整個格式驗證（F01） |
-| 真實部署形狀 | 部署包在場＋非 ASCII 檔名時仍 exit 0 | 照說明部署的人一定會踩到 |
+| 真實部署形狀 | 專案裡有非 ASCII 檔名時 check_docs 仍 exit 0、不崩潰 | 崩潰看起來像環境問題，接手的人會跳過驗證 |
 | 跨平台防呆 | 無絕對路徑、有 `python3` 退路 | 換一台機器會靜默失效 |
-| AI push 提醒情境 | staged／unstaged 不放行、已提交開工／交棒放行；命令選項、remote、refspec、GUI／script 的已知邊界；恢復舊捷徑的負向測試 | 未提交修改不會隨 push 上傳，不能拿來放行；有限提醒不能冒充發布保證（2026-11-02／F06） |
-| 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 那一份後照原文印出（2026-11-13 起不再分 🔴／🟡／✅，v3 D12）：別台機器、主題含「無」原文完整、已交棒、欄位重複說有幾列、欄位不存在明講讀不到、工具環境變數不改變輸出；拿掉印出那一行的負向測試 | 下一棒看不到誰握著分支（F4 偵測） |
+| AI push 提醒情境 | staged／unstaged 不放行、已提交開工／交棒放行；命令選項、remote、refspec、GUI／script 的已知邊界；恢復舊捷徑的負向測試 | 未提交修改不會隨 push 上傳，不能拿來放行；有限提醒不能冒充發布保證（F06） |
+| 工作中標記 | 範本有欄位，且 git-freshness 讀 `origin` 那一份後照原文印出（v3 D12）：別台機器、主題含「無」原文完整、已交棒、欄位重複說有幾列、欄位不存在明講讀不到、工具環境變數不改變輸出；拿掉印出那一行的負向測試 | 下一棒看不到誰握著分支（F4 偵測） |
 | `VERSION` 檔 | 與部署包版本行一致 | 落後偵測會說謊，落後的專案以為自己最新 |
 | 版本落後偵測 | 共用制度版本取自 `AGENTS.md` 開始標記；餵**比本機新**的版本要講落後、餵**比本機舊**的要說「比上游新」、同版與 `BOOTSTRAP_VERSION_CHECK=off` 要閉嘴 | 專案不再自己回報落後（F18 提示） |
 | 本 repo 自己的文件 | 本 repo 的 `.md` 無死連結、`AGENTS.md`／`ARCHITECTURE.md` 有日期標頭，受管非 Markdown 檔無已知部署佔位符；`src/kit/` 另有規則，`archive/docs/` 封存區不讀（v3 Q39） | 改檔名或搬段落留下死連結，或把未填的部署欄位帶進公開來源。部署包裡指向「部署後才存在的檔」的連結不算，判準是 `EXPECTED`，所以它指向本 repo 檔案的連結照樣會被抓 |
-| 封存原件 | `archive/docs/` 的 v2 決策書 Git blob 不變（只看 index 記的 blob，不開檔）；程式、測試與設定檔不出現它的路徑（`ARCHIVE_READERS` 登記的除外，登記前要使用者同意）；文件檢查不讀封存區但不外溢。引用、改內容、搬走、略過外溢四種反例都要擋，已登記讀取者放行（2026-11-17，v3 Q39） | 有程式又開始讀 v2，或封存原件被改、被搬走 |
-| 版本更替 | 現行版本取 AGENTS 連到的決策書（檔名的版本號要跟「決策版本」行相同）；`archive/` 以外的檔名、資料夾名與程式識別字不得帶比它舊的版本號，程式不得引用 `archive/` 底下的版本封存資料夾。文件內文的對照與歷史說明、`v2.1.277` 這種工具版本號不算；本檔自己的反例在執行時拼出版本號，換版後不會擋到自己。版本來源 3 種、檔名／識別字／封存引用 4 種反例（2026-11-18，v3 Q47） | 新版成為權威後，舊版本名稱的檔案或程式還留在現行區；也就是 v2 的程式留在 main 那種情形（v3 Q46） |
-| 本 repo push 前 hook | `repo-pre-push.sh` 跟部署包 3.11 逐位元組相同；兩份接線的 PreToolUse 都指向它；接線守門 7 個負向測試（沒接、指向別支、matcher 退回 `Bash`、接回 PostToolUse、SessionStart 指錯、腳本不存在）（2026-11-14 取代「動作當下送規則」） | 改了 3.11 卻沒重貼，或接線被改掉，本 repo 推 `main` 時沒寫開工標記也不會被擋 |
-| 本 repo 兩份接線 | `.claude/settings.json` 與 `.codex/hooks.json` 都是合法 JSON、`SessionStart` 都指向 `repo-git-check.sh`、`PreToolUse` 都指向 `repo-pre-push.sh`（2026-11-14 起；之前只有 Claude Code 那份可多接動作提醒），其他事件一律拒絕，而且沒被改成指向 `git-freshness.sh`／`pre-push-handoff.sh` | 開場檢查靜默不執行——看起來有防護、實際上沒有。這兩個檔是 JSON、塞不進 `source:` 標記，落後偵測看不到它們，這一項是唯一的守門人 |
+| 封存原件 | `archive/docs/` 的 v2 決策書 Git blob 不變（只看 index 記的 blob，不開檔）；程式、測試與設定檔不出現它的路徑（`ARCHIVE_READERS` 登記的除外，登記前要使用者同意）；文件檢查不讀封存區但不外溢。引用、改內容、搬走、略過外溢四種反例都要擋，已登記讀取者放行（v3 Q39） | 有程式又開始讀 v2，或封存原件被改、被搬走 |
+| 版本更替 | 現行版本取 AGENTS 連到的決策書（檔名的版本號要跟「決策版本」行相同）；`archive/` 以外的檔名、資料夾名與程式識別字不得帶比它舊的版本號，程式不得引用 `archive/` 底下的版本封存資料夾。文件內文的對照與歷史說明、`v2.1.277` 這種工具版本號不算；本檔自己的反例在執行時拼出版本號，換版後不會擋到自己。版本來源 3 種、檔名／識別字／封存引用 4 種反例（v3 Q47） | 新版成為權威後，舊版本名稱的檔案或程式還留在現行區；也就是 v2 的程式留在 main 那種情形（v3 Q46） |
+| 本 repo push 前 hook | `repo-pre-push.sh` 跟部署包 3.11 逐位元組相同；兩份接線的 PreToolUse 都指向它；接線守門 7 個負向測試（沒接、指向別支、matcher 退回 `Bash`、接回 PostToolUse、SessionStart 指錯、腳本不存在）（v3 F10） | 改了 3.11 卻沒重貼，或接線被改掉，本 repo 推 `main` 時沒寫開工標記也不會被擋 |
+| 本 repo 兩份接線 | `.claude/settings.json` 與 `.codex/hooks.json` 都是合法 JSON、`SessionStart` 都指向 `repo-git-check.sh`、`PreToolUse` 都指向 `repo-pre-push.sh`，其他事件一律拒絕，而且沒被改成指向 `git-freshness.sh`／`pre-push-handoff.sh` | 開場檢查靜默不執行——看起來有防護、實際上沒有。這兩個檔是 JSON、塞不進 `source:` 標記，落後偵測看不到它們，這一項是唯一的守門人 |
 | sync 拒絕本 repo | `sync_project.py <本 repo 路徑>` 要印出拒絕，**而且預演輸出裡零 `UPDATE`** | 一次手打路徑就把兩份接線改成指向這裡不存在的腳本。只檢查「有印拒絕」的話，一個印了話卻照樣改檔的版本會通過，比沒有這項更糟 |
 | 改名寫進回報模板 | A5／B9 各有必填 `session：` 與無改名工具時的回報選項，附負向測試 | 改名漏做卻在 repo 內沒有任何跡象 |
-| 續聊狀態與計數 | `AGENTS.md` 共用制度有「`↗` 時收到新訊息先改回 `㊣`」（2026-11-13 起取代 skill 與指標 description 的觸發詞，skill 不再必讀；2026-11-20 起沒有 `※`，v3 Q54）；skill 參考檔保留時間與計數、只讀不寫 Git、改檔重跑 A、成功交棒才累加；附 17 個負向測試 | 已交棒後續聊沒恢復工作中，或計數被重算 |
+| 續聊狀態與計數 | `AGENTS.md` 共用制度有「`↗` 時收到新訊息先改回 `㊣`」（v3 第 5 節、Q54）；skill 參考檔保留時間與計數、只讀不寫 Git、改檔重跑 A、成功交棒才累加；附 17 個負向測試 | 已交棒後續聊沒恢復工作中，或計數被重算 |
 | 本 repo 交接狀態 | 必要欄位與章節、≤80 行、骨架版本符合 VERSION、禁止這次已知過期待辦與只改兩欄的入口規則；附負向測試 | 標記清了卻保留已完成待辦，下一棒被迫從聊天重建現況；不保證任意待辦的語意正確，仍需 B6 人工核對 |
-| 規則理由連結 | AGENTS.md 與 `docs/maintenance.md` 每節至少一個、專用規則／副本規則／hook 訊息每條各一個指向 `docs/rationale.md` 的連結（從各自的位置算相對路徑），連結的段落存在且非空；只有表格列的「碰到才讀」索引節免連結，夾帶規則句就照一般章節要求（2026-11-20）；AGENTS 照「## 大段／### 節」切，只放小節的大段標題不算一節（v3 Q58）；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
-| 規則引用有前綴 | 現行文件、範本與程式註解引用 AGENTS 的規則編號時寫「共用規則 N」或「專用規則 N」（「副本規則 N」是維護手冊自己的清單，放行）；`CHANGELOG.md`、`docs/history/`、`archive/`、`experiments/` 是經過，不查；3 個負向測試（2026-11-21，v3 Q58） | 共用與專用分開編號後，沒有前綴的「規則 N」分不出指哪一份，舊編號也會躲在裡面不被發現 |
-| 來源例外可見性（F46 部分） | 每輪印出已宣告減項（2026-11-14 起剩 handoff skill、check_docs.py 兩項；pre-push 補裝了）；確認來源缺、產物有，並對漏宣告／來源增項／產物缺項跑負向變異 | 三項減項再次從驗證輸出中靜默消失；這只驗可見性，未完成來源／產物全部同組情境 |
-| 來源／產物交接快照同組情境（F46 部分） | 同一組 11 種合成快照在來源檢查與部署後 `check_docs.py` 各跑一次：有效、整份缺失、占用欄缺失／重複、章節缺失、超行數、機器／工具欄正反例均須一致；來源檢查遇整份缺失須明確報錯 | 來源少了整份 `HANDOFF.md` 時只拋例外，或產物與來源對相同缺陷給出矛盾結論；實際接手流程仍待驗 |
-| 來源／產物文件同組情境（F46 部分） | 同一份合成文件在來源文件檢查與部署後 `check_docs.py` 各跑一次：20 種正反例涵蓋根目錄及巢狀文件的缺檔、死連結、程式碼、角括號加 title、片段、日期及佔位符；沿用來源實際檢查函式 | 同樣的文件缺陷在來源與產物給出不同結論；其他文件項仍待驗 |
+| 規則理由連結 | AGENTS.md 與 `docs/maintenance.md` 每節至少一個、專用規則／副本規則／hook 訊息每條各一個指向 `docs/rationale.md` 的連結（從各自的位置算相對路徑），連結的段落存在且非空；只有表格列的「碰到才讀」索引節免連結，夾帶規則句就照一般章節要求；AGENTS 照「## 大段／### 節」切，只放小節的大段標題不算一節（v3 Q58）；附負向測試 | 理由搬到別的檔之後被悄悄刪掉、新增規則沒有理由、連結指向不存在的段落。只查連結與段落存在，不判斷理由寫得對不對 |
+| 規則引用有前綴 | 現行文件、範本與程式註解引用 AGENTS 的規則編號時寫「共用規則 N」或「專用規則 N」（「副本規則 N」是維護手冊自己的清單，放行）；`CHANGELOG.md`、`docs/history/`、`archive/`、`experiments/` 是經過，不查；3 個負向測試（v3 Q58） | 共用與專用分開編號後，沒有前綴的「規則 N」分不出指哪一份，舊編號也會躲在裡面不被發現 |
+| 來源例外可見性（F46 部分） | 每輪印出已宣告減項（handoff skill、check_docs.py 兩項）；確認來源缺、產物有，並對漏宣告／來源增項／產物缺項跑負向變異 | 三項減項再次從驗證輸出中靜默消失；這只驗可見性，未完成來源／產物全部同組情境 |
+| 來源／產物交接快照同組情境（F46 部分） | 同一組 13 種合成快照在來源檢查與部署後 `check_docs.py` 各跑一次：有效、整份缺失、占用欄缺失／重複、章節缺失、超行數、機器／工具欄正反例、主題含「無」、已交棒前後有空白均須一致；來源檢查遇整份缺失須明確報錯 | 來源少了整份 `HANDOFF.md` 時只拋例外，或產物與來源對相同缺陷給出矛盾結論；實際接手流程仍待驗 |
+| 來源／產物文件同組情境（F46 部分） | 同一份合成文件在來源文件檢查與部署後 `check_docs.py` 各跑一次：20 種正反例涵蓋根目錄及巢狀文件的缺檔、死連結、程式碼、角括號加 title、片段、日期（含 `ARCHITECTURE.md`）及佔位符；沿用來源實際檢查函式 | 同樣的文件缺陷在來源與產物給出不同結論；其他文件項仍待驗 |
 | 來源／產物文件設定同組情境（F46 部分） | 9 種合成設定情境對照非 Markdown 已知佔位符、未知樣板、專案自訂過期字串、同列歷史文字與連結／佔位符／過期字串路徑豁免；來源端同時掃自己受管的非 Markdown 檔 | 來源非 Markdown 檔殘留部署欄位，或來源與產物對相同設定給出不同結果；任意專案設定與跨工具遵循仍待驗 |
 | 來源提交候選一致性（F46 部分） | 來源 `verify_bootstrap.py --staged` 拒絕未暫存或未追蹤檔；完整／部分 stage 與產物 `check_docs.py --staged` 跑同組 fixture，並對來源未追蹤檔作負向測試 | 用未提交的工作樹內容證明另一份 staged 內容；只驗提交候選形狀，不代表實際接手流程已驗收 |
-| 本 repo 開場 hook | `repo-git-check.sh` 跟部署包 3.10 逐位元組相同；多一行與檔案不存在兩個負向測試（2026-11-14 取代「本 repo 工作中判讀」，那一項測的是已退場的判讀版） | 改了 3.10 卻沒重貼，本 repo 開場印的跟共用制度說的不一樣，或退回會下指示的判讀版 |
+| 本 repo 開場 hook | `repo-git-check.sh` 跟部署包 3.10 逐位元組相同；多一行與檔案不存在兩個負向測試 | 改了 3.10 卻沒重貼，本 repo 開場印的跟共用制度說的不一樣，或退回會下指示的判讀版 |
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
-| 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（2026-11-02／F02、F03） |
+| 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（F02、F03） |
 | 同步升級 mode | 替換前複製既存 mode；複製失敗保留原檔；新依賴仍可建立；移除複製的負向變異必須失敗。POSIX 另驗 0755／0640、開場 hook 直接執行、Git 無 mode diff | 新 inode 預設權限會讓更新後的 POSIX hook 無法執行；Windows 通過不代表 POSIX 實測 |
 | 結構摘要一致性 | 本 repo 與生成 ARCHITECTURE 寫明 `CLAUDE.md` 用 import、表格不再列 Gemini 的指標檔；四個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
 | 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
@@ -62,124 +54,24 @@
 | Codex Windows 結束碼 | 實跑 PowerShell → cmd → Git Bash；保留 exit 2，拿掉明確 exit 時必須重現 exit 1 | 只測原生 cmd 會把工具仍放行的版本誤報成功；此項只在 Windows 執行 |
 | Codex 接線升級 | 舊專案補齊啟動器、保留專案 hook 與 SKILL、預演零寫入、重跑零變更、不替沒有接線的專案補裝 | 只更新 JSON 卻漏掉新依賴會再度靜默失效 |
 | Codex Windows 啟動器 | Windows 原生 cmd 實跑中文／空白路徑、不同 cwd、stdin／stdout／stderr／exit 2 與缺少 Git Bash 的情境 | 轉接層若吞掉 exit 2，pre-push 防呆會消失；此項只在 Windows 執行 |
-| verify_state 失敗訊號 | 命令非零退出、HTTP 500、連不上、200 但回應內容不對都要讓結束碼非零；缺憑證是 SKIP，`--strict` 才非零、`OPTIONAL` 放行；未填仍回 0；祕密要遮罩。十個情境全部實跑 | 舊版每一種情況都 return 0，畫面印著 `rc7` 而下游拿 exit 0 當服務驗收（2026-11-02／F04） |
-| 交接快照檢查 | `HANDOFF.md` 不見了、超過 80 行、缺必要章節或欄位重複都要 exit 2；`--docs-only` 要真的關得掉；程式碼範例、帶 title 與角括號連結不得誤報，但真的死連結仍要抓到 | 第 6 項只在 HANDOFF 出現在輸入清單時才驗，整份刪掉反而回報乾淨；而連結誤報會教人「這支腳本的 FAIL 可以無視」（2026-11-02／F08） |
-| Python 版本下限 | 兩支維護工具檔頭的 `MIN_PY` 存在、會擋、兩邊同號；README 範本寫出部署後工具的下限；四支 `.py` 都沒有用到高於下限的 API（掃描前把註解與字串塗白） | 3.13-only 的 API 在舊版 python 上是執行到那一行才炸成 TypeError，不會說「版本太舊」。下限是靜態擔保、不是實測：沒有舊版可跑，要實測得先有 CI（2026-11-02／F14） |
-| 已修正的主張沒復活 | 能力表 ✅ 的工具不得被散文說成沒有 skill、交接 prompt 不得有自己的 A／B 編號且要寫出模式、`verify_state` 不得以憑證為前提、版本序號只有一種定義、可攜層不得寫成「到哪都成立」；附九個負向測試 | 事實在部署包被改對，範本、操作卡與入口文件裡的舊說法照樣部署出去。綁結構不綁禁句，「」裡的引用不算主張（專用規則 8 要留為什麼）；守不了一整段敘述的準確度（2026-11-02／F15） |
+| verify_state 失敗訊號 | 命令非零退出、HTTP 500、連不上、200 但回應內容不對都要讓結束碼非零；缺憑證是 SKIP，`--strict` 才非零、`OPTIONAL` 放行；未填仍回 0；祕密要遮罩。十個情境全部實跑 | 舊版每一種情況都 return 0，畫面印著 `rc7` 而下游拿 exit 0 當服務驗收（F04） |
+| 交接快照檢查 | 超過 80 行、章節重複或欄位重複都要 exit 2（刪檔與缺章節在交接快照同組情境）；`--docs-only` 要真的關得掉；程式碼範例、帶 title 與角括號連結不得誤報，但真的死連結仍要抓到 | 第 6 項只在 HANDOFF 出現在輸入清單時才驗，整份刪掉反而回報乾淨；而連結誤報會教人「這支腳本的 FAIL 可以無視」（F08） |
+| Python 版本下限 | 兩支維護工具檔頭的 `MIN_PY` 存在、會擋、兩邊同號；README 範本寫出部署後工具的下限；四支 `.py` 都沒有用到高於下限的 API（掃描前把註解與字串塗白） | 3.13-only 的 API 在舊版 python 上是執行到那一行才炸成 TypeError，不會說「版本太舊」。下限是靜態擔保、不是實測：沒有舊版可跑，要實測得先有 CI（F14） |
+| 已修正的主張沒復活 | 能力表 ✅ 的工具不得被散文說成沒有 skill、交接 prompt 不得有自己的 A／B 編號且要寫出模式、`verify_state` 不得以憑證為前提、版本序號只有一種定義、可攜層不得寫成「到哪都成立」；附九個負向測試 | 事實在部署包被改對，範本、操作卡與入口文件裡的舊說法照樣部署出去。綁結構不綁禁句，「」裡的引用不算主張（專用規則 8 要留為什麼）；守不了一整段敘述的準確度（F15） |
 | 協作狀態契約／Git 異常提示 | 六狀態與步驟契約、21 個負向測試，含 R07 先 stage 再驗證。Git 異常：部署 hook 實跑領先／分岔／fetch 失敗要照實報出、不得建議 rebase，`AGENTS.md` 共用制度要有停止條件；本 repo hook 照舊要求停止；2 個負向測試 | 程序順序矛盾或工具提示教人自行 rebase |
 | 核心與實例優先序 | skill／README 宣告一致、override 範圍明確、部署包不再產出交接協定（v3 Q41）、7 個負向測試；同步對舊實例列版本與 MIGRATE，不改寫 | 不同步的舊協定會推翻新程序（F10） |
-| 接力協調邊界 | A2.5／A5 明列協調訊號非鎖、SHA 比對與禁止自動奪權，4 個文字負向測試（協定 2026-11-17 移出部署包） | 不宣稱並行互斥；原子 claim 留待另案（F12） |
+| 接力協調邊界 | A2.5／A5 明列協調訊號非鎖、SHA 比對與禁止自動奪權，4 個文字負向測試 | 不宣稱並行互斥；原子 claim 留待另案（F12） |
 | skill 拆分 | 七個 skill 檔齊全、同版本、都在 `WHOLE`；入口＋`mode-a.md` ≤6,000 字元；入口 12 條、`mode-a.md` 12 條必備句；拆分前每一行逐字留存或列入已改寫清單（13 行） | 入口指向不存在的檔、同步只寫一半、濃縮時丟了停止條件或理由。不證明模型會去讀模式檔 |
-| AGENTS.md 共用制度 | 開始／結束標記成對、35 條必備條件（v3 第 5 節；每條共用規則至少一條，三個 ### 節與 ## 大段標題都在，v3 Q58）、共用 ≤40 行、全檔 ≤100 行（v3 D11）、開始標記的版本等於 `VERSION`；39 個負向測試（2026-11-13 新增） | 每個 session 都載入的那一層缺了條件、長過預算，或版本提示失準。只證明文字在，不證明模型照做 |
+| AGENTS.md 共用制度 | 開始／結束標記成對、35 條必備條件（v3 第 5 節；每條共用規則至少一條，三個 ### 節與 ## 大段標題都在，v3 Q58）、共用 ≤40 行、全檔 ≤100 行（v3 D11）、開始標記的版本等於 `VERSION`；39 個負向測試 | 每個 session 都載入的那一層缺了條件、長過預算，或版本提示失準。只證明文字在，不證明模型照做 |
 | 同步補齊模式檔 | 只有單檔的舊專案會補上五個新檔、入口最後寫、不認得的檔列為 EXTRA；1 個負向測試 | 同步後新入口指向不存在的模式檔 |
-| 同步共用制度 | `AGENTS.md` 沒有共用制度就插在第一個「## 」前、舊版整段換掉、標記外不動、已是權威版不寫、壞標記 FAIL 不寫、舊交接段落、「## 鐵律」與接在結束標記後的編號清單列 MIGRATE、新版「### 專用規則」不列（v3 Q58）、先於 skill 入口寫；2 個負向測試 | 新 skill 指向舊專案 `AGENTS.md` 裡不存在的共用制度（2026-11-14 加，v3 Q34 前置） |
+| 同步共用制度 | `AGENTS.md` 沒有共用制度就插在第一個「## 」前、舊版整段換掉、標記外不動、已是權威版不寫、壞標記 FAIL 不寫、舊交接段落、「## 鐵律」與接在結束標記後的編號清單列 MIGRATE、新版「### 專用規則」不列（v3 Q58）、先於 skill 入口寫；2 個負向測試 | 新 skill 指向舊專案 `AGENTS.md` 裡不存在的共用制度（v3 Q34 前置） |
 | 同步範圍與前置檢查 | 真 worktree、含 worktrees 普通目錄、已完結 inventory；fresh fetch／upstream 對齊／明確 owner、dirty／占用／整份檔與 check_docs 共用程式區客製漂移拒絕且零寫入；批次僅預演，單專案 A5 writer 才能寫入 | 路徑字串不是 worktree 證據，批次同步不能悄悄擴大範圍（F13） |
-| 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，clone 後開場 hook 印出 `[facts]`；`mode-0.md` 0-5 的驗收、提交、發布順序與不整批 `git add`（2026-11-18 起，v3 Q49）；6 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit |
-| 安裝程式由來源生成 | `bootstrap.py` 與 `src/kit`、`installer.py`、`sync_project.py` 的生成結果逐位元組相同；5 個負向測試（手改、改範本／installer／合併函式沒重生、少一個共用函式）。安裝、衝突、更新、CRLF 與兩支 hook 由 `tests/test_bootstrap_repo.py` 在暫存資料夾實跑 | 手改了安裝程式，或改了來源沒重生（2026-11-18，v3 Q49） |
+| 部署生命週期 | 訪談自訂 ignore、本機檢查→首 commit→local bare push→clone，clone 後開場 hook 印出 `[facts]`；`mode-0.md` 0-5 的驗收、提交、發布順序與不整批 `git add`（v3 Q49）；6 個負向測試 | 圍欄外追加規則及發布後才驗收無法保護首 commit |
+| 安裝程式由來源生成 | `bootstrap.py` 與 `src/kit`、`installer.py`、`sync_project.py` 的生成結果逐位元組相同；5 個負向測試（手改、改範本／installer／合併函式沒重生、少一個共用函式）。安裝、衝突、更新、CRLF 與兩支 hook 由 `tests/test_bootstrap_repo.py` 在暫存資料夾實跑 | 手改了安裝程式，或改了來源沒重生（v3 Q49） |
 | 部署包由來源生成 | `src/kit` 組得出部署包全文、每個範本剛好用一次、範本集合等於 `EXPECTED`，而且 `PROJECT-BOOTSTRAP.md` 沒被放回來；7 個負向測試（放回來、多／少範本、指錯、重複、缺結尾換行、範本含收尾圍籬） | 部署包全文是範本的第二份副本；2026-11-18 起不提交（v3 Q50），放回來就又多一份會過期的家 |
 | 開發骨架 | pyproject 依賴都在 `uv.lock`、外部套件都有 sha256 與授權、最低 Python 3.12、`package = false`；`tools/` 與 `src/project_bootstrap` 的程式除 `DEV_EXTRAS` 列的模組外不 import 鎖檔裡的套件，也不 import 那些模組；import 它們的測試缺套件時 SkipTest；10 個負向測試。不需要 uv，鎖檔是否最新要另跑 `uv lock --check` | 依賴沒鎖或沒審授權；A4 在沒裝 uv 的機器跑不起來 |
 | 全域 handoff skill 跟部署包同版 | 家目錄 `~/.claude/skills/handoff/`、`~/.codex/skills/handoff/` 的七個檔跟 `src/kit` 範本逐字相同（不只比 `source:` 版本號）；不同只印「提醒」、不影響結束碼，兩份都沒裝印 skip；4 個負向測試 | 改了部署包卻忘了重裝全域副本，沒有專案層 skill 的 session 讀到舊程序（2026-11-18 使用者指定） |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
-
-下面是部分檢查加入的經過與細節，順序即執行順序。
-這裡刻意不寫「做 N 件事」——數字會自己過期，2026-09-13 就漏算過一項）：
-  重生骨架     ——把第 3 節每個範本抽成實體檔案，比對 EXPECTED 清單有沒有缺漏
-  填佔位符     ——模擬一次真實部署，填完不該再有殘留
-  check_docs   ——在填好的骨架跑，要 exit 0
-  佔位符清單   ——check_docs 的 PLACEHOLDER_NAMES 要蓋住範本裡真正用到的佔位符，
-                  漏一個名字就是那個洞永遠不會被檢查到，而且沒有任何跡象
-  佔位符檢查   ——故意種一個佔位符回去，check_docs 必須 exit 2（否則 check_docs 的
-                  佔位符檢查本身是壞的）
-  日期標頭     ——拿掉 ARCHITECTURE.md 的「最後更新」，check_docs 必須 exit 2（2026-09-07 加
-                  ARCHITECTURE.md 時補的）。守的是 check_docs 的 DATED_DIRS 有沒有真的涵蓋
-                  ARCHITECTURE.md：漏掉不會有任何跡象，結構圖就會安靜地變成沒有日期、
-                  沒人分得出是哪一天的事實
-  真實部署形狀 ——把部署包與一個非 ASCII 檔名放回骨架裡再跑 check_docs，必須仍 exit 0
-                  （2026-08-05 使用者回報實際部署踩到問題後補的）。這兩件事單獨看都不起眼，
-                  合起來就是「照說明部署的人 100% 會踩到」
-  跨平台防呆   ——掃絕對路徑，以及「用了 python 卻整份沒交代 python3 退路」的檔案。
-                  這兩類問題在原機器上完全正常，換一台才壞，而且壞得無聲無息
-  bash 3.2 多位元組變數——shell 腳本裡 `$變數` 後面不得緊接中文或全形字，要寫 `${變數}`。
-                  macOS 的 /bin/bash 3.2 在 UTF-8 語系下會把那個字的第一個位元組吃進變數名，
-                  訊息印成亂碼、「$tool」整個消失；Windows 的 Git Bash（bash 5）不重現，所以
-                  只靠實跑永遠是綠的（2026-11-06 第一次在 Mac 上跑才發現，附負向測試）
-  接線 cwd 定位 ——從子目錄實跑接線 JSON 裡原始的那一串命令（含空白與中文的 repo 路徑）。
-                  舊接線假設 cwd 是 repo 根目錄，`cd tools` 開的 session 直接 exit 127，
-                  而 SessionStart 失敗跟「檢查過了沒事」在畫面上一模一樣（2026-11-02／F05，
-                  附舊形式與 Windows 混合斜線兩個負向測試）
-  AI push 提醒 ——18 情境，含未提交修改、命令邊界與舊捷徑負向測試
-  VERSION 檔   ——跟部署包開頭的版本行一致。各專案靠抓它判斷自己落後沒有，
-                  不一致＝落後偵測說謊，而且沒有任何徵兆（2026-10-30 加入）
-  版本落後偵測 ——種一個假的快取版本，git-freshness 要講；同版與開關 off 要閉嘴。
-                  用快取餵假資料所以不打網路（2026-10-30 加入）
-  跨工具表保鮮期——「跨工具與跨平台」那節的「查證日期」超過 90 天就 fail。對外部工具能力的
-                  斷言會無聲過期，而上一次的對策是一句警告、警告沒擋住第二次（Antigravity
-                  的 hooks、Codex 桌面 App 的 hooks）。`BOOTSTRAP_FRESHNESS=off` 可跳過
-                  （2026-10-30 加入）
-  README 跨工具表——README 那張表是部署包那一張的轉述，而保鮮期只守部署包那一份。同名列的
-                  判定符號、README 的版本號、指回部署包的指標三者要對得上，否則人的入口會
-                  無聲分岔（2026-11-01 加入，加的當下就抓到一處）
-  跨工具過期敘述——守住已修掉的「2.0 未測」「骨架還沒附接線」等已知舊斷言，涵蓋部署包正文、
-                  重生的結構／協定範本與本 repo 結構說明。表頭的歷史變更記錄不算現況；
-                  這不是通用語意檢查，不會重查外部工具（2026-11-01 加入，附負向與範圍測試）
-  改名寫進回報——A5 與 B9 的回報模板各要有一行 `session：`，而且都要留著「不適用」這個選項。
-                  改 session 名稱發生在 repo 外面，check_docs、git-freshness、pre-push 三層
-                  都看不到它，所以漏掉完全無聲；那一行是它唯一的守門人，被誰順手刪掉也同樣
-                  無聲（2026-11-01 加入，起因是六個收尾 session 裡兩個漏了改名）
-  續聊狀態與計數——skill 與指標的 description 都要觸發已交棒後的新訊息；命名程序必須有
-                  先恢復工作中、只讀不寫 Git、改檔重查 A 模式與成功交棒才累加的規則。
-                  附負向測試；只驗程序文字沒有退化，不宣稱量到外部工具真的逐訊息改名
-  工作中標記   ——HANDOFF.md 範本要有「工作中」欄位，且 git-freshness 讀 origin 那一份後
-                  別台機器印 🔴、自己這台印 🟡、已交棒印 ✅、欄位不存在印 🟡。這條鏈斷掉
-                  不會有徵兆，下一棒只會看到一切正常然後接棒（2026-10-30 加入；2026-11-13 起
-                  改成照原文印出、不分符號，判讀交給模型）
-  本 repo 開場 hook——repo-git-check.sh 要跟部署包 3.10 逐位元組相同（2026-11-14，v3 D12；
-                  取代原本的「本 repo 工作中判讀」與「全綠行」），附負向測試
-  本 repo push 前 hook——repo-pre-push.sh 要跟部署包 3.11 逐位元組相同，兩份接線的 PreToolUse
-                  都指向它（2026-11-14 v3 F10 補裝，取代「動作當下送規則」），接線守門附負向測試
-  封存原件     ——archive/docs/ 的 v2 決策書 Git blob 不變、程式與測試不引用封存區任何檔名（回溯
-                  歷史要先經使用者同意並登記）、文件檢查不讀封存區；五種反例都要擋（2026-11-17，v3 Q39；
-                  同日封存需求與計畫類舊文件，擋的範圍從 v2 檔名擴大到整個封存區；2026-11-18 v3 Q44
-                  封存區從 docs/history/ 改名 docs/archive/，docs/history/ 改放照常檢查的熱歷史；同日 v3 Q45
-                  再搬到根目錄冷區 archive/docs/，機械檢查的範圍仍只有這個資料夾）
-  版本更替     ——現行版本取 AGENTS 連到的決策書（檔名與「決策版本」行要相同）；archive/ 以外的
-                  檔名、資料夾名與程式識別字不得帶比它舊的版本號，程式不得引用 archive/ 底下的
-                  版本封存資料夾；四類反例都要擋（2026-11-18，v3 Q47，取代 Q46 只擋 v2 的那一條）
-  本 repo 交接 ——HANDOFF 必要欄位、80 行上限、版本與已知過期待辦；入口不得再教人只改標記。
-                  只守可機械判定與已知回歸，不代替 B6 核對任意待辦是否真的完成
-  來源例外可見性——逐項印出已宣告減項（2026-11-14 起剩 handoff skill 與 check_docs.py 兩項），核對來源缺而產物有；漏宣告、來源增項及
-                  產物缺項均有負向變異。不代表 F46 全部同組情境已驗收（2026-11-08）
-  交接快照同組情境——有效、整份缺失、占用欄缺失／重複、章節缺失、超行數，用同一份
-                  合成輸入跑來源檢查與部署後 check_docs；仍非 F46 整項驗收
-  文件同組情境——同一份合成文件跑來源檢查與部署後 check_docs；20 種連結／日期等正反例，
-                  另有 9 種非 Markdown 佔位符、自訂過期字串與豁免情境；仍非 F46 整項驗收
-  來源提交候選一致性——來源 --staged 拒絕部分 stage 與未追蹤檔；完整／部分 stage 同組
-                  情境對照產物 check_docs.py --staged，仍非 F46 整項驗收
-  verify_state ——失敗不得吞成 exit 0：命令非零退出、HTTP 500、連不上、200 但回應內容
-                  不對都要讓結束碼非零；缺憑證是 SKIP（`--strict` 才非零），未填仍回 0，
-                  祕密要遮罩。九個情境全部實跑（2026-11-02 加／F04）
-  交接快照     ——check_docs 的第 7 項：HANDOFF.md 不見了、超過 80 行、缺必要章節或欄位
-                  重複都要 exit 2，`--docs-only` 要真的關得掉；連結檢查不得把程式碼範例、
-                  帶 title 與角括號連結誤報，但真的死連結仍要抓到（2026-11-02 加／F08）
-  Python 下限 ——兩支維護工具檔頭都有 MIN_PY 守門且同號、README 範本寫出部署後工具的
-                  下限、四支 .py 都沒有用到高於下限的 API。掃描前先把註解與字串塗白，
-                  否則「解釋為什麼不要用」會被判成用法（2026-11-02 加／F14）
-  主張沒復活   ——已修正的主張不得在範本、操作卡與入口文件裡復活：能力表 ✅ 的工具不得被
-                  散文說成沒有 skill、交接 prompt 不得有自己的 A／B 編號、verify_state 不得
-                  以憑證為前提、版本序號只有一種算法、可攜層不得寫成「到哪都成立」。綁的是
-                  結構不是禁句，`舊版 …` 的引用刻意放行（2026-11-02 加／F15）
-  行末與雜項   ——本 repo 與重生骨架全 LF、兩份 JSON 設定合法、verify_state 與
-                  git-freshness 可執行
-  同步安全     ——sync_project.py 只擁有指向骨架腳本的 handler（同組的自訂 hook 要留），
-                  且任一項算不出來就零寫入、失敗要非零退出（2026-11-02／F02、F03）
-  同步清單     ——sync_project.py 的清單要涵蓋骨架每一個檔，且 hook 接線合併要真的換掉
-                  舊值又保住專案自己的設定。兩份 JSON 接線從來不在清單裡，於是 matcher
-                  的修正一年半沒發下去，pre-push 防呆在那些專案等於沒裝（2026-10-30 加入）
-  全域 skill 同版——家目錄兩份全域 handoff skill 跟 src/kit 範本逐字比對，不同只印「提醒」、
-                  不影響結束碼；兩份都沒裝印 skip。改完部署包要重裝全域副本，忘了的話沒有
-                  專案層 skill 的 session 會讀到舊程序（2026-11-18 使用者指定）
-
-
 
 Python 版本下限：這兩支維護工具（本檔與 `sync_project.py`）宣告的下限寫在下面的 MIN_PY，
 而且在檔頭就檢查、清楚報錯。那是**靜態擔保**（「不使用更新的 API」），不是「在那個版本上
@@ -220,8 +112,8 @@ if sys.version_info < MIN_PY:
              % (MIN_PY + sys.version_info[:2]))
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-# 部署包的全文（kit.md＋範本）。2026-11-18（v3 Q50）起不再提交成 PROJECT-BOOTSTRAP.md，
-# 每次從 src/kit 在記憶體生成；KIT 只剩一個名字，用來擋有人把檔放回來。
+# 部署包的全文（kit.md＋範本）每次從 src/kit 在記憶體生成（v3 Q50）；KIT 只剩一個名字，
+# 用來擋有人把 PROJECT-BOOTSTRAP.md 放回來。
 KIT = ROOT / 'PROJECT-BOOTSTRAP.md'
 _KIT_TEXT = None
 
@@ -268,7 +160,7 @@ ANSWERS = {
     'STACK_DIRS': '`src/`',
     'VERIFY_TARGETS': '健康檢查 API',
 }
-# 與 check_docs.py 的第 5 項檢查同一套語法：雙大括號＋全大寫底線。放寬會誤判 verify_state.py
+# 與 check_docs.py 的佔位符檢查同一套語法：雙大括號＋全大寫底線。放寬會誤判 verify_state.py
 # 範本裡的 docker `--format '{{ .Names }}'`——那不是待填的洞。
 PLACEHOLDER_RE = re.compile(r'\{\{([A-Z][A-Z0-9_]{1,40})\}\}')
 HEAD_RE = re.compile(r'^### 3\.\d+ ')
@@ -371,10 +263,8 @@ def find_bash():
 def read_lf(path, encoding='utf-8'):
     """讀檔，不做換行轉換（等同 Path.read_text(newline='')，但不需要 3.13）。
 
-    **不要改回 `Path.read_text(..., newline='')`**：那個參數官方標「Changed in 3.13」，
-    而這兩支維護工具宣告的下限是 MIN_PY。`open()` 的 newline 參數從一開始就有。
-    2026-11-02 之前這裡就是 3.13-only 的寫法，而文件只說「`python` 不存在就用
-    `python3`」——在 3.12 上它會在執行到那一行時才炸（查核報告 F14）。
+    不要改回 `Path.read_text(..., newline='')`：那個參數 3.13 才有，低於 MIN_PY 的 Python
+    會跑到那一行才炸（查核報告 F14）。`open()` 的 newline 參數一直都有。
     """
     with open(path, encoding=encoding, newline='') as fh:
         return fh.read()
@@ -410,9 +300,7 @@ def extract(dest, text=None):
         if not paths:
             continue                       # 例：3.20 是慣例說明，不是檔案
         # 一節裡的圍籬區塊依序對應標題上的檔名；區塊比檔名少就全部沿用第一個
-        # （多數節是一個檔、一個區塊）。2026-10-30 從「只取第一個區塊、事後改標題」
-        # 改成這樣：當時 3.2 一節產兩個內容不同的檔（2026-11-17 起只剩 CLAUDE.md），而把
-        # 其中一份合成在這支腳本裡，就等於讓範本內容有第二個家——部署包才是權威版。
+        # （多數節是一個檔、一個區塊）。不要在這支腳本裡合成範本內容：那等於讓範本有第二個家。
         blocks, j = [], i
         while j < end:
             m = FENCE_RE.match(lines[j])
@@ -615,19 +503,12 @@ def step_bash32_multibyte(dest):
 
 
 def step_deploy_shape(dest):
-    """模擬「剛解壓、還沒刪部署包」的真實部署形狀。
+    """專案裡有非 ASCII 檔名時，check_docs 要照常回報，不能崩潰。
 
-    2026-08-05 使用者實際部署時回報的兩個問題都只在這個形狀下出現，而原本的驗證流程
-    剛好兩個都避開了——骨架裡沒有部署包、檔名又全是 ASCII：
-      - 部署包還在專案裡時，它內嵌範本的相對路徑會被當成死連結（假警報），
-        於是自檢清單第 1 項在刪檔之前永遠不可能通過。
-      - 壓縮檔附的「讀我-先看這個.md」是非 ASCII 檔名，git ls-files 預設會輸出八進位
-        跳脫字串，check_docs 直接 traceback 而不是 FAIL。比 FAIL 更糟：看起來像環境
-        問題，接手的人會跳過驗證，正好繞開這套骨架唯一的文檔關卡。
+    2026-08-05 實際部署踩到：`git ls-files` 預設把非 ASCII 檔名輸出成八進位跳脫，
+    check_docs 直接 traceback。崩潰看起來像環境問題，接手的人會跳過驗證。
     """
-    kit_copy = dest / KIT.name
     noise = dest / '讀我-先看這個.md'
-    write_lf(kit_copy, kit_text())  # 2026-11-18（v3 Q50）起部署包不再提交；舊專案裡可能還留著一份
     with open(noise, 'w', encoding='utf-8', newline='') as fh:
         fh.write('# 說明\n\n> 最後更新：2026-08-05\n')
     try:
@@ -641,124 +522,10 @@ def step_deploy_shape(dest):
             head = '\n           '.join(r.stdout.strip().splitlines()[:6])
             record('FAIL', '真實部署形狀', f'exit {r.returncode}\n           {head}')
             return False
-        record('OK', '真實部署形狀', '部署包在場＋非 ASCII 檔名，check_docs 仍 exit 0')
+        record('OK', '真實部署形狀', '非 ASCII 檔名，check_docs 仍 exit 0')
         return True
     finally:
-        kit_copy.unlink(missing_ok=True)
         noise.unlink(missing_ok=True)
-        git(['add', '-A'], dest)
-
-
-def step_placeholder_guard(dest):
-    """故意種一個佔位符回去。抓不到就代表第 5 項檢查形同虛設。
-
-    種的名字必須是 PLACEHOLDER_NAMES 裡真的有的（檢查是封閉清單比對，隨便編一個名字
-    本來就不會被抓到，那樣這個測試會恆真、什麼都沒驗到）。
-    """
-    target = dest / 'docs' / 'ai-notes' / 'roadmap.md'
-    original = target.read_text(encoding='utf-8')
-    try:
-        with open(target, 'a', encoding='utf-8', newline='') as fh:
-            fh.write('\n- 這行是驗證用的：' + '{{' + 'PROJECT_NAME' + '}}' + '\n')
-        git(['add', '-A'], dest)
-        r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-        if r.returncode != 2 or 'PROJECT_NAME' not in r.stdout:
-            record('FAIL', '佔位符檢查（負向測試）', f'期望 exit 2 並指出該行，實得 exit {r.returncode}')
-            return False
-        record('OK', '佔位符檢查（負向測試）', '殘留佔位符確實被擋下（exit 2）')
-        return True
-    finally:
-        with open(target, 'w', encoding='utf-8', newline='') as fh:
-            fh.write(original)
-        git(['add', '-A'], dest)
-
-
-def step_date_guard(dest):
-    """拿掉 ARCHITECTURE.md 的日期標頭，check_docs 必須擋下。
-
-    ARCHITECTURE.md 是被拿來「找檔案」的文件，沒有日期就無法判斷這份結構圖是哪一天的事實，
-    而過期的結構圖比沒有更糟。它靠 check_docs 的 DATED_DIRS 把關——但那份清單漏掉一個
-    名字不會有任何跡象（少一項檢查而已，照樣 exit 0），所以在這裡對一次。
-    """
-    target = dest / 'ARCHITECTURE.md'
-    original = target.read_text(encoding='utf-8')
-    stripped = '\n'.join(
-        ln for ln in original.split('\n') if '最後更新' not in ln)
-    try:
-        with open(target, 'w', encoding='utf-8', newline='') as fh:
-            fh.write(stripped)
-        git(['add', '-A'], dest)
-        r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-        if r.returncode != 2 or 'ARCHITECTURE.md' not in r.stdout:
-            record('FAIL', '日期標頭（負向測試）',
-                   f'期望 exit 2 並指出 ARCHITECTURE.md，實得 exit {r.returncode}'
-                   '——檢查 check_docs.py 的 DATED_DIRS 有沒有含 ARCHITECTURE.md')
-            return False
-        record('OK', '日期標頭（負向測試）', 'ARCHITECTURE.md 缺「最後更新」確實被擋下（exit 2）')
-        return True
-    finally:
-        with open(target, 'w', encoding='utf-8', newline='') as fh:
-            fh.write(original)
-        git(['add', '-A'], dest)
-
-
-def step_busy_tool_guard(dest):
-    """「工作中」標記少了工具欄，check_docs 必須擋下（2026-10-31）。
-
-    2026-10-31 把標記格式從 `機器` ／ `session 名` 改成 `機器` ／ `工具` ／ `session 名`。
-    這種「加一欄」的格式變更有一個特性：少填那一欄不會壞掉，只會**靜默退化回舊行為**——
-    hook 的同機器分支退回「大概是你自己另一個視窗」的 🟡，而退化後的畫面跟「從來沒有這個
-    機制」一模一樣。所以 check_docs 第 6 項要擋，而這裡要證明它真的擋得住。
-    """
-    target = dest / 'HANDOFF.md'
-    original = target.read_text(encoding='utf-8')
-    field = '- **工作中**：'
-    line = next((ln for ln in original.split('\n') if ln.startswith(field)), None)
-    if line is None:
-        record('FAIL', '工作中欄位格式（負向測試）', 'HANDOFF.md 範本找不到「工作中」欄位列')
-        return False
-    sess = '`㊣　10.30.09｜測試｜工作中`'
-    # 四個都要被擋下。後三個是 2026-11-02 補的 F01 負向測試，在舊版（`'無' in value`
-    # 就跳過驗證、而且只看第一列）上**全部會 exit 0**：
-    #   ②「修無效連結」是完全正常的任務名稱，卻讓整個格式驗證被跳過；
-    #   ③ 第一列寫「無（已交棒）」、第二列是真的占用標記——hook 只讀第一列，所以
-    #      重複欄位等於讓人用一行字關掉防呆；
-    #   ④ 機器欄空白，舊版照樣當成合法的三欄標記。
-    bads = (
-        ('舊格式沒有工具欄', '缺工具欄',
-         '`desk-win` ／ ' + sess + '，2026-10-30 09:12 (+08) 開工'),
-        ('主題含「無」仍要驗格式', '缺工具欄',
-         '`other-box` ／ `㊣　26110209｜修無效連結｜工作中`'),
-        ('欄位重複', '列「工作中」欄位',
-         '無（已交棒）\n' + field + '`other-box` ／ `Codex CLI` ／ ' + sess),
-        ('機器欄空白', '解析不出機器欄', '／ `Codex CLI` ／ ' + sess),
-    )
-    try:
-        for name, want, value in bads:
-            with open(target, 'w', encoding='utf-8', newline='') as fh:
-                fh.write(original.replace(line, field + value))
-            git(['add', '-A'], dest)
-            r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-            if r.returncode != 2 or want not in r.stdout:
-                record('FAIL', '工作中欄位格式（負向測試）',
-                       f'「{name}」沒被擋下：期望 exit 2 並指出「{want}」，'
-                       f'實得 exit {r.returncode}——檢查 check_docs.py 的 check_busy_field')
-                return False
-        # 反向保險：修法不能嚴到連正常的已交棒值都認不出來（前後多幾個空白也要過）
-        with open(target, 'w', encoding='utf-8', newline='') as fh:
-            fh.write(original.replace(line, field + '　無（已交棒）　'))
-        git(['add', '-A'], dest)
-        r = run([sys.executable, '-X', 'utf8', 'tools/check_docs.py'], cwd=dest)
-        if r.returncode != 0:
-            record('FAIL', '工作中欄位格式（負向測試）',
-                   f'「已交棒前後有空白」被誤擋：期望 exit 0，實得 exit {r.returncode}')
-            return False
-        record('OK', '工作中欄位格式（負向測試）',
-               '%d 種壞格式都擋下（exit 2），正常的已交棒值不誤擋' % len(bads))
-        return True
-    finally:
-        with open(target, 'w', encoding='utf-8', newline='') as fh:
-            fh.write(original)
         git(['add', '-A'], dest)
 
 
@@ -957,11 +724,10 @@ def agents_stop_problems(agents):
 
 
 def facts_busy_cases(push_busy, me):
-    """開場 hook 的「工作中」情境表（2026-11-13 起，v3 D12：照原文印、不判讀）。
+    """開場 hook 的「工作中」情境表（v3 D12：照原文印、不判讀）。
 
-    v3 的 F4（知道誰在動）是「偵測」：hook 讀 origin 那一份並印出來，判讀交給模型。
-    所以這裡釘的是「印得出來、印得完整、不被環境左右」：舊版 F01 那幾個子字串陷阱
-    （主題或機器名含「無」、欄位重複）在只印原文的實作上不會放行，但仍要看得到原文。
+    守「印得出來、印得完整、不被環境左右」：主題或機器名含「無」、欄位重複這些舊陷阱，
+    只印原文時不會放行，但原文仍要看得到。
     """
     sess = '`㊣　10.30.09｜測試｜工作中`'
     claude = tool_env(CLAUDECODE='1')
@@ -994,12 +760,9 @@ def strip_clock(out):
 
 
 def step_busy(dest, work):
-    """「工作中」標記防呆（2026-10-30，2026-10-31 加工具欄）。
+    """「工作中」標記整條鏈：範本有欄位 → hook 讀得到 origin 那一份 → 照原文印出來。
 
-    守的是整條鏈：範本有欄位 → hook 讀得到 origin 那一份 → 照原文印出來（2026-11-13 起，
-    v3 D12：不再分 🔴／🟡，判讀交給模型與 AGENTS.md 的共用制度）。
-    鏈上任何一環斷掉都不會有徵兆——下一棒只會看到一切正常然後接棒，而那正是這個機制要擋
-    的那件事，所以它必須有自動測試。
+    任何一環斷掉都沒有徵兆，下一棒只會看到一切正常然後接棒，所以要自動測試。
     """
     field = '**工作中**'
     if field not in (dest / 'HANDOFF.md').read_text(encoding='utf-8'):
@@ -1077,14 +840,10 @@ def repo_hook_problems(hook_text, deployed_text):
 
 
 def step_repo_busy(dest):
-    """本 repo 的開場 hook（2026-11-14 起，需求決策書 v3 第 5 節、D12）。
+    """本 repo 的開場 hook 要跟部署包 3.10 逐位元組相同（v3 D12）。
 
-    2026-10-30 到 2026-11-13 這支是本 repo 自己寫的判讀版（🔴／🟡、全綠行、工具身分猜測），
-    理由是 sync_project.py 掃不到這個 repo，抄 3.10 會變成唯一落後又沒有徵兆的副本。v3 把
-    部署出去的 hook 改成只報事實之後，那支判讀版反而跟本 repo AGENTS.md 的共用制度副本
-    （「印出 [facts] 開頭的幾行」）矛盾，也違反 D12。所以改成 3.10 的逐字副本，落後的風險
-    由這一項逐位元組比對擋下——跟 AGENTS.md 共用制度副本同一種做法。部署 hook 的行為由
-    「git-freshness 工作中標記」「Git 異常提示」等項實跑，相同內容不重跑。
+    sync_project.py 掃不到本 repo，副本落後不會有徵兆，所以由這一項逐位元組比對。
+    部署 hook 的行為由「git-freshness 工作中標記」「Git 異常提示」等項實跑，這裡不重跑。
     """
     path = ROOT / REPO_START_HOOK
     hook = read_lf(path) if path.is_file() else None
@@ -1100,11 +859,9 @@ def step_repo_busy(dest):
 
 
 def step_version_check(work):
-    """骨架版本落後偵測（2026-10-30）。
+    """骨架版本落後偵測：用快取檔餵假版本，不打網路，驗的是比對邏輯本身。
 
-    用快取檔餵假版本，所以**不打網路**：離線也驗得到，而且驗的正是比對邏輯本身
-    （真正會壞的是比對，不是 curl）。五個情境：落後要講、**領先不能說成落後**、
-    領先要勸退同步、同版要閉嘴、關掉開關要閉嘴。方向那兩項是 2026-11-02 補的（F09）。
+    五個情境：落後要講、領先不能說成落後、領先要勸退同步、同版要閉嘴、關掉開關要閉嘴（F09）。
     """
     bash = find_bash()
     if not bash or work is None:
@@ -1115,9 +872,7 @@ def step_version_check(work):
     mark = '共用制度落後'
 
     # 🔴 快取裡放的是「上游最新版」，所以落後的情境要餵一個**比本機新**的版本。
-    # 2026-11-02 修（查核報告 F09）：舊版這裡餵 1999-01-01——那是上游比本機**舊**，
-    # 也就是「本機領先」，卻被命名成「落後→講」並且通過。所以這個測試不但沒守住方向，
-    # 還會把任何正確的修法判成 FAIL。方向弄反時沒有任何徵兆，因為舊實作只比 `!=`。
+    # 餵比本機舊的版本是「本機領先」，方向弄反時沒有徵兆（查核報告 F09）。
     write_lf(cache, '2099-01-01')
     lag = run([bash, hook], cwd=work).stdout
     off = run([bash, hook], cwd=work, env=dict(GIT_ENV, BOOTSTRAP_VERSION_CHECK='off')).stdout
@@ -1181,10 +936,10 @@ def rename_line_problems(skill):
 
 
 def step_rename_line(dest):
-    """改名有沒有被寫進回報模板（2026-11-01）。
+    """A5／B9 回報模板要有必填的 `session：` 一行，而且留著「不適用」選項。
 
-    2026-11-01 量到：六個收尾 session（全 Sonnet）裡只有四個改了 session 名稱，六個的 git
-    結果全部正確。**為什麼漏沒有量過**，所以加硬的方向不是猜原因，而是讓「有沒有做」露出來。
+    改 session 名稱不留 repo 痕跡，漏做完全無聲（2026-11-01 量到六個收尾 session 有兩個漏了）。
+    為什麼漏沒有量過，所以做法是讓「有沒有做」露出來，不是猜原因。
     """
     skill = skill_text(dest)
     problems = rename_line_problems(skill)
@@ -1219,16 +974,16 @@ SESSION_RESUME_RULE = '是 `↗` 時收到任何新訊息，先改回 `㊣`'
 
 
 def session_resume_problems(skill, agents):
-    """守住 2026-11-02 的程序契約；不模擬模型或外部 session 改名工具。
+    """續聊的程序契約；不模擬模型或外部 session 改名工具。
 
-    2026-11-13（v3 第 5 節）：skill 降為碰到才讀的參考，「每則新訊息先恢復工作中」不再靠
-    skill description 觸發，改由每個 session 都載入的 AGENTS.md 共用制度承載。
+    「每則新訊息先恢復工作中」由每個 session 都載入的 AGENTS.md 共用制度承載（v3 第 5 節），
+    skill 這邊守命名與交棒計數的程序句子。
     """
     problems = []
     if SESSION_RESUME_RULE not in shared_rules(agents):
         problems.append('AGENTS.md 共用制度缺續聊恢復規則')
-    # 2026-11-10：命名規則拆到入口（摘要）、mode-b.md（計數）與 reasons.md（細則原文），
-    # 所以這裡看整個 skill 目錄；入口自己該有哪些句子由「skill 拆分」守。
+    # 命名規則分散在入口（摘要）、mode-b.md（計數）與 reasons.md（細則），所以看整個 skill 目錄；
+    # 入口自己該有哪些句子由「skill 拆分」守。
     naming = skill
     required = (
         '每則使用者新訊息都先檢查 session 狀態',
@@ -1399,11 +1154,9 @@ def step_repo_handoff():
     return True
 
 
-# 2026-11-10／F22：AGENTS.md 的事故與理由搬到 AGENTS-reasons.md，入口只留規則。
-# 搬走之後「保留每條規則的為什麼」（專用規則 8）不能只靠自律：規則沒有理由連結、
-# 連結指不到段落、或段落是空的，都要被擋下來。
-# 2026-11-18（v3 Q48）：理由檔搬成 docs/rationale.md、CONTRIBUTING.md 搬成 docs/maintenance.md。
-# 連結從各自的位置算相對路徑：AGENTS.md 寫 docs/rationale.md#x，維護手冊寫 rationale.md#x。
+# 規則的理由在理由檔，入口只留連結；「保留每條規則的為什麼」（專用規則 8）不能只靠自律：
+# 規則沒有理由連結、連結指不到段落、或段落是空的，都要擋。連結從各自的位置算相對路徑：
+# AGENTS.md 寫 docs/rationale.md#x，維護手冊寫 rationale.md#x。
 REASON_FILE = 'docs/rationale.md'
 
 
@@ -1415,8 +1168,7 @@ REASON_LINK = reason_link_re(REASON_FILE)
 # 2026-11-21（v3 Q58）：AGENTS 分成共用與專用兩大段，規則各自編號；共用規則在標記之間、塗白不查，
 # 要逐條連理由的是「### 專用規則」。
 REASON_ITEM_SECTIONS = ('專用規則', '副本規則', '改兩支 hook 的訊息時')
-# 2026-11-20：AGENTS 的寫作規範（協作系統原則草稿第 4 節）把「碰到才讀」的索引放在最後一節，
-# 寫成「什麼時候 → 讀哪份」的表。索引不是規則，不要求理由連結；但這一節只能有表格列，
+# 「碰到才讀」是「什麼時候 → 讀哪份」的索引表（原則草稿第 4 節），不要求理由連結；但這一節只能有表格列，
 # 夾帶一句規則就照一般章節要求理由連結，免得規則躲進索引逃掉專用規則 8。
 REASON_INDEX_SECTIONS = ('碰到才讀',)
 REASON_MIN_BODY = 40
@@ -1536,8 +1288,7 @@ def step_reason_links():
     path = ROOT / REASON_FILE
     reasons = read_lf(path) if path.is_file() else ''
     problems = reason_link_problems(agents, reasons)
-    # 2026-11-17（v3 Q40）：碰到才需要的規則搬出 AGENTS.md，同一套理由連結檢查跟過去；
-    # 2026-11-18（v3 Q48）起那份是 docs/maintenance.md。
+    # 碰到才需要的規則在維護手冊，同一套理由連結檢查。
     contrib_path = ROOT / CONTRIB_FILE
     contributing = read_lf(contrib_path) if contrib_path.is_file() else ''
     if not contributing:
@@ -1736,6 +1487,10 @@ def step_handoff_parity(dest):
         ('工具欄缺失', occupied.replace(' ／ `Codex CLI`', ''), False),
         ('舊格式把 session 誤作工具',
          occupied.replace('`Codex CLI` ／ ', ''), False),
+        # 主題含「無」不能讓格式驗證被跳過（舊版 `'無' in value` 就放行，F01）。
+        ('主題含「無」仍驗格式',
+         occupied.replace('`Codex CLI` ／ ', '').replace('測試', '修無效連結'), False),
+        ('已交棒前後有空白不誤擋', control.replace('無（已交棒）', '　無（已交棒）　'), True),
     )
     target = dest / 'HANDOFF.md'
     original = target.read_text(encoding='utf-8')
@@ -2145,7 +1900,7 @@ def handoff_flow_case(kind, dest, tmp, bash):
     if kind == 'product':
         shutil.copytree(initial, writer, ignore=shutil.ignore_patterns('.git'))
         hook_rel = '.claude/hooks/git-freshness.sh'
-        # 2026-11-13 起部署出去的 hook 照原文印「工作中」（v3 D12），判讀交給模型。
+        # 部署出去的 hook 照原文印「工作中」（v3 D12），判讀交給模型。
         free_mark, foreign_mark = '- **工作中**：無（已交棒）', '- **工作中**：`other-box`'
         needle = 'origin/${branch}:HANDOFF.md'
     else:
@@ -2156,7 +1911,7 @@ def handoff_flow_case(kind, dest, tmp, bash):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(initial / rel, target)
         hook_rel = '.claude/hooks/repo-git-check.sh'
-        # 2026-11-14 起本 repo 的開場 hook 是 3.10 的逐字副本，印法跟部署出去的一樣。
+        # 本 repo 的開場 hook 是 3.10 的逐字副本，印法跟部署出去的一樣。
         free_mark, foreign_mark = '- **工作中**：無（已交棒）', '- **工作中**：`other-box`'
         needle = 'origin/${branch}:HANDOFF.md'
 
@@ -2272,7 +2027,7 @@ def step_handoff_flow_parity(dest, tmp):
 REPO_START_HOOK = '.claude/hooks/repo-git-check.sh'
 REPO_PRE_PUSH_HOOK = '.claude/hooks/repo-pre-push.sh'
 
-# 2026-11-17（需求決策書 v3 Q39）：v2 決策書凍結封存。使用者原話：「v2 應該是凍結的對照原件，
+# v2 決策書凍結封存（v3 Q39）。使用者原話：「v2 應該是凍結的對照原件，
 # 不該再被任何程式讀取」「一般時候不能讀，除非需要回朔歷史，在經過我的同意以後可以讀」。
 # 檔名用拼接寫，因為本檔自己也在「封存原件」的掃描範圍內。
 ARCHIVE_DIR = 'archive/docs/'
@@ -2281,14 +2036,14 @@ FROZEN_ARCHIVES = {
 }
 ARCHIVE_NAMES = ('project-bootstrap-requirements-decision' + '.md',
                  'requirements-decision' + '-v2.md')
-# 2026-11-17：同日稍晚封存了 19 份需求與計畫類舊文件。程式不得引用封存區裡任何檔，所以檔名
+# 程式不得引用封存區裡任何檔，所以檔名
 # 清單由 Git 追蹤的封存區檔案即時產生，不在這裡列舉（列舉了本檔自己就會引用它們）。索引例外：
 # 它的檔名是通用的 README.md，而且是封存區對外的入口。
 ARCHIVE_INDEX = ARCHIVE_DIR + 'README.md'
 # 經使用者同意、為回溯歷史而讀封存原件的程式。加一筆之前先取得使用者同意，並登記在決策書。
 ARCHIVE_READERS = ()
 ARCHIVE_CODE_SUFFIXES = ('.py', '.sh', '.cmd', '.json', '.toml', '.tmpl', '.yml', '.lock')
-# 2026-11-18（v3 Q47）：新的穩定版本成為權威後，屬於舊版本名稱的一切要刪除、封存或改名。
+# 新的穩定版本成為權威後，屬於舊版本名稱的一切要刪除、封存或改名（v3 Q47）。
 # 版本號是 v 加數字；後面接 .數字 的是工具版本（Claude Code v2.1.277），不算。
 VERSION_TOKEN = re.compile(r'(?<![A-Za-z0-9.])[vV]([0-9]+)(?![0-9])(?!\.[0-9])')
 # 程式裡用 _ 或 - 黏在識別字或標籤上的版本號（step_vN、vN_report、bootstrap-vN-…）。
@@ -2302,8 +2057,7 @@ BOOK_VERSION = re.compile(r'^> 決策版本：([0-9]+)。', re.M)
 def repo_scanned_files(tracked_files):
     """本 repo 文件檢查要讀的檔：src/kit/ 另有規則，封存區不讀（v3 Q39）。
 
-    bootstrap.py 內嵌全部範本、刻意保留佔位符，跟部署包一樣是 src/kit 的生成結果
-    （「安裝程式由來源生成」守，2026-11-18，v3 Q49），這裡不再查一次。
+    bootstrap.py 是 src/kit 的生成結果、刻意保留佔位符，由「安裝程式由來源生成」守，這裡不再查。
     """
     return [p for p in tracked_files
             if not p.startswith('src/kit/') and not p.startswith(ARCHIVE_DIR) and p != 'bootstrap.py']
@@ -2348,16 +2102,12 @@ REPO_WIRING = ('.claude/settings.json', '.codex/hooks.json')
 
 
 def repo_wiring_problems(root):
-    """本 repo 兩份接線的問題清單。
+    """本 repo 兩份接線的問題清單；抽成函式讓負向測試能對暫存目錄跑。
 
-    兩份接線一起查（2026-11-01 加上 `.codex/hooks.json`）。這個 repo 的接線指的是它
-    自己的 `repo-*.sh`，所以它們跟部署包 3.9／3.17 只是長得像、不是副本；也因此沒有
-    `source:` 標記、落後偵測看不到它們，唯一的守門人就是這一項。
-    連「有沒有被 sync_project.py 覆蓋過」一起釘：那會把它們改成指向這裡不存在的
-    `git-freshness.sh`／`pre-push-handoff.sh`，開場檢查於是靜默失效。
-    2026-11-14（v3 F10，使用者決定補裝）：兩份都要接 PreToolUse，而且只能指向
-    repo-pre-push.sh；2026-11-10 試行的動作提醒（repo-action-rules.sh、PostToolUse）
-    同日由使用者決定拿掉，其他事件一律拒絕。抽成函式是為了讓負向測試能對暫存目錄跑。
+    這兩份指向本 repo 自己的 `repo-*.sh`，跟部署包的接線只是長得像，沒有 `source:` 標記、
+    落後偵測看不到，這一項是唯一的守門人。SessionStart 只能指向 `repo-git-check.sh`、
+    PreToolUse 只能指向 `repo-pre-push.sh`，其他事件一律拒絕；被 sync_project.py 改成指向
+    不存在的 `git-freshness.sh`／`pre-push-handoff.sh` 時，開場檢查會靜默失效。
     """
     problems, present = [], []
     targets = {'SessionStart': REPO_START_HOOK, 'PreToolUse': REPO_PRE_PUSH_HOOK}
@@ -2400,23 +2150,15 @@ def repo_wiring_problems(root):
 
 
 def step_self():
-    """本 repo 自己的 .md 與設定檔沒有任何自動檢查——`check_docs.py` 是骨架的檔，部署進來
-    就成了副本，要跳版、要同步，而 sync_project.py 的 --all 又掃不到這個 repo（它靠
-    handoff skill 發現專案，這裡刻意沒有）。所以改成在這支腳本多一項：同一個指令、同一份
-    報告，沒有第二個會腐化的家。
+    """本 repo 自己的 .md 與設定檔：死連結、日期標頭、殘留佔位符、接線合法。
 
-    2026-10-30 加。在此之前 AGENTS／ARCHITECTURE／README 之間的相對連結從來沒有被檢查過；
-    當天手掃是乾淨的，但那是一次快照，不是防護——死連結會在改檔名的那一次無聲出現。
-    settings.json 一起查，是因為它壞掉的後果是 SessionStart hook 靜默不執行：那正是
-    「看起來有防護、實際上沒有」的那一類失效，而且沒有任何徵兆。
+    本 repo 刻意不裝 `check_docs.py`（裝了就成了要同步的副本），所以由這一項代替。
+    settings.json 壞掉的後果是 SessionStart hook 靜默不執行，所以一起查。
     """
     ok = True
     tracked_files = [p for p in run(['git', 'ls-files', '-z'], cwd=ROOT).stdout.split('\0') if p]
-    # 2026-11-11：src/kit/ 是部署包的來源，內容逐位元組生成進 PROJECT-BOOTSTRAP.md
-    # （「部署包由來源生成」守），在那裡照部署包的豁免規則查；這裡再查一次只會因為
-    # kit.md 放在子目錄、範本保留佔位符而誤報。
-    # 2026-11-17（v3 Q39）：封存區不讀（2026-11-18 起是 archive/docs/，v3 Q44、Q45）。v2 原件逐位元組凍結，檔內相對連結
-    # 在新位置失效是已宣告例外；內容不變由「封存原件」的 blob 比對守。
+    # src/kit/ 由「部署包由來源生成」照部署包的豁免規則查，這裡再查會誤報。
+    # 封存區不讀（v3 Q39、Q45）：v2 原件逐位元組凍結，檔內相對連結失效是已宣告例外。
     tracked_files = repo_scanned_files(tracked_files)
     mds = [p for p in tracked_files if p.endswith('.md')]
     dead, undated, missing, stale, holes = source_repo_document_problems(ROOT, tracked_files)
@@ -2453,11 +2195,11 @@ def step_self():
 
 
 def step_archive(tmp):
-    """封存原件（2026-11-17，需求決策書 v3 Q39）。
+    """封存原件（v3 Q39）：v2 決策書凍結在 archive/docs/。
 
-    v2 決策書凍結在 archive/docs/（2026-11-18 前叫 docs/history/，同日先改 docs/archive/ 再搬來，v3 Q44、Q45）：程式與測試不引用它的路徑（回溯歷史要先經使用者同意並
-    登記到 ARCHIVE_READERS）、Git 記的 blob 不變、文件檢查不讀它。三件事都對合成 fixture
-    跑負向測試：只有真檔案一次乾淨，不足以證明守門會擋。
+    程式與測試不引用封存區的檔（回溯歷史要先經使用者同意並登記到 ARCHIVE_READERS）、
+    Git 記的 blob 不變、文件檢查不讀它。三件事都對合成 fixture 跑負向測試：只有真檔案一次
+    乾淨，證明不了守門會擋。
     """
     tracked = [p for p in run(['git', 'ls-files', '-z'], cwd=ROOT).stdout.split('\0') if p]
     problems = archive_problems(ROOT, tracked, lambda path: index_blob(ROOT, path))
@@ -2485,7 +2227,7 @@ def step_archive(tmp):
         problems.append('文件提到封存路徑被當成程式引用')
     if archive_problems(root, ['tools/reader.py'], blobs.get, frozen, ('tools/reader.py',)):
         problems.append('已登記（經使用者同意）的讀取者仍被擋')
-    # 2026-11-17：不在 FROZEN_ARCHIVES 的封存檔一樣不能被程式引用；索引例外。
+    # 不在 FROZEN_ARCHIVES 的封存檔一樣不能被程式引用；索引例外。
     other = 'old-' + 'plan.md'
     (root / 'tools/plan.py').write_text("PLAN = '%s'\n" % other, encoding='utf-8')
     (root / 'tools/index.py').write_text("INDEX = 'README.md'\n", encoding='utf-8')
@@ -2500,9 +2242,8 @@ def step_archive(tmp):
         if not archive_problems(root, [], lookup, frozen, ()):
             problems.append('封存原件%s沒被擋' % label)
 
-    # 文件檢查略過封存區，但不能連帶略過別處的死連結；2026-11-18（v3 Q44）起熱歷史
-    # docs/history/ 是活文件，照常檢查。同日（v3 Q45）封存區搬到 archive/docs/：只略過這個
-    # 資料夾，archive/ 底下其他資料夾的說明檔照常檢查連結。
+    # 文件檢查只略過 archive/docs/，不能連帶略過別處的死連結：熱歷史 docs/history/ 與
+    # archive/ 底下其他資料夾的說明檔照常檢查（v3 Q44、Q45）。
     (root / 'docs/history').mkdir(parents=True)
     (root / 'archive/other').mkdir(parents=True)
     (root / 'archive/docs/x.md').write_text('[死](nowhere.md)\n', encoding='utf-8')
@@ -2628,13 +2369,11 @@ def step_version_names(tmp):
 
 
 def step_repo_pre_push(dest, tmp):
-    """本 repo 的 push 前 hook（2026-11-14，v3 F10，使用者決定補裝）。
+    """本 repo 的 push 前 hook 要跟部署包 3.11 逐位元組相同（v3 F10）。
 
-    v3 唯一要「阻擋」的需求是 F10：推權威分支、這次推送沒改 HANDOFF.md、origin 的「工作中」
-    又是「無（已交棒）」時擋下。部署出去的專案有 3.11，本 repo 原本宣告為例外（2026-11-06）；
-    使用者 2026-11-14 改成補裝，做法跟開場 hook 一樣：放 3.11 的逐字副本、逐位元組比對，
-    行為由「AI push 提醒情境」對部署 hook 實跑，相同內容不重跑。接線另由「本 repo 兩份接線」守，
-    這裡再對接線守門跑負向測試。
+    F10 是 v3 唯一要「阻擋」的需求：推權威分支、這次推送沒改 HANDOFF.md、origin 的「工作中」
+    又是「無（已交棒）」時擋下。行為由「AI push 提醒情境」對部署 hook 實跑；接線由
+    「本 repo 兩份接線」守，這裡再對接線守門跑負向測試。
     """
     issues = []
     path = ROOT / REPO_PRE_PUSH_HOOK
@@ -2686,17 +2425,11 @@ def step_repo_pre_push(dest, tmp):
 
 
 def step_sync_self_guard():
-    """`sync_project.py <本 repo 路徑>` 必須拒絕（2026-11-01）。
+    """`sync_project.py <本 repo 路徑>` 必須拒絕，而且預演輸出裡一個 `UPDATE` 都沒有。
 
-    這個 repo 的 `.claude/settings.json` 與 `.codex/hooks.json` 跟 `WIRING` 清單同名，指的
-    卻是它自己那支 `repo-git-check.sh`。沒有這道擋，一次 `sync_project.py .` 就把兩份接線
-    改成指向這裡不存在的 `git-freshness.sh` 與 `pre-push-handoff.sh`——開場檢查從此靜默
-    失效，而「看起來有防護、實際上沒有」是這套制度最貴的那一種壞法。`--all` 那條路本來就
-    安全（`discover()` 靠 handoff skill 發現專案，這裡刻意沒有），會踩到的是手打路徑，而那
-    在加擋之前實測真的印出兩個 `UPDATE`。
-
-    釘兩件事而不是一件：拒絕的話有印出來，而且**預演輸出裡一個 `UPDATE` 都沒有**。只檢查
-    前者的話，一個「印了話卻照樣改檔」的版本會通過，而那比沒有這項檢查更糟。
+    本 repo 的兩份接線跟 `WIRING` 清單同名、指的卻是自己的 hook；被同步一次就改成指向
+    不存在的 `git-freshness.sh`，開場檢查靜默失效（2026-11-01 實測手打路徑會印出兩個 `UPDATE`）。
+    只查有印出拒絕不夠：「印了話卻照樣改檔」的版本也會過。
     """
     out = run([sys.executable, '-X', 'utf8', 'tools/sync_project.py', str(ROOT)],
               cwd=ROOT).stdout
@@ -2721,10 +2454,9 @@ def wiring_command(script):
 
 
 def wiring_command_windows(script):
-    r"""Windows 那一欄多一次斜線正規化：`--show-cdup` 回的是 `../`（正斜線），而
-    `cmd /d /c "../.claude\hooks\codex-hook.cmd"` 會死在 `'..' is not recognized`
-    （2026-11-02 實測）。`commandWindows` 由 Codex 外層的 PowerShell 執行，所以用
-    得上 `-replace`。
+    r"""Windows 那一欄多一次斜線正規化：`--show-cdup` 回的是 `../`，
+    `cmd /d /c "../.claude\hooks\codex-hook.cmd"` 會死在 `'..' is not recognized`（2026-11-02 實測）。
+    `commandWindows` 由 Codex 外層的 PowerShell 執行，所以用得上 `-replace`。
     """
     return (r"""cmd /d /c "$((git rev-parse --show-cdup) -replace '/','\')"""
             + r""".claude\hooks\codex-hook.cmd" """ + script)
@@ -2882,17 +2614,11 @@ def step_codex_windows(dest, tmp):
 
 
 def step_wiring_cwd(dest, tmp):
-    """接線必須從子目錄也找得到腳本（2026-11-02，查核報告 F05）。
+    """接線要從子目錄也找得到腳本（查核報告 F05）。
 
-    hook 的 `command` 以 **session 的 cwd** 執行（Claude Code：handler「runs in the current
-    directory」；Codex 官方文件同樣明寫，並直接建議改從 Git root 解析 repo hook），而人會
-    從子目錄開 session——`cd tools && claude`。舊接線寫成 `bash .claude/hooks/git-freshness.sh`，
-    那時候是 exit 127、No such file，而 **SessionStart 失敗跟「檢查過了沒事」在畫面上一模
-    一樣**：落後的本機、別台機器的「工作中」標記、骨架落後提醒三件事同時無聲消失。
-
-    所以這一項跑的是**接線 JSON 裡原始的那一串命令**，不是直接拿完整路徑跑腳本——後者在
-    任何 cwd 都會過，測不到入口（那正是查核報告的驗收條件）。fixture 的路徑同時含空白與
-    中文；版本偵測關掉，這一項不打網路。
+    hook 的 `command` 以 session 的 cwd 執行，從子目錄開 session 時舊接線是 exit 127，
+    而 SessionStart 失敗跟「檢查過了沒事」在畫面上一樣。所以跑的是接線 JSON 裡原始的命令，
+    不是直接拿完整路徑跑腳本（那在任何 cwd 都會過）。fixture 路徑含空白與中文；不打網路。
     """
     files = {
         '骨架 .claude/settings.json': dest / '.claude/settings.json',
@@ -3061,18 +2787,10 @@ def wiring_preservation_problems(sp):
 
 
 def step_sync_safety(tmp):
-    """同步器的資料保全與失敗訊號（2026-11-02，查核報告 F02／F03）。
+    """同步器的資料保全與失敗訊號（查核報告 F02／F03）。
 
-    F02：骨架擁有的是**指向骨架腳本的 handler**，不是含它的整組。舊版 `cur[at] =
-    deepcopy(g)` 把整組當成骨架的，所以專案把自己的 hook 加在同一組裡（`hooks` 陣列
-    本來就放得下多個，完全合法）就會被靜默刪掉——而輸出還寫著「專案其他設定原樣保留」。
-    既有的「接線合併」把專案 hook 放在**另一組**，所以一直沒碰到這個形狀；這裡補的就是
-    同一組的那幾種。
-
-    F03：先算完整個計畫、驗完才寫。舊版邊算邊寫且 `WHOLE` 那圈在 JSON 驗證之前，於是
-    一份壞掉的接線會在覆蓋掉好幾個檔之後才被發現；而 FAIL 只進訊息列、不影響結束碼，
-    所以同步失敗一半照樣 exit 0，最後還印「全部都已經是 v…」。這裡釘的是
-    「任一檔算不出來→零寫入」與「任何目標沒完成→非零退出」。
+    F02：骨架擁有的是指向骨架腳本的 handler，不是整組；專案加在同一組的 hook 要保留。
+    F03：先算完、驗完才寫；任一檔算不出來就零寫入，任何目標沒完成就非零退出。
     """
     import sync_project as sp
     bad = wiring_preservation_problems(sp)
@@ -3213,13 +2931,8 @@ def step_sync_safety(tmp):
 def step_sync_coverage(dest):
     """同步清單要涵蓋骨架每一個檔，而且 hook 接線真的會被修好。
 
-    2026-10-30 查出來的洞：`.claude/settings.json` 與 `.codex/hooks.json` 兩份 hook 接線
-    從來不在 sync_project.py 的清單裡。所以 2026-09-13 把 3.9 的 PreToolUse matcher 補成
-    `Bash|PowerShell` 之後，三個專案一直停在舊的 `Bash`——而那台機器的主 shell 正是
-    PowerShell，於是 pre-push 防呆整個不會觸發，且完全沒有徵兆。這兩個檔是 JSON，塞不進
-    `source:` 版本標記，落後偵測也看不到它們，等於沒人在看。所以這裡釘兩件事：清單有沒有
-    涵蓋全部範本（新增範本忘了歸類就 FAIL，而不是安靜地沒人同步），以及接線合併有沒有
-    真的換掉舊值、又保住專案自己加的設定。
+    兩份接線是 JSON、放不了 `source:` 標記，曾經不在同步清單裡，matcher 的修正就一直沒發下去、
+    沒有徵兆（2026-10-30 查出）。新增範本忘了歸類要 FAIL；接線合併要換掉舊值、保住專案設定。
     """
     sys.path.insert(0, str(ROOT / 'tools'))
     import sync_project as sp
@@ -3292,8 +3005,7 @@ def step_eol(dest):
 
 FRESHNESS_DAYS = 90
 # 權威清單在部署包「這張表的保鮮期」那一段，這裡只是它的副本（用途只有放進 fail 訊息）。
-# Codex 那兩頁 2026-10-31 搬家：舊網址回 308，skills 那頁連路徑名都換了，所以兩邊要一起改——
-# 指著轉址等於每次重查都先撞一次牆。
+# 網址要跟部署包同步改，指著轉址等於每次重查都先撞一次牆。
 FRESHNESS_PAGES = ('code.claude.com/docs/en/hooks', 'code.claude.com/docs/en/memory',
                    'learn.chatgpt.com/docs/hooks', 'learn.chatgpt.com/docs/build-skills',
                    'antigravity.google/docs/hooks', 'antigravity.google/docs/rules')
@@ -3302,15 +3014,8 @@ FRESHNESS_PAGES = ('code.claude.com/docs/en/hooks', 'code.claude.com/docs/en/mem
 def step_table_freshness():
     """「跨工具與跨平台」那張表的查證日期不得超過 FRESHNESS_DAYS 天。
 
-    為什麼要用工具擋：同一種錯踩過兩次——Antigravity 的 hooks（2026-08-05 的事實，
-    2026-10-30 才發現過時）、Codex 桌面 App 的 hooks（2026-08-06 的實測，同樣到
-    2026-10-30 才發現）。第一次之後的對策是在那一節寫一句警告，而**警告沒有擋住
-    第二次**：表上一直都有查證日期，但沒有人會因為日期舊就主動重查。
-
-    天花板要講明白：這一項只能保證有人看過日期，不能保證有人真的重查。它買到的是
-    「必須有意識地決定」，不是正確性。不怕退化成「bump 一個欄位就能過」（那是
-    pre-push-handoff.sh 被否決的理由之一）的原因是頻率——90 天一次，一年四次，
-    反射形不成；pre-push 是每次推進度都誤報。
+    外部工具能力的斷言會無聲過期，同一種錯踩過兩次，第一次之後加的警告沒擋住第二次。
+    這一項只保證有人看過日期，不保證真的重查；90 天一次，不會變成反射動作。
     """
     if os.environ.get('BOOTSTRAP_FRESHNESS') == 'off':
         record('SKIP', '跨工具表保鮮期', 'BOOTSTRAP_FRESHNESS=off')
@@ -3346,11 +3051,10 @@ def tool_section(text):
 
 
 def tool_matrix(section):
-    """那一節裡的能力矩陣：表頭是空的第一欄＋至少三個工具名（2026-11-14 前是四個，Antigravity 欄拿掉）。
+    """那一節裡的能力矩陣：表頭是空的第一欄＋至少三個工具名。
 
-    回傳 (欄名, {列名: [判定符號]})。**只讀第一張這種形狀的表**：那一節裡還有別的表
-    （Antigravity 四個 surface、hook 契約、實測版本），拿列名當 key 全掃會把它們也收
-    進來，然後在兩邊都沒有的列名上比出一堆假問題。
+    回傳 (欄名, {列名: [判定符號]})。只讀第一張這種形狀的表：那一節還有別的表，
+    拿列名當 key 全掃會在兩邊都沒有的列名上比出假問題。
     """
     lines = section.splitlines()
     for n, line in enumerate(lines):
@@ -3404,21 +3108,10 @@ def compare_tool_tables(readme, kit):
 
 
 def step_readme_table():
-    """README 的跨工具表是部署包那一張的**轉述**，而保鮮期檢查只讀部署包那一份。於是它可以
-    無聲分岔：事實在部署包被重查、改對，README 留在舊事實上——而 README 正好是**人的入口**，
-    第一個讀到它的人拿到的就是過期的那一份。
+    """README 的跨工具表是部署包那一張的轉述，兩邊的判定符號要一致。
 
-    2026-11-01 加。**加的當下就抓到一處已經發生的分岔**：「自動載入程序檔」×「Codex CLI」
-    部署包 2026-10-30 實測後改成 ✅（`~/.codex/skills/` ＋ repo 的 `.agents/skills/`），
-    README 還停在 ⬜「靠 `AGENTS.md` 指路」。沒有任何徵兆，也沒人發現。
-
-    為什麼不是給 README 也加一個「查證日期」：那會讓同一個事實有**第二個時鐘**，而兩個時鐘
-    一定會分岔（部署包那一節已經踩過——Antigravity 那段的 `實測日期：` 刻意避開 `查證日期：`
-    這個字串，就是因為保鮮期只讀全檔第一個）。綁住一致性之後，**單一時鐘就同時罩得住兩張表**。
-
-    天花板：只守矩陣的**判定符號**、README 的版本號與指回部署包的指標，守不了 cell 裡與表
-    下面那幾段**散文**。README 的列比部署包少是刻意的（它是入口摘要，不是副本），所以只比對
-    同名的列——代價是部署包新增一整列（新的能力類別）不會逼 README 跟上。
+    保鮮期只讀部署包那一份，README 會無聲停在舊事實上（2026-11-01 加的當下就抓到一處）。
+    只比對同名的列、判定符號、README 的版本號與指回部署包的指標，守不了格子裡的散文。
     """
     readme = (ROOT / 'README.md').read_text(encoding='utf-8')
     problems = compare_tool_tables(readme, kit_text())
@@ -3520,12 +3213,10 @@ PY_FEATURES = (
 
 
 def code_only(text):
-    """把註解與字串塗成空白後的原始碼（位置保留，所以正規表示式還是對得上行）。
+    """把註解與字串塗成空白後的原始碼（位置保留，正規表示式還對得上行）。
 
-    為什麼非去不可：這一項掃的是「有沒有用到比下限新的 API」，而那些 API 的名字在
-    **解釋為什麼不要用它**的註解與 docstring 裡一定會出現——`read_lf` 的 docstring 就
-    寫著 `Path.read_text(..., newline='')`。掃全檔會把說明判成用法，於是正確的修法反而
-    FAIL，而那種假陽性會逼下一棒把理由刪掉，正好砍掉專用規則 8 要保的東西。
+    新 API 的名字一定會出現在「解釋為什麼不要用它」的註解裡（例如 `read_lf` 的 docstring），
+    掃全檔會把說明判成用法，逼下一棒把理由刪掉。
     """
     lines = text.split('\n')
     try:
@@ -3557,23 +3248,12 @@ def py_floor_problems(sources, floor):
 
 
 def step_python_floor(dest):
-    """宣告 Python 版本下限，並守住「沒有人順手用了更新的 API」。
+    """宣告 Python 版本下限，並守住「沒有人順手用了更新的 API」（查核報告 F14）。
 
-    2026-11-02 加（查核報告 F14）。起因：`verify_bootstrap.py` 用 `Path.read_text(
-    ..., newline='')`，而那個參數官方標「Changed in 3.13」——文件卻只說「`python` 不存在
-    就用 `python3`」。**失敗的形狀是最壞的那一種**：舊版不會在啟動時說「版本太舊」，而是
-    執行到那一行才炸成 TypeError，沒人會把它聯想到版本。
-
-    守三件事：①兩支維護工具檔頭都有 `MIN_PY` 守門、而且兩邊同號（同一個事實兩個家，所以
-    要釘住）；②部署後兩支腳本的下限有寫在 `README.md` 範本——那是**人的入口**，而部署出去
-    的專案看不到這個 repo 的驗證器；③四支 .py 都沒有用到高於下限的 API。
-
-    天花板要講明白：**下限是「不使用更新的 API」的靜態擔保，不是「在那個版本上跑過」。**
-    這台機器只有 3.13，沒有舊版可測；要把它變成實測，得先有 CI（查核報告第 6 節）。
-    部署後那兩支**刻意不加 `MIN_PY` 守門**：`tools/check_docs.py` 是 `sync_project.py` 的
-    同步對象，動它就得跳 `source:` 標記、再把六個專案同步一輪，而 `VERSION` 不跟著動
-    （專用規則 7），於是落後偵測不會替你講——為了一個「本來就跑得動」的版本宣告製造一筆無聲的
-    同步債並不划算。它們的保障是這一項的靜態掃描。
+    用到新 API 時，舊版 Python 不會在啟動時說版本太舊，而是跑到那一行才炸。守三件事：
+    兩支維護工具都有同號的 `MIN_PY` 守門；README 範本寫出部署後工具的下限；四支 .py 都沒用到
+    高於下限的 API。這是靜態擔保，不是在那個版本上跑過。部署後的兩支刻意不加 `MIN_PY`：
+    加了就得跳標記、同步每個專案，保障靠這一項的掃描。
     """
     maint = {}
     for rel in ('tools/verify_bootstrap.py', 'tools/sync_project.py'):
@@ -3645,11 +3325,9 @@ CLAIM_QUOTE = re.compile(r'「[^」]*」')
 
 
 def claim_text(line):
-    """把「」裡的內容拿掉之後的那一行——引用不算主張。
+    """把「」裡的內容拿掉之後的那一行：引用不算主張。
 
-    專用規則 8 要求保留每條規則的「為什麼」，而「為什麼」幾乎一定要引用被改掉的舊說法
-    （「舊版寫『有憑證就跑』」）。不區分引用與主張的話，守門人就會逼下一棒把理由刪掉，
-    正好砍掉這份骨架最值錢的那一半。2026-11-02 加這一項的當下就被自己的修正文字誤判。
+    保留理由時常要引用被改掉的舊說法；不區分引用與主張，守門人會逼下一棒把理由刪掉。
     """
     return CLAIM_QUOTE.sub('', line)
 
@@ -3658,8 +3336,7 @@ def claim_problems(docs):
     """docs：{'kit', 'readme', 'dep_readme', 'dep_skill', 'agents'} → 問題清單。"""
     problems = []
 
-    # ① 散文不得否認能力表裡已經 ✅ 的工具（2026-11-02 之前 README 範本還寫著
-    #    「其他工具沒有 skill 機制」，而 Codex 那一格 2026-10-30 就實測成 ✅）。
+    # ① 散文不得否認能力表裡已經 ✅ 的工具。
     cols, rows = tool_matrix(tool_section(docs['kit']))
     if not rows.get('自動載入程序檔'):
         problems.append('部署包能力表找不到「自動載入程序檔」那一列，這一項無從判斷')
@@ -3673,18 +3350,15 @@ def claim_problems(docs):
                 bare = claim_text(line)
                 for tool in sorted(yes):
                     for hit in re.finditer(CLAIM_DENY % re.escape(tool), bare):
-                        # 「…沒有 handoff skill」講的是少一個檔，不是少一層機制。例外只能
-                        # 看**命中的那一段**：2026-11-02 第一版寫成「整行含 handoff skill
-                        # 就放行」，而要擋的那一句所在的那一行開頭正好是「程序已經寫成
-                        # **[handoff skill](…)**」——例外把唯一的目標吃掉了，而畫面上是 ok。
+                        # 「…沒有 handoff skill」講的是少一個檔，不是少一層機制。例外只能看
+                        # 命中的那一段，不能整行放行：要擋的句子跟「handoff skill」常在同一行。
                         if 'handoff skill' in hit.group(0):
                             continue
                         problems.append('%s 有一句說「%s 沒有 skill」，但能力表那一格是 ✅：%s'
                                         % (name, tool, hit.group(0)[:40]))
 
-    # ② 交接 prompt 不得有自己的字母編號（舊版 A＝交棒、B＝接棒，跟 skill 正好相反）。
-    #    2026-11-17（v3 Q40）起 README 範本不再放交接 prompt：程序的家是 AGENTS 共用制度與
-    #    handoff skill，README 是 seed、部署後不更新，放在那裡的程序一定會過期。
+    # ② 交接 prompt 不得有自己的字母編號（曾經跟 skill 正好相反）。README 範本不放交接 prompt
+    #    （v3 Q40）：README 部署後不更新，放在那裡的程序一定會過期。
     if '**A 接棒**' not in docs['kit'] or '**B 交棒**' not in docs['kit']:
         problems.append('部署包的 skill 模式表沒有「**A 接棒**／**B 交棒**」，字母對應無從比對')
     sec = docs['dep_readme']
@@ -3703,7 +3377,7 @@ def claim_problems(docs):
             if 'verify_state' in line and re.search(r'有憑證(?:才|就)', claim_text(line)):
                 problems.append('%s 把 verify_state 寫成有憑證才跑：%s'
                                 % (name, line.strip()[:50]))
-    # 2026-11-17（v3 Q41）：交接協定移出部署包，「一律跑」改由 skill 的 A4 帶著。
+    # 交接協定已移出部署包（v3 Q41），「一律跑」由 skill 的 A4 帶著。
     if '**一律跑**' not in docs['dep_skill']:
         problems.append('handoff skill 的一鍵驗證沒有寫「一律跑」')
 
@@ -3732,21 +3406,11 @@ def claim_problems(docs):
 
 
 def step_claims(dest):
-    """已修正的主張不得在範本、操作卡與入口文件裡復活。
+    """已修正的主張不得在範本、操作卡與入口文件裡復活（查核報告 F15）。
 
-    2026-11-02 加（查核報告 F15）。那份報告點名五處：README 範本說「其他工具沒有 skill
-    機制」（能力表 2026-10-30 就改成 ✅）、第 6 節的版本序號算法跟 `AGENTS.md` 當時的版本規則不同、
-    協定與接棒 prompt 把 `verify_state` 寫成「有憑證才跑」（漏掉不需要憑證的本機／公開
-    檢查）、README 的 prompt A／B 跟 skill 的 A／B 正好相反、以及「可攜層到哪都成立」
-    「三層自動發生」這兩句過度保證。
-
-    **為什麼不是一張禁句表**：報告的改善建議明寫「不要只增加特定舊句的禁止 regex，因為新的
-    措辭會再次繞過」。所以每一項都綁在一個結構上——能力表的那一格、skill 的字母對應、
-    同一條規則的單一定義、`舊版` 引用之外不得出現的舊算法。
-
-    天花板：它守的是**可機械判定的那一面**（表格的格子、字母對應、關鍵定義是否單一），
-    守不了一段敘述整體的準確度；而「舊版 …」這個例外是故意的——專用規則 8 要求保留為什麼，
-    所以引用舊說法的那些行必須放行。
+    每一項都綁在一個結構上（能力表的格子、skill 的字母對應、同一條規則的單一定義），
+    不是禁句表，因為新的措辭會繞過禁句。只守可機械判定的那一面；「舊版 …」的引用刻意放行，
+    保留理由時常要引用舊說法。
     """
     docs = {
         'kit': kit_text(),
@@ -3779,7 +3443,7 @@ def step_claims(dest):
         ('可攜層又寫成到哪都成立', 'kit',
          lambda t: t.replace('- **可攜層——不需要任何設定就讀得到**',
                              '- **可攜層——到哪都成立**')),
-        # 2026-11-16：標題的層數會變（三層→四層），所以錨點只取不含層數的那半句。
+        # 標題的層數會變，所以錨點只取不含層數的那半句。
         ('README 又寫層自動發生', 'readme',
          lambda t: t.replace('把漏做的機會壓低', '自動發生')),
     )
@@ -3833,16 +3497,11 @@ class _StateHandler(http.server.BaseHTTPRequestHandler):
 
 
 def step_state_exit(dest):
-    """verify_state 不得把失敗吞成 exit 0（2026-11-02／查核報告 F04）。
+    """verify_state 不得把失敗吞成 exit 0（查核報告 F04）。
 
-    原始缺陷：在生成的檢查裡放一個 exit 7 的命令，畫面上印著 `=rc7`，而 `main()` 仍然
-    `return 0`；HTTP 的 FAIL／ERROR 也只是印字。於是任何「跑 verify_state，exit 0 就算
-    服務驗過」的下游流程都會誤過關——而這支腳本存在的理由正是「把接手查證壓成一個回合」，
-    也就是說它的結束碼本來就會被當成結論用。
-
-    九個情境全部實跑（不是讀原始碼）：rc7、HTTP 500、連不上、200 但回應內容不對、
-    全綠、缺憑證（預設／`--strict`／列進 OPTIONAL）、未填 CHECKS，再加一個祕密遮罩。
-    `NOT_CONFIGURED` 仍然回 0 是刻意的，所以它也在表裡——免得下一棒「順手把它也改成非零」。
+    它的結束碼會被當成「服務驗過」的結論。九個情境全部實跑：rc7、HTTP 500、連不上、
+    200 但內容不對、全綠、缺憑證（預設／`--strict`／OPTIONAL）、未填 CHECKS、祕密遮罩。
+    `NOT_CONFIGURED` 回 0 是刻意的，也列在情境裡，免得被順手改成非零。
     """
     work = pathlib.Path(tempfile.mkdtemp(prefix='state-exit-'))
     shutil.copyfile(dest / 'tools' / 'verify_state.py', work / 'verify_state.py')
@@ -3934,16 +3593,11 @@ print('[x](does-not-exist.md)')
 
 
 def step_snapshot_guard(dest):
-    """check_docs 的第 7 項：交接快照不見了必須擋下（2026-11-02／查核報告 F08）。
+    """check_docs 交接快照與連結檢查裡「同組情境」沒涵蓋的部分（查核報告 F08）。
 
-    原始缺陷：第 6 項（「工作中」欄位）是「HANDOFF.md 有出現在輸入清單裡才驗」，所以
-    **部署後整份刪掉或改名時，它回報乾淨**——而那一刀正好把跨機器誤接棒防呆連根拔掉。
-    80 行、必要欄位與必要章節是 skill B6 的規則，在此之前只有骨架自己這個 repo 在驗，
-    使用者的專案拿不到（報告原話：「本 repo 有較強版本，但沒有部署給使用者」）。
-
-    七個情境都實跑 `check_docs.py`：刪檔、超行、缺章節、欄位重複各要 exit 2；
-    `--docs-only` 下刪檔要 exit 0（那個開關要真的是開關）；連結誤報的 fixture 要 exit 0；
-    最後放一個真的死連結進去，確認「不誤報」不是靠「什麼都不報」換來的。
+    刪檔、缺章節與工作中欄位的正反例在「來源／產物交接快照同組情境」。這裡守：
+    超行與 `--docs-only` 開關、章節重複與欄位重複的訊息、R07 stage 集合、R08／R09 與
+    把守門拿掉的負向變異，以及連結不誤報、真的死連結仍要抓到。
     """
     handoff = dest / 'HANDOFF.md'
     original = handoff.read_text(encoding='utf-8')
@@ -4006,12 +3660,6 @@ def step_snapshot_guard(dest):
         spaced.unlink()
         probe.unlink()
 
-        handoff.unlink()
-        r = check()
-        if r.returncode != 2 or 'HANDOFF.md' not in r.stdout:
-            bad.append('刪掉 HANDOFF.md 沒被擋下（exit %d）' % r.returncode)
-        write_lf(handoff, original)
-
         # --docs-only 用「超行」驗，不用「刪檔」：刪掉 HANDOFF.md 會讓 README／AGENTS
         # 指向它的連結變成**真的**死連結，於是 --docs-only 照樣 exit 2——那不是開關沒用。
         write_lf(handoff, original.rstrip('\n') + '\n' + '- 填行\n' * 90)
@@ -4022,11 +3670,6 @@ def step_snapshot_guard(dest):
         if r.returncode != 0:
             bad.append('--docs-only 下仍然 exit %d（這個開關要真的關掉第 7 項）'
                        % r.returncode)
-
-        write_lf(handoff, original.replace('## 已完成', '## 做完的'))
-        r = check()
-        if r.returncode != 2 or '已完成' not in r.stdout:
-            bad.append('缺必要章節沒被擋下（exit %d）' % r.returncode)
 
         # 章節重複＝往下疊成日誌（B6 禁止）。2026-11-02 在真專案上量到一份有兩個
         # 「## 已完成（日期）」——所以比對開頭、罰重複，而不是罰標題的措辭。
@@ -4060,7 +3703,7 @@ def step_snapshot_guard(dest):
         record('FAIL', '交接快照檢查', '；'.join(bad[:4]))
         return False
     record('OK', '交接快照檢查',
-           '刪檔／超 80 行／缺章節／章節重複／欄位重複都 exit 2，--docs-only 真的關得掉'
+           '超 80 行／章節重複／欄位重複都 exit 2，--docs-only 真的關得掉'
            '（用超行情境驗，刪檔會連帶產生真的死連結）；'
            '程式碼範例、帶 title 與角括號連結不誤報，真的死連結仍 exit 2；R07 stage 集合／部分 stage、R08 空欄、R09 空白角括號 title 組合與負向變異')
     return True
@@ -4219,7 +3862,7 @@ def flow_contract_problems(skill):
         if heading not in skill or token not in part:
             bad.append(heading + '缺契約：' + token)
     mode = skill.split('## 判斷模式', 1)[-1].split('### A／B／C', 1)[0]
-    # 2026-11-12（Q31）：舊句「準備 push 預設先做 B；只有 A5／C 例外」改成交棒只由使用者決定。
+    # 交棒只由使用者決定（Q31），不能退回「準備 push 預設先做 B」。
     for token in ('使用者沒要求就不得自行交棒', 'A5 開工標記與 C 中途安全點都不宣稱交棒'):
         if token not in mode:
             bad.append('入口缺：' + token)
@@ -4273,7 +3916,7 @@ def step_flow_contract(dest, tmp):
     must(['clone', '-q', '-b', 'main', str(origin), str(peer)])
     write_lf(work / 'file', 'local\n')
     must(['commit', '-qam', 'local'], work)
-    # 2026-11-14 起本 repo 的 repo-git-check.sh 是 3.10 的逐字副本（「本 repo 開場 hook」逐位元組比對），不重跑。
+    # 本 repo 的 repo-git-check.sh 是 3.10 的逐字副本（「本 repo 開場 hook」逐位元組比對），不重跑。
     scripts = [('部署 hook', read_lf(dest / '.claude/hooks/git-freshness.sh'))]
     issues = []
     # 2026-11-13（v3 D12）：部署出去的 hook 只報事實，「停下來」寫在 AGENTS.md 的共用規則 3；
@@ -4789,15 +4432,13 @@ def step_architecture_summary(dest):
         bad = []
         for name, text in docs.items():
             rows = [line for line in text.splitlines() if line.startswith('|')]
-            # 2026-11-17：本專案明確不支援 Gemini，不再產出 GEMINI.md；指標只剩 CLAUDE.md 的 import。
+            # 本專案不支援 Gemini，指標只剩 CLAUDE.md 的 import。
             pointers = [line for line in rows
                         if line.startswith('| [CLAUDE.md](CLAUDE.md)') or line.startswith('| 3.2 |')]
             if not pointers or any('import' not in line for line in pointers):
                 bad.append(name + ' 沒寫 CLAUDE.md 用 import')
             if any('GEMINI' in line for line in rows):
                 bad.append(name + ' 的表格還列著 GEMINI.md')
-            # 2026-11-20（v3 Q52）：本 repo 的 3.x 範本表刪掉（kit.md 第 2、3 節才是它的家），
-            # 原本守「3.4 那一列不得退回交接 prompt」的那段跟著拿掉。
         return bad
     docs = {'repo': read_lf(ROOT / 'ARCHITECTURE.md'), 'generated': read_lf(dest / 'ARCHITECTURE.md')}
     bad = problems(docs)
@@ -4815,11 +4456,7 @@ def step_architecture_summary(dest):
 
 
 def tests_report_problem(report):
-    """Reject an empty, partial or failed test report (tools/run_tests.py --json).
-
-    2026-11-18（v3 Q46）：取代 v2 原型報告的判定。那份報告的 strict_ready、封存位置與
-    ssh-keygen 指紋隨 v2 程式封存，只留測試與現況索引本身的判定。
-    """
+    """Reject an empty, partial or failed test report (tools/run_tests.py --json)."""
     try:
         tests = report['tests']
         if report['passed'] is not True or report['registry_errors']:
@@ -4879,20 +4516,16 @@ def step_tests(result=None):
 
 
 SPLIT_BASELINE = ROOT / 'tools/skill_split_baseline.json'
-# 入口必須自己帶著的句子：停止條件與禁令。2026-11-13（v3 第 5 節）起 skill 是碰到才讀的參考，
-# 「模型沒去讀模式檔時的最後一道」改成每個 session 都載入的 AGENTS.md 共用制度（SHARED_MUST）；
-# 原本在這裡的六句（A2.5 占用、A1–A4 不改檔、找不到模式檔就停、每則新訊息看 session 狀態、
-# 續聊改檔前重走 A1–A5、`session：` 一行）移到那裡守，取捨記在理由檔歷史紀錄的「#rule-4」。
+# skill 入口必須自己帶著的句子：停止條件與禁令。每個 session 都要守的句子在 AGENTS.md 共用制度
+# （SHARED_MUST），這裡不重複（v3 第 5 節；取捨在理由檔歷史紀錄的「#rule-4」）。
 ENTRY_MUST = (
     '不要憑空建立交接檔案', '`reset --hard`', '`push --force`', '自行 `stash`',
     '接棒時 ahead-only', 'fetch 失敗',
     '功能分支要併進 `main`', '憑證缺失', 'HANDOFF 沒授權的破壞性操作', '建 GitHub repo 與第一次 push',
     '~/.claude/skills/handoff/', '使用者沒要求就不得自行交棒',
 )
-# AGENTS.md 共用制度（開始與結束標記之間）必須有的條件，v3 第 5 節。
-# 2026-11-21（v3 Q57）：共用規則去重成 7 條，每條至少一句在這裡，整條被刪會被擋。
-# 2026-11-21（v3 Q58）：分成「## 共用制度」底下三個 ### 節；skill 位置改寫成共用規則 8（附觸發條件），
-# session 命名併成共用規則 9。標題也列進來，結構被改掉會被擋。
+# AGENTS.md 共用制度（開始與結束標記之間）必須有的條件（v3 第 5 節、Q57、Q58）：
+# 每條共用規則至少一句在這裡，整條被刪會被擋；大段與三個 ### 節的標題也列進來，結構被改掉會被擋。
 SHARED_MUST = (
     '## 共用制度', '### 協作目標', '### 環境事實', '### 共用規則',
     '本機的檔案可能是舊的', '唯一的訊號是 origin 上 `HANDOFF.md` 的「工作中」那一行',
@@ -4969,10 +4602,10 @@ def line_key(line):
 
 
 def skill_split_problems(files, version, whole, baseline):
-    """2026-11-10（決策書 F22／Q9）：handoff skill 拆成六個檔之後要守的東西。
+    """handoff skill 拆檔之後要守的東西（決策書 F22／Q9）。
 
-    files 是 {檔名: 內容}。拆檔最怕三件事，而且都沒有徵兆：入口指向不存在的檔、六個檔
-    版本不一（同步只寫了一半）、濃縮時把停止條件或理由弄丟。
+    files 是 {檔名: 內容}。拆檔最怕三件事，而且都沒有徵兆：入口指向不存在的檔、各檔版本不一
+    （同步只寫了一半）、濃縮時把停止條件或理由弄丟。
     """
     missing = [name for name in SKILL_FILES if name not in files]
     if missing:
@@ -5079,10 +4712,10 @@ def skill_headings(text):
 
 
 def rule_map_problems(files):
-    """2026-11-10（決策書 Q17 (b)）：reasons.md 的對照表要涵蓋入口與四個模式檔的每個段落。
+    """reasons.md 的對照表要涵蓋入口與四個模式檔的每個段落（決策書 Q17 (b)）。
 
     只查涵蓋與指向：左欄每個段落都在、沒有多出不存在的段落；右欄指到的段落真的存在，
-    或是三個固定字樣之一。理由寫得對不對、「本段內文」是不是真的有理由，這裡看不出來。
+    或是三個固定字樣之一。理由寫得對不對，這裡看不出來。
     """
     reasons = files.get('reasons.md', '')
     if RULE_MAP_HEAD not in reasons:
@@ -5303,9 +4936,6 @@ def _run_checks(dest, tmp, collect):
     seen = step_regenerate(dest) and step_fill(dest)
     if seen and step_check_docs(dest):
         step_placeholder_list(dest, seen)
-        step_placeholder_guard(dest)
-        step_date_guard(dest)
-        step_busy_tool_guard(dest)
         step_deploy_shape(dest)
         step_codex_windows(dest, tmp)
         step_wiring_cwd(dest, tmp)
@@ -5360,7 +4990,7 @@ DEV_IMPORT_NAMES = {'attrs': ('attr', 'attrs'), 'markdown-it-py': ('markdown_it'
                    'pytest': ('pytest', '_pytest'), 'rpds-py': ('rpds',)}
 # A4 會跑到的程式：只能用標準函式庫，沒裝 uv 的機器也要能驗
 DEV_STDLIB_ONLY = ('tools', 'src/project_bootstrap')
-# 2026-11-11 P1 第四片：只有這幾支可以用鎖檔裡的套件。其他程式不能 import 它們（A4 才碰不到），
+# 只有這幾支可以用鎖檔裡的套件。其他程式不能 import 它們（A4 才碰不到），
 # import 它們的測試要以 raise unittest.SkipTest('needs …') 開頭：run_tests 憑這個標記不跑它們並在報告列出。
 # 要多一支就加在這裡，這是刻意留的關卡。
 DEV_EXTRAS = ('src/project_bootstrap/mdlinks.py', 'src/project_bootstrap/schema_check.py')
@@ -5396,13 +5026,12 @@ def p1_imports(text):
 
 
 def dev_layout_problems(pyproject, lock, sources, tests=None, extras=DEV_EXTRAS):
-    """2026-11-11 P1 第一片：開發骨架的鎖定與 A4 免安裝。
+    """開發骨架的鎖定與 A4 免安裝。
 
     只查：最低版本是 3.12、還不是可安裝的包；pyproject 宣告的每個依賴都在 uv.lock；
-    鎖檔每個外部套件都有 sha256；每個鎖住的套件都登記了授權；A4 會跑到的程式不 import
-    鎖檔裡的套件。授權字串對不對、鎖檔是不是 uv 最新解出來的，這裡看不出來（後者用 uv lock --check）。
-    第四片起：`extras` 列的模組可以用鎖檔套件，但別的程式不能 import 它們，import 它們的測試
-    要在缺套件時 SkipTest。只看靜態 import，`importlib` 動態載入看不到。
+    鎖檔每個外部套件都有 sha256 與授權；A4 會跑到的程式不 import 鎖檔裡的套件。
+    `extras` 列的模組可以用鎖檔套件，但別的程式不能 import 它們，import 它們的測試要在缺套件時
+    SkipTest。授權字串對不對、鎖檔是不是最新（用 uv lock --check）、importlib 動態載入，這裡看不出來。
     """
     bad = []
     project = p1_section(pyproject, 'project') or {}
@@ -5512,7 +5141,7 @@ def step_dev_layout():
 
 
 def bootstrap_source_problems(build_kit, files, installer, sync, current):
-    """2026-11-18（決策書 v3 Q49）：bootstrap.py 必須等於 build_kit 的生成結果。
+    """bootstrap.py 必須等於 build_kit 的生成結果（v3 Q49）。
 
     來源有三個：src/kit 的範本與 owners.json、src/project_bootstrap/installer.py、
     tools/sync_project.py 的合併函式。任何一個改了沒重生都要擋，手改產物也要擋。
@@ -5530,9 +5159,8 @@ def bootstrap_source_problems(build_kit, files, installer, sync, current):
 def kit_source_problems(build_kit, prose, files, retired_exists):
     """src/kit 生得出部署包全文、範本集合等於 EXPECTED，而且 PROJECT-BOOTSTRAP.md 沒被放回來。
 
-    2026-11-11 P1 第三片起要求提交的 PROJECT-BOOTSTRAP.md 等於生成結果；2026-11-18
-    （v3 Q50）起不再提交它，全文只在記憶體生成（kit_text），所以改成擋它回來——
-    回來就又多一份會過期的範本副本。範本內容對不對由本檔其他各項照舊驗。
+    部署包全文只在記憶體生成（kit_text，v3 Q50）；那個檔放回來就多一份會過期的範本副本。
+    範本內容對不對由本檔其他各項驗。
     """
     try:
         build_kit.build(prose, files)
