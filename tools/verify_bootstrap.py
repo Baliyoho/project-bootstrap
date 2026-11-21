@@ -45,7 +45,7 @@
 | 同步清單涵蓋骨架 | `sync_project.py` 的四份清單加起來要等於 `EXPECTED` | 新增範本沒歸類＝那個檔沒人同步，而且沒有徵兆。2026-10-30 就是這樣查出兩份 hook 接線從來沒被發下去 |
 | 同步安全 | F02：骨架只擁有**指向骨架腳本的 handler**（同組的自訂 hook 要保留，matcher 衝突／重複組／異常分組要拒絕，`commandWindows` 要認得）。F03：任一項算不出來就零寫入，失敗與不存在的目標要非零退出、不准宣稱最新版 | 同步靜默刪掉專案設定；或失敗一半卻回 exit 0 並宣稱最新版，而落後的專案以為自己同步過了（F02、F03） |
 | 同步升級 mode | 替換前複製既存 mode；複製失敗保留原檔；新依賴仍可建立；移除複製的負向變異必須失敗。POSIX 另驗 0755／0640、開場 hook 直接執行、Git 無 mode diff | 新 inode 預設權限會讓更新後的 POSIX hook 無法執行；Windows 通過不代表 POSIX 實測 |
-| 結構摘要一致性 | 本 repo 與生成 ARCHITECTURE 寫明 `CLAUDE.md` 用 import、表格不再列 Gemini 的指標檔；四個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
+| 結構摘要一致性 | 本 repo 與生成 ARCHITECTURE 寫明 `CLAUDE.md` 用 import；兩個負向測試 | 權威範本已改，結構表格仍教舊寫法 |
 | 接線合併 | 餵一份「舊 matcher ＋ 專案自己加的 permissions 與 hook」進去，要換掉舊值、保住專案設定、已一致時不動 | 同步會洗掉專案設定，或落後的專案根本修不好 |
 | 跨工具表保鮮期 | 「跨工具與跨平台」那節的「查證日期」不得超過 90 天（`BOOTSTRAP_FRESHNESS=off` 可跳過） | 對外部工具能力的斷言在無聲中過期。這一項只保證有人看過日期，**不保證有人真的重查**——買到的是「必須有意識地決定」。會做成 fail 而不是警告，是因為上一次的對策就是一句警告，而警告沒擋住第二次（Antigravity 的 hooks、Codex 桌面 App 的 hooks，兩次同一種錯） |
 | 跨工具過期敘述 | 部署包正文、本 repo 結構說明、重生的結構範本與 handoff skill，不得復活 CLI／2.0 測試狀態、Antigravity 接線、skill 入口與 IDE 追查決定的已知舊斷言；附回歸負向測試與範圍測試 | 同一份文件的表改對了，散文卻仍教下一棒照舊事實行動。只檢查已知回歸，不做通用語意判讀、不代替外部查證；表頭的歷史變更記錄與 IDE 未解結果仍保留 |
@@ -58,7 +58,7 @@
 | Python 版本下限 | 兩支維護工具與安裝程式的 `MIN_PY` 存在、在檔頭擋下舊版，跟 `pyproject.toml` 的 `requires-python` 同號；README 範本寫出同一個下限；4 個負向測試（2026-11-21 使用者選定全部對齊 3.12） | 下限各處說法不一，有人照比較低的那個去裝，跑到用了新 API 的那一行才炸（F14） |
 | 已修正的主張沒復活 | 能力表 ✅ 的工具不得被散文說成沒有 skill、交接 prompt 不得有自己的 A／B 編號且要寫出模式、`verify_state` 不得以憑證為前提、版本序號只有一種定義、可攜層不得寫成「到哪都成立」；附九個負向測試 | 事實在部署包被改對，範本、操作卡與入口文件裡的舊說法照樣部署出去。綁結構不綁禁句，「」裡的引用不算主張（專用規則 8 要留為什麼）；守不了一整段敘述的準確度（F15） |
 | 協作狀態契約／Git 異常提示 | 六狀態與步驟契約、21 個負向測試，含 R07 先 stage 再驗證。Git 異常：部署 hook 實跑領先／分岔／fetch 失敗要照實報出、不得建議 rebase，`AGENTS.md` 共用制度要有停止條件；本 repo hook 照舊要求停止；2 個負向測試 | 程序順序矛盾或工具提示教人自行 rebase |
-| 核心與實例優先序 | skill／README 宣告一致、override 範圍明確、部署包不再產出交接協定（v3 Q41）、7 個負向測試；同步對舊實例列版本與 MIGRATE，不改寫 | 不同步的舊協定會推翻新程序（F10） |
+| 核心與實例優先序 | skill／README 宣告一致、override 範圍明確、7 個負向測試；同步對舊實例列版本與 MIGRATE，不改寫 | 不同步的舊協定會推翻新程序（F10） |
 | 接力協調邊界 | A2.5／A5 明列協調訊號非鎖、SHA 比對與禁止自動奪權，4 個文字負向測試 | 不宣稱並行互斥；原子 claim 留待另案（F12） |
 | skill 拆分 | 七個 skill 檔齊全、同版本、都在 `WHOLE`；入口＋`mode-a.md` ≤6,000 字元；入口 12 條、`mode-a.md` 12 條必備句；拆分前每一行逐字留存或列入已改寫清單（13 行） | 入口指向不存在的檔、同步只寫一半、濃縮時丟了停止條件或理由。不證明模型會去讀模式檔 |
 | AGENTS.md 共用制度 | 開始／結束標記成對、35 條必備條件（v3 第 5 節；每條共用規則至少一條，三個 ### 節與 ## 大段標題都在，v3 Q58）、共用 ≤40 行、全檔 ≤100 行（v3 D11）、開始標記的版本等於 `VERSION`；39 個負向測試 | 每個 session 都載入的那一層缺了條件、長過預算，或版本提示失準。只證明文字在，不證明模型照做 |
@@ -1695,18 +1695,6 @@ def step_document_policy_parity(dest, tmp):
            % len(cases))
 
 
-def template_link(target):
-    """部署包裡指向「部署後才存在的檔」的連結不是死連結——那是範本內容，真正該檢查它的
-    地方是重生出來的骨架（step_check_docs 就在那裡跑 check_docs.py）。判準用 EXPECTED
-    本身而不是「整個 PROJECT-BOOTSTRAP.md 跳過」：這樣它指向本 repo 檔案的連結
-    （README.md、ARCHITECTURE.md…）改檔名時照樣會被抓到。`<slug>` 那種示意路徑也跳過。"""
-    if '<' in target:
-        return True
-    while target.startswith('../'):
-        target = target[3:]
-    return target in EXPECTED
-
-
 def source_document_problems(root, mds, link_ok_paths=()):
     """Same source document check used by the live repo and F46 fixtures.
 
@@ -1755,8 +1743,6 @@ def source_document_problems(root, mds, link_ok_paths=()):
                 continue
             target = link.split('#')[0]
             if not target:
-                continue
-            if rel == 'PROJECT-BOOTSTRAP.md' and template_link(target):
                 continue
             if not (base / target).exists():
                 dead.append('%s → %s' % (rel, raw))
@@ -3848,10 +3834,7 @@ def core_priority_problems(skill, protocol=None, readme=None):
 def step_core_priority(dest, tmp):
     import sync_project as syncer
     skill = skill_text(dest)
-    if (dest / 'docs/ai-notes/handover-protocol.md').exists():
-        bad = ['部署包又產出了交接協定（v3 Q41 已移除）']
-    else:
-        bad = core_priority_problems(skill)
+    bad = core_priority_problems(skill)
     readme = read_lf(ROOT / 'README.md')
     bad.extend(core_priority_problems(skill, readme=readme))
     for mutant in (readme.replace('核心優先序：SKILL.md', '舊優先序'),
@@ -3874,7 +3857,7 @@ def step_core_priority(dest, tmp):
     if any(rel == 'docs/ai-notes/handover-protocol.md' for _, _, rel in plan.writes):
         bad.append('同步覆蓋專案協定')
     record('FAIL' if bad else 'OK', '核心與實例優先序', '；'.join(bad) if bad else
-           'skill 與 README 宣告一致、override 範圍明確、部署包不再產出交接協定、7 個負向測試；'
+           'skill 與 README 宣告一致、override 範圍明確、7 個負向測試；'
            '同步對舊實例列核心版本與 MIGRATE，不改寫')
 
 
@@ -4295,13 +4278,10 @@ def step_architecture_summary(dest):
         bad = []
         for name, text in docs.items():
             rows = [line for line in text.splitlines() if line.startswith('|')]
-            # 本專案不支援 Gemini，指標只剩 CLAUDE.md 的 import。
             pointers = [line for line in rows
                         if line.startswith('| [CLAUDE.md](CLAUDE.md)') or line.startswith('| 3.2 |')]
             if not pointers or any('import' not in line for line in pointers):
                 bad.append(name + ' 沒寫 CLAUDE.md 用 import')
-            if any('GEMINI' in line for line in rows):
-                bad.append(name + ' 的表格還列著 GEMINI.md')
         return bad
     docs = {'repo': read_lf(ROOT / 'ARCHITECTURE.md'), 'generated': read_lf(dest / 'ARCHITECTURE.md')}
     bad = problems(docs)
@@ -4310,12 +4290,8 @@ def step_architecture_summary(dest):
         mutant[name] = docs[name].replace('import', '只有標題不同')
         if not problems(mutant):
             bad.append('負向測試未抓到指標摘要退化：' + name)
-        mutant = dict(docs)
-        mutant[name] = docs[name] + '\n| [GEMINI.md](GEMINI.md) | 指標 | x | x |\n'
-        if not problems(mutant):
-            bad.append('負向測試未抓到 GEMINI.md 回到表格：' + name)
     record('FAIL' if bad else 'OK', '結構摘要一致性', '；'.join(bad) if bad else
-           '本 repo 與生成 ARCHITECTURE 寫明 CLAUDE.md 用 import、表格不再列 GEMINI.md；四個負向測試')
+           '本 repo 與生成 ARCHITECTURE 寫明 CLAUDE.md 用 import；兩個負向測試')
 
 
 def tests_report_problem(report):
