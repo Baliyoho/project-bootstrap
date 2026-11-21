@@ -11,7 +11,7 @@
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無（`feat/bootstrap-installer`、`feat/retire-kit-doc` 都已併回 `main`，分支留在 origin 沒刪）。
-- **工作中**：無（已交棒）
+- **工作中**：`Mac mini` ／ `Claude Code` ／ `㊣　11.21.15｜待指派｜工作中｜交棒0次`，2026-11-21 15:36 (+08) 開工
 - **骨架版本**：`2026-11-21.2`
 - 本機能力：Mac mini；`git push` 可用；`.venv` 可跑外部套件測試（`.venv/bin/python -m pytest tests`）。`/usr/bin/python3` 是 3.9.6，太舊（全 repo 下限已是 3.12），用另裝的 `python3`（3.15.2）。
 
