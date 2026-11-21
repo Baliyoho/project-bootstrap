@@ -31,7 +31,7 @@ Edit the source and rerun:
     python3 -X utf8 tools/build_kit.py            # write bootstrap.py
     python3 -X utf8 tools/build_kit.py --check    # exit 1 if it is out of date
 
-Standard library only (Python 3.8+), like verify_bootstrap.py.
+Standard library only (Python 3.12+), like verify_bootstrap.py.
 """
 import argparse
 import ast

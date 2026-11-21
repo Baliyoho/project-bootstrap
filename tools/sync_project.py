@@ -41,11 +41,10 @@ import subprocess
 import sys
 import tempfile
 
-# Python 版本下限（2026-11-02／查核報告 F14）。在檔頭就擋，而且訊息要說「版本太舊」——
-# 高於下限的 API 不會在啟動時失敗，而是執行到那一行才炸成 TypeError／AttributeError，
-# 那種形狀沒人會聯想到版本。兩支維護工具的 MIN_PY 必須一致，由「Python 版本下限」那一
-# 項檢查釘住。
-MIN_PY = (3, 8)
+# Python 版本下限（查核報告 F14）。在檔頭就擋，訊息要說「版本太舊」：高於下限的 API 不會在
+# 啟動時失敗，而是執行到那一行才炸，那種形狀沒人會聯想到版本。跟安裝程式、開發環境同一個下限
+# （2026-11-21 使用者選定全部對齊 3.12），由「Python 版本下限」那一項檢查釘住。
+MIN_PY = (3, 12)
 if sys.version_info < MIN_PY:
     sys.exit('需要 Python %d.%d 以上，本機是 %d.%d——請改用較新的 python'
              % (MIN_PY + sys.version_info[:2]))

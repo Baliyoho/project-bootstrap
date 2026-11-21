@@ -18,7 +18,7 @@ self-test probe passed in this run. ``strict_ready`` is true only when every
 strict capability did. Summary cells are prose for the table and are never
 read as evidence.
 
-Standard library only and Python 3.8 compatible: build_kit.py imports it.
+Standard library only (Python 3.12+, the repo-wide floor): build_kit.py imports it.
 """
 import argparse
 import json

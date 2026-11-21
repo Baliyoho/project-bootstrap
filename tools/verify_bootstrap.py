@@ -55,7 +55,7 @@
 | Codex Windows 啟動器 | Windows 原生 cmd 實跑中文／空白路徑、不同 cwd、stdin／stdout／stderr／exit 2 與缺少 Git Bash 的情境 | 轉接層若吞掉 exit 2，pre-push 防呆會消失；此項只在 Windows 執行 |
 | verify_state 失敗訊號 | 命令非零退出、HTTP 500、連不上、200 但回應內容不對都要讓結束碼非零；缺憑證是 SKIP，`--strict` 才非零、`OPTIONAL` 放行；未填仍回 0；祕密要遮罩。十個情境全部實跑 | 舊版每一種情況都 return 0，畫面印著 `rc7` 而下游拿 exit 0 當服務驗收（F04） |
 | 交接快照檢查 | 超過 80 行、章節重複或欄位重複都要 exit 2（刪檔與缺章節在交接快照同組情境）；`--docs-only` 要真的關得掉；程式碼範例、帶 title 與角括號連結不得誤報，但真的死連結仍要抓到 | 第 6 項只在 HANDOFF 出現在輸入清單時才驗，整份刪掉反而回報乾淨；而連結誤報會教人「這支腳本的 FAIL 可以無視」（F08） |
-| Python 版本下限 | 兩支維護工具檔頭的 `MIN_PY` 存在、會擋、兩邊同號；README 範本寫出部署後工具的下限；四支 `.py` 都沒有用到高於下限的 API（掃描前把註解與字串塗白） | 3.13-only 的 API 在舊版 python 上是執行到那一行才炸成 TypeError，不會說「版本太舊」。下限是靜態擔保、不是實測：沒有舊版可跑，要實測得先有 CI（F14） |
+| Python 版本下限 | 兩支維護工具與安裝程式的 `MIN_PY` 存在、在檔頭擋下舊版，跟 `pyproject.toml` 的 `requires-python` 同號；README 範本寫出同一個下限；4 個負向測試（2026-11-21 使用者選定全部對齊 3.12） | 下限各處說法不一，有人照比較低的那個去裝，跑到用了新 API 的那一行才炸（F14） |
 | 已修正的主張沒復活 | 能力表 ✅ 的工具不得被散文說成沒有 skill、交接 prompt 不得有自己的 A／B 編號且要寫出模式、`verify_state` 不得以憑證為前提、版本序號只有一種定義、可攜層不得寫成「到哪都成立」；附九個負向測試 | 事實在部署包被改對，範本、操作卡與入口文件裡的舊說法照樣部署出去。綁結構不綁禁句，「」裡的引用不算主張（專用規則 8 要留為什麼）；守不了一整段敘述的準確度（F15） |
 | 協作狀態契約／Git 異常提示 | 六狀態與步驟契約、21 個負向測試，含 R07 先 stage 再驗證。Git 異常：部署 hook 實跑領先／分岔／fetch 失敗要照實報出、不得建議 rebase，`AGENTS.md` 共用制度要有停止條件；本 repo hook 照舊要求停止；2 個負向測試 | 程序順序矛盾或工具提示教人自行 rebase |
 | 核心與實例優先序 | skill／README 宣告一致、override 範圍明確、部署包不再產出交接協定（v3 Q41）、7 個負向測試；同步對舊實例列版本與 MIGRATE，不改寫 | 不同步的舊協定會推翻新程序（F10） |
@@ -72,11 +72,8 @@
 | 全域 handoff skill 跟部署包同版 | 家目錄 `~/.claude/skills/handoff/`、`~/.codex/skills/handoff/` 的七個檔跟 `src/kit` 範本逐字相同（不只比 `source:` 版本號）；不同只印「提醒」、不影響結束碼，兩份都沒裝印 skip；4 個負向測試 | 改了部署包卻忘了重裝全域副本，沒有專案層 skill 的 session 讀到舊程序（2026-11-18 使用者指定） |
 | 行末與雜項 | 全 LF、JSON 合法、腳本可執行 | Windows 寫出 CRLF、設定檔打錯字 |
 
-Python 版本下限：這兩支維護工具（本檔與 `sync_project.py`）宣告的下限寫在下面的 MIN_PY，
-而且在檔頭就檢查、清楚報錯。那是**靜態擔保**（「不使用更新的 API」），不是「在那個版本上
-跑過」——實跑過的只有本機這一版。守門人是「Python 版本下限」那一項：它掃四支 .py（兩支
-維護工具＋兩支部署後工具）有沒有用到高於下限的 API，所以下一棒順手用一個新 API 時會當場
-FAIL，而不是在別人的舊 python 上才炸（查核報告 F14）。
+Python 版本下限：兩支維護工具、安裝程式與開發環境都是 3.12（MIN_PY），在檔頭就檢查、清楚報錯。
+「Python 版本下限」那一項只查各處宣告同號，不掃有沒有用到更新的 API。
 
 結束碼：0＝全過；1＝有跳過項（缺 bash 之類）但無失敗；2＝有失敗。印「提醒」的項目不影響結束碼。
 本工具唯讀本 repo，只在系統暫存區寫檔。
@@ -93,19 +90,16 @@ import shutil
 import subprocess
 import sys
 import http.server
-import io
 import tempfile
 import threading
-import tokenize
 from contextlib import contextmanager, redirect_stdout, redirect_stderr
 from unittest.mock import patch
 from datetime import date
 
-# Python 版本下限（2026-11-02／查核報告 F14）。在檔頭就擋，而且訊息要說「版本太舊」——
-# 高於下限的 API 不會在啟動時失敗，而是執行到那一行才炸成 TypeError／AttributeError，
-# 那種形狀沒人會聯想到版本。兩支維護工具的 MIN_PY 必須一致，由「Python 版本下限」那一
-# 項檢查釘住。
-MIN_PY = (3, 8)
+# Python 版本下限（查核報告 F14）。在檔頭就擋，訊息要說「版本太舊」：高於下限的 API 不會在
+# 啟動時失敗，而是執行到那一行才炸，那種形狀沒人會聯想到版本。跟安裝程式、開發環境同一個下限
+# （2026-11-21 使用者選定全部對齊 3.12），由「Python 版本下限」那一項檢查釘住。
+MIN_PY = (3, 12)
 if sys.version_info < MIN_PY:
     sys.exit('需要 Python %d.%d 以上，本機是 %d.%d——請改用較新的 python'
              % (MIN_PY + sys.version_info[:2]))
@@ -3125,118 +3119,59 @@ def step_tool_prose(dest):
     return True
 
 # ── Python 版本下限（F14）────────────────────────────────────────────────
-# 這張表只收「寫得出來、但舊版 python 沒有」的 API。每一條都要註明需要的版本，因為
-# 這一項報錯時要能直接回答「那我最低要幾」——只說「不要用」會逼下一棒去翻官方文件。
-PY_FEATURES = (
-    (re.compile(r'read_text\([^)]*newline'), (3, 13), "Path.read_text 的 newline 參數"),
-    (re.compile(r'write_text\([^)]*newline'), (3, 10), "Path.write_text 的 newline 參數"),
-    (re.compile(r'\.(?:removeprefix|removesuffix)\('), (3, 9), 'str.removeprefix／removesuffix'),
-    (re.compile(r'\.is_relative_to\('), (3, 9), 'Path.is_relative_to'),
-    (re.compile(r'functools\.cache\b'), (3, 9), 'functools.cache'),
-    (re.compile(r'^\s*match\s+[^\n]+:\s*$', re.M), (3, 10), 'match 語句'),
-    (re.compile(r'zip\([^)]*strict='), (3, 10), 'zip(strict=)'),
-    (re.compile(r'\btomllib\b'), (3, 11), 'tomllib'),
-    (re.compile(r'datetime\.UTC\b'), (3, 11), 'datetime.UTC'),
-    (re.compile(r'\bdirs_exist_ok='), (3, 8), 'shutil.copytree(dirs_exist_ok=)'),
-)
+PY_FLOOR_SOURCES = ('tools/verify_bootstrap.py', 'tools/sync_project.py', 'src/project_bootstrap/installer.py')
 
 
-def code_only(text):
-    """把註解與字串塗成空白後的原始碼（位置保留，正規表示式還對得上行）。
-
-    新 API 的名字一定會出現在「解釋為什麼不要用它」的註解裡（例如 `read_lf` 的 docstring），
-    掃全檔會把說明判成用法，逼下一棒把理由刪掉。
-    """
-    lines = text.split('\n')
-    try:
-        toks = list(tokenize.generate_tokens(io.StringIO(text).readline))
-    except (tokenize.TokenError, IndentationError, SyntaxError):
-        return text  # 壞檔讓語法本身去報；這裡寧可多掃，不要少掃
-    for tok in toks:
-        if tok.type not in (tokenize.COMMENT, tokenize.STRING):
+def py_floor_problems(texts, pyproject, readme):
+    """texts：{路徑: 原始碼}。回傳 (下限, 問題清單)。"""
+    problems, floors = [], {}
+    for rel, text in sorted(texts.items()):
+        m = re.search(r'^MIN_PY = \((\d+), (\d+)\)$', text, re.M)
+        if not m:
+            problems.append('%s 沒有 `MIN_PY = (x, y)`' % rel)
             continue
-        (sr, sc), (er, ec) = tok.start, tok.end
-        for r in range(sr - 1, min(er, len(lines))):
-            line = lines[r]
-            a = sc if r == sr - 1 else 0
-            b = ec if r == er - 1 else len(line)
-            lines[r] = line[:a] + ' ' * max(0, b - a) + line[b:]
-    return '\n'.join(lines)
-
-
-def py_floor_problems(sources, floor):
-    """sources：{標籤: 原始碼}。回傳問題清單（空＝沒有用到高於 floor 的 API）。"""
-    problems = []
-    for label in sorted(sources):
-        code = code_only(sources[label])
-        for pat, need, what in PY_FEATURES:
-            if need > floor and pat.search(code):
-                problems.append('%s 用了 %s：要 Python %d.%d，宣告的下限是 %d.%d'
-                                % ((label, what) + need + floor))
-    return problems
+        floors[rel] = (int(m.group(1)), int(m.group(2)))
+        if not re.search(r'^\s*if sys\.version_info < MIN_PY:', text, re.M) or '需要 Python' not in text:
+            problems.append('%s 宣告了 MIN_PY 卻沒有擋下舊版並清楚報錯' % rel)
+    m = re.search(r'^requires-python = ">=(\d+)\.(\d+)"$', pyproject, re.M)
+    if not m:
+        problems.append('pyproject.toml 沒有 requires-python = ">=x.y"')
+    else:
+        floors['pyproject.toml'] = (int(m.group(1)), int(m.group(2)))
+    if len(set(floors.values())) > 1:
+        problems.append('Python 下限各處不同：%s' % '、'.join('%s %d.%d' % ((k,) + v) for k, v in sorted(floors.items())))
+    floor = sorted(floors.values())[0] if floors else None
+    if floor and '需要 Python %d.%d 以上' % floor not in readme:
+        problems.append('README.md 範本沒有寫「需要 Python %d.%d 以上」' % floor)
+    return floor, problems
 
 
 def step_python_floor(dest):
-    """宣告 Python 版本下限，並守住「沒有人順手用了更新的 API」（查核報告 F14）。
+    """Python 版本下限各處同號（查核報告 F14）。
 
-    用到新 API 時，舊版 Python 不會在啟動時說版本太舊，而是跑到那一行才炸。守三件事：
-    兩支維護工具都有同號的 `MIN_PY` 守門；README 範本寫出部署後工具的下限；四支 .py 都沒用到
-    高於下限的 API。這是靜態擔保，不是在那個版本上跑過。部署後的兩支刻意不加 `MIN_PY`：
-    加了就得跳標記、同步每個專案，保障靠這一項的掃描。
+    安裝程式要 3.12，沒有 3.12 的機器裝不起專案，所以維護工具、開發環境與部署後工具都用同一個
+    下限。部署後的兩支不加守門（加了就得跳標記、同步每個專案），下限寫在 README 範本。
+    只查宣告一致，不保證沒人用了比下限更新的 API。
     """
-    maint = {}
-    for rel in ('tools/verify_bootstrap.py', 'tools/sync_project.py'):
-        maint[rel] = read_lf(ROOT / rel)
-    problems, floors = [], {}
-    for rel, text in maint.items():
-        m = re.search(r'^MIN_PY = \((\d+), (\d+)\)$', text, re.M)
-        if not m:
-            problems.append('%s 檔頭沒有 `MIN_PY = (x, y)`——沒有宣告就沒有下限' % rel)
-            continue
-        floors[rel] = (int(m.group(1)), int(m.group(2)))
-        if 'if sys.version_info < MIN_PY' not in text or '需要 Python' not in text:
-            problems.append('%s 宣告了 MIN_PY 卻沒有在檔頭擋下舊版並清楚報錯' % rel)
-    if len(set(floors.values())) > 1:
-        problems.append('兩支維護工具的 MIN_PY 不一致：%s' % floors)
+    texts = {rel: read_lf(ROOT / rel) for rel in PY_FLOOR_SOURCES}
+    pyproject, readme = read_lf(ROOT / 'pyproject.toml'), read_lf(dest / 'README.md')
+    floor, problems = py_floor_problems(texts, pyproject, readme)
+    if not problems:
+        first = PY_FLOOR_SOURCES[0]
+        cases = (
+            ('一支工具的 MIN_PY 不同', dict(texts, **{first: texts[first].replace(
+                'MIN_PY = (%d, %d)' % floor, 'MIN_PY = (3, 8)', 1)}), pyproject, readme),
+            ('拿掉檔頭守門', dict(texts, **{first: texts[first].replace(
+                'if sys.version_info < MIN_PY', 'if False', 1)}), pyproject, readme),
+            ('pyproject 下限不同', texts, pyproject.replace('>=%d.%d' % floor, '>=3.11', 1), readme),
+            ('README 範本沒寫下限', texts, pyproject, readme.replace('需要 Python', '需要 python', 1)),
+        )
+        problems = ['負向測試未擋：' + name for name, *args in cases if not py_floor_problems(*args)[1]]
     if problems:
         record('FAIL', 'Python 版本下限', '；'.join(problems))
         return False
-
-    floor = sorted(floors.values())[0]
-    want = '需要 Python %d.%d 以上' % floor
-    if want not in read_lf(dest / 'README.md'):
-        record('FAIL', 'Python 版本下限',
-               'README.md 範本沒有寫「%s」——部署出去的專案看不到這個 repo 的驗證器' % want)
-        return False
-
-    sources = dict(maint)
-    for rel in ('tools/check_docs.py', 'tools/verify_state.py'):
-        sources['骨架 ' + rel] = read_lf(dest / rel)
-    problems = py_floor_problems(sources, floor)
-    if problems:
-        record('FAIL', 'Python 版本下限', '；'.join(problems))
-        return False
-
-    # 負向測試：掃描器要真的掃得到，而且不能把「解釋為什麼不要用」判成用法。
-    cases = (
-        ('3.13 的 read_text(newline=)', "s = p.read_text(encoding='utf-8', newline='')\n"),
-        ('3.10 的 write_text(newline=)', "p.write_text(s, encoding='utf-8', newline='')\n"),
-        ('3.9 的 removeprefix', "s = s.removeprefix('a')\n"),
-        ('3.11 的 tomllib', 'import tomllib\n'),
-    )
-    missed = [name for name, src in cases if not py_floor_problems({'x.py': src}, floor)]
-    excuse = ('"""不要改回 Path.read_text(..., newline=\'\') ——那要 3.13。"""\n'
-              '# 也不要 p.write_text(s, newline="")\n')
-    if py_floor_problems({'x.py': excuse}, floor):
-        missed.append('把註解／docstring 裡的說明判成用法')
-    if missed:
-        record('FAIL', 'Python 版本下限', '負向測試沒排到：%s' % '、'.join(missed))
-        return False
-
-    record('OK', 'Python 版本下限',
-           '兩支維護工具都有 MIN_PY=%d.%d 守門且同號、README 範本寫出下限、四支 .py 沒有'
-           '用到更新的 API；%d 個負向測試＋1 個反向保險通過（下限是靜態擔保，不是實跑過）'
-           % (floor + (len(cases),)))
+    record('OK', 'Python 版本下限', '兩支維護工具、安裝程式與 pyproject 都是 %d.%d，README 範本寫出同一個下限；'
+           '%d 個負向測試（只查宣告一致）' % (floor + (len(cases),)))
     return True
 
 
@@ -4924,21 +4859,6 @@ DEV_STDLIB_ONLY = ('tools', 'src/project_bootstrap')
 DEV_EXTRAS = ('src/project_bootstrap/mdlinks.py', 'src/project_bootstrap/schema_check.py')
 
 
-def p1_section(text, header):
-    """回傳 TOML 某個 [header] 底下的 key = value 行（只認本 repo 自己寫的簡單格式）。"""
-    body = text.split('\n[' + header + ']\n', 1)
-    if len(body) != 2:
-        return None
-    rows = {}
-    for line in body[1].split('\n'):
-        if line.startswith('['):
-            break
-        match = re.match(r'([A-Za-z0-9_.-]+)\s*=\s*(.+)$', line)
-        if match:
-            rows[match[1]] = match[2].strip()
-    return rows
-
-
 def p1_imports(text):
     """頂層 import 的完整模組名；相對 import 不算。"""
     ast = __import__('ast')
@@ -4961,29 +4881,32 @@ def dev_layout_problems(pyproject, lock, sources, tests=None, extras=DEV_EXTRAS)
     `extras` 列的模組可以用鎖檔套件，但別的程式不能 import 它們，import 它們的測試要在缺套件時
     SkipTest。授權字串對不對、鎖檔是不是最新（用 uv lock --check）、importlib 動態載入，這裡看不出來。
     """
+    import tomllib  # 標準庫，3.11 起有；放這裡，舊版 Python 才看得到檔頭的版本訊息
+    try:
+        meta, locked = tomllib.loads(pyproject), tomllib.loads(lock)
+    except tomllib.TOMLDecodeError as exc:
+        return ['pyproject.toml 或 uv.lock 不是合法的 TOML：%s' % exc]
     bad = []
-    project = p1_section(pyproject, 'project') or {}
-    if project.get('requires-python') != '">=3.12"':
+    project = meta.get('project', {})
+    if project.get('requires-python') != '>=3.12':
         bad.append('pyproject 的 requires-python 不是 >=3.12')
-    if (p1_section(pyproject, 'tool.uv') or {}).get('package') != 'false':
+    if meta.get('tool', {}).get('uv', {}).get('package') is not False:
         bad.append('pyproject 沒寫 [tool.uv] package = false（打包屬 P2）')
-    declared = set(re.findall(r'^\s+"([A-Za-z0-9_.-]+)[^"]*",$', pyproject, re.M))
-    packages = {}
-    for block in lock.split('\n[[package]]\n')[1:]:
-        name = re.search(r'^name = "([^"]+)"', block, re.M)
-        if name:
-            packages[name[1]] = block
+    wanted = project.get('dependencies', []) + [d for group in meta.get('dependency-groups', {}).values()
+                                                  for d in group]
+    declared = {re.match(r'[A-Za-z0-9_.-]+', d).group(0) for d in wanted}
+    packages = {p['name']: p for p in locked.get('package', [])}
     if not declared:
         bad.append('pyproject 沒有宣告任何依賴')
     for name in sorted(declared - set(packages)):
         bad.append('依賴沒進 uv.lock：' + name)
-    licenses = p1_section(pyproject, 'tool.project-bootstrap.licenses') or {}
-    external = {name: block for name, block in packages.items()
-                if 'source = { registry = ' in block}
+    licenses = meta.get('tool', {}).get('project-bootstrap', {}).get('licenses', {})
+    external = {name: p for name, p in packages.items() if 'registry' in p.get('source', {})}
     if 'project-bootstrap' not in packages:
         bad.append('uv.lock 沒有本專案自己')
-    for name, block in sorted(external.items()):
-        if 'hash = "sha256:' not in block:
+    for name, p in sorted(external.items()):
+        artifacts = p.get('wheels', []) + ([p['sdist']] if 'sdist' in p else [])
+        if not artifacts or not all(a.get('hash', '').startswith('sha256:') for a in artifacts):
             bad.append('鎖檔套件沒有 sha256：' + name)
         if name not in licenses:
             bad.append('鎖檔套件沒登記授權：' + name)

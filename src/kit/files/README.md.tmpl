@@ -27,7 +27,7 @@ python -X utf8 tools/verify_state.py
 python -X utf8 tools/check_docs.py
 ```
 
-`verify_state.py` 查服務現況，結束碼 0 表示沒有 FAIL／ERROR；`check_docs.py` 查死連結、日期標頭、殘留佔位符與交接快照的格式，`--docs-only` 只查文件。macOS／Linux 常常只有 `python3`，`python` 不存在就改用 `python3`。兩支腳本**需要 Python 3.8 以上**：它們只用到 3.8 就有的 API，這是靜態擔保，不是在 3.8 上實跑過（2026-11-02／F14）。
+`verify_state.py` 查服務現況，結束碼 0 表示沒有 FAIL／ERROR；`check_docs.py` 查死連結、日期標頭、殘留佔位符與交接快照的格式，`--docs-only` 只查文件。macOS／Linux 常常只有 `python3`，`python` 不存在就改用 `python3`。兩支腳本**需要 Python 3.12 以上**，跟安裝程式同一個下限。
 
 ## 專案結構
 
