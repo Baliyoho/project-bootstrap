@@ -1,53 +1,54 @@
 # HANDOFF — 工作交接狀態
 
-- **交接時間**：2026-11-20 20:12（+08）
-- **交棒者**：Claude Code（桌面 App）／Mac mini（session 名稱拿掉 `※` 待你決定、更新這台 Mac 的全域 handoff skill）
+- **交接時間**：2026-11-21 15:25（+08）
+- **交棒者**：Claude Code（桌面 App）／Mac mini（AGENTS 改成共用與專用兩大段、驗證器精簡）
 
 ## 任務目標
 
-使用者在討論 AI 協作 repo 的文件體系，先跟 AI 取得共識再動手。共識寫在 [collaboration-system-principles-draft.md](collaboration-system-principles-draft.md)（前提、效用、設計原則；草稿，還不是約束文件，最終要跟決策書與計畫整合成一份新文件，名稱未定）。上一棒依原則整理了 README、維護手冊與 ARCHITECTURE；這一棒照使用者指示改了 session 狀態標記。
+使用者在依[協作系統原則草稿](collaboration-system-principles-draft.md)整理這個 repo 的文件與程式，目標是更簡潔、每個事實只有一個家。草稿還不是約束文件。這一棒把 AGENTS 的規則改到使用者定案的結構，再把驗證器砍掉重複與經過敘述。
 
 ## Git 狀態
 
 - Repo：public `Baliyoho/project-bootstrap`，權威分支 `main`。
 - **待續分支**：無（`feat/bootstrap-installer`、`feat/retire-kit-doc` 都已併回 `main`，分支留在 origin 沒刪）。
-- **工作中**：`Mac mini` ／ `Claude Code` ／ `㊣　11.20.20｜整理文件｜工作中｜交棒0次`，2026-11-20 20:17 (+08) 開工
+- **工作中**：無（已交棒）
 - **骨架版本**：`2026-11-21.2`
-- 本機能力：Mac mini；`git push` 可用；本機 `.venv` 可跑驗證器不跑的外部套件測試（`.venv/bin/python -m pytest tests`）。`/usr/bin/python3` 是 3.9.6，跑不了 `bootstrap.py`（要 3.12），用另裝的 `python3`（3.15.2）。
+- 本機能力：Mac mini；`git push` 可用；`.venv` 可跑外部套件測試（`.venv/bin/python -m pytest tests`）。`/usr/bin/python3` 是 3.9.6，太舊（全 repo 下限已是 3.12），用另裝的 `python3`（3.15.2）。
 
 ## 已完成
 
-- **session 名稱拿掉 `※` 待你決定**（`94211d8`，決策書 v3 Q54，使用者指定）：共用制度只剩 `㊣` 工作中、`↗` 已交棒；停下等決定的回覆不再要求 `session：` 一行（AI 連帶拿掉，已告知使用者，要加回再說）。handoff skill 四個檔拿掉 `※` 的規則與理由一節，七個檔與共用制度標記跳 `2026-11-20.2`；原理由留在 CHANGELOG。決策書 F50 與第 5 節跟著改，下一個 Q 編號是 Q55。
-- **這台 Mac 的兩份全域 handoff skill 更新到 `2026-11-20.2`**（`~/.claude/skills/handoff/`、`~/.codex/skills/handoff/`）：覆蓋前核對過 14 個檔都跟 `2026-11-18.3` 範本逐位元組相同，沒有本機改動。驗證器的同版提醒已消失。
+- **AGENTS 規則整併（決策書 v3 Q55–Q58，使用者逐項選定）**：鐵律與不可違反的條件合成「規則」；原本的 15 條規則去重；整份分成「## 共用制度」（協作目標、環境事實、共用規則 1–9）與「## 專案專用」（專用規則、碰到才讀），共用與專用各自編號，引用一律寫「共用規則 N」或「專用規則 N」，驗證器「規則引用有前綴」擋沒前綴的寫法。skill 位置改成共用規則 8（開場 `[facts]` 不正常或要交棒時讀），session 命名是共用規則 9。部署包跳到 `2026-11-21.2`。原則草稿第 4 節第 4 點改成「共用、專用各一份清單」。
+- **驗證器精簡**（`bfffd8f`、`7a9d971`、`3e0bf37`、`36b85a0`、`c3354a9`）：5,732 行 → 5,085 行，69 項 → 65 項。刪檔頭重疊清單與經過敘述、併掉三項重複的負向測試；README 跨工具一節改成摘要加連結並刪掉表格一致性檢查；Python 下限全部對齊 3.12（維護工具、部署後兩支、安裝程式、pyproject），開發骨架改用 `tomllib`；刪三處守著退場功能的檢查；本 repo 的文件與交接快照檢查改用部署後 `check_docs.py` 的同一份函式（不裝副本，F46 構造上成立），來源自己重寫的那套刪掉。
 
 ## 未完成／下一步
 
-1. **已部署專案的結構文件改名**：各專案仍是 `ARCHITECT.md`，`sync_project.py` 不會改名（歸專案的 seed 檔）。使用者還沒選做法：讓同步器改名，或各專案自己 `git mv`。**選之前不要把任何專案同步到 `2026-11-20` 以後的版本**，否則 skill 寫的檔名跟專案裡的對不上。
-2. **繼續依原則整理本 repo 文件**：使用者說「分類」與「索引」之後再談；AGENTS「這個 repo 是什麼」、README 第二段跟 ARCHITECTURE「一句話」三處重述同一件事，還沒處理。依草稿原則 4.2，「最後更新」只該寫日期；ARCHITECTURE、維護手冊、理由檔、AGENTS、CHANGELOG、決策書與其歷史紀錄已改，其他文件的檔頭多半還寫著改了什麼。
-3. **鍵鼠同部署_mac**：還在 `2026-11-17.3`，留著 `GEMINI.md` 與 `docs/ai-notes/handover-protocol.md`。2026-11-18 23:13 起 origin 上的「工作中」是 Windows 那台的 Codex session（本棒沒再查）；等它交棒、且第 1 項有了做法再同步。
-4. **第 2 期（Codex＋macOS）、Q49 在 Windows 與 Codex 上跑**：使用者 2026-11-18 說先等等。序號卡、解決網路速度刻意停在舊版不動。
-5. **`verify_bootstrap.py` 檔頭表「skill 拆分」一列寫「已改寫清單（13 行）」**：實際已是 69 行，這一棒之前就過期了，沒改。
+1. **handoff skill 整理、`src/kit/kit.md` 對齊原則**：使用者排定之後做，沒說何時。兩份都混著「某天起……、舊版寫……」的經過（kit.md 帶日期的行佔約一半字數）。做的時候一起處理驗證器 B 層：「skill 拆分」與 `tools/skill_split_baseline.json`、「同步補齊模式檔」（先確認已部署專案都不是單檔 skill）、「跨工具過期敘述」、「已修正的主張沒復活」「跨工具表保鮮期」。檔頭表「skill 拆分」一列寫「已改寫清單（13 行）」早就過期，到時一起改。
+2. **handoff-ab 對照**：Q57、Q58 改過的共用規則還沒實驗驗證。使用者說等規則全部定案再一次跑，不要每改一次就提。
+3. **這台 Mac 的全域 handoff skill 還是 `2026-11-20.2`**（驗證器只印提醒）。要重裝得使用者同意或自己做：把 `src/kit/files/.claude/skills/handoff/` 的七個範本去掉 `.tmpl` 覆蓋到 `~/.claude/skills/handoff/` 與 `~/.codex/skills/handoff/`。
+4. **已部署專案的結構文件改名**：各專案仍是 `ARCHITECT.md`，`sync_project.py` 不會改名。使用者還沒選做法（讓同步器改名，或各專案自己 `git mv`）。**選之前不要把任何專案同步到 `2026-11-20` 以後的版本**。
+5. **鍵鼠同部署_mac**：還在 `2026-11-17.3`，留著 `GEMINI.md` 與 `docs/ai-notes/handover-protocol.md`；2026-11-18 起 origin 的「工作中」是 Windows 那台的 Codex session（本棒沒再查）。等它交棒、且第 4 項有了做法再同步；同步工具對它的 MIGRATE 提示刻意留著。
+6. **Windows 那台的 Python 版本沒確認**：全 repo 下限改成 3.12 後，低於 3.12 的機器跑維護工具會在檔頭停下。
+7. **繼續整理文件**：使用者說「分類」與「索引」之後再談；原則草稿定案後，在 AGENTS「碰到才讀」加一列指向原則文件，現在不加。其他文件檔頭的「最後更新」多半還寫著改了什麼。
+8. **第 2 期（Codex＋macOS）、Q49 在 Windows 與 Codex 上跑**：使用者 2026-11-18 說先等等。
 
 ## 地雷與注意事項
 
-- **討論模式**：使用者在文件體系的題目上要先討論取得共識，不要急著給方案；討論結論寫進草稿要使用者說了才寫。
-- **換 v4 不是待辦**：真的換版時照 `docs/maintenance.md`「開發注意事項」的換版那條。
-- **整個 `archive/` 是冷區**：AI 平常不讀，回溯或修改先經使用者同意。程式與測試不能引用 `archive/docs/` 的檔名，也不能指向 `archive/v<N>-`。
-- **「版本更替」會掃程式檔的註解**：`v2` 用 `_` 或 `-` 黏在字上就算違反；寫歷史時用空格隔開。
-- **驗證器不跑變異測試**：改到 `src/project_bootstrap/` 的檢查，要自己跑 `.venv/bin/python -X utf8 src/project_bootstrap/mutants.py --only tests.test_<模組>`。
-- **根目錄有未追蹤檔時，`--staged` 會回 exit 2**：`comparison-adr-memory-bank.md` 是使用者自己放的。提交前暫移到 scratchpad、驗證後原樣移回；不要刪它或提交它。
-- **決策紀錄要有子項**：`採用理由：`、每個沒選的字母一條 `未選 (x)：`，狀態欄寫出選了哪個字母（例如「AI 依此選 (a)」）；少了 `test_trail_repo` 會失敗。
-- **刪改 skill 的行要登記 `tools/skill_split_baseline.json` 的 `rewritten`**：拆分前單檔的每一行要嘛留著、要嘛寫去處，否則「skill 拆分」FAIL。這個檔是 1 格縮排，重寫時保持原格式。
-- **README 的核心一節有兩句是檢查要的**：「核心優先序：SKILL.md」與「把漏做的機會壓低」，刪了「核心與實例優先序」「已修正的主張沒復活」會失敗。
+- **討論模式**：文件體系的題目先討論取得共識；改約束文件要使用者在聊天中決定，並在 `docs/history/` 成對記一筆。決策書下一個 Q 是 Q59。
+- **引用規則要寫前綴**：寫「共用規則 N」或「專用規則 N」；`CHANGELOG.md`、`docs/history/`、`archive/`、`experiments/` 不查。
+- **共用制度改了要跳版**：`VERSION`、共用制度標記與七個 skill 檔的 `source:` 一起換；本 repo `AGENTS.md` 的共用段要從 `src/kit/files/AGENTS.md.tmpl` 逐字重貼。
+- **本 repo 的文件檢查跑的是部署後的 `check_docs.py`**：改 `src/kit/files/tools/check_docs.py.tmpl` 會同時改到本 repo 的檢查；讀 `AGENTS.md` 時共用段靠 `SharedBlanked`（Path 子類別）塗白，要 Python 3.12。
+- **整個 `archive/` 是冷區**：AI 平常不讀，回溯或修改先經使用者同意。
+- **根目錄有未追蹤檔時 `--staged` 回 exit 2**：`comparison-adr-memory-bank.md` 是使用者自己放的。提交前暫移到 scratchpad、驗證後原樣移回；不要刪它或提交它。
+- **決策紀錄要有子項**：`採用理由：`、每個沒選的字母一條 `未選 (x)`，狀態欄寫出選了哪個字母；少了 `test_trail_repo` 會失敗。
 - **`bootstrap.py` 是產物**：改 `src/kit/`、`installer.py` 或 `sync_project.py` 的合併函式後跑 `tools/build_kit.py`，同一個 commit 提交。
 - **檔頭 `source: PROJECT-BOOTSTRAP.md v…` 的字樣不要改**：已部署專案的開場 hook 用這個字面比對版本。
+- **驗證器不跑變異測試**：改到 `src/project_bootstrap/` 的檢查，自己跑 `mutants.py --only tests.test_<模組>`。
 - 其他開發時容易踩的地方在 `docs/maintenance.md` 的「開發注意事項」。
 
 ## 服務查證與期望快照
 
-- 2026-11-20 macOS Mac mini，`94211d8` 提交前：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，68 項全過**；`.venv/bin/python -m pytest tests` → 173 passed。全域 skill 更新後重跑全套驗證 exit 0，沒有提醒。
-- 本棒沒跑變異測試（沒改 `src/project_bootstrap/`）。
-- `※` 拿掉後的規則沒有在互動 session 實測過（F50 的互動驗證是 `2026-11-13` 版）。
+- 2026-11-21 macOS Mac mini，`c3354a9`：`python3 -X utf8 tools/verify_bootstrap.py --staged` → **exit 0，65 項全過**（全域 skill 同版只印提醒）；`.venv/bin/python -m pytest -q` → 170 passed。
+- 本棒沒跑變異測試（`src/project_bootstrap/` 只改了說明與註解）。handoff-ab 沒重跑。
 - Windows 與已部署專案本棒沒跑；任一平台看到失敗都是回歸。
 
 ## 懸置事項（AI 勿自行處理）
