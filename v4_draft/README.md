@@ -18,4 +18,4 @@
 | [open-questions.md](open-questions.md) | 現在等使用者決定的事（Q 開頭） |
 | [known-weaknesses.md](known-weaknesses.md) | 這套需求哪裡還站不穩 |
 | [history.md](history.md) | 屬於「經過」的段落，等審核：留的進歷史紀錄，不留的刪 |
-| [v3-annotated.md](v3-annotated.md) | v3 原文副本，每段標了拆到哪裡、哪些建議刪除 |
+| [v3-annotated.md](v3-annotated.md) | v3 對照表：原文逐段一列，標出去向（含建議刪除）與理由 |
