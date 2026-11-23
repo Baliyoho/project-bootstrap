@@ -9,9 +9,9 @@
 
 | 檔案 | 回答什麼 |
 |---|---|
-| [new_draft/goal.md](new_draft/goal.md) | 這套系統是什麼、提供哪些標準、靠什麼落實、帶來什麼效用。已定稿，是 v4 最高層級的規範 |
+| [new_draft/goal_v4.md](new_draft/goal_v4.md) | 這套系統是什麼、提供哪些標準、靠什麼落實、帶來什麼效用。已定稿，是 v4 最高層級的規範 |
 | [new_draft/requirements.md](new_draft/requirements.md) | 三種標準與落實手段各要做到什麼、多強；範圍、分期與驗收 |
-| [new_draft/principles.md](new_draft/principles.md) | 文件怎麼切、怎麼寫、維護到多仔細（標準 2 的原則）。已定稿 |
+| [new_draft/principles_v4.md](new_draft/principles_v4.md) | 文件怎麼切、怎麼寫、維護到多仔細（標準 2 的原則）。已定稿 |
 | [new_draft/rationale.md](new_draft/rationale.md) | 為什麼這樣定、靠什麼證據、哪裡還站不穩 |
 | [new_draft/roadmap.md](new_draft/roadmap.md) | 選了哪條路線、各期怎麼收尾、什麼先放著、v4 生效時要一起做的事 |
 | [new_draft/progress.md](new_draft/progress.md) | 各期走到哪、靠什麼證據、還差什麼 |

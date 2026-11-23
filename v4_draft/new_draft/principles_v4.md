@@ -1,7 +1,7 @@
 # 設計原則
 
 > 最後更新：2026-11-23
-> 已定稿，是 v4 的約束文件，全文約束；v4 整套取代 v3 之前，現行約束仍是[需求決策書 v3](../../project-bootstrap-requirements-decision-v3.md)與[實施計畫 v3](../../project-bootstrap-implementation-plan-v3.md)。本檔回答「協作系統的文件要怎麼切、怎麼寫、維護到多仔細」，是[目標](goal.md)標準 2「文件書寫與架構」的原則。為什麼這樣定在[理由與依據](rationale.md)；具體的數字與規定在[需求](requirements.md)標準二。
+> 已定稿，是 v4 的約束文件，全文約束；v4 整套取代 v3 之前，現行約束仍是[需求決策書 v3](../../project-bootstrap-requirements-decision-v3.md)與[實施計畫 v3](../../project-bootstrap-implementation-plan-v3.md)。本檔回答「協作系統的文件要怎麼切、怎麼寫、維護到多仔細」，是[目標](goal_v4.md)標準 2「文件書寫與架構」的原則。為什麼這樣定在[理由與依據](rationale.md)；具體的數字與規定在[需求](requirements.md)標準二。
 
 0. 協作系統服務的是人的目的（秩序、整理依據、可溝通），實際讀者大多是 AI。人很少讀，但需要的時候要找得到、讀得懂；讀得懂指理解它所需的知識都有索引可循。
 1. 每個事實只有一個家，其他地方只放連結，不重述；每個連結都要說明它指向的內容回答什麼問題。
