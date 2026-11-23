@@ -24,16 +24,16 @@
 
 | 對象 | 理由 |
 |---|---|
-| 原則 1（依主題切分）、原則 4（現況和歷史分開） | 一份文件把歷史、決策和理由放在一起，對人也許方便一次看懂，對 AI 卻會增加 token 成本和搞混的風險。 |
-| AGENTS 另訂寫作規範（D12，其餘細則生效時寫進維護手冊） | AGENTS 是唯一保證會被讀到的文件：每個 session 開場整份載入，之後每一輪都佔著上下文。它是原則 5、6 最極端的情況。 |
+| 原則 2（現況和歷史分開）、原則 3（依主題切分） | 一份文件把歷史、決策和理由放在一起，對人也許方便一次看懂，對 AI 卻會增加 token 成本和搞混的風險。 |
+| AGENTS 另訂寫作規範（D12，其餘細則生效時寫進維護手冊） | AGENTS 是唯一保證會被讀到的文件：每個 session 開場整份載入，之後每一輪都佔著上下文。它是原則 6、7 最極端的情況。 |
 | AGENTS 寫作規範：擋得住的錯仍留一句規則 | 有些工具不跑 hook。 |
 | D10：過期的規則馬上刪 | 過期比沒寫還糟。 |
-| 原則 7（只寫 AI 看不出來的事） | 實測顯示多餘的要求會讓 AI 表現變差、成本變高（[Evaluating AGENTS.md](https://arxiv.org/abs/2602.11988)）；但文件也是給人整理與溝通用的，所以以宗旨為前提。 |
-| 原則 8（規則附理由連結） | AI 知道規則的原因，比較會套用到規則沒寫到的情況（[Claude 提示詞最佳實踐](https://platform.claude.com/en/docs/build-with-claude/prompt-engineering/claude-prompting-best-practices)）；理由放連結而不放條文，是為了守原則 3、5。 |
+| 原則 4（只寫 AI 看不出來的事） | 實測顯示多餘的要求會讓 AI 表現變差、成本變高（[Evaluating AGENTS.md](https://arxiv.org/abs/2602.11988)）；但文件也是給人整理與溝通用的，所以以宗旨為前提。 |
+| 原則 5（規則不互相矛盾） | 新模型照字面執行指示（[OpenAI GPT-4.1 指南](https://developers.openai.com/api/docs/guides/gpt-4.1)），兩條規則衝突時結果無法預期。 |
+| 原則 8（寫目標與界線，不寫逐步劇本） | 寫太細會變成僵硬的 if-else，太粗又沒有指引；要寫在兩者之間（[Anthropic：context engineering](https://anthropic.com/engineering/effective-context-engineering-for-ai-agents)）。 |
 | 原則 9（標題與名詞寫清楚） | AI 常只讀到一節，例如搜尋命中的那段；標題單看看不懂、同一件事換了名字，它就會讀錯或找不到（[DigitalOcean](https://docs.digitalocean.com/style/pdocs/llm-friendly-content/)、[Sentry](https://docs.sentry.io/contributing/pages/llm-support)）。 |
-| 原則 10（寫目標與界線，不寫逐步劇本） | 寫太細會變成僵硬的 if-else，太粗又沒有指引；要寫在兩者之間（[Anthropic：context engineering](https://anthropic.com/engineering/effective-context-engineering-for-ai-agents)）。 |
-| 原則 11（規則不互相矛盾） | 新模型照字面執行指示（[OpenAI GPT-4.1 指南](https://developers.openai.com/api/docs/guides/gpt-4.1)），兩條規則衝突時結果無法預期。 |
-| 進度另開一份，不寫在 `HANDOFF.md` | `HANDOFF.md` 每個 session 開場都讀，交棒時整份重寫；期別狀態很少變，放在裡面每次交棒都得照抄，抄錯或漏抄就沒了（原則 5、6）。[Cline memory bank](https://docs.cline.bot/prompting/cline-memory-bank) 也把「目前焦點」與「進度」分成兩份。 |
+| 原則 10（規則附理由連結） | AI 知道規則的原因，比較會套用到規則沒寫到的情況（[Claude 提示詞最佳實踐](https://platform.claude.com/en/docs/build-with-claude/prompt-engineering/claude-prompting-best-practices)）；理由放連結而不放條文，是為了守原則 1、6。 |
+| 進度另開一份，不寫在 `HANDOFF.md` | `HANDOFF.md` 每個 session 開場都讀，交棒時整份重寫；期別狀態很少變，放在裡面每次交棒都得照抄，抄錯或漏抄就沒了（原則 6、7）。[Cline memory bank](https://docs.cline.bot/prompting/cline-memory-bank) 也把「目前焦點」與「進度」分成兩份。 |
 
 ## 方案約束的理由
 

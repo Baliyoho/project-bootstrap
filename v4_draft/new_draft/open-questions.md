@@ -17,7 +17,7 @@
 - **需求清單的格式**：(a) 保留 F 編號清單並補定義；(b) 改寫成可以檢驗的句子，逐條對應 handoff-ab 情境，現況索引才有機會出現「通過」。外部做法都是 (b)：[Spec Kit](https://github.com/github/spec-kit) 寫成「系統必須……」加可量測的成功條件，[Kiro](https://kiro.dev/docs/specs/) 用「當……時，系統必須……」的句型，[ISO/IEC/IEEE 29148](https://www.iso.org/standard/72089.html) 要求每條需求可驗證。AI 傾向 (b)。
 - **名詞定義**：「交棒」「待續分支」「工作中」標記等詞散在 `AGENTS.md` 與[需求](requirements.md)「怎麼讀」，沒有一處完整定義。[arc42](https://arc42.org/overview) 與 ISO/IEC/IEEE 29148 都有獨立的名詞表。選項：(a) 把需求的「怎麼讀」擴成名詞定義，其他文件用到只連過去；(b) 維持現狀。
 - **放棄的路線放哪**：現在放在[歷史紀錄](history.md)「放棄的路線」，論證與否決日期寫在一起。[Rust RFC](https://github.com/rust-lang/rfcs/blob/master/0000-template.md)、[PEP 1](https://peps.python.org/pep-0001/)、[Google 設計文件](https://www.industrialempathy.com/posts/design-docs-at-google/)、[MADR](https://adr.github.io/madr/) 都把沒選的方案跟理由放在一起。選項：(a) 論證搬到[理由與依據](rationale.md)，歷史紀錄只留哪天否決一行；(b) 維持現狀。
-- **條文附不附出處**：設計原則照原則 4，條文不再附待決事項編號或日期；v3 原本規定條文附 Q 編號或日期當出處。
+- **條文附不附出處**：設計原則照原則 2，條文不再附待決事項編號或日期；v3 原本規定條文附 Q 編號或日期當出處。
 - **第 2 期結果要不要在現行部署包重跑**：第 2 期的 handoff-ab 結果跑在 2026-11-14 當時的部署包。
 - **部署包要不要也給每個專案一份進度檔**：本 repo 的期別進度已另開[進度](progress.md)；已部署的專案仍只有 `HANDOFF.md` 的「目前進度」欄（F2）。選項：(a) 部署包加一份進度檔，改 F2 與部署包；(b) 維持現狀，只有本 repo 另開。
 - **設計原則要不要部署到每個專案**：要的話，它的家搬到 `src/kit/`，這組文件只留連結。
