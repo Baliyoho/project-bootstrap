@@ -1,7 +1,15 @@
 # v4 草稿區
 
-> 最後更新：2026-11-22
+> 最後更新：2026-11-23
 > 新版需求與計畫的草稿，在 `v4_draft` 分支上寫。這裡還不是約束文件：現行約束仍是[需求決策書 v3](../project-bootstrap-requirements-decision-v3.md)與[實施計畫 v3](../project-bootstrap-implementation-plan-v3.md)，改寫的標準是[協作系統原則草稿](../collaboration-system-principles-draft.md)。
+
+## 重寫稿
+
+照原則草稿重新寫的新版放在 `new_draft/`，跟下面拆開的舊檔零件分開。
+
+| 檔案 | 回答什麼 |
+|---|---|
+| [new_draft/goal.md](new_draft/goal.md) | 這套系統是什麼、提供哪些標準、靠什麼落實 |
 
 ## 需求書 v3 與實施計畫 v3 拆開後的各份
 
