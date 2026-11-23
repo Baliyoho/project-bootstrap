@@ -13,7 +13,8 @@
 | [new_draft/requirements.md](new_draft/requirements.md) | 三種標準與落實手段各要做到什麼、多強；範圍、分期與驗收 |
 | [new_draft/principles.md](new_draft/principles.md) | 文件怎麼切、怎麼寫，規則怎麼增減，本 repo 的約束文件怎麼改（標準 2 的具體內容） |
 | [new_draft/rationale.md](new_draft/rationale.md) | 為什麼這樣定、靠什麼證據、哪裡還站不穩 |
-| [new_draft/roadmap.md](new_draft/roadmap.md) | 選了哪條路線、各期的證據在哪、什麼先放著、v4 生效時要一起做的事 |
+| [new_draft/roadmap.md](new_draft/roadmap.md) | 選了哪條路線、各期怎麼收尾、什麼先放著、v4 生效時要一起做的事 |
+| [new_draft/progress.md](new_draft/progress.md) | 各期走到哪、靠什麼證據、還差什麼 |
 | [new_draft/open-questions.md](new_draft/open-questions.md) | 現在等使用者決定的事 |
 | [new_draft/history.md](new_draft/history.md) | 這組文件的決策與修改經過 |
 

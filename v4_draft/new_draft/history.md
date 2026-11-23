@@ -1,12 +1,13 @@
 # 歷史紀錄
 
 > 最後更新：2026-11-23
-> v4 重寫稿，不是約束文件。回答「這組文件的決策與修改是怎麼來的」。跟[目標](goal.md)、[需求](requirements.md)、[設計原則](principles.md)、[理由與依據](rationale.md)、[實施計畫](roadmap.md)、[待決事項](open-questions.md)成對；只增加，不改寫。v3 的經過在 [v3 需求歷史紀錄](../../docs/history/project-bootstrap-requirements-v3-history.md)與 [v3 計畫歷史紀錄](../../docs/history/project-bootstrap-implementation-v3-history.md)，不複製。
+> v4 重寫稿，不是約束文件。回答「這組文件的決策與修改是怎麼來的」。跟[目標](goal.md)、[需求](requirements.md)、[設計原則](principles.md)、[理由與依據](rationale.md)、[實施計畫](roadmap.md)、[進度](progress.md)、[待決事項](open-questions.md)成對；只增加，不改寫。v3 的經過在 [v3 需求歷史紀錄](../../docs/history/project-bootstrap-requirements-v3-history.md)與 [v3 計畫歷史紀錄](../../docs/history/project-bootstrap-implementation-v3-history.md)，不複製。
 
 ## 決策紀錄
 
 - **2026-11-23 核心目標定稿**：[目標](goal.md)定為 v4 最高層級的規範，其他 v4 文件不得與它牴觸；v4 整套取代 v3 時一起生效，在那之前現行約束仍是 v3。出處：使用者在聊天中決定。
-- **2026-11-23 文件分成七份**：目標、需求、設計原則、理由與依據、實施計畫、待決事項、歷史紀錄。整體進度不單獨成一份：當下這一棒與各期走到哪寫在 `HANDOFF.md`，逐條需求的狀態在現況索引。出處：使用者同意 AI 的建議。
+- **2026-11-23 文件分成七份**：目標、需求、設計原則、理由與依據、實施計畫、待決事項、歷史紀錄。整體進度不單獨成一份：當下這一棒與各期走到哪寫在 `HANDOFF.md`，逐條需求的狀態在現況索引。出處：使用者同意 AI 的建議。部分被取代：「整體進度不單獨成一份」由下一筆「進度另開一份」取代。
+- **2026-11-23 進度另開一份**：各期走到哪、證據與還差什麼寫在[進度](progress.md)，文件變成八份；`HANDOFF.md` 只寫當下這一棒，逐條需求的狀態仍在現況索引。理由見[理由與依據](rationale.md)「設計原則的理由」。出處：AI 對照外部做法後修正原建議，使用者在聊天中決定。
 
 ## 修改紀錄
 

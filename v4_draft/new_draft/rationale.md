@@ -28,6 +28,7 @@
 | AGENTS 另訂寫作規範 | AGENTS 是唯一保證會被讀到的文件：每個 session 開場整份載入，之後每一輪都佔著上下文。它是原則 5、6 最極端的情況。 |
 | AGENTS 規範第 3 點：擋得住的錯仍留一句規則 | 有些工具不跑 hook。 |
 | 規則的增減：過期的規則馬上刪 | 過期比沒寫還糟。 |
+| 進度另開一份，不寫在 `HANDOFF.md` | `HANDOFF.md` 每個 session 開場都讀，交棒時整份重寫；期別狀態很少變，放在裡面每次交棒都得照抄，抄錯或漏抄就沒了（原則 5、6）。[Cline memory bank](https://docs.cline.bot/prompting/cline-memory-bank) 也把「目前焦點」與「進度」分成兩份。 |
 
 ## 方案約束的理由
 
