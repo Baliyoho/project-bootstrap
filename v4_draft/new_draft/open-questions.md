@@ -12,7 +12,9 @@
 
 - **強度四級與「不變條件」的定義**：v3 寫「定義同 v2」，但 v2 原件在封存區，要讀得先經你同意。[需求](requirements.md)「怎麼讀」裡是依 v3 用法草擬的版本。選項：(a) 確認草擬版；(b) 同意讀封存的 v2 原件，照原定義寫。
 - **F43 的 (a)、(b) 各指什麼**：v3 只寫強度「(a) 偵測／(b) 留痕」，沒說兩個子項的範圍。
-- **需求清單的格式**：(a) 保留 F 編號清單並補定義；(b) 改寫成可以檢驗的句子，逐條對應 handoff-ab 情境，現況索引才有機會出現「通過」。
+- **需求清單的格式**：(a) 保留 F 編號清單並補定義；(b) 改寫成可以檢驗的句子，逐條對應 handoff-ab 情境，現況索引才有機會出現「通過」。外部做法都是 (b)：[Spec Kit](https://github.com/github/spec-kit) 寫成「系統必須……」加可量測的成功條件，[Kiro](https://kiro.dev/docs/specs/) 用「當……時，系統必須……」的句型，[ISO/IEC/IEEE 29148](https://www.iso.org/standard/72089.html) 要求每條需求可驗證。AI 傾向 (b)。
+- **名詞定義**：「交棒」「待續分支」「工作中」標記等詞散在 `AGENTS.md` 與[需求](requirements.md)「怎麼讀」，沒有一處完整定義。[arc42](https://arc42.org/overview) 與 ISO/IEC/IEEE 29148 都有獨立的名詞表。選項：(a) 把需求的「怎麼讀」擴成名詞定義，其他文件用到只連過去；(b) 維持現狀。
+- **放棄的路線放哪**：現在放在[歷史紀錄](history.md)「放棄的路線」，論證與否決日期寫在一起。[Rust RFC](https://github.com/rust-lang/rfcs/blob/master/0000-template.md)、[PEP 1](https://peps.python.org/pep-0001/)、[Google 設計文件](https://www.industrialempathy.com/posts/design-docs-at-google/)、[MADR](https://adr.github.io/madr/) 都把沒選的方案跟理由放在一起。選項：(a) 論證搬到[理由與依據](rationale.md)，歷史紀錄只留哪天否決一行；(b) 維持現狀。
 - **設計原則是否列為約束文件**：[設計原則](principles.md)「本 repo 的約束文件」把它跟需求一樣列為全文約束。
 - **條文附不附出處**：設計原則照原則 4，條文不再附待決事項編號或日期；v3 原本規定條文附 Q 編號或日期當出處。
 - **第 2 期結果要不要在現行部署包重跑**：第 2 期的 handoff-ab 結果跑在 2026-11-14 當時的部署包。
