@@ -12,6 +12,7 @@
 | [new_draft/goal_v4.md](new_draft/goal_v4.md) | 這套系統是什麼、提供哪些標準、靠什麼落實、帶來什麼效用。已定稿，是 v4 最高層級的規範 |
 | [new_draft/requirements.md](new_draft/requirements.md) | 三種標準與落實手段各要做到什麼、多強；範圍、分期與驗收 |
 | [new_draft/requirements_v4.md](new_draft/requirements_v4.md) | 依定稿的目標與設計原則重寫的需求：每條寫成可檢驗的句子，附編號表格。初稿，將取代 requirements.md |
+| [new_draft/glossary.md](new_draft/glossary.md) | 協作系統的名詞各指什麼、英文叫什麼。初稿，v4 生效時隨範本發到每個專案 |
 | [new_draft/principles_v4.md](new_draft/principles_v4.md) | 文件怎麼切、怎麼寫、維護到多仔細（標準 2 的原則）。已定稿 |
 | [new_draft/rationale.md](new_draft/rationale.md) | 為什麼這樣定、靠什麼證據、哪裡還站不穩 |
 | [new_draft/roadmap.md](new_draft/roadmap.md) | 選了哪條路線、各期怎麼收尾、什麼先放著、v4 生效時要一起做的事 |
