@@ -7,7 +7,7 @@
 
 ## 已登記
 
-- **Q60**（2026-11-21 登記）：已部署專案的結構文件 `ARCHITECT.md` 怎麼改名成 `ARCHITECTURE.md`？起因是 Q52 起部署包的結構文件叫 `ARCHITECTURE.md`，已部署專案仍是 `ARCHITECT.md`，`sync_project.py` 不會改名；選定之前，任何專案都不要同步到 `2026-11-20` 以後的版本。選項：(a) 讓 `sync_project.py` 改名；(b) 各專案自己 `git mv`。影響 F18、Q52。狀態：待決。
+- **Q60**（2026-11-21 登記）：已部署專案的結構文件 `ARCHITECT.md` 怎麼改名成 `ARCHITECTURE.md`？起因是 Q52 起部署包的結構文件叫 `ARCHITECTURE.md`，已部署專案仍是 `ARCHITECT.md`，`sync_project.py` 不會改名；選定之前，任何專案都不要同步到 `2026-11-20` 以後的版本。選項：(a) 讓 `sync_project.py` 改名；(b) 各專案自己 `git mv`。影響 F18b、Q52。狀態：待決。
 - **Q61**（2026-11-21 登記）：第 2 期（Codex＋macOS）與 Q49 在 Windows、Codex 上的實跑什麼時候續做？起因是使用者 2026-11-18 說先等等，沒有說等到什麼時候。選項：(a) 現在續做；(b) 繼續等，由使用者指定時機。影響 F14、Q49。狀態：待決。
 
 ## 還沒編號
