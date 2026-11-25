@@ -32,8 +32,8 @@
 
 | ID | 需求 | 強度 | 承擔 | 怎麼驗 |
 |---|---|---|---|---|
-| F14 | 換工具（Claude Code、Codex）時，結果必須一樣 | 提醒 | 兩個工具讀同一份 `AGENTS.md` | 同一組 handoff-ab 情境在兩個工具各跑一次，關鍵檢查的結果相同 |
-| F15 | 換作業系統（macOS、Windows）時，結果必須一樣 | 提醒 | | 同一組 handoff-ab 情境在兩個作業系統各跑一次，關鍵檢查的結果相同 |
+| F14 | 換用 Claude Code 或 Codex 時，本系統的結果必須相同（compatibility） | 提醒 | 兩個工具讀同一份 `AGENTS.md` | 同一組 handoff-ab 情境在兩個工具各跑一次，關鍵檢查的結果相同 |
+| F15 | 換用 macOS 或 Windows 時，本系統的結果必須相同（compatibility） | 提醒 | | 同一組 handoff-ab 情境在兩個作業系統各跑一次，關鍵檢查的結果相同 |
 
 ### 範本的發布與更新
 
